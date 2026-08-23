@@ -51,6 +51,35 @@ update public.profiles set role = 'member' where email = 'ky-su@congty.com';
 
 ## 5. Kiểm chứng phân quyền
 
+### Cách nhanh — chạy ngay ở máy local, không cần Docker
+
+```bash
+npm run test:db
+```
+
+Script dựng một Postgres thật chạy in-process (PGlite, WebAssembly), tạo stub schema
+`auth` của Supabase, áp dụng toàn bộ migration, nạp seed hai lần để kiểm tra tính
+idempotent, rồi chạy bộ test RLS. Không đụng gì tới database thật.
+
+Chạy cái này TRƯỚC khi dán SQL lên Supabase Dashboard — bắt được lỗi cú pháp và lỗi
+logic phân quyền sớm hơn nhiều.
+
+Kiểm tra xem bộ test có thực sự bắt được lỗ hổng không (không phải chạy suông):
+
+```bash
+npm run test:db:mutate
+```
+
+Script cố tình phá từng luật bảo mật rồi chạy lại bộ test. Mọi mutation đều phải bị
+bắt; dòng `BỎ SÓT` nghĩa là bộ test có điểm mù cần bổ sung assert. Chạy lại mỗi khi
+sửa policy.
+
+Khác biệt duy nhất giữa SQL chạy ở local và trên Supabase: PGlite không có extension
+`pgcrypto` nên dòng `create extension` bị bỏ qua — `gen_random_uuid()` vốn là hàm lõi
+từ PostgreSQL 13 nên kết quả không đổi.
+
+### Cách chạy trên database thật
+
 Dán `tests/rls_smoke_test.sql` vào SQL Editor và chạy. Script tự tạo 4 user thử
 nghiệm cho 4 vai trò, giả lập JWT của từng người, assert kết quả rồi `ROLLBACK` —
 không ghi gì vĩnh viễn vào database.

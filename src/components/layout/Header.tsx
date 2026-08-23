@@ -1,6 +1,9 @@
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { LanguageSwitcher } from './LanguageSwitcher';
+import { RoleBadge } from '@/components/auth/RoleBadge';
+import { SignOutButton } from '@/components/auth/SignOutButton';
+import { getSessionContext, isAdmin } from '@/lib/auth';
 
 const navItems = [
   { href: '/cam-nang', key: 'handbook' },
@@ -10,6 +13,10 @@ const navItems = [
 export async function Header() {
   const t = await getTranslations('nav');
   const tCommon = await getTranslations('common');
+
+  // Chỉ để hiển thị đúng menu. Chặn truy cập thật nằm ở RLS trong database.
+  const session = await getSessionContext();
+  const role = session?.profile?.role ?? null;
 
   return (
     <header className="border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
@@ -33,22 +40,46 @@ export async function Header() {
               {t(item.key)}
             </Link>
           ))}
+          {isAdmin(role) ? (
+            <Link
+              href="/admin"
+              className="text-slate-600 hover:text-sky-700 dark:text-slate-300 dark:hover:text-sky-400"
+            >
+              {t('admin')}
+            </Link>
+          ) : null}
         </nav>
 
         <div className="ml-auto flex items-center gap-3">
           <LanguageSwitcher />
-          <Link
-            href="/dang-nhap"
-            className="rounded-md px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
-          >
-            {t('signIn')}
-          </Link>
-          <Link
-            href="/dang-ky"
-            className="rounded-md bg-sky-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-sky-700"
-          >
-            {t('signUp')}
-          </Link>
+
+          {session ? (
+            <>
+              {role ? <RoleBadge role={role} /> : null}
+              <Link
+                href="/tai-khoan"
+                className="rounded-md px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+              >
+                {t('account')}
+              </Link>
+              <SignOutButton />
+            </>
+          ) : (
+            <>
+              <Link
+                href="/dang-nhap"
+                className="rounded-md px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+              >
+                {t('signIn')}
+              </Link>
+              <Link
+                href="/dang-ky"
+                className="rounded-md bg-sky-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-sky-700"
+              >
+                {t('signUp')}
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </header>

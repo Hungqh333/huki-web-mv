@@ -13,6 +13,7 @@
     "admin": "Quản trị",
     "signIn": "Đăng nhập",
     "signUp": "Đăng ký",
+    "signOut": "Đăng xuất",
     "openMenu": "Mở menu",
     "closeMenu": "Đóng menu"
   },
@@ -21,10 +22,68 @@
     "vi": "Tiếng Việt",
     "en": "English"
   },
+  "roles": {
+    "registered": "Đã đăng ký",
+    "member": "Member",
+    "vip": "VIP",
+    "admin": "Admin"
+  },
   "home": {
     "title": "Machine Vision Hub",
     "subtitle": "Bộ chọn thiết bị theo bài toán và cẩm nang kỹ thuật cho đội ngũ Vision.",
     "cta": "Khám phá cẩm nang"
+  },
+  "auth": {
+    "fields": {
+      "name": "Họ và tên",
+      "company": "Công ty",
+      "email": "Email",
+      "password": "Mật khẩu",
+      "confirmPassword": "Nhập lại mật khẩu",
+      "passwordHint": "Tối thiểu 8 ký tự."
+    },
+    "signIn": {
+      "title": "Đăng nhập",
+      "subtitle": "Đăng nhập để xem nội dung dành riêng cho thành viên.",
+      "submit": "Đăng nhập",
+      "submitting": "Đang đăng nhập...",
+      "noAccount": "Chưa có tài khoản?",
+      "goToSignUp": "Đăng ký ngay"
+    },
+    "signUp": {
+      "title": "Đăng ký",
+      "subtitle": "Tạo tài khoản để theo dõi cẩm nang kỹ thuật.",
+      "submit": "Tạo tài khoản",
+      "submitting": "Đang tạo tài khoản...",
+      "checkEmail": "Đã gửi email xác nhận. Vui lòng mở hộp thư và bấm vào liên kết để kích hoạt tài khoản.",
+      "roleNotice": "Tài khoản tự đăng ký mặc định ở mức \"Đã đăng ký\". Quyền Member/VIP (dùng bộ chọn thiết bị, xem tips dự án) do quản trị viên cấp thủ công — vui lòng liên hệ bộ phận Vision.",
+      "haveAccount": "Đã có tài khoản?",
+      "goToSignIn": "Đăng nhập"
+    },
+    "account": {
+      "title": "Tài khoản của tôi",
+      "roleTitle": "Cấp quyền hiện tại",
+      "roleSelectorAllowed": "Bạn được phép sử dụng đầy đủ bộ chọn thiết bị.",
+      "roleSelectorBlocked": "Cấp quyền hiện tại chưa dùng được bộ chọn thiết bị. Liên hệ bộ phận Vision để được nâng cấp.",
+      "profileTitle": "Thông tin cá nhân",
+      "save": "Lưu thay đổi",
+      "saving": "Đang lưu...",
+      "saved": "Đã lưu thay đổi.",
+      "historyTitle": "Lịch sử dùng công cụ",
+      "historyEmpty": "Chưa có lượt sử dụng nào."
+    },
+    "errors": {
+      "missingFields": "Vui lòng nhập đầy đủ email và mật khẩu.",
+      "passwordTooShort": "Mật khẩu phải có ít nhất 8 ký tự.",
+      "passwordMismatch": "Hai lần nhập mật khẩu không khớp.",
+      "invalidCredentials": "Email hoặc mật khẩu không đúng.",
+      "notSignedIn": "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
+      "callbackFailed": "Liên kết xác nhận không hợp lệ hoặc đã hết hạn. Vui lòng thử lại."
+    },
+    "notConfigured": {
+      "title": "Chưa cấu hình Supabase",
+      "description": "Sao chép .env.example thành .env.local và điền hai biến sau, sau đó khởi động lại npm run dev."
+    }
   },
   "footer": {
     "description": "Nền tảng nội bộ hỗ trợ lựa chọn thiết bị machine vision và chia sẻ kiến thức kỹ thuật.",

@@ -13,6 +13,7 @@
     "admin": "Admin",
     "signIn": "Sign in",
     "signUp": "Sign up",
+    "signOut": "Sign out",
     "openMenu": "Open menu",
     "closeMenu": "Close menu"
   },
@@ -21,10 +22,68 @@
     "vi": "Tiếng Việt",
     "en": "English"
   },
+  "roles": {
+    "registered": "Registered",
+    "member": "Member",
+    "vip": "VIP",
+    "admin": "Admin"
+  },
   "home": {
     "title": "Machine Vision Hub",
     "subtitle": "Task-driven equipment selection and a technical handbook for the Vision team.",
     "cta": "Explore the handbook"
+  },
+  "auth": {
+    "fields": {
+      "name": "Full name",
+      "company": "Company",
+      "email": "Email",
+      "password": "Password",
+      "confirmPassword": "Confirm password",
+      "passwordHint": "At least 8 characters."
+    },
+    "signIn": {
+      "title": "Sign in",
+      "subtitle": "Sign in to access member-only content.",
+      "submit": "Sign in",
+      "submitting": "Signing in...",
+      "noAccount": "No account yet?",
+      "goToSignUp": "Create one"
+    },
+    "signUp": {
+      "title": "Sign up",
+      "subtitle": "Create an account to follow the technical handbook.",
+      "submit": "Create account",
+      "submitting": "Creating account...",
+      "checkEmail": "A confirmation email has been sent. Open your inbox and click the link to activate your account.",
+      "roleNotice": "Self-registered accounts start at the \"Registered\" level. Member/VIP access (equipment selector, real project tips) is granted manually by an administrator — please contact the Vision department.",
+      "haveAccount": "Already have an account?",
+      "goToSignIn": "Sign in"
+    },
+    "account": {
+      "title": "My account",
+      "roleTitle": "Current access level",
+      "roleSelectorAllowed": "You have full access to the equipment selector.",
+      "roleSelectorBlocked": "Your current access level cannot use the equipment selector. Contact the Vision department to upgrade.",
+      "profileTitle": "Personal details",
+      "save": "Save changes",
+      "saving": "Saving...",
+      "saved": "Changes saved.",
+      "historyTitle": "Tool usage history",
+      "historyEmpty": "No usage recorded yet."
+    },
+    "errors": {
+      "missingFields": "Please enter both email and password.",
+      "passwordTooShort": "Password must be at least 8 characters.",
+      "passwordMismatch": "The two passwords do not match.",
+      "invalidCredentials": "Incorrect email or password.",
+      "notSignedIn": "Your session has expired. Please sign in again.",
+      "callbackFailed": "The confirmation link is invalid or has expired. Please try again."
+    },
+    "notConfigured": {
+      "title": "Supabase is not configured",
+      "description": "Copy .env.example to .env.local, fill in the two variables below, then restart npm run dev."
+    }
   },
   "footer": {
     "description": "Internal platform for machine vision equipment selection and technical knowledge sharing.",

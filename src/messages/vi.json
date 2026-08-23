@@ -1,0 +1,37 @@
+{
+  "common": {
+    "appName": "Machine Vision Hub",
+    "appTagline": "Nền tảng kỹ thuật cho bộ phận Vision",
+    "loading": "Đang tải...",
+    "comingSoon": "Sắp ra mắt"
+  },
+  "nav": {
+    "home": "Trang chủ",
+    "handbook": "Cẩm nang",
+    "selector": "Bộ chọn thiết bị",
+    "account": "Tài khoản",
+    "admin": "Quản trị",
+    "signIn": "Đăng nhập",
+    "signUp": "Đăng ký",
+    "openMenu": "Mở menu",
+    "closeMenu": "Đóng menu"
+  },
+  "language": {
+    "label": "Ngôn ngữ",
+    "vi": "Tiếng Việt",
+    "en": "English"
+  },
+  "home": {
+    "title": "Machine Vision Hub",
+    "subtitle": "Bộ chọn thiết bị theo bài toán và cẩm nang kỹ thuật cho đội ngũ Vision.",
+    "cta": "Khám phá cẩm nang"
+  },
+  "footer": {
+    "description": "Nền tảng nội bộ hỗ trợ lựa chọn thiết bị machine vision và chia sẻ kiến thức kỹ thuật.",
+    "sections": {
+      "product": "Sản phẩm",
+      "resources": "Tài nguyên"
+    },
+    "rights": "Bản quyền thuộc về bộ phận Vision."
+  }
+}

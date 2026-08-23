@@ -1,0 +1,37 @@
+{
+  "common": {
+    "appName": "Machine Vision Hub",
+    "appTagline": "Engineering platform for the Vision department",
+    "loading": "Loading...",
+    "comingSoon": "Coming soon"
+  },
+  "nav": {
+    "home": "Home",
+    "handbook": "Handbook",
+    "selector": "Equipment Selector",
+    "account": "Account",
+    "admin": "Admin",
+    "signIn": "Sign in",
+    "signUp": "Sign up",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu"
+  },
+  "language": {
+    "label": "Language",
+    "vi": "Tiếng Việt",
+    "en": "English"
+  },
+  "home": {
+    "title": "Machine Vision Hub",
+    "subtitle": "Task-driven equipment selection and a technical handbook for the Vision team.",
+    "cta": "Explore the handbook"
+  },
+  "footer": {
+    "description": "Internal platform for machine vision equipment selection and technical knowledge sharing.",
+    "sections": {
+      "product": "Product",
+      "resources": "Resources"
+    },
+    "rights": "All rights reserved by the Vision department."
+  }
+}

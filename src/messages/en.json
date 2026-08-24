@@ -209,5 +209,29 @@
       "noFields": "This task has no input fields declared.",
       "noRules": "There are no recommendation rules for this task yet, or your account cannot read the rule table."
     }
+  },
+  "handbook": {
+    "title": "Technical handbook",
+    "subtitle": "Fundamentals, new technology, and lessons learned from machine vision projects we have delivered.",
+    "filterLabel": "Filter by topic",
+    "allCategories": "All",
+    "readMore": "Read more",
+    "empty": "No articles in this topic yet.",
+    "backToList": "All articles",
+    "notConfigured": "Supabase is not configured, so the article list could not be loaded.",
+    "noContentInLocale": "This article has no translation for the selected language yet.",
+    "lockedCtaGuest": "Sign in to read in full",
+    "lockedCtaSignedIn": "See access requirements",
+    "lockedTitle": "Members-only content",
+    "lockedBodyGuest": "The rest of this article is available to accounts with granted access. Sign in to read it in full, or contact the Vision department if you need this material.",
+    "lockedBodySignedIn": "This article requires {tier} access. Your account does not have it yet — contact the Vision department for an upgrade.",
+    "signInCta": "Sign in",
+    "contactCta": "Contact the Vision department",
+    "tiers": {
+      "public": "Public",
+      "registered": "Registered",
+      "member": "Member",
+      "vip": "VIP"
+    }
   }
 }

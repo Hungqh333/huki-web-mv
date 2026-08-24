@@ -209,5 +209,29 @@
       "noFields": "Bài toán này chưa khai báo trường nhập liệu nào.",
       "noRules": "Chưa có luật gợi ý nào cho bài toán này, hoặc tài khoản của bạn không đủ quyền đọc bảng luật."
     }
+  },
+  "handbook": {
+    "title": "Cẩm nang kỹ thuật",
+    "subtitle": "Kiến thức nền, công nghệ mới và bài học rút ra từ các dự án machine vision đã triển khai.",
+    "filterLabel": "Lọc theo chủ đề",
+    "allCategories": "Tất cả",
+    "readMore": "Đọc tiếp",
+    "empty": "Chưa có bài viết nào trong chủ đề này.",
+    "backToList": "Tất cả bài viết",
+    "notConfigured": "Chưa cấu hình Supabase nên chưa tải được danh sách bài viết.",
+    "noContentInLocale": "Bài viết này chưa có bản dịch cho ngôn ngữ đang chọn.",
+    "lockedCtaGuest": "Đăng nhập để xem đầy đủ",
+    "lockedCtaSignedIn": "Xem yêu cầu quyền truy cập",
+    "lockedTitle": "Nội dung dành riêng cho thành viên",
+    "lockedBodyGuest": "Phần còn lại của bài viết dành cho tài khoản đã được cấp quyền. Đăng nhập để xem đầy đủ, hoặc liên hệ bộ phận Vision nếu bạn cần nội dung này.",
+    "lockedBodySignedIn": "Bài viết này yêu cầu cấp quyền {tier}. Tài khoản của bạn hiện chưa đủ quyền — liên hệ bộ phận Vision để được nâng cấp.",
+    "signInCta": "Đăng nhập",
+    "contactCta": "Liên hệ bộ phận Vision",
+    "tiers": {
+      "public": "Công khai",
+      "registered": "Đã đăng ký",
+      "member": "Member",
+      "vip": "VIP"
+    }
   }
 }

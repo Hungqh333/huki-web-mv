@@ -386,3 +386,71 @@ on conflict (code) where code is not null do update set
   notes_en             = excluded.notes_en,
   priority             = excluded.priority,
   is_active            = true;
+
+-- =============================================================================
+-- BÀI VIẾT MẪU (CLAUDE.md mục 5)
+--
+-- Phân bố cố ý để test gating: 2 bài public, 2 bài member, 1 bài vip.
+-- Bài tier member/vip khách vẫn thấy tiêu đề + đoạn mở đầu qua view
+-- article_previews, nhưng toàn văn thì RLS chặn ở tầng database.
+--
+-- Nội dung là dữ liệu tạm để kiểm thử, không phải tài liệu kỹ thuật chính thức.
+-- =============================================================================
+
+insert into public.articles
+  (slug, title_vi, title_en, content_vi, content_en, category_id, access_tier, published_at)
+values
+
+('nguyen-ly-chieu-sang-machine-vision',
+ 'Nguyên lý chiếu sáng trong machine vision',
+ 'Lighting principles in machine vision',
+ '<p>Chiếu sáng quyết định tới 80% thành công của một ứng dụng machine vision. Một hệ thống có camera đắt tiền nhưng chiếu sáng sai vẫn cho kết quả tệ hơn hệ thống camera phổ thông với ánh sáng được thiết kế đúng.</p><p>Nguyên tắc nền tảng: đừng cố làm cho ảnh <em>đẹp</em>, hãy làm cho đặc trưng cần đo <em>nổi bật</em> so với phần còn lại. Một tấm ảnh tối om nhưng vết xước hiện rõ trắng trên nền đen thì tốt hơn nhiều so với tấm ảnh sáng đều mà vết xước chìm vào bề mặt.</p><p>Ba kiểu chiếu sáng hay dùng nhất: đèn vòng khuếch tán cho bề mặt phẳng ít phản chiếu, đèn dome cho bề mặt cong hoặc bóng, và đèn nền tạo bóng biên khi cần đo kích thước. Đèn nền cho biên sắc nét nhất vì tương phản gần như tuyệt đối giữa vật và nền.</p>',
+ '<p>Lighting determines up to 80% of the success of a machine vision application. A system with an expensive camera but poor lighting will still perform worse than a commodity camera with properly designed illumination.</p><p>The fundamental principle: do not try to make the image <em>look nice</em>, make the feature you need to measure <em>stand out</em> from everything else. A dark image where a scratch shows up bright white against black is far more useful than an evenly lit image where the scratch blends into the surface.</p><p>The three most common lighting types: diffuse ring lights for flat, low-reflectivity surfaces; dome lights for curved or glossy surfaces; and backlights for silhouette measurement. A backlight gives the sharpest edge because the contrast between part and background is almost absolute.</p>',
+ (select id from public.categories where slug = 'fundamentals'),
+ 'public',
+ now() - interval '20 days'),
+
+('chon-do-phan-giai-camera',
+ 'Cách chọn độ phân giải camera cho bài toán đo lường',
+ 'Choosing camera resolution for measurement tasks',
+ '<p>Câu hỏi thường gặp nhất khi thiết kế hệ vision: cần camera bao nhiêu megapixel? Câu trả lời không nằm ở megapixel mà ở số pixel phủ lên đặc trưng nhỏ nhất cần phân biệt.</p><p>Công thức khởi điểm: lấy kích thước vùng quan sát chia cho dung sai yêu cầu, rồi nhân với hệ số an toàn 2–3 pixel cho mỗi đặc trưng. Ví dụ vùng quan sát 100 mm, dung sai 0.02 mm, hệ số 3 thì cần 15000 pixel trên trục dài — con số này lớn hơn hầu hết cảm biến area scan phổ thông, dấu hiệu cho thấy phải chia vùng quan sát cho nhiều camera hoặc chuyển sang line scan.</p><p>Lưu ý quan trọng: độ phân giải cảm biến chỉ là điều kiện cần. Nếu ống kính không phân giải nổi tới mức đó, hoặc rung động làm nhoè ảnh, thì thêm pixel cũng vô ích.</p>',
+ '<p>The most common question when designing a vision system: how many megapixels do I need? The answer is not about megapixels at all, but about how many pixels cover the smallest feature you must distinguish.</p><p>A starting formula: divide the field of view by the required tolerance, then multiply by a safety factor of 2–3 pixels per feature. For a 100 mm field of view with 0.02 mm tolerance and a factor of 3, you need 15000 pixels along the long axis — larger than most common area scan sensors, which is a signal that you must split the field of view across several cameras or move to a line scan setup.</p><p>An important caveat: sensor resolution is only a necessary condition. If the lens cannot resolve that level of detail, or vibration blurs the image, adding pixels achieves nothing.</p>',
+ (select id from public.categories where slug = 'fundamentals'),
+ 'public',
+ now() - interval '14 days'),
+
+('bai-hoc-trien-khai-kiem-tra-ngoai-quan',
+ 'Bài học từ dự án kiểm tra ngoại quan vỏ nhựa',
+ 'Lessons from a plastic housing inspection project',
+ '<p>Dự án chạy ổn định trong phòng lab nhưng tỉ lệ báo lỗi giả tăng vọt sau hai tuần chạy thực tế. Nguyên nhân hoá ra không nằm ở thuật toán mà ở ba thứ rất đời thường.</p><p>Thứ nhất: ánh sáng môi trường. Xưởng có cửa sổ, buổi chiều nắng chiếu xiên vào khu vực kiểm tra làm nền ảnh sáng lên. Giải pháp là che chắn cụm camera, không phải chỉnh ngưỡng.</p><p>Thứ hai: bụi bám kính camera làm ảnh mờ dần theo thời gian. Kết quả trôi từ từ nên không ai nhận ra cho tới khi tỉ lệ lỗi giả vượt ngưỡng chịu được. Từ đó chúng tôi đưa việc vệ sinh kính vào lịch bảo trì tuần.</p><p>Thứ ba: lô nhựa mới có màu lệch nhẹ so với lô cũ. Ngưỡng cố định đặt theo lô đầu không còn đúng. Bài học: luôn lấy mẫu từ nhiều lô khác nhau trước khi chốt ngưỡng, và ưu tiên đặc trưng ít phụ thuộc màu khi có thể.</p>',
+ '<p>The project ran reliably in the lab, but the false reject rate rose sharply after two weeks in production. The cause turned out to have nothing to do with the algorithm and everything to do with three very mundane things.</p><p>First: ambient light. The workshop had windows, and afternoon sun fell across the inspection station, brightening the image background. The fix was to shield the camera assembly, not to retune the threshold.</p><p>Second: dust on the camera window gradually blurred the image. Because the results drifted slowly, nobody noticed until the false reject rate crossed the tolerable limit. We added window cleaning to the weekly maintenance schedule from then on.</p><p>Third: a new plastic batch had a slightly different colour from the original. The fixed threshold set from the first batch no longer held. The lesson: always sample from several batches before fixing a threshold, and prefer features that depend as little as possible on colour.</p>',
+ (select id from public.categories where slug = 'project-tips'),
+ 'member',
+ now() - interval '9 days'),
+
+('khi-nao-nen-dung-deep-learning',
+ 'Khi nào nên dùng deep learning, khi nào không',
+ 'When to use deep learning, and when not to',
+ '<p>Deep learning là công cụ mạnh nhưng không phải lúc nào cũng đúng chỗ. Nguyên tắc của chúng tôi: chỉ dùng khi rule-based thực sự không đáp ứng được, không dùng vì nó nghe hiện đại.</p><p>Rule-based phù hợp khi đặc trưng cần tìm mô tả được bằng ngưỡng cố định: kích thước, vị trí, độ tương phản, hình dạng ổn định. Ưu điểm là chạy nhanh, giải thích được vì sao ra kết quả đó, và không cần dữ liệu huấn luyện. Khi có sự cố, kỹ sư truy được ngay bước nào sai.</p><p>Deep learning chỉ thắng rõ khi lỗi biến thiên mạnh về hình dạng, vị trí và màu sắc tới mức không viết nổi luật cố định — ví dụ vết nứt trên bề mặt vân gỗ tự nhiên. Nhưng phải chuẩn bị: vài trăm ảnh có gán nhãn cho mỗi loại lỗi, một quy trình gán nhãn nhất quán, và chấp nhận rằng khi mô hình sai thì rất khó giải thích tại sao.</p><p>Với bài toán đo lường kích thước, deep learning gần như luôn là lựa chọn sai — nó không cho sai số lặp lại ổn định theo đơn vị milimet.</p>',
+ '<p>Deep learning is a powerful tool but not always the right one. Our rule: use it only when rule-based processing genuinely cannot meet the requirement, never because it sounds modern.</p><p>Rule-based methods fit when the feature can be described with fixed thresholds: size, position, contrast, stable shape. The advantages are speed, explainability, and no need for training data. When something goes wrong, an engineer can trace exactly which step failed.</p><p>Deep learning clearly wins only when defects vary so much in shape, position and colour that no fixed rule can capture them — a crack across natural wood grain, for example. But be prepared: several hundred labelled images per defect class, a consistent labelling process, and the reality that when the model is wrong it is very hard to explain why.</p><p>For dimensional measurement, deep learning is almost always the wrong choice — it does not deliver repeatable error in millimetres.</p>',
+ (select id from public.categories where slug = 'new-technology'),
+ 'member',
+ now() - interval '5 days'),
+
+('so-sanh-lens-telecentric',
+ 'So sánh ống kính telecentric của bốn hãng',
+ 'Comparing telecentric lenses from four vendors',
+ '<p>Chúng tôi thử nghiệm ống kính telecentric của bốn hãng trên cùng một bài toán đo đường kính trục kim loại, dung sai 0.01 mm, để xem thông số công bố có phản ánh đúng thực tế không.</p><p>Kết quả tóm tắt: cả bốn đều đạt độ méo công bố trong vùng trung tâm, nhưng khác biệt rõ rệt ở vùng rìa vùng quan sát. Hai hãng giữ được sai số dưới ngưỡng trên toàn bộ trường nhìn; hai hãng còn lại vượt ngưỡng ở khoảng 15% diện tích ngoài rìa — chấp nhận được nếu vật luôn nằm giữa khung, nhưng rủi ro nếu vị trí vật thay đổi.</p><p>Yếu tố ít được chú ý nhưng ảnh hưởng lớn tới chi phí: đường kính thấu kính đầu vào phải lớn hơn vật cần đo. Với vật trên 100 mm, giá ống kính telecentric tăng rất nhanh, tới mức chia vùng quan sát cho hai camera thường rẻ hơn đáng kể.</p><p>Chi tiết số liệu đo, điều kiện thử nghiệm và khuyến nghị theo từng dải kích thước nằm ở phần dưới.</p>',
+ '<p>We tested telecentric lenses from four vendors on the same shaft diameter measurement task at 0.01 mm tolerance, to see whether the published specifications hold up in practice.</p><p>Summary: all four met their stated distortion figures in the central region, but differed markedly toward the edge of the field of view. Two vendors held the error below the limit across the whole field; the other two exceeded it over roughly the outer 15% of the area — acceptable if the part is always centred, but risky if part position varies.</p><p>A factor that gets little attention but drives cost heavily: the front lens diameter must exceed the part being measured. Above 100 mm the price of a telecentric lens climbs very steeply, to the point where splitting the field of view across two cameras is often considerably cheaper.</p><p>Detailed measurements, test conditions and recommendations per size range follow below.</p>',
+ (select id from public.categories where slug = 'equipment-reviews'),
+ 'vip',
+ now() - interval '2 days')
+
+on conflict (slug) do update set
+  title_vi     = excluded.title_vi,
+  title_en     = excluded.title_en,
+  content_vi   = excluded.content_vi,
+  content_en   = excluded.content_en,
+  category_id  = excluded.category_id,
+  access_tier  = excluded.access_tier,
+  published_at = excluded.published_at;

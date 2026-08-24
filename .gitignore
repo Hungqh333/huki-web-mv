@@ -40,3 +40,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# File gop tam thoi de dan vao Supabase SQL Editor
+CHAY-BUOC-NAY.sql

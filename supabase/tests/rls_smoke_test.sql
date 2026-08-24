@@ -78,20 +78,20 @@ set local role anon;
 do $$
 begin
   perform pg_temp.assert_eq(
-    (select count(*) from public.articles), 1,
+    (select count(*) from public.articles where slug like 'rls-test-%'), 1,
     'Guest chỉ đọc được bài public (bản nháp bị ẩn)');
 
   perform pg_temp.assert_eq(
-    (select count(*) from public.articles where access_tier <> 'public'), 0,
+    (select count(*) from public.articles where slug like 'rls-test-%' and access_tier <> 'public'), 0,
     'Guest không đọc được bài registered/member/vip');
 
   -- Teaser vẫn hiện đủ 4 bài đã publish, phục vụ marketing.
   perform pg_temp.assert_eq(
-    (select count(*) from public.article_previews), 4,
+    (select count(*) from public.article_previews where slug like 'rls-test-%'), 4,
     'Guest thấy teaser của cả 4 bài đã publish');
 
   perform pg_temp.assert_eq(
-    (select count(*) from public.article_previews where is_locked), 3,
+    (select count(*) from public.article_previews where slug like 'rls-test-%' and is_locked), 3,
     'Guest thấy 3 bài ở trạng thái khoá');
 end $$;
 
@@ -108,11 +108,11 @@ do $$
 declare blocked boolean := false;
 begin
   perform pg_temp.assert_eq(
-    (select count(*) from public.articles), 2,
+    (select count(*) from public.articles where slug like 'rls-test-%'), 2,
     'Registered đọc được đúng 2 bài (public + registered)');
 
   perform pg_temp.assert_eq(
-    (select count(*) from public.articles where access_tier in ('member','vip')), 0,
+    (select count(*) from public.articles where slug like 'rls-test-%' and access_tier in ('member','vip')), 0,
     'Registered KHÔNG đọc được nội dung member/vip');
 
   perform pg_temp.assert_eq(
@@ -166,11 +166,11 @@ set local role authenticated;
 do $$
 begin
   perform pg_temp.assert_eq(
-    (select count(*) from public.articles), 3,
+    (select count(*) from public.articles where slug like 'rls-test-%'), 3,
     'Member đọc được public + registered + member');
 
   perform pg_temp.assert_eq(
-    (select count(*) from public.articles where access_tier = 'vip'), 0,
+    (select count(*) from public.articles where slug like 'rls-test-%' and access_tier = 'vip'), 0,
     'Member KHÔNG đọc được bài vip');
 
   -- Chỉ đếm luật của bài toán test, để không phụ thuộc vào số luật đã seed.
@@ -204,11 +204,11 @@ set local role authenticated;
 do $$
 begin
   perform pg_temp.assert_eq(
-    (select count(*) from public.articles), 4,
+    (select count(*) from public.articles where slug like 'rls-test-%'), 4,
     'VIP đọc được tất cả bài đã publish, kể cả tier vip');
 
   perform pg_temp.assert_eq(
-    (select count(*) from public.article_previews where is_locked), 0,
+    (select count(*) from public.article_previews where slug like 'rls-test-%' and is_locked), 0,
     'VIP không thấy bài nào bị khoá');
 
   perform pg_temp.assert_eq(

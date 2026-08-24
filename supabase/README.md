@@ -64,7 +64,8 @@ Không có cách nào tự đăng ký thành admin — đúng theo thiết kế.
 2. Vào SQL Editor chạy:
 
 ```sql
-update public.profiles set role = 'admin' where email = 'hungnv@soragroup.vn';
+-- thay bằng email bạn vừa dùng để đăng ký
+update public.profiles set role = 'admin' where email = 'email-cua-ban@example.com';
 ```
 
 Câu lệnh này chạy được vì trong SQL Editor không có JWT (`auth.uid()` là NULL), nên

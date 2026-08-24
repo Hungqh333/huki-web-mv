@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test:db": "node scripts/verify-db.mjs",
-    "test:db:mutate": "node scripts/mutation-test-db.mjs"
+    "test:db:mutate": "node scripts/mutation-test-db.mjs",
+    "test:engine": "tsx --test scripts/test-selector-engine.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",
@@ -28,6 +29,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.2",
     "tailwindcss": "^4",
+    "tsx": "^4.23.12",
     "typescript": "^5"
   }
 }

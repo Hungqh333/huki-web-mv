@@ -1,0 +1,112 @@
+import Link from 'next/link';
+import { getLocale, getTranslations } from 'next-intl/server';
+import { canUseSelector, getSessionContext } from '@/lib/auth';
+import { hasSupabaseEnv } from '@/lib/supabase/env';
+import { createClient } from '@/lib/supabase/server';
+
+type TaskTypeRow = {
+  slug: string;
+  name_vi: string;
+  name_en: string;
+  description_vi: string | null;
+  description_en: string | null;
+};
+
+async function getTaskTypes(): Promise<TaskTypeRow[]> {
+  if (!hasSupabaseEnv()) return [];
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from('task_types')
+    .select('slug, name_vi, name_en, description_vi, description_en')
+    .eq('is_active', true)
+    .order('sort_order', { ascending: true });
+  return (data ?? []) as TaskTypeRow[];
+}
+
+export default async function SelectorHomePage() {
+  const t = await getTranslations('selector.landing');
+  const locale = await getLocale();
+
+  const session = await getSessionContext();
+  const role = session?.profile?.role ?? null;
+  const allowed = canUseSelector(role);
+
+  // task_types đọc công khai nên trang giới thiệu vẫn liệt kê được tên bài toán
+  // cho khách và Registered — phục vụ mục tiêu marketing. Bảng luật thì không.
+  const taskTypes = await getTaskTypes();
+  const pickName = (row: TaskTypeRow) => (locale === 'en' ? row.name_en : row.name_vi);
+  const pickDesc = (row: TaskTypeRow) =>
+    (locale === 'en' ? row.description_en : row.description_vi) ?? '';
+
+  return (
+    <section className="mx-auto w-full max-w-5xl px-4 py-12 sm:px-6">
+      <h1 className="text-3xl font-bold tracking-tight">{t('title')}</h1>
+      <p className="mt-3 max-w-2xl text-slate-600 dark:text-slate-400">{t('subtitle')}</p>
+
+      {allowed ? (
+        <>
+          <p className="mt-8 text-sm font-medium text-slate-700 dark:text-slate-300">
+            {t('pickTask')}
+          </p>
+          <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {taskTypes.map((task) => (
+              <li key={task.slug}>
+                <Link
+                  href={`/cong-cu-chon-thiet-bi/${task.slug}`}
+                  className="flex h-full flex-col rounded-lg border border-slate-200 p-5 transition hover:border-sky-500 hover:shadow-sm dark:border-slate-800 dark:hover:border-sky-500"
+                >
+                  <span className="font-semibold">{pickName(task)}</span>
+                  <span className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+                    {pickDesc(task)}
+                  </span>
+                  <span className="mt-4 text-sm font-medium text-sky-700 dark:text-sky-400">
+                    {t('openTask')} →
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </>
+      ) : (
+        <div className="mt-10 space-y-8">
+          <ul className="grid gap-4 sm:grid-cols-3">
+            {taskTypes.map((task) => (
+              <li
+                key={task.slug}
+                className="rounded-lg border border-slate-200 p-5 dark:border-slate-800"
+              >
+                <p className="font-semibold">{pickName(task)}</p>
+                <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">{pickDesc(task)}</p>
+              </li>
+            ))}
+          </ul>
+
+          <div className="rounded-lg border border-sky-200 bg-sky-50 p-6 dark:border-sky-900 dark:bg-sky-950/30">
+            <h2 className="text-lg font-semibold text-sky-900 dark:text-sky-200">
+              {t('lockedTitle')}
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm text-sky-900/80 dark:text-sky-300/90">
+              {session ? t('lockedForRegistered') : t('lockedForGuest')}
+            </p>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <a
+                href="mailto:hungnv@soragroup.vn?subject=Machine%20Vision%20Hub%20-%20Yeu%20cau%20tu%20van"
+                className="rounded-md bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700"
+              >
+                {t('contactCta')}
+              </a>
+              {session ? null : (
+                <Link
+                  href="/dang-nhap"
+                  className="rounded-md border border-sky-300 px-4 py-2 text-sm font-medium text-sky-800 hover:bg-sky-100 dark:border-sky-800 dark:text-sky-300 dark:hover:bg-sky-950"
+                >
+                  {t('signInCta')}
+                </Link>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}

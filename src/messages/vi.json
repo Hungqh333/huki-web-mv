@@ -92,5 +92,122 @@
       "resources": "Tài nguyên"
     },
     "rights": "Bản quyền thuộc về bộ phận Vision."
+  },
+  "selector": {
+    "landing": {
+      "title": "Bộ chọn thiết bị theo bài toán",
+      "subtitle": "Nhập tham số bài toán, hệ thống tra bảng luật kỹ thuật và gợi ý cấu hình camera, ánh sáng, ống kính kèm lý do và rủi ro cần lưu ý.",
+      "pickTask": "Chọn bài toán để bắt đầu:",
+      "openTask": "Mở công cụ",
+      "lockedTitle": "Tính năng dành cho thành viên nội bộ",
+      "lockedForGuest": "Bộ chọn thiết bị dành cho kỹ sư nội bộ và đối tác được cấp quyền. Đăng nhập bằng tài khoản đã được cấp, hoặc liên hệ bộ phận Vision để được tư vấn trực tiếp cho bài toán của bạn.",
+      "lockedForRegistered": "Tài khoản của bạn đang ở mức \"Đã đăng ký\" nên chưa dùng được công cụ này. Liên hệ bộ phận Vision để được nâng cấp quyền, hoặc để chúng tôi tư vấn trực tiếp cho bài toán của bạn.",
+      "contactCta": "Liên hệ để được tư vấn",
+      "signInCta": "Đăng nhập"
+    },
+    "task": {
+      "backToTasks": "Tất cả bài toán",
+      "noFields": "Bài toán này chưa khai báo trường nhập liệu nào. Kiểm tra cột input_fields của task_types.",
+      "unknownFields": "Có trường chưa được hỗ trợ nên đã bị bỏ qua: {keys}. Cần bổ sung vào catalog trong src/lib/selector/fields.ts.",
+      "requiredNote": "Trường có dấu * là bắt buộc."
+    },
+    "form": {
+      "submit": "Tính toán gợi ý",
+      "submitting": "Đang tính...",
+      "emptyState": "Điền tham số bên trái rồi bấm \"Tính toán gợi ý\". Kết quả sẽ hiện ở đây kèm công thức đã thay số để bạn tự kiểm chứng."
+    },
+    "fields": {
+      "fov_width_mm": "Chiều rộng vùng quan sát (FOV)",
+      "fov_height_mm": "Chiều cao vùng quan sát (FOV)",
+      "tolerance_mm": "Dung sai yêu cầu",
+      "working_distance_mm": "Khoảng cách làm việc khả dụng",
+      "throughput_ppm": "Năng suất dây chuyền",
+      "line_speed_mms": "Tốc độ băng tải",
+      "surface": "Đặc tính bề mặt vật liệu",
+      "environment": "Điều kiện môi trường",
+      "ip_rating": "Yêu cầu IP rating",
+      "rotation_range_deg": "Khoảng xoay tự do của vật",
+      "defect_min_size_mm": "Kích thước lỗi nhỏ nhất cần phát hiện",
+      "defect_variability": "Mức biến thiên của lỗi",
+      "color_critical": "Đánh giá màu sắc",
+      "color_criticalHint": "Bài toán có yêu cầu phân biệt màu",
+      "measure_type": "Loại phép đo",
+      "perspective_free": "Không chấp nhận sai số phối cảnh",
+      "perspective_freeHint": "Kích thước đo được không được đổi theo khoảng cách"
+    },
+    "options": {
+      "surface": {
+        "reflective": "Phản chiếu / bóng",
+        "transparent": "Trong suốt",
+        "metal": "Kim loại",
+        "multicolor": "Nhiều màu",
+        "matte": "Nhám / mờ",
+        "other": "Khác"
+      },
+      "environment": {
+        "vibration": "Rung động",
+        "dust": "Bụi",
+        "humidity": "Độ ẩm cao",
+        "high_temp": "Nhiệt độ cao",
+        "ambient_light": "Ánh sáng môi trường thay đổi"
+      },
+      "ipRating": {
+        "none": "Không yêu cầu",
+        "ip54": "IP54",
+        "ip65": "IP65",
+        "ip67": "IP67"
+      },
+      "variability": {
+        "low": "Thấp — lỗi có hình dạng và vị trí ổn định",
+        "medium": "Trung bình — có biến thiên nhưng vẫn mô tả được",
+        "high": "Cao — hình dạng, vị trí, màu sắc thay đổi nhiều"
+      },
+      "measureType": {
+        "dimension": "Kích thước / khoảng cách",
+        "diameter": "Đường kính",
+        "angle": "Góc",
+        "position": "Vị trí tương đối"
+      }
+    },
+    "fieldErrors": {
+      "required": "Vui lòng nhập giá trị.",
+      "invalid": "Giá trị không hợp lệ."
+    },
+    "approach": {
+      "rule_based": "Rule-based",
+      "hybrid": "Kết hợp rule-based + AI",
+      "deep_learning": "Cần Deep Learning"
+    },
+    "result": {
+      "title": "Gợi ý cấu hình",
+      "camera": "Camera",
+      "lighting": "Ánh sáng",
+      "lens": "Ống kính",
+      "notSpecified": "Không có luật nào chỉ định",
+      "approachReason": "Lý do chọn hướng giải quyết",
+      "calculations": "Tính toán",
+      "calculationsHint": "Công thức đã thay số, theo CLAUDE.md mục 4 — kiểm chứng lại trước khi chốt phương án.",
+      "notes": "Ghi chú và rủi ro triển khai",
+      "noRuleMatched": "Không có luật nào khớp với tham số này. Kết quả đang trống — cần bổ sung luật cho bài toán trong trang quản trị.",
+      "exportPdf": "Xuất báo cáo PDF",
+      "comingSoon": "Sắp có",
+      "exportTodo": "Chức năng xuất PDF sẽ hoàn thiện ở bước sau.",
+      "exportVipOnly": "Xuất báo cáo PDF dành cho tài khoản VIP trở lên.",
+      "historySaved": "Đã lưu vào lịch sử dùng công cụ.",
+      "historyNotSaved": "Không lưu được vào lịch sử. Kết quả trên vẫn dùng được bình thường.",
+      "metrics": {
+        "fov_long_mm": "Trục dài của vùng quan sát",
+        "required_resolution_px": "Độ phân giải cần thiết",
+        "px_per_mm": "Mật độ điểm ảnh",
+        "required_sensor_mp": "Cảm biến tối thiểu"
+      }
+    },
+    "errors": {
+      "unknownTask": "Không tìm thấy bài toán này.",
+      "notSignedIn": "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
+      "notAllowed": "Tài khoản của bạn chưa được cấp quyền dùng bộ chọn thiết bị.",
+      "noFields": "Bài toán này chưa khai báo trường nhập liệu nào.",
+      "noRules": "Chưa có luật gợi ý nào cho bài toán này, hoặc tài khoản của bạn không đủ quyền đọc bảng luật."
+    }
   }
 }

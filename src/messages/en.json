@@ -92,5 +92,122 @@
       "resources": "Resources"
     },
     "rights": "All rights reserved by the Vision department."
+  },
+  "selector": {
+    "landing": {
+      "title": "Task-based equipment selector",
+      "subtitle": "Enter your task parameters and the tool queries the engineering rule table to recommend a camera, lighting and lens configuration, with the reasoning and the risks to watch.",
+      "pickTask": "Pick a task to start:",
+      "openTask": "Open the tool",
+      "lockedTitle": "Available to internal members",
+      "lockedForGuest": "The equipment selector is for internal engineers and approved partners. Sign in with a granted account, or contact the Vision department for direct consulting on your application.",
+      "lockedForRegistered": "Your account is at the \"Registered\" level, so this tool is not available yet. Contact the Vision department to have your access upgraded, or to get direct consulting on your application.",
+      "contactCta": "Contact us for consulting",
+      "signInCta": "Sign in"
+    },
+    "task": {
+      "backToTasks": "All tasks",
+      "noFields": "This task has no input fields declared. Check the input_fields column on task_types.",
+      "unknownFields": "Unsupported fields were skipped: {keys}. Add them to the catalog in src/lib/selector/fields.ts.",
+      "requiredNote": "Fields marked * are required."
+    },
+    "form": {
+      "submit": "Calculate recommendation",
+      "submitting": "Calculating...",
+      "emptyState": "Fill in the parameters on the left and press \"Calculate recommendation\". Results appear here, including the formulas with your numbers substituted so you can check them."
+    },
+    "fields": {
+      "fov_width_mm": "Field of view width",
+      "fov_height_mm": "Field of view height",
+      "tolerance_mm": "Required tolerance",
+      "working_distance_mm": "Available working distance",
+      "throughput_ppm": "Line throughput",
+      "line_speed_mms": "Conveyor speed",
+      "surface": "Material surface characteristics",
+      "environment": "Environmental conditions",
+      "ip_rating": "Required IP rating",
+      "rotation_range_deg": "Free rotation range of the part",
+      "defect_min_size_mm": "Smallest defect to detect",
+      "defect_variability": "Defect variability",
+      "color_critical": "Colour grading",
+      "color_criticalHint": "The task requires distinguishing colours",
+      "measure_type": "Measurement type",
+      "perspective_free": "No perspective error allowed",
+      "perspective_freeHint": "Measured size must not change with distance"
+    },
+    "options": {
+      "surface": {
+        "reflective": "Reflective / glossy",
+        "transparent": "Transparent",
+        "metal": "Metal",
+        "multicolor": "Multicoloured",
+        "matte": "Matte",
+        "other": "Other"
+      },
+      "environment": {
+        "vibration": "Vibration",
+        "dust": "Dust",
+        "humidity": "High humidity",
+        "high_temp": "High temperature",
+        "ambient_light": "Changing ambient light"
+      },
+      "ipRating": {
+        "none": "Not required",
+        "ip54": "IP54",
+        "ip65": "IP65",
+        "ip67": "IP67"
+      },
+      "variability": {
+        "low": "Low — stable defect shape and location",
+        "medium": "Medium — variable but still describable",
+        "high": "High — shape, location and colour vary widely"
+      },
+      "measureType": {
+        "dimension": "Dimension / distance",
+        "diameter": "Diameter",
+        "angle": "Angle",
+        "position": "Relative position"
+      }
+    },
+    "fieldErrors": {
+      "required": "Please enter a value.",
+      "invalid": "This value is not valid."
+    },
+    "approach": {
+      "rule_based": "Rule-based",
+      "hybrid": "Rule-based + AI combined",
+      "deep_learning": "Deep learning required"
+    },
+    "result": {
+      "title": "Recommended configuration",
+      "camera": "Camera",
+      "lighting": "Lighting",
+      "lens": "Lens",
+      "notSpecified": "No rule specified this",
+      "approachReason": "Why this approach",
+      "calculations": "Calculations",
+      "calculationsHint": "Formulas with your numbers substituted, per CLAUDE.md section 4 — verify before committing to a design.",
+      "notes": "Notes and deployment risks",
+      "noRuleMatched": "No rule matched these parameters, so the result is empty. Add rules for this task in the admin area.",
+      "exportPdf": "Export PDF report",
+      "comingSoon": "Soon",
+      "exportTodo": "PDF export will be completed in a later step.",
+      "exportVipOnly": "PDF export is available to VIP accounts and above.",
+      "historySaved": "Saved to your tool usage history.",
+      "historyNotSaved": "Could not save to history. The result above is still valid.",
+      "metrics": {
+        "fov_long_mm": "Long axis of the field of view",
+        "required_resolution_px": "Required resolution",
+        "px_per_mm": "Pixel density",
+        "required_sensor_mp": "Minimum sensor size"
+      }
+    },
+    "errors": {
+      "unknownTask": "That task could not be found.",
+      "notSignedIn": "Your session has expired. Please sign in again.",
+      "notAllowed": "Your account is not authorised to use the equipment selector.",
+      "noFields": "This task has no input fields declared.",
+      "noRules": "There are no recommendation rules for this task yet, or your account cannot read the rule table."
+    }
   }
 }

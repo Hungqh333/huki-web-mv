@@ -173,8 +173,10 @@ begin
     (select count(*) from public.articles where access_tier = 'vip'), 0,
     'Member KHÔNG đọc được bài vip');
 
+  -- Chỉ đếm luật của bài toán test, để không phụ thuộc vào số luật đã seed.
   perform pg_temp.assert_eq(
-    (select count(*) from public.selector_rules), 1,
+    (select count(*) from public.selector_rules
+     where task_type_id = 'bbbbbbbb-0000-4000-8000-000000000001'), 1,
     'Member đọc được bảng luật bộ chọn thiết bị');
 
   insert into public.selector_history (user_id, task_type_id, input_json, result_json)

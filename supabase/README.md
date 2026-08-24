@@ -14,6 +14,34 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon key>
 **Cách A — SQL Editor (nhanh nhất, không cần cài gì):**
 mở Dashboard → SQL Editor → dán toàn bộ `migrations/20260823000001_init_schema.sql` → Run.
 
+> ### ⚠️ Copy file SQL sang clipboard: dùng đúng lệnh
+>
+> Các file SQL ở đây chứa tiếng Việt có dấu (UTF-8). Trên Windows **không được**
+> dùng `clip` từ Git Bash:
+>
+> ```
+> cat supabase/seed.sql | clip     # SAI — bam nat UTF-8
+> ```
+>
+> `clip.exe` diễn giải byte đầu vào theo codepage OEM của console chứ không phải
+> UTF-8, nên `Đo lường 2D` biến thành `─Éo l╞░ß╗¥ng 2D` trong clipboard.
+>
+> Dùng PowerShell:
+>
+> ```powershell
+> Get-Content -Raw -Encoding UTF8 "supabase\seed.sql" | Set-Clipboard
+> ```
+>
+> Hoặc đơn giản là mở file trong VS Code rồi Ctrl+A / Ctrl+C.
+>
+> Kiểm tra nhanh sau khi chạy seed — câu này phải trả về đúng chữ có dấu, nếu ra
+> `?` hoặc ký tự lạ thì clipboard đã hỏng, copy lại rồi chạy lại `seed.sql`:
+>
+> ```sql
+> select name_vi from public.task_types where slug = '2d-measurement';
+> -- mong đợi: Đo lường 2D
+> ```
+
 **Cách B — Supabase CLI:**
 
 ```bash

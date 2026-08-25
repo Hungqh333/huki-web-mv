@@ -4,12 +4,15 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "node scripts/check-env.mjs && next build",
     "start": "next start",
     "lint": "eslint",
     "test:db": "node scripts/verify-db.mjs",
     "test:db:mutate": "node scripts/mutation-test-db.mjs",
-    "test:unit": "tsx --test scripts/test-*.ts"
+    "test:unit": "tsx --test scripts/test-*.ts",
+    "check:env": "node scripts/check-env.mjs",
+    "test:all": "npm run check:env && npm run lint && npm run test:unit && npm run test:db && npm run test:db:mutate",
+    "probe:rls": "node scripts/probe-rls.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",

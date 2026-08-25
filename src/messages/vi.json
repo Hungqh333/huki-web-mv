@@ -351,5 +351,17 @@
       "cannotChangeOwnRole": "Không thể tự đổi quyền của chính mình. Nhờ admin khác thực hiện, hoặc dùng SQL Editor.",
       "roleUpdated": "Đã cập nhật cấp quyền."
     }
+  },
+  "errors": {
+    "title": "Đã có lỗi xảy ra",
+    "body": "Không tải được dữ liệu. Nguyên nhân thường gặp là mất kết nối tới Supabase hoặc phiên đăng nhập đã hết hạn. Thử tải lại; nếu vẫn lỗi, báo bộ phận kỹ thuật kèm mã bên dưới.",
+    "digest": "Mã lỗi",
+    "retry": "Thử lại",
+    "notFound": {
+      "title": "Không tìm thấy trang",
+      "body": "Đường dẫn không tồn tại, hoặc nội dung đã bị gỡ.",
+      "home": "Về trang chủ",
+      "handbook": "Xem cẩm nang"
+    }
   }
 }

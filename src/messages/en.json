@@ -351,5 +351,17 @@
       "cannotChangeOwnRole": "You cannot change your own access level. Ask another admin, or use the SQL Editor.",
       "roleUpdated": "Access level updated."
     }
+  },
+  "errors": {
+    "title": "Something went wrong",
+    "body": "The data could not be loaded. This is usually a lost connection to Supabase or an expired session. Try again; if it persists, report the code below to the engineering team.",
+    "digest": "Error code",
+    "retry": "Try again",
+    "notFound": {
+      "title": "Page not found",
+      "body": "This address does not exist, or the content has been removed.",
+      "home": "Back to home",
+      "handbook": "Browse the handbook"
+    }
   }
 }

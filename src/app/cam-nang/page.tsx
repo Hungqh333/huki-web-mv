@@ -27,10 +27,14 @@ export default async function HandbookPage({ searchParams }: PageProps<'/cam-nan
   // article_previews chỉ trả tiêu đề + teaser đã cắt, không bao giờ trả toàn văn.
   // Nhờ vậy bài bị khoá vẫn hiện được để làm marketing (CLAUDE.md mục 5) mà
   // không phải nới RLS của bảng articles.
-  const [{ data: previewData }, { data: categoryData }] = await Promise.all([
+  const [{ data: previewData, error: previewError }, { data: categoryData }] = await Promise.all([
     supabase.from('article_previews').select('*').order('published_at', { ascending: false }),
     supabase.from('categories').select('id, slug, name_vi, name_en').order('sort_order'),
   ]);
+
+  // Ném lỗi để error boundary bắt. Nuốt lỗi ở đây sẽ hiện "chưa có bài viết
+  // nào" — người dùng tưởng cẩm nang trống trong khi thực ra là hỏng kết nối.
+  if (previewError) throw new Error(`Không tải được danh sách bài viết: ${previewError.message}`);
 
   const categories = (categoryData ?? []) as Category[];
   const allPreviews = (previewData ?? []) as ArticlePreview[];

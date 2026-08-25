@@ -15,11 +15,16 @@ type TaskTypeRow = {
 async function getTaskTypes(): Promise<TaskTypeRow[]> {
   if (!hasSupabaseEnv()) return [];
   const supabase = await createClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('task_types')
     .select('slug, name_vi, name_en, description_vi, description_en')
     .eq('is_active', true)
     .order('sort_order', { ascending: true });
+
+  // Danh sách bài toán trống vì lỗi kết nối trông giống hệt "chưa cấu hình bài
+  // toán nào". Ném lỗi để error boundary phân biệt giúp người dùng.
+  if (error) throw new Error(`Không tải được danh sách bài toán: ${error.message}`);
+
   return (data ?? []) as TaskTypeRow[];
 }
 

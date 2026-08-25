@@ -50,7 +50,12 @@ export async function Header() {
           ) : null}
         </nav>
 
-        <div className="ml-auto flex items-center gap-3">
+        {/*
+          flex-wrap là bắt buộc: khi đăng nhập vai admin, cụm này có thêm badge
+          vai trò, link Tài khoản và nút Đăng xuất — đo được 375px trên màn hình
+          375px, tức tràn ngang nếu không cho xuống dòng.
+        */}
+        <div className="ml-auto flex flex-wrap items-center justify-end gap-x-3 gap-y-2">
           <LanguageSwitcher />
 
           {session ? (

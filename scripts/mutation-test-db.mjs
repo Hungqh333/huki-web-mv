@@ -64,6 +64,19 @@ const MUTATIONS = [
           end $fn$;`,
   },
   {
+    name: 'Cho mọi authenticated ghi bai viet (quan ly noi dung khong con gioi han o admin)',
+    sql: `drop policy "articles_write_admin" on public.articles;
+          create policy "articles_write_admin" on public.articles for all
+            to authenticated using (true) with check (true);`,
+  },
+  {
+    name: 'Cho moi authenticated doi role nguoi khac',
+    sql: `drop trigger profiles_enforce_role_change on public.profiles;
+          drop policy "profiles_update_own" on public.profiles;
+          create policy "profiles_update_own" on public.profiles for update
+            to authenticated using (true) with check (true);`,
+  },
+  {
     name: 'View teaser trả về toàn văn content',
     sql: `drop view public.article_previews;
           create view public.article_previews with (security_invoker = on) as

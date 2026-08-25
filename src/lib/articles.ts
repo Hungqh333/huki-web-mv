@@ -65,19 +65,8 @@ export function toTeaser(raw: string, maxSentences = 3): string {
 /**
  * Làm sạch HTML trước khi render.
  *
- * Nội dung bài viết chỉ admin ghi được (RLS chặn mọi vai trò khác), nhưng render
- * HTML thô vẫn là một đường XSS nếu tài khoản admin bị chiếm. Bộ lọc dưới đây
- * bỏ script/style/iframe, thuộc tính sự kiện on*, và các URL javascript:.
- *
- * TODO(Prompt 4): khi gắn trình soạn thảo Tiptap, chuyển sang danh sách thẻ cho
- * phép chặt chẽ hơn ở ngay bước lưu, thay vì chỉ lọc lúc hiển thị.
+ * Từ Prompt 4 trở đi việc làm sạch dùng allowlist thật (thư viện sanitize-html,
+ * xem src/lib/html.ts) và được áp ngay lúc LƯU qua admin UI. Hàm này giữ lại để
+ * lọc thêm lần nữa lúc hiển thị, phòng dữ liệu ghi vào trước khi có bước đó.
  */
-export function sanitizeHtml(html: string): string {
-  return html
-    .replace(/<\s*(script|style|iframe|object|embed|link|meta)\b[\s\S]*?<\s*\/\s*\1\s*>/gi, '')
-    .replace(/<\s*(script|style|iframe|object|embed|link|meta)\b[^>]*\/?\s*>/gi, '')
-    .replace(/\son\w+\s*=\s*"[^"]*"/gi, '')
-    .replace(/\son\w+\s*=\s*'[^']*'/gi, '')
-    .replace(/\son\w+\s*=\s*[^\s>]+/gi, '')
-    .replace(/(href|src)\s*=\s*(["'])\s*javascript:[^"']*\2/gi, '$1="#"');
-}
+export { sanitizeArticleHtml as sanitizeHtml } from './html';

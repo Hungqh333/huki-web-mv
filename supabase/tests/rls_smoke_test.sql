@@ -190,6 +190,29 @@ begin
     raise exception 'FAIL: Member sửa được selector_rules';
   end if;
   raise notice 'PASS: Member bị chặn sửa selector_rules';
+
+  -- Quản lý nội dung là việc của admin (CLAUDE.md mục 6).
+  update public.articles set title_vi = 'hacked' where slug like 'rls-test-%';
+  if found then
+    raise exception 'FAIL: Member sửa được bài viết';
+  end if;
+  raise notice 'PASS: Member bị chặn sửa bài viết';
+
+  begin
+    insert into public.articles (slug, title_vi, title_en, access_tier, published_at)
+    values ('rls-test-member-hack', 'x', 'x', 'public', now());
+    raise exception 'FAIL: Member tạo được bài viết';
+  exception when insufficient_privilege then
+    raise notice 'PASS: Member bị chặn tạo bài viết';
+  end;
+
+  -- Không được đổi vai trò của người khác.
+  update public.profiles set role = 'admin'
+  where id = 'aaaaaaaa-0000-4000-8000-000000000001';
+  if found then
+    raise exception 'FAIL: Member đổi được role của người khác';
+  end if;
+  raise notice 'PASS: Member bị chặn đổi role người khác';
 end $$;
 
 reset role;

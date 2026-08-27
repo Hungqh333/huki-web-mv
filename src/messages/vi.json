@@ -133,7 +133,15 @@
       "color_criticalHint": "Bài toán có yêu cầu phân biệt màu",
       "measure_type": "Loại phép đo",
       "perspective_free": "Không chấp nhận sai số phối cảnh",
-      "perspective_freeHint": "Kích thước đo được không được đổi theo khoảng cách"
+      "perspective_freeHint": "Kích thước đo được không được đổi theo khoảng cách",
+      "height_range_mm": "Dải cao độ cần đo",
+      "z_resolution_mm": "Độ phân giải theo trục Z",
+      "character_height_mm": "Chiều cao ký tự nhỏ nhất",
+      "print_contrast": "Độ tương phản của chữ in",
+      "code_type": "Loại mã",
+      "module_size_mm": "Kích thước ô module (X-dimension)",
+      "guidance_mode": "Kiểu dẫn hướng",
+      "pick_accuracy_mm": "Độ chính xác gắp yêu cầu"
     },
     "options": {
       "surface": {
@@ -167,6 +175,22 @@
         "diameter": "Đường kính",
         "angle": "Góc",
         "position": "Vị trí tương đối"
+      },
+      "codeType": {
+        "barcode_1d": "Mã vạch 1D (Code128, EAN...)",
+        "datamatrix": "Data Matrix",
+        "qr": "QR Code",
+        "dpm": "DPM — khắc trực tiếp lên vật"
+      },
+      "printContrast": {
+        "high": "Cao — chữ đen nền trắng, in rõ",
+        "medium": "Trung bình — có mờ hoặc nhoè nhẹ",
+        "low": "Thấp — khắc kim loại, in mờ, nền nhiễu"
+      },
+      "guidanceMode": {
+        "plane_2d": "2D trên mặt phẳng — vật nằm cùng cao độ",
+        "pose_3d": "3D pose — cần cả vị trí và góc nghiêng",
+        "bin_picking": "Bin picking — vật chồng lộn xộn trong khay"
       }
     },
     "fieldErrors": {
@@ -197,7 +221,8 @@
         "fov_long_mm": "Trục dài của vùng quan sát",
         "required_resolution_px": "Độ phân giải cần thiết",
         "px_per_mm": "Mật độ điểm ảnh",
-        "required_sensor_mp": "Cảm biến tối thiểu"
+        "required_sensor_mp": "Cảm biến tối thiểu",
+        "px_per_feature": "Số pixel trên mỗi đặc trưng"
       },
       "exportNeedsHistory": "Chưa lưu được vào lịch sử nên chưa xuất báo cáo được."
     },

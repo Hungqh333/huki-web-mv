@@ -92,6 +92,29 @@ test('hệ số an toàn mặc định nằm trong khoảng 2-3 px/feature', () 
   assert.ok(DEFAULT_SAFETY_FACTOR >= 2 && DEFAULT_SAFETY_FACTOR <= 3);
 });
 
+test('OCR cần ~20 px cho chiều cao ký tự, không phải 3 px như các bài khác', () => {
+  // FOV 80mm, ký tự cao 2mm -> 80 / (2/20) = 800 px. Dùng nhầm 3 px se ra 120 px,
+  // thấp hơn thực tế gần 7 lần và dẫn tới chọn camera không đọc nổi chữ.
+  const { context, metrics } = deriveMetrics(
+    { fov_width_mm: 80, fov_height_mm: 40, character_height_mm: 2 },
+    3
+  );
+  assert.equal(context.px_per_feature, 20);
+  assert.equal(context.required_resolution_px, 800);
+
+  const formula = metrics.find((m) => m.key === 'required_resolution_px')?.formula ?? '';
+  assert.ok(formula.includes('20 px'), `cong thuc phai hien dung he so: ${formula}`);
+});
+
+test('mã vạch dùng kích thước ô module làm đặc trưng', () => {
+  const { context } = deriveMetrics(
+    { fov_width_mm: 60, fov_height_mm: 60, module_size_mm: 0.2 },
+    3
+  );
+  assert.equal(context.px_per_feature, 3);
+  assert.equal(context.required_resolution_px, 900);
+});
+
 test('bài ngoại quan dùng kích thước lỗi nhỏ nhất thay cho dung sai', () => {
   const { context } = deriveMetrics(
     { fov_width_mm: 60, fov_height_mm: 60, defect_min_size_mm: 0.2 },

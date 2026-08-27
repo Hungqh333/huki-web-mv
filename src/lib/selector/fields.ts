@@ -69,6 +69,25 @@ const MEASURE_TYPE_OPTIONS: FieldOption[] = [
   { value: 'position', labelKey: 'measureType.position' },
 ];
 
+const CODE_TYPE_OPTIONS: FieldOption[] = [
+  { value: 'barcode_1d', labelKey: 'codeType.barcode_1d' },
+  { value: 'datamatrix', labelKey: 'codeType.datamatrix' },
+  { value: 'qr', labelKey: 'codeType.qr' },
+  { value: 'dpm', labelKey: 'codeType.dpm' },
+];
+
+const PRINT_CONTRAST_OPTIONS: FieldOption[] = [
+  { value: 'high', labelKey: 'printContrast.high' },
+  { value: 'medium', labelKey: 'printContrast.medium' },
+  { value: 'low', labelKey: 'printContrast.low' },
+];
+
+const GUIDANCE_MODE_OPTIONS: FieldOption[] = [
+  { value: 'plane_2d', labelKey: 'guidanceMode.plane_2d' },
+  { value: 'pose_3d', labelKey: 'guidanceMode.pose_3d' },
+  { value: 'bin_picking', labelKey: 'guidanceMode.bin_picking' },
+];
+
 export const FIELD_CATALOG: Record<string, FieldDef> = {
   fov_width_mm: {
     key: 'fov_width_mm',
@@ -181,6 +200,82 @@ export const FIELD_CATALOG: Record<string, FieldDef> = {
     key: 'perspective_free',
     kind: 'boolean',
     labelKey: 'perspective_free',
+  },
+
+  // --- Bài toán phase 2 -------------------------------------------------------
+
+  // 3D
+  height_range_mm: {
+    key: 'height_range_mm',
+    kind: 'number',
+    labelKey: 'height_range_mm',
+    unit: 'mm',
+    min: 0.01,
+    step: 0.1,
+    required: true,
+  },
+  z_resolution_mm: {
+    key: 'z_resolution_mm',
+    kind: 'number',
+    labelKey: 'z_resolution_mm',
+    unit: 'mm',
+    min: 0.0001,
+    step: 0.001,
+    required: true,
+  },
+
+  // OCR / OCV
+  character_height_mm: {
+    key: 'character_height_mm',
+    kind: 'number',
+    labelKey: 'character_height_mm',
+    unit: 'mm',
+    min: 0.1,
+    step: 0.1,
+    required: true,
+  },
+  print_contrast: {
+    key: 'print_contrast',
+    kind: 'select',
+    labelKey: 'print_contrast',
+    options: PRINT_CONTRAST_OPTIONS,
+    required: true,
+  },
+
+  // Đọc mã vạch
+  code_type: {
+    key: 'code_type',
+    kind: 'select',
+    labelKey: 'code_type',
+    options: CODE_TYPE_OPTIONS,
+    required: true,
+  },
+  module_size_mm: {
+    key: 'module_size_mm',
+    kind: 'number',
+    labelKey: 'module_size_mm',
+    unit: 'mm',
+    min: 0.01,
+    step: 0.01,
+    required: true,
+  },
+
+  // Robot guidance
+  guidance_mode: {
+    key: 'guidance_mode',
+    kind: 'select',
+    labelKey: 'guidance_mode',
+    options: GUIDANCE_MODE_OPTIONS,
+    required: true,
+  },
+  pick_accuracy_mm: {
+    key: 'pick_accuracy_mm',
+    kind: 'number',
+    labelKey: 'pick_accuracy_mm',
+    unit: 'mm',
+    min: 0.01,
+    step: 0.01,
+    required: true,
   },
 };
 

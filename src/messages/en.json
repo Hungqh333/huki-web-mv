@@ -133,7 +133,15 @@
       "color_criticalHint": "The task requires distinguishing colours",
       "measure_type": "Measurement type",
       "perspective_free": "No perspective error allowed",
-      "perspective_freeHint": "Measured size must not change with distance"
+      "perspective_freeHint": "Measured size must not change with distance",
+      "height_range_mm": "Height range to measure",
+      "z_resolution_mm": "Z-axis resolution",
+      "character_height_mm": "Smallest character height",
+      "print_contrast": "Print contrast",
+      "code_type": "Code type",
+      "module_size_mm": "Module size (X-dimension)",
+      "guidance_mode": "Guidance mode",
+      "pick_accuracy_mm": "Required pick accuracy"
     },
     "options": {
       "surface": {
@@ -167,6 +175,22 @@
         "diameter": "Diameter",
         "angle": "Angle",
         "position": "Relative position"
+      },
+      "codeType": {
+        "barcode_1d": "1D barcode (Code128, EAN...)",
+        "datamatrix": "Data Matrix",
+        "qr": "QR Code",
+        "dpm": "DPM — marked directly on the part"
+      },
+      "printContrast": {
+        "high": "High — black on white, cleanly printed",
+        "medium": "Medium — some fading or blur",
+        "low": "Low — metal marking, faint print, noisy background"
+      },
+      "guidanceMode": {
+        "plane_2d": "2D on a plane — parts at the same height",
+        "pose_3d": "3D pose — position and tilt both needed",
+        "bin_picking": "Bin picking — parts jumbled in a bin"
       }
     },
     "fieldErrors": {
@@ -197,7 +221,8 @@
         "fov_long_mm": "Long axis of the field of view",
         "required_resolution_px": "Required resolution",
         "px_per_mm": "Pixel density",
-        "required_sensor_mp": "Minimum sensor size"
+        "required_sensor_mp": "Minimum sensor size",
+        "px_per_feature": "Pixels per feature"
       },
       "exportNeedsHistory": "The run was not saved to history, so no report can be exported."
     },

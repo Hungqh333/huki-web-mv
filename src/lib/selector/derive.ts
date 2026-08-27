@@ -6,6 +6,28 @@ import type { DerivedMetric, EvalContext, SelectorInput } from './types';
  */
 export const DEFAULT_SAFETY_FACTOR = 3;
 
+/**
+ * Đặc trưng nhỏ nhất cần phân biệt được lấy từ trường nào, và cần bao nhiêu
+ * pixel phủ lên nó.
+ *
+ * Số pixel KHÔNG giống nhau giữa các bài toán, đây là chỗ dễ tính sai nhất:
+ *
+ * - Dung sai / kích thước lỗi: 2–3 px là đủ (CLAUDE.md mục 4).
+ * - Ô module mã vạch (X-dimension): 2–3 px cho mã in thường; mã DPM khắc trực
+ *   tiếp lên kim loại thì luật trong database sẽ nâng thêm.
+ * - Chiều cao ký tự OCR: cần khoảng 20 px thì nhận dạng mới ổn định. Dùng 3 px
+ *   như các bài khác sẽ ra độ phân giải thấp hơn thực tế gần 7 lần.
+ *
+ * Thứ tự trong mảng là thứ tự ưu tiên khi có nhiều trường cùng được điền.
+ */
+const FEATURE_SOURCES: { key: string; pxPerFeature?: number; labelVi: string }[] = [
+  { key: 'tolerance_mm', labelVi: 'dung sai' },
+  { key: 'defect_min_size_mm', labelVi: 'lỗi nhỏ nhất' },
+  { key: 'pick_accuracy_mm', labelVi: 'độ chính xác gắp' },
+  { key: 'module_size_mm', labelVi: 'ô module mã' },
+  { key: 'character_height_mm', pxPerFeature: 20, labelVi: 'chiều cao ký tự' },
+];
+
 function num(value: unknown): number | null {
   return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
@@ -48,22 +70,27 @@ export function deriveMetrics(
     });
   }
 
-  // Feature nhỏ nhất cần phân biệt: dung sai với bài đo lường, kích thước lỗi
-  // nhỏ nhất với bài kiểm tra ngoại quan.
-  const tolerance = num(input.tolerance_mm);
-  const defectSize = num(input.defect_min_size_mm);
-  const feature = tolerance ?? defectSize;
-  const featureLabel = tolerance !== null ? 'dung sai' : 'lỗi nhỏ nhất';
+  // Đặc trưng nhỏ nhất cần phân biệt, và số pixel cần phủ lên nó — xem
+  // FEATURE_SOURCES ở trên để biết vì sao con số khác nhau giữa các bài toán.
+  const source = FEATURE_SOURCES.find((candidate) => {
+    const value = num(input[candidate.key]);
+    return value !== null && value > 0;
+  });
+
+  const feature = source ? num(input[source.key]) : null;
+  const featureLabel = source?.labelVi ?? '';
+  const pxPerFeature = source?.pxPerFeature ?? safetyFactor;
 
   const longFov = num(derived.fov_long_mm);
 
   if (feature !== null && feature > 0 && longFov !== null && longFov > 0) {
-    const requiredPx = (longFov * safetyFactor) / feature;
+    derived.px_per_feature = pxPerFeature;
+    const requiredPx = (longFov * pxPerFeature) / feature;
     derived.required_resolution_px = Math.ceil(requiredPx);
     metrics.push({
       key: 'required_resolution_px',
       value: Math.ceil(requiredPx),
-      formula: `${longFov} mm ÷ (${feature} mm ÷ ${safetyFactor} px) = ${Math.ceil(requiredPx)} px trên trục dài (${featureLabel})`,
+      formula: `${longFov} mm ÷ (${feature} mm ÷ ${pxPerFeature} px) = ${Math.ceil(requiredPx)} px trên trục dài (${featureLabel})`,
     });
 
     const pxPerMm = requiredPx / longFov;

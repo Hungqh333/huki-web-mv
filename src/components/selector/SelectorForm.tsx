@@ -56,6 +56,7 @@ export function SelectorForm({
           <SelectorResultPanel
             result={state.result}
             historySaved={state.historySaved}
+            historyId={state.historyId}
             canExport={canExport}
           />
         ) : (

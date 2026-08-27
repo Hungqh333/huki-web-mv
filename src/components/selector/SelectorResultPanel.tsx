@@ -12,10 +12,12 @@ const APPROACH_STYLES: Record<string, string> = {
 export function SelectorResultPanel({
   result,
   historySaved,
+  historyId,
   canExport,
 }: {
   result: SelectorResult;
   historySaved?: boolean;
+  historyId?: string;
   canExport: boolean;
 }) {
   const t = useTranslations('selector.result');
@@ -104,18 +106,28 @@ export function SelectorResultPanel({
       ) : null}
 
       <div className="flex flex-wrap items-center gap-3">
-        {/* TODO(Prompt 5): xuất PDF thật. Hiện chỉ là placeholder cho VIP+. */}
-        <button
-          type="button"
-          disabled
-          title={canExport ? t('exportTodo') : t('exportVipOnly')}
-          className="rounded-md border border-slate-300 px-4 py-2 text-sm text-slate-500 disabled:cursor-not-allowed dark:border-slate-700 dark:text-slate-400"
-        >
-          {t('exportPdf')}
-          <span className="ml-2 rounded bg-slate-100 px-1.5 py-0.5 text-xs dark:bg-slate-800">
-            {canExport ? t('comingSoon') : 'VIP'}
-          </span>
-        </button>
+        {canExport && historyId ? (
+          <a
+            href={`/api/bao-cao/${historyId}`}
+            // Route trả Content-Disposition: attachment nên trình duyệt tải về
+            // thay vì mở tab mới rồi bỏ trống.
+            className="rounded-md bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:bg-slate-900 dark:bg-slate-200 dark:text-slate-900 dark:hover:bg-white"
+          >
+            {t('exportPdf')}
+          </a>
+        ) : (
+          <button
+            type="button"
+            disabled
+            title={canExport ? t('exportNeedsHistory') : t('exportVipOnly')}
+            className="rounded-md border border-slate-300 px-4 py-2 text-sm text-slate-500 disabled:cursor-not-allowed dark:border-slate-700 dark:text-slate-400"
+          >
+            {t('exportPdf')}
+            <span className="ml-2 rounded bg-slate-100 px-1.5 py-0.5 text-xs dark:bg-slate-800">
+              VIP
+            </span>
+          </button>
+        )}
 
         <p className="text-xs text-slate-500 dark:text-slate-400">
           {historySaved === false ? t('historyNotSaved') : t('historySaved')}

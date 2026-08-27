@@ -12,8 +12,10 @@ export type SelectorState = {
   fieldErrors?: Record<string, 'required' | 'invalid'>;
   result?: SelectorResult;
   input?: SelectorInput;
-  /** null = đã chạy nhưng không lưu được lịch sử; nói thật thay vì im lặng. */
+  /** false = đã chạy nhưng không lưu được lịch sử; nói thật thay vì im lặng. */
   historySaved?: boolean;
+  /** Có id thì mới xuất được PDF — báo cáo đọc lại từ database theo id này. */
+  historyId?: string;
 };
 
 export async function runSelectorAction(
@@ -65,12 +67,22 @@ export async function runSelectorAction(
   const result = runSelector(rules as unknown as SelectorRule[], input);
 
   // Lưu lịch sử cho Member+ (RLS cũng yêu cầu đúng như vậy).
-  const { error: historyError } = await supabase.from('selector_history').insert({
-    user_id: session.user.id,
-    task_type_id: taskType.id,
-    input_json: input,
-    result_json: result,
-  });
+  // Lấy lại id để nút xuất PDF trỏ tới đúng bản ghi này.
+  const { data: saved, error: historyError } = await supabase
+    .from('selector_history')
+    .insert({
+      user_id: session.user.id,
+      task_type_id: taskType.id,
+      input_json: input,
+      result_json: result,
+    })
+    .select('id')
+    .maybeSingle<{ id: string }>();
 
-  return { result, input, historySaved: !historyError };
+  return {
+    result,
+    input,
+    historySaved: !historyError,
+    historyId: saved?.id,
+  };
 }

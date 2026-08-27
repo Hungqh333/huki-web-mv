@@ -190,8 +190,6 @@
       "notes": "Notes and deployment risks",
       "noRuleMatched": "No rule matched these parameters, so the result is empty. Add rules for this task in the admin area.",
       "exportPdf": "Export PDF report",
-      "comingSoon": "Soon",
-      "exportTodo": "PDF export will be completed in a later step.",
       "exportVipOnly": "PDF export is available to VIP accounts and above.",
       "historySaved": "Saved to your tool usage history.",
       "historyNotSaved": "Could not save to history. The result above is still valid.",
@@ -200,7 +198,8 @@
         "required_resolution_px": "Required resolution",
         "px_per_mm": "Pixel density",
         "required_sensor_mp": "Minimum sensor size"
-      }
+      },
+      "exportNeedsHistory": "The run was not saved to history, so no report can be exported."
     },
     "errors": {
       "unknownTask": "That task could not be found.",
@@ -208,6 +207,19 @@
       "notAllowed": "Your account is not authorised to use the equipment selector.",
       "noFields": "This task has no input fields declared.",
       "noRules": "There are no recommendation rules for this task yet, or your account cannot read the rule table."
+    },
+    "report": {
+      "title": "Equipment configuration recommendation",
+      "task": "Task",
+      "generatedAt": "Generated at",
+      "generatedFor": "Generated for",
+      "inputs": "Input parameters",
+      "approach": "Approach",
+      "unknownTask": "Unknown",
+      "yes": "Yes",
+      "no": "No",
+      "page": "Page",
+      "disclaimer": "This report is generated automatically from the Machine Vision Hub engineering rule table. It is a starting recommendation and does not replace trials with real samples. Verify the calculations and deployment conditions before committing to a purchase."
     }
   },
   "handbook": {

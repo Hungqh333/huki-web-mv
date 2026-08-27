@@ -190,8 +190,6 @@
       "notes": "Ghi chú và rủi ro triển khai",
       "noRuleMatched": "Không có luật nào khớp với tham số này. Kết quả đang trống — cần bổ sung luật cho bài toán trong trang quản trị.",
       "exportPdf": "Xuất báo cáo PDF",
-      "comingSoon": "Sắp có",
-      "exportTodo": "Chức năng xuất PDF sẽ hoàn thiện ở bước sau.",
       "exportVipOnly": "Xuất báo cáo PDF dành cho tài khoản VIP trở lên.",
       "historySaved": "Đã lưu vào lịch sử dùng công cụ.",
       "historyNotSaved": "Không lưu được vào lịch sử. Kết quả trên vẫn dùng được bình thường.",
@@ -200,7 +198,8 @@
         "required_resolution_px": "Độ phân giải cần thiết",
         "px_per_mm": "Mật độ điểm ảnh",
         "required_sensor_mp": "Cảm biến tối thiểu"
-      }
+      },
+      "exportNeedsHistory": "Chưa lưu được vào lịch sử nên chưa xuất báo cáo được."
     },
     "errors": {
       "unknownTask": "Không tìm thấy bài toán này.",
@@ -208,6 +207,19 @@
       "notAllowed": "Tài khoản của bạn chưa được cấp quyền dùng bộ chọn thiết bị.",
       "noFields": "Bài toán này chưa khai báo trường nhập liệu nào.",
       "noRules": "Chưa có luật gợi ý nào cho bài toán này, hoặc tài khoản của bạn không đủ quyền đọc bảng luật."
+    },
+    "report": {
+      "title": "Báo cáo gợi ý cấu hình thiết bị",
+      "task": "Bài toán",
+      "generatedAt": "Thời điểm tính",
+      "generatedFor": "Người thực hiện",
+      "inputs": "Tham số đầu vào",
+      "approach": "Hướng giải quyết",
+      "unknownTask": "Không xác định",
+      "yes": "Có",
+      "no": "Không",
+      "page": "Trang",
+      "disclaimer": "Báo cáo được sinh tự động từ bảng luật kỹ thuật của Machine Vision Hub. Đây là gợi ý khởi điểm, không thay thế cho việc thử nghiệm thực tế với mẫu sản phẩm. Vui lòng kiểm chứng lại các phép tính và điều kiện triển khai trước khi chốt phương án mua sắm."
     }
   },
   "handbook": {

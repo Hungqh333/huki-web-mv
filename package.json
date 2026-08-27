@@ -11,10 +11,12 @@
     "test:db:mutate": "node scripts/mutation-test-db.mjs",
     "test:unit": "tsx --test scripts/test-*.ts",
     "check:env": "node scripts/check-env.mjs",
-    "test:all": "npm run check:env && npm run lint && npm run test:unit && npm run test:db && npm run test:db:mutate",
-    "probe:rls": "node scripts/probe-rls.mjs"
+    "test:all": "npm run check:env && npm run lint && npm run test:unit && npm run test:pdf && npm run test:db && npm run test:db:mutate",
+    "probe:rls": "node scripts/probe-rls.mjs",
+    "test:pdf": "node scripts/test-pdf.mjs"
   },
   "dependencies": {
+    "@react-pdf/renderer": "^4.8.1",
     "@supabase/ssr": "^0.12.4",
     "@supabase/supabase-js": "^2.112.3",
     "@tiptap/pm": "^3.30.3",

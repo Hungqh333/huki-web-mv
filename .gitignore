@@ -43,3 +43,7 @@ next-env.d.ts
 
 # File gop tam thoi de dan vao Supabase SQL Editor
 CHAY-BUOC-NAY.sql
+
+# File Excel/SQL bang luat do doi ky thuat dien, khong commit
+bang-luat*.xlsx
+bang-luat*.sql

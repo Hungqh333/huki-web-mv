@@ -111,11 +111,14 @@ npm run dev
 | `npm run build` | Build production (tự kiểm biến môi trường trước) |
 | `npm run lint` | ESLint |
 | `npm run check:env` | Kiểm biến môi trường |
-| `npm run test:unit` | Unit test engine chọn thiết bị + xử lý nội dung |
+| `npm run test:unit` | Unit test engine chọn thiết bị, xử lý nội dung, nhất quán dữ liệu seed |
+| `npm run test:pdf` | Kiểm tra PDF xuất ra mã hoá đúng tiếng Việt |
 | `npm run test:db` | Áp migration + seed + test RLS trên Postgres in-process |
 | `npm run test:db:mutate` | Cố tình phá từng luật bảo mật, kiểm bộ test có bắt được không |
 | `npm run probe:rls` | Dò RLS qua REST API thật với vai khách |
 | `npm run test:all` | Chạy tất cả trừ `probe:rls` |
+| `npm run import:rules:template` | Sinh file Excel mẫu cho đội kỹ thuật điền bảng luật |
+| `npm run import:rules -- <file>` | Kiểm tra file Excel rồi chuyển thành SQL |
 
 ### Vì sao có `test:db:mutate`
 
@@ -159,9 +162,36 @@ Kết quả tính toán được đưa ngược vào ngữ cảnh đánh giá lu
 kiện kiểu `required_resolution_px > 5000 → line scan`. Nhờ vậy ngưỡng chọn cảm biến
 vẫn do admin sửa, còn công thức thì ở trong code.
 
-Thêm bài toán mới (3D, OCR/OCV, đọc mã vạch, robot guidance) = thêm dòng vào
-`task_types` kèm `input_fields`, không sửa code — miễn là dùng lại các trường đã có
-trong catalog `src/lib/selector/fields.ts`.
+Thêm bài toán mới = thêm dòng vào `task_types` kèm `input_fields`, không sửa code —
+miễn là dùng lại các trường đã có trong catalog `src/lib/selector/fields.ts`. Bảy bài
+toán hiện có (3 bài MVP + 3D, OCR/OCV, đọc mã vạch, dẫn hướng robot) đều được thêm
+theo đúng cách này.
+
+Đổi lại, gõ sai một tên trường sẽ **không gây lỗi ở đâu cả** — form lặng lẽ bỏ qua,
+hoặc luật không bao giờ khớp. Vì vậy `npm run test:unit` có bộ kiểm tra đối chiếu dữ
+liệu seed với catalog, bắt các trường hợp: trường lạ, trường không thuộc bài toán đó,
+bài toán thiếu luật nền.
+
+### Nhập bảng luật từ Excel
+
+Đội kỹ thuật điền bảng luật trong Excel thay vì gõ tay từng dòng vào trang quản trị:
+
+```bash
+npm run import:rules:template          # sinh file mẫu, gửi cho đội kỹ thuật
+npm run import:rules -- bang-luat.xlsx # kiểm tra rồi chuyển thành SQL
+```
+
+File mẫu có sẵn sheet hướng dẫn liệt kê toàn bộ trường dùng được, cú pháp điều kiện,
+và cách engine ghép kết quả theo thứ tự ưu tiên.
+
+Công cụ kiểm tra từng dòng **trước khi** sinh SQL: mã trùng, bài toán không tồn tại,
+JSON sai cú pháp, và quan trọng nhất — điều kiện tham chiếu tới trường không thuộc
+bài toán đó. Lỗi cuối nguy hiểm nhất vì luật vẫn lưu được nhưng không bao giờ khớp,
+không có thông báo nào. Danh sách bài toán đọc từ Supabase thật nên phản ánh cả những
+bài đội kỹ thuật thêm qua trang quản trị.
+
+SQL sinh ra idempotent theo cột `code`: chạy lại thì cập nhật luật cũ chứ không nhân
+bản, và luật đang có trong database mà không nằm trong file thì giữ nguyên.
 
 ## Deploy lên Vercel
 
@@ -222,7 +252,6 @@ mobile riêng.
 
 ### Việc còn dở
 
-- **Xuất báo cáo PDF** cho tài khoản VIP: nút đã hiển thị nhưng còn là placeholder,
-  đánh dấu `TODO` trong `src/components/selector/SelectorResultPanel.tsx`.
-- **Bảng luật gợi ý** hiện là 27 dòng dữ liệu tạm để engine chạy được ngay. Đội kỹ
-  thuật sẽ thay bằng bảng đầy đủ qua `/admin/luat-goi-y`.
+- **Bảng luật gợi ý** hiện là dữ liệu tạm để engine chạy được ngay. Đội kỹ thuật thay
+  bằng bảng đầy đủ qua `/admin/luat-goi-y`, hoặc nhập hàng loạt từ Excel bằng
+  `npm run import:rules`.

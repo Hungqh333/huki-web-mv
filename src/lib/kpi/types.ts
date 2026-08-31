@@ -57,6 +57,8 @@ export type TighteningFactor = {
  */
 export type KpiConfig = {
   commercial_ceiling: number;
+  /** Nới trần khi khách chưa có danh mục lỗi đóng / mẫu giới hạn / tiêu chuẩn còn chủ quan. */
+  commercial_ceiling_unclear_spec: number;
   modifier_cap: number;
   level_up_threshold: number;
   recheck_exponent: number;
@@ -67,9 +69,13 @@ export type KpiConfig = {
 
 export const DEFAULT_KPI_CONFIG: KpiConfig = {
   commercial_ceiling: 8,
+  commercial_ceiling_unclear_spec: 10,
   modifier_cap: 5,
   level_up_threshold: 3,
-  recheck_exponent: 0.5,
+  // 1,0 chứ không phải 0,5 — xem ghi chú trong seed_kpi.sql. Vùng xám phình to
+  // khi điều kiện xấu đi, không co lại; trần nhân lực được kiểm riêng bằng
+  // computeRecheckFeasibility.
+  recheck_exponent: 1,
   no_recheck_miss_multiplier: 1.5,
   minimize_scrap_false_reject_share: 0.15,
   assist_model_auto_clear_share: 85,
@@ -125,4 +131,21 @@ export type SampleAdequacy = {
   provableMiss: number;
   requiredSamples: number;
   isAdequate: boolean;
+};
+
+/**
+ * Trần nhân lực của trạm tái kiểm.
+ *
+ * Đây mới là thứ thật sự giới hạn tái kiểm trong thực tế — không phải một quy
+ * luật thống kê nào. Nếu phương án đang chọn cần nhiều người hơn số hiện có,
+ * phần vượt buộc phải chuyển sang bắt ảo (tức là mất hàng tốt).
+ */
+export type RecheckFeasibility = {
+  requiredHeadcount: number;
+  availableHeadcount: number;
+  isFeasible: boolean;
+  /** Mức tái kiểm tối đa mà nhân lực hiện có gánh được (%). */
+  maxFeasibleRecheck: number;
+  /** Phần tải phụ buộc phải đẩy sang bắt ảo (%). */
+  forcedToFalseReject: number;
 };

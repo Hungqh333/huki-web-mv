@@ -53,13 +53,15 @@ export function computeModifierFactor(
 /**
  * Áp hệ số vào dải chỉ tiêu cơ sở.
  *
- * Hệ số áp ĐẦY ĐỦ lên bỏ sót và bắt ảo, nhưng lên tái kiểm thì dùng số mũ
- * recheck_exponent (mặc định 0,5 = căn bậc hai): tái kiểm tăng chậm hơn hai chỉ
- * số kia. Điều kiện xấu làm máy sai nhiều hơn, nhưng phần "máy không chắc" thì
- * không nở ra cùng tốc độ.
+ * Hệ số áp đầy đủ lên cả ba chỉ số (recheck_exponent mặc định 1,0). Trần tổng
+ * tải phụ cũng giãn theo — nó là đặc tính của bài toán trong điều kiện cụ thể,
+ * không phải hằng số tuyệt đối.
  *
- * Trần tổng tải phụ cũng giãn theo hệ số — nó là đặc tính của bài toán trong
- * điều kiện cụ thể, không phải hằng số tuyệt đối.
+ * LƯU Ý khi đọc kết quả: ba dải trả về ở đây là dải cam kết ĐIỂN HÌNH của loại
+ * bài toán, không phải kết quả cuối. Con số thật do splitBurden quyết định theo
+ * phương án chia mà người dùng chọn, và nó có thể nằm ngoài dải này khi chọn
+ * phương án lệch hẳn về một phía. Giao diện phải trình bày hai thứ đó tách bạch,
+ * đừng để người dùng thấy hai con số đá nhau.
  */
 export function applyModifier(
   base: ProblemType,
@@ -289,6 +291,61 @@ export function computeSampleAdequacy(
     provableMiss,
     requiredSamples,
     isAdequate: availableNgSamples > 0 && provableMiss <= committedMiss,
+  };
+}
+
+/**
+ * Trần thương mại áp dụng cho dự án này.
+ *
+ * Khi tiêu chuẩn còn chưa rõ — chưa có danh mục lỗi đóng, chưa có mẫu giới hạn,
+ * hoặc còn phụ thuộc cảm nhận người chấm — thì nới trần, vì hai bên đều biết
+ * còn phải hiệu chỉnh sau ramp-up.
+ */
+export function resolveCeiling(
+  specIsUnclear: boolean,
+  config: KpiConfig = DEFAULT_KPI_CONFIG
+): number {
+  return specIsUnclear ? config.commercial_ceiling_unclear_spec : config.commercial_ceiling;
+}
+
+/**
+ * Kiểm tra trạm tái kiểm có khả thi với nhân lực hiện có không.
+ *
+ * ĐÂY LÀ THỨ THẬT SỰ GIỚI HẠN TÁI KIỂM. Trước đây mô hình dùng căn bậc hai của
+ * hệ số để "tái kiểm tăng chậm hơn" — nhưng về thống kê thì vùng xám PHÌNH TO
+ * khi điều kiện xấu đi chứ không co lại. Quan sát thực tế đến từ chỗ khác: không
+ * ai đẩy được 30% sản lượng sang bàn kiểm tay.
+ *
+ * Nói thẳng ra thành số người là trung thực hơn, và cho người dùng một con số
+ * đàm phán được thay vì một hằng số vô hình trong công thức.
+ */
+export function computeRecheckFeasibility(input: {
+  unitsPerHour: number;
+  shifts: number;
+  secondsPerCheck: number;
+  recheck: number;
+  availableHeadcount: number;
+}) {
+  const perPersonPerHour = input.secondsPerCheck > 0 ? 3600 / input.secondsPerCheck : 0;
+
+  const requiredHeadcount = round(
+    (input.unitsPerHour * (input.recheck / 100) * input.secondsPerCheck) / 3600 * input.shifts,
+    1
+  );
+
+  // Số sản phẩm mỗi giờ mà nhân lực hiện có kiểm được, quy về % sản lượng.
+  const capacityPerHour = perPersonPerHour * (input.availableHeadcount / Math.max(input.shifts, 1));
+  const maxFeasibleRecheck =
+    input.unitsPerHour > 0 ? round(clamp((capacityPerHour / input.unitsPerHour) * 100, 0, 100)) : 0;
+
+  const isFeasible = requiredHeadcount <= input.availableHeadcount + 1e-9;
+
+  return {
+    requiredHeadcount,
+    availableHeadcount: input.availableHeadcount,
+    isFeasible,
+    maxFeasibleRecheck,
+    forcedToFalseReject: isFeasible ? 0 : round(Math.max(0, input.recheck - maxFeasibleRecheck)),
   };
 }
 

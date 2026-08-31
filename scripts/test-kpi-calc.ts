@@ -18,6 +18,8 @@ import {
   computeSampleAdequacy,
   computeTighteningScenario,
   computeTwoStage,
+  computeRecheckFeasibility,
+  resolveCeiling,
   splitBurden,
 } from '../src/lib/kpi/calc';
 import { DEFAULT_KPI_CONFIG, type Modifier, type ProblemType } from '../src/lib/kpi/types';
@@ -146,22 +148,34 @@ test('siết bỏ sót n lần thì tổng tải phụ nhân theo hệ số củ
 
 // ---------------------------------------------------------------- LỖI SỐ BA --
 
-test('hệ số áp đầy đủ lên bỏ sót và bắt ảo, nhưng dùng căn bậc hai cho tái kiểm', () => {
+test('hệ số áp đầy đủ lên cả ba chỉ số', () => {
   const base = problem({ miss_max: 2, false_reject_max: 5, recheck_max: 4 });
   const adjusted = applyModifier(base, 4, CONFIG);
 
   assert.equal(adjusted.miss.max, 8, 'bo sot: 2 x 4');
   assert.equal(adjusted.falseReject.max, 20, 'bat ao: 5 x 4');
-  assert.equal(adjusted.recheck.max, 8, 'tai kiem: 4 x sqrt(4) = 4 x 2');
+  assert.equal(adjusted.recheck.max, 16, 'tai kiem: 4 x 4 — khong dung can bac hai');
 });
 
-test('tái kiểm tăng chậm hơn hẳn hai chỉ số kia', () => {
-  const base = problem({ miss_max: 1, false_reject_max: 1, recheck_max: 1 });
-  const adjusted = applyModifier(base, 9, CONFIG);
+test('số mũ tái kiểm vẫn chỉnh được nếu dữ liệu dự án cho thấy khác', () => {
+  const base = problem({ recheck_max: 4 });
+  const withSqrt = applyModifier(base, 4, { ...CONFIG, recheck_exponent: 0.5 });
+  assert.equal(withSqrt.recheck.max, 8, 'so mu 0.5 van hoat dong khi co ai do doi lai');
+});
 
-  assert.equal(adjusted.miss.max, 9);
-  assert.equal(adjusted.recheck.max, 3, 'sqrt(9) = 3');
-  assert.ok(adjusted.recheck.max < adjusted.miss.max);
+test('dải điển hình và kết quả chia là hai thứ khác nhau, không được coi là một', () => {
+  // Doi lai so mu ve 0.5 se lam dai hien thi mau thuan voi ket qua chia —
+  // day chinh la ly do bo no. Test nay chot lai quan he giua hai dai luong.
+  const base = problem({ recheck_max: 4, total_burden_max: 8 });
+  const adjusted = applyModifier(base, 2, CONFIG);
+  const split = splitBurden(adjusted.totalBurden, adjusted.miss, 'balanced', undefined, CONFIG);
+
+  assert.equal(adjusted.totalBurden, 16, 'tran tai phu gian theo he so');
+  assert.equal(split.recheck + split.falseReject, 16, 'chia dung tong');
+  assert.ok(
+    split.recheck <= adjusted.recheck.max,
+    `voi so mu 1.0 va phuong an can bang, ket qua chia (${split.recheck}) khong duoc vuot dai (${adjusted.recheck.max})`
+  );
 });
 
 // ------------------------------------------------------------------- HỆ SỐ --
@@ -291,6 +305,57 @@ test('không có mẫu nào thì không chứng minh được gì', () => {
   const result = computeSampleAdequacy(0, 1);
   assert.equal(result.provableMiss, 100);
   assert.equal(result.isAdequate, false);
+});
+
+// ------------------------------------------------------------ TRẦN THƯƠNG MẠI --
+
+test('tiêu chuẩn chưa rõ ràng thì nới trần thương mại lên 10%', () => {
+  assert.equal(resolveCeiling(false, CONFIG), 8);
+  assert.equal(resolveCeiling(true, CONFIG), 10);
+});
+
+// --------------------------------------------------------- TRẦN NHÂN LỰC --
+
+test('trạm tái kiểm vượt nhân lực hiện có thì báo không khả thi', () => {
+  // 3600 sp/gio, tai kiem 10% = 360 sp/gio, moi sp 10 giay -> 1 nguoi/ca x 2 ca = 2 nguoi
+  const result = computeRecheckFeasibility({
+    unitsPerHour: 3600,
+    shifts: 2,
+    secondsPerCheck: 10,
+    recheck: 10,
+    availableHeadcount: 1,
+  });
+
+  assert.equal(result.requiredHeadcount, 2);
+  assert.equal(result.isFeasible, false);
+  assert.ok(result.forcedToFalseReject > 0, 'phan vuot phai chuyen sang bat ao');
+});
+
+test('đủ người thì báo khả thi và không phải đẩy sang bắt ảo', () => {
+  const result = computeRecheckFeasibility({
+    unitsPerHour: 3600,
+    shifts: 2,
+    secondsPerCheck: 10,
+    recheck: 10,
+    availableHeadcount: 3,
+  });
+
+  assert.equal(result.isFeasible, true);
+  assert.equal(result.forcedToFalseReject, 0);
+});
+
+test('mức tái kiểm khả thi tối đa tỷ lệ thuận với số người', () => {
+  const forHeadcount = (n: number) =>
+    computeRecheckFeasibility({
+      unitsPerHour: 3600,
+      shifts: 1,
+      secondsPerCheck: 10,
+      recheck: 50,
+      availableHeadcount: n,
+    }).maxFeasibleRecheck;
+
+  assert.equal(forHeadcount(1), 10, '1 nguoi kiem duoc 360/3600 = 10%');
+  assert.equal(forHeadcount(2), 20);
 });
 
 // ------------------------------------------------- MÔ HÌNH HỖ TRỢ NGƯỜI KIỂM --

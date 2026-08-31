@@ -260,11 +260,17 @@ insert into public.kpi_config (key, value, name_vi, name_en, note_vi, note_en) v
    'Hệ số vượt mức này nghĩa là bài toán đã khác hẳn loại ban đầu — nên chọn lại loại khó hơn thay vì nhân hệ số.',
    'Above this the problem is effectively a different class — pick a harder type rather than multiplying.'),
 
-  ('recheck_exponent', 0.5,
+  ('recheck_exponent', 1.0,
    'Số mũ áp hệ số lên tái kiểm',
    'Exponent applied to recheck',
-   'Tái kiểm tăng chậm hơn bỏ sót và bắt ảo. 0,5 = căn bậc hai. Đây là ước lượng kinh nghiệm, chỉnh khi có số liệu thật.',
-   'Recheck grows more slowly than miss and false reject. 0.5 = square root. An experience-based estimate; adjust with real data.'),
+   'Để 1,0 = tái kiểm giãn cùng nhịp với bắt ảo. Vùng xám là phần chồng lấn giữa phân bố điểm của hàng OK và NG; điều kiện xấu đi làm nhóm này PHÌNH TO, không co lại — nên không có cơ sở thống kê để nó tăng chậm hơn. Quan sát "tái kiểm tăng chậm hơn" trong thực tế đến từ trần nhân lực, và trần đó đã được kiểm riêng bằng phép tính số người.',
+   'Keep at 1.0 so recheck scales in step with false reject. The grey zone is the overlap between OK and NG score distributions; worse conditions make that population GROW, not shrink, so there is no statistical basis for it to grow more slowly. The real-world observation that recheck grows more slowly comes from the manpower ceiling, which is checked separately by the headcount calculation.'),
+
+  ('commercial_ceiling_unclear_spec', 10,
+   'Trần thương mại khi tiêu chuẩn chưa rõ ràng (%)',
+   'Commercial ceiling when the spec is unclear (%)',
+   'Áp dụng khi khách chưa có danh mục lỗi đóng, chưa có mẫu giới hạn, hoặc tiêu chuẩn còn mang tính chủ quan. Nới trần vì hai bên đều biết còn phải hiệu chỉnh sau ramp-up.',
+   'Applies when the customer has no closed defect list, no limit samples, or the criteria remain subjective. The ceiling is relaxed because both sides accept that tuning continues after ramp-up.'),
 
   ('no_recheck_miss_multiplier', 1.5,
    'Hệ số tăng bỏ sót khi bỏ trạm tái kiểm',

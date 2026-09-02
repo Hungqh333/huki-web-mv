@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
-import { getTranslations } from 'next-intl/server';
+import { NextIntlClientProvider } from 'next-intl';
+import { getMessages, getTranslations } from 'next-intl/server';
 import { getSessionContext, isAdmin } from '@/lib/auth';
 import { hasSupabaseEnv } from '@/lib/supabase/env';
 
@@ -22,6 +23,10 @@ export default async function AdminLayout({ children }: LayoutProps<'/admin'>) {
   // bên dưới đều trả rỗng hoặc lỗi nếu tài khoản không phải admin.
   if (!isAdmin(session.profile?.role)) redirect('/');
 
+  // Namespace 'admin' bị loại khỏi provider ở layout gốc — chỉ nạp sau khi đã
+  // qua cổng kiểm tra quyền ở trên.
+  const messages = await getMessages();
+
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
       <h1 className="text-2xl font-bold tracking-tight">{t('title')}</h1>
@@ -39,7 +44,11 @@ export default async function AdminLayout({ children }: LayoutProps<'/admin'>) {
           ))}
         </nav>
 
-        <div className="min-w-0">{children}</div>
+        <div className="min-w-0">
+          <NextIntlClientProvider messages={{ admin: messages.admin }}>
+            {children}
+          </NextIntlClientProvider>
+        </div>
       </div>
     </div>
   );

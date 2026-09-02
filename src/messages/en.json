@@ -15,7 +15,8 @@
     "signUp": "Sign up",
     "signOut": "Sign out",
     "openMenu": "Open menu",
-    "closeMenu": "Close menu"
+    "closeMenu": "Close menu",
+    "kpi": "KPI calculator"
   },
   "language": {
     "label": "Language",
@@ -399,6 +400,177 @@
       "body": "This address does not exist, or the content has been removed.",
       "home": "Back to home",
       "handbook": "Browse the handbook"
+    }
+  },
+  "kpi": {
+    "title": "Vision KPI calculator",
+    "subtitle": "Work out the quality targets you can actually commit to for a project, convert them into operating cost, and generate a draft contract clause.",
+    "progress": "Input progress",
+    "emptyState": "Pick a problem type in step 1 to start. Results update immediately as you change any input.",
+    "noData": "No KPI data in the database yet. Run supabase/seed_kpi.sql to load it.",
+    "locked": {
+      "title": "Available to internal members",
+      "bodyGuest": "The KPI calculator holds internal commercial data — it shows how far the company can commit. Sign in with a granted account, or contact the Vision department.",
+      "bodyRegistered": "Your account is at the \"Registered\" level, so this tool is not available yet. Contact the Vision department to have your access upgraded.",
+      "signIn": "Sign in",
+      "contact": "Contact the Vision department"
+    },
+    "groups": {
+      "presence": "A. Presence and identity checks",
+      "metrology": "B. Metrology and positioning",
+      "code": "C. Code and character reading",
+      "process": "D. Process-step inspection",
+      "cosmetic": "E. Cosmetic surface inspection"
+    },
+    "deepLearning": {
+      "no": "No DL needed",
+      "sometimes": "DL sometimes",
+      "often": "DL often",
+      "required": "DL required"
+    },
+    "step1": {
+      "title": "Pick the problem type",
+      "level": "Level",
+      "helperTrigger": "Not sure which one?",
+      "helperTitle": "Three questions that separate Level 6 from Level 7",
+      "helperQ1": "Can you list every defect type that can occur?",
+      "helperQ2": "Do you have physical limit samples (reference OK and NG parts)?",
+      "helperQ3": "If two QC inspectors grade the same part, do they agree?",
+      "helperAnswer": "Three \"yes\" answers → Level 6. Even one \"no\" → Level 7, and do not commit to numbers before ramp-up."
+    },
+    "step2": {
+      "title": "Adjustment factors",
+      "subtitle": "Tick the conditions that apply. The factors compound and are applied to the base targets.",
+      "currentFactor": "Current factor",
+      "capped": "Capped — compounding too many factors produces implausible numbers.",
+      "worse": "Makes it harder",
+      "better": "Makes it easier",
+      "levelUpWarning": "The compounded factor exceeds 3.0 — the problem is effectively a different class. Move up a difficulty level and recalculate rather than multiplying further.",
+      "levelUpApply": "Move up a level"
+    },
+    "step3": {
+      "title": "Split the total burden",
+      "coreIdea": "The total burden barely changes. You are only choosing whether that share goes into the scrap bin or onto the manual inspection table.",
+      "noRecheck": {
+        "label": "No recheck station",
+        "description": "No labour needed, but more good parts are lost and misses rise about 1.5× because the safety buffer disappears."
+      },
+      "minimizeScrap": {
+        "label": "Minimise scrap",
+        "description": "Fewer good parts lost, but you need someone staffing the recheck station."
+      },
+      "balanced": {
+        "label": "Balanced (default)",
+        "description": "Split evenly between the two."
+      },
+      "custom": {
+        "label": "Custom",
+        "description": "Set the ratio between the two branches yourself."
+      },
+      "customLabel": "Share going to recheck",
+      "customAllScrap": "All to scrap",
+      "customAllRecheck": "All to recheck"
+    },
+    "step4": {
+      "title": "Production parameters",
+      "subtitle": "All optional. Leave blank and the cost section is hidden; everything else still calculates.",
+      "fields": {
+        "unitsPerHour": "Units per hour",
+        "shifts": "Shifts per day",
+        "secondsPerCheck": "Manual check time per unit",
+        "availableHeadcount": "People available for the recheck station",
+        "annualVolume": "Annual volume",
+        "unitValue": "Value per unit",
+        "p0": "Incoming NG rate (p₀)",
+        "ngSamples": "NG samples on hand"
+      },
+      "hints": {
+        "unitsPerHour": "Used to convert the burden into headcount and money.",
+        "shifts": "Shifts run per day.",
+        "secondsPerCheck": "How long an inspector takes on one suspect part.",
+        "availableHeadcount": "Used to check whether the recheck station is feasible.",
+        "annualVolume": "Used to compute the annual false-reject cost.",
+        "unitValue": "Value lost when a good part is rejected by mistake.",
+        "p0": "Share of NG parts arriving at the station. Feeds the escape ladder.",
+        "ngSamples": "NG samples available to prove the targets at FAT."
+      },
+      "specUnclear": {
+        "label": "Quality criteria are not yet clear",
+        "description": "The customer has no closed defect list, no limit samples, or the criteria still depend on the inspector's judgement. The commercial ceiling is then relaxed to 10%."
+      }
+    },
+    "result": {
+      "tabs": {
+        "targets": "Targets",
+        "tightening": "Tighter demands",
+        "contract": "Clause"
+      },
+      "estimateNotice": "The numbers below come from estimated industry ranges and have not been checked against this company's project history. Get confirmation from an experienced engineer before committing to a customer.",
+      "committed": "Committed targets",
+      "miss": "Miss rate",
+      "falseReject": "False reject (committed)",
+      "recheck": "Recheck rate",
+      "totalBurden": "Total burden",
+      "ceilingMarker": "The red mark is the commercial ceiling {value}",
+      "week1": "False reject, week 1",
+      "week1Hint": "not committed",
+      "rampUp": "Ramp-up",
+      "weeks": "{min}–{max} weeks",
+      "cost": "Operating cost",
+      "headcount": "Additional headcount",
+      "people": "{count} people",
+      "annualScrap": "Annual false-reject cost",
+      "escapeLadder": "Escape ladder",
+      "escapeHint": "Miss rate is measured against true NG parts; escape is measured against total volume. Worse incoming quality raises escape even when the system has not degraded at all.",
+      "inputNg": "Incoming NG",
+      "escapeTarget": "Escape target",
+      "suspended": "commitment suspended"
+    },
+    "warnings": {
+      "title": "Warnings",
+      "overCeiling": "Above the commercial ceiling. Do not sell \"replace the inspector\" — sell \"assist the inspector\": vision clears 80–90% of certain-OK parts and humans review the rest.",
+      "levelUp": "The adjustment factor exceeds 3.0. Move up a difficulty level and recalculate.",
+      "hardWithoutRecheck": "A level 6+ problem with no recheck station puts the entire burden into false rejects. The project easily fails on economics even when it runs well technically.",
+      "notEnoughSamples": "The NG samples on hand only prove a miss rate of ≤ {provable}% at 95% confidence. You need {required} samples to prove the level being committed.",
+      "recheckNotFeasible": "The recheck station needs {required} people but only {available} are available. Current staffing supports at most {maxRecheck}% recheck — the remaining {forced}% must shift into false rejects."
+    },
+    "tightening": {
+      "title": "When the customer demands more",
+      "subtitle": "Tightening the miss rate is not free: a stricter threshold puts more good parts under suspicion, so the total burden rises with it.",
+      "zeroMiss": "Customer demands zero misses",
+      "newMiss": "New miss rate",
+      "newBurden": "New total burden",
+      "newBurdenOverCeiling": "Above the {ceiling} commercial ceiling. The operating cost will make the project fail acceptance.",
+      "impossible": "This requirement does not exist mathematically.",
+      "impossibleExplain": "There is no threshold that gives zero misses while keeping false rejects finite. Absolute zero misses means rejecting every part. The three options below are what actually works.",
+      "alternatives": "Three workable alternatives",
+      "twoStageMiss": "Miss rate after two stages",
+      "twoStageFr": "False reject after two stages",
+      "twoStageWarning": "These numbers only hold if the two systems are GENUINELY INDEPENDENT — different principle, different angle, different lighting. Same camera and lighting with only a different algorithm means they fail on the same parts, and the multiplication no longer applies.",
+      "alt": {
+        "per-defect-class": {
+          "title": "Commit per defect class",
+          "body": "Instead of one blanket number, commit tightly on critical defects (safety, function) and loosely on cosmetic ones. Customers usually only truly care about a few specific classes."
+        },
+        "zero-auto-pass": {
+          "title": "No-auto-pass architecture",
+          "body": "The system never passes a part on its own: it only auto-rejects or routes to a human. Machine miss rate becomes zero by architecture, at the cost of routing the whole uncertain zone to recheck."
+        },
+        "two-stage": {
+          "title": "Two independent inspection stages",
+          "body": "Two systems on different principles inspect the same part. Miss rates multiply so they drop sharply, while false rejects add up."
+        }
+      }
+    },
+    "contract": {
+      "gateTitle": "This is a draft, not ready for direct use",
+      "gateItem1": "Appendix A (defect list) and Appendix B (production conditions) must be filled in — the clause is void without them.",
+      "gateItem2": "The numbers must be cross-checked against comparable delivered projects.",
+      "gateItem3": "The Vision department head and legal must both sign off.",
+      "gateAcknowledge": "I understand this is a draft and will review it before it goes into a contract",
+      "copy": "Copy",
+      "copied": "Copied",
+      "download": "Download .md"
     }
   }
 }

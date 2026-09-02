@@ -15,7 +15,8 @@
     "signUp": "Đăng ký",
     "signOut": "Đăng xuất",
     "openMenu": "Mở menu",
-    "closeMenu": "Đóng menu"
+    "closeMenu": "Đóng menu",
+    "kpi": "Bộ tính chỉ tiêu"
   },
   "language": {
     "label": "Ngôn ngữ",
@@ -399,6 +400,177 @@
       "body": "Đường dẫn không tồn tại, hoặc nội dung đã bị gỡ.",
       "home": "Về trang chủ",
       "handbook": "Xem cẩm nang"
+    }
+  },
+  "kpi": {
+    "title": "Bộ tính chỉ tiêu Vision",
+    "subtitle": "Xác định chỉ tiêu chất lượng cam kết được cho một dự án, quy ra chi phí vận hành, và sinh bản nháp điều khoản hợp đồng.",
+    "progress": "Tiến độ nhập liệu",
+    "emptyState": "Chọn loại bài toán ở bước 1 để bắt đầu. Kết quả cập nhật ngay khi bạn thay đổi bất kỳ thông số nào.",
+    "noData": "Chưa có dữ liệu chỉ tiêu trong database. Chạy supabase/seed_kpi.sql để nạp.",
+    "locked": {
+      "title": "Tính năng dành cho thành viên nội bộ",
+      "bodyGuest": "Bộ tính chỉ tiêu chứa dữ liệu thương mại nội bộ — nó cho biết công ty cam kết được tới mức nào. Đăng nhập bằng tài khoản đã được cấp quyền, hoặc liên hệ bộ phận Vision.",
+      "bodyRegistered": "Tài khoản của bạn đang ở mức \"Đã đăng ký\" nên chưa dùng được công cụ này. Liên hệ bộ phận Vision để được nâng cấp quyền.",
+      "signIn": "Đăng nhập",
+      "contact": "Liên hệ bộ phận Vision"
+    },
+    "groups": {
+      "presence": "A. Kiểm sự hiện diện & định danh",
+      "metrology": "B. Đo lường & định vị",
+      "code": "C. Đọc mã & ký tự",
+      "process": "D. Kiểm công đoạn quá trình",
+      "cosmetic": "E. Kiểm ngoại quan bề mặt"
+    },
+    "deepLearning": {
+      "no": "Không cần DL",
+      "sometimes": "Đôi khi cần DL",
+      "often": "Thường cần DL",
+      "required": "Bắt buộc DL"
+    },
+    "step1": {
+      "title": "Chọn loại bài toán",
+      "level": "Mức",
+      "helperTrigger": "Không biết chọn loại nào?",
+      "helperTitle": "Ba câu hỏi phân biệt Mức 6 và Mức 7",
+      "helperQ1": "Anh liệt kê được hết các loại lỗi có thể xảy ra không?",
+      "helperQ2": "Anh có mẫu giới hạn vật lý (mẫu chuẩn OK và NG) không?",
+      "helperQ3": "Cho hai QC chấm cùng một sản phẩm, họ có ra cùng kết quả không?",
+      "helperAnswer": "Đủ ba câu trả lời \"có\" → chọn Mức 6. Chỉ cần một câu \"không\" → chọn Mức 7, và đừng cam kết con số trước ramp-up."
+    },
+    "step2": {
+      "title": "Yếu tố điều chỉnh",
+      "subtitle": "Tích những điều kiện đúng với dự án. Hệ số nhân dồn và áp vào chỉ tiêu cơ sở.",
+      "currentFactor": "Hệ số hiện tại",
+      "capped": "Đã chạm trần — nhân dồn quá nhiều hệ số sẽ ra con số vô lý.",
+      "worse": "Làm xấu đi",
+      "better": "Làm tốt lên",
+      "levelUpWarning": "Tổng hệ số vượt 3,0 — bài toán đã khác hẳn loại đang chọn. Nên nâng lên mức khó hơn và tính lại thay vì tiếp tục nhân hệ số.",
+      "levelUpApply": "Nâng lên mức khó hơn"
+    },
+    "step3": {
+      "title": "Chia tổng tải phụ",
+      "coreIdea": "Tổng tải phụ gần như không đổi. Bạn chỉ đang chọn phần đó đi vào thùng loại hay đi vào bàn kiểm tay.",
+      "noRecheck": {
+        "label": "Không tái kiểm",
+        "description": "Không tốn người, nhưng mất nhiều hàng tốt hơn và bỏ sót tăng khoảng 1,5 lần do mất vùng đệm an toàn."
+      },
+      "minimizeScrap": {
+        "label": "Ưu tiên giữ hàng",
+        "description": "Ít mất hàng tốt, nhưng cần người trực ở trạm tái kiểm."
+      },
+      "balanced": {
+        "label": "Cân bằng (mặc định)",
+        "description": "Chia đôi giữa hai bên."
+      },
+      "custom": {
+        "label": "Tuỳ chỉnh",
+        "description": "Tự đặt tỷ lệ giữa hai nhánh."
+      },
+      "customLabel": "Phần chuyển sang tái kiểm",
+      "customAllScrap": "Toàn bộ vào thùng loại",
+      "customAllRecheck": "Toàn bộ vào bàn kiểm"
+    },
+    "step4": {
+      "title": "Thông số sản xuất",
+      "subtitle": "Tất cả đều tuỳ chọn. Bỏ trống thì phần chi phí không hiển thị, các phần khác vẫn tính bình thường.",
+      "fields": {
+        "unitsPerHour": "Sản lượng mỗi giờ",
+        "shifts": "Số ca mỗi ngày",
+        "secondsPerCheck": "Thời gian kiểm tay một sản phẩm",
+        "availableHeadcount": "Số người bố trí được cho trạm tái kiểm",
+        "annualVolume": "Sản lượng mỗi năm",
+        "unitValue": "Giá trị một sản phẩm",
+        "p0": "Tỷ lệ NG đầu vào (p₀)",
+        "ngSamples": "Số mẫu NG hiện có"
+      },
+      "hints": {
+        "unitsPerHour": "Dùng để quy tải phụ ra số người và tiền.",
+        "shifts": "Số ca chạy mỗi ngày.",
+        "secondsPerCheck": "Người kiểm mất bao lâu cho một sản phẩm nghi ngờ.",
+        "availableHeadcount": "Dùng để kiểm xem trạm tái kiểm có khả thi không.",
+        "annualVolume": "Dùng để tính chi phí bắt ảo mỗi năm.",
+        "unitValue": "Giá trị mất đi khi loại nhầm một sản phẩm tốt.",
+        "p0": "Tỷ lệ hàng NG đi vào trạm kiểm. Dùng cho bảng bậc thang escape.",
+        "ngSamples": "Số mẫu NG dùng để chứng minh chỉ tiêu ở FAT."
+      },
+      "specUnclear": {
+        "label": "Tiêu chuẩn chất lượng chưa rõ ràng",
+        "description": "Khách chưa có danh mục lỗi đóng, chưa có mẫu giới hạn, hoặc tiêu chuẩn còn phụ thuộc cảm nhận người chấm. Khi đó trần thương mại được nới lên 10%."
+      }
+    },
+    "result": {
+      "tabs": {
+        "targets": "Chỉ tiêu",
+        "tightening": "Yêu cầu khắt khe",
+        "contract": "Điều khoản"
+      },
+      "estimateNotice": "Các con số dưới đây lấy từ dải ước lượng theo kinh nghiệm ngành, chưa đối chiếu với lịch sử dự án của công ty. Cần người có kinh nghiệm xác nhận trước khi cam kết với khách.",
+      "committed": "Chỉ tiêu cam kết",
+      "miss": "Bỏ sót",
+      "falseReject": "Bắt ảo (cam kết)",
+      "recheck": "Tái kiểm",
+      "totalBurden": "Tổng tải phụ",
+      "ceilingMarker": "Vạch đỏ là trần thương mại {value}",
+      "week1": "Bắt ảo tuần đầu",
+      "week1Hint": "không cam kết",
+      "rampUp": "Ramp-up",
+      "weeks": "{min}–{max} tuần",
+      "cost": "Chi phí vận hành",
+      "headcount": "Số người cần thêm",
+      "people": "{count} người",
+      "annualScrap": "Chi phí bắt ảo mỗi năm",
+      "escapeLadder": "Bảng bậc thang escape",
+      "escapeHint": "Bỏ sót tính trên số hàng NG thật; escape tính trên tổng sản lượng. Chất lượng đầu vào xấu đi thì escape tăng dù hệ thống không hề kém đi.",
+      "inputNg": "NG đầu vào",
+      "escapeTarget": "Escape mục tiêu",
+      "suspended": "tạm dừng cam kết"
+    },
+    "warnings": {
+      "title": "Cảnh báo",
+      "overCeiling": "Vượt trần thương mại. Đừng bán \"thay thế người kiểm\" — bán \"hỗ trợ người kiểm\": vision lọc 80–90% hàng chắc chắn OK, người chỉ kiểm phần còn lại.",
+      "levelUp": "Hệ số điều chỉnh vượt 3,0. Nên nâng một mức độ khó và tính lại.",
+      "hardWithoutRecheck": "Bài toán mức 6 trở lên mà bỏ trạm tái kiểm: toàn bộ tải phụ dồn vào bắt ảo. Dự án dễ thất bại về kinh tế dù kỹ thuật chạy tốt.",
+      "notEnoughSamples": "Số mẫu NG hiện có chỉ chứng minh được bỏ sót ≤ {provable}% ở khoảng tin cậy 95%. Cần {required} mẫu để chứng minh mức đang cam kết.",
+      "recheckNotFeasible": "Trạm tái kiểm cần {required} người nhưng chỉ bố trí được {available}. Nhân lực hiện có gánh được tối đa {maxRecheck}% tái kiểm — phần {forced}% còn lại buộc phải chuyển sang bắt ảo."
+    },
+    "tightening": {
+      "title": "Khi khách đòi khắt khe hơn",
+      "subtitle": "Siết bỏ sót không miễn phí: ngưỡng chặt hơn thì nhiều hàng tốt bị nghi ngờ hơn, tổng tải phụ tăng theo.",
+      "zeroMiss": "Khách đòi bỏ sót = 0",
+      "newMiss": "Bỏ sót mới",
+      "newBurden": "Tổng tải phụ mới",
+      "newBurdenOverCeiling": "Vượt trần thương mại {ceiling}. Chi phí vận hành sẽ làm dự án không nghiệm thu được.",
+      "impossible": "Yêu cầu này không tồn tại về mặt toán học.",
+      "impossibleExplain": "Không có ngưỡng nào cho bỏ sót bằng 0 mà bắt ảo vẫn hữu hạn. Muốn bỏ sót về 0 tuyệt đối thì phải loại toàn bộ sản phẩm. Ba phương án dưới đây là những thứ dùng được thật.",
+      "alternatives": "Ba phương án thay thế",
+      "twoStageMiss": "Bỏ sót sau hai tầng",
+      "twoStageFr": "Bắt ảo sau hai tầng",
+      "twoStageWarning": "Con số trên chỉ đúng khi hai hệ thống THỰC SỰ ĐỘC LẬP — khác nguyên lý, khác góc chụp, khác ánh sáng. Cùng camera cùng ánh sáng chỉ khác thuật toán thì chúng sai ở cùng những mẫu, và phép nhân không còn đúng.",
+      "alt": {
+        "per-defect-class": {
+          "title": "Cam kết theo từng loại lỗi",
+          "body": "Thay vì một con số chung, cam kết chặt với loại lỗi nghiêm trọng (an toàn, chức năng) và nới với loại lỗi nhẹ. Khách thường chỉ thực sự lo về vài loại lỗi cụ thể."
+        },
+        "zero-auto-pass": {
+          "title": "Kiến trúc không tự động thông qua",
+          "body": "Hệ thống không bao giờ tự cho qua: chỉ tự động loại và tự động chuyển sang người. Bỏ sót của máy về 0 theo đúng nghĩa kiến trúc, đổi lại toàn bộ vùng nghi ngờ chuyển thành tái kiểm."
+        },
+        "two-stage": {
+          "title": "Kiểm hai tầng độc lập",
+          "body": "Hai hệ thống khác nguyên lý cùng kiểm. Bỏ sót nhân với nhau nên giảm rất mạnh, đổi lại bắt ảo cộng dồn."
+        }
+      }
+    },
+    "contract": {
+      "gateTitle": "Đây là bản nháp, chưa dùng trực tiếp được",
+      "gateItem1": "Phải điền Phụ lục A (danh mục lỗi) và Phụ lục B (điều kiện sản xuất) — thiếu là điều khoản vô hiệu.",
+      "gateItem2": "Phải đối chiếu con số với dự án tương tự công ty đã làm.",
+      "gateItem3": "Phải có trưởng bộ phận Vision và bộ phận pháp chế duyệt.",
+      "gateAcknowledge": "Tôi hiểu đây là bản nháp và sẽ rà soát trước khi đưa vào hợp đồng",
+      "copy": "Sao chép",
+      "copied": "Đã sao chép",
+      "download": "Tải .md"
     }
   }
 }

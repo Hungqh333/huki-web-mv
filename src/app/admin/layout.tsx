@@ -9,6 +9,7 @@ const NAV = [
   { href: '/admin/nguoi-dung', key: 'users' },
   { href: '/admin/bai-viet', key: 'articles' },
   { href: '/admin/luat-goi-y', key: 'rules' },
+  { href: '/admin/chi-tieu', key: 'kpi' },
 ] as const;
 
 export default async function AdminLayout({ children }: LayoutProps<'/admin'>) {

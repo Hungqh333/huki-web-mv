@@ -92,9 +92,29 @@ export type ModifierResult = {
 export type AdjustedTargets = {
   miss: Range;
   falseReject: Range;
+  /**
+   * Bắt ảo tuần đầu, ĐÃ nhân hệ số điều chỉnh.
+   *
+   * Trước đây điều khoản lấy thẳng giá trị gốc chưa nhân hệ số, nên khi có hệ
+   * số lớn nó in ra con số NHỎ HƠN mức cam kết kèm câu "cao hơn mức cam kết" —
+   * một điều khoản tự mâu thuẫn ngay trong cùng một trang.
+   */
+  falseRejectWeek1: Range;
   recheck: Range;
   totalBurden: number;
 };
+
+/**
+ * Lý do KHÔNG được sinh điều khoản hợp đồng.
+ *
+ * Mỗi lý do tương ứng một trường hợp mà con số tính ra đúng về mặt kỹ thuật
+ * nhưng không được phép biến thành cam kết pháp lý.
+ */
+export type ContractBlocker =
+  | 'zero-miss'
+  | 'special-kpi'
+  | 'over-ceiling'
+  | 'insufficient-samples';
 
 export type BurdenSplit = {
   falseReject: number;

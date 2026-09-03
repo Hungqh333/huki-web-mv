@@ -46,7 +46,7 @@ export function ProductionStep({
               className="block text-sm font-medium text-slate-700 dark:text-slate-200"
             >
               {t(`fields.${field.key}`)}
-              {field.unit ? <span className="ml-1 text-slate-400">({field.unit})</span> : null}
+              {field.unit ? <span className="ml-1 text-slate-500 dark:text-slate-400">({field.unit})</span> : null}
             </label>
             <input
               id={field.key}

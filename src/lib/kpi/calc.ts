@@ -8,6 +8,7 @@ import {
   type Modifier,
   type ModifierResult,
   type OperationalCost,
+  type ContractBlocker,
   type ProblemType,
   type Range,
   type SampleAdequacy,
@@ -76,6 +77,12 @@ export function applyModifier(
     falseReject: {
       min: scale(base.false_reject_min, factor),
       max: scale(base.false_reject_max, factor),
+    },
+    // Nhân cùng hệ số với bắt ảo cam kết: điều kiện xấu đi thì tuần đầu cũng
+    // xấu đi theo, không có lý do gì nó đứng yên.
+    falseRejectWeek1: {
+      min: scale(base.false_reject_week1_min, factor),
+      max: scale(base.false_reject_week1_max, factor),
     },
     recheck: {
       min: scale(base.recheck_min, recheckFactor),
@@ -187,7 +194,10 @@ export function computeTighteningScenario(
   base: { miss: Range; totalBurden: number },
   ratio: number | 'zero',
   factors: TighteningFactor[],
-  config: KpiConfig = DEFAULT_KPI_CONFIG
+  // Trần đã được giải quyết theo bối cảnh dự án (8% hoặc 10% khi tiêu chuẩn
+  // chưa rõ ràng). Trước đây hàm này dùng thẳng config.commercial_ceiling nên
+  // giao diện cảnh báo "vượt trần 10%" cho một con số 9%.
+  ceiling: number = DEFAULT_KPI_CONFIG.commercial_ceiling
 ): TighteningScenario {
   const alternatives: TighteningScenario['alternatives'] = [
     'per-defect-class',
@@ -211,7 +221,7 @@ export function computeTighteningScenario(
       max: round(base.miss.max / factor.miss_ratio, 3),
     },
     newTotalBurden,
-    exceedsCeiling: newTotalBurden > config.commercial_ceiling,
+    exceedsCeiling: newTotalBurden > ceiling,
     alternatives,
   };
 }
@@ -292,6 +302,41 @@ export function computeSampleAdequacy(
     requiredSamples,
     isAdequate: availableNgSamples > 0 && provableMiss <= committedMiss,
   };
+}
+
+/**
+ * Những lý do KHÔNG được sinh điều khoản hợp đồng.
+ *
+ * Đây là chốt chặn quan trọng nhất của module. Bốn trường hợp dưới đây đều cho
+ * ra con số đúng về mặt tính toán nhưng biến thành cam kết pháp lý thì sai:
+ *
+ * - zero-miss: dải bỏ sót bằng 0 (barcode in tốt, dẫn hướng robot). In ra
+ *   "bỏ sót ≤ 0%" là cam kết đúng cái điều mà chính module này tuyên bố không
+ *   tồn tại về mặt toán học.
+ * - special-kpi: loại bài toán có KPI riêng (độ lặp lại, tỷ lệ gắp, no-read).
+ *   Bộ chỉ số bỏ sót/bắt ảo không mô tả đúng bài toán đó.
+ * - over-ceiling: tổng tải phụ vượt trần thương mại. Cam kết một con số mà
+ *   chính công cụ vừa cảnh báo là dự án sẽ trượt nghiệm thu vì chi phí.
+ * - insufficient-samples: số mẫu NG hiện có không đủ chứng minh mức đang cam
+ *   kết ở FAT. Đây đúng là kiểu "hứa liều rồi đến FAT mới phát hiện".
+ */
+export function findContractBlockers(input: {
+  miss: number;
+  totalBurden: number;
+  ceiling: number;
+  specialKpi: string | null;
+  sampleAdequacy: SampleAdequacy | null;
+}): ContractBlocker[] {
+  const blockers: ContractBlocker[] = [];
+
+  if (input.miss <= 0) blockers.push('zero-miss');
+  if (input.specialKpi) blockers.push('special-kpi');
+  if (input.totalBurden > input.ceiling) blockers.push('over-ceiling');
+  if (input.sampleAdequacy && !input.sampleAdequacy.isAdequate) {
+    blockers.push('insufficient-samples');
+  }
+
+  return blockers;
 }
 
 /**

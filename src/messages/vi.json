@@ -703,7 +703,45 @@
       "gateAcknowledge": "Tôi hiểu đây là bản nháp và sẽ rà soát trước khi đưa vào hợp đồng",
       "copy": "Sao chép",
       "copied": "Đã sao chép",
-      "download": "Tải .md"
+      "download": "Tải .md",
+      "blocked": {
+        "title": "Chưa sinh được điều khoản cho trường hợp này",
+        "intro": "Con số tính ra vẫn đúng và dùng để tham khảo được, nhưng biến chúng thành cam kết pháp lý thì sai. Xử lý những điểm dưới đây trước.",
+        "whatToDo": "Cần làm:",
+        "reasons": {
+          "zero-miss": {
+            "title": "Dải bỏ sót đang bằng 0",
+            "body": "Điều khoản sẽ in ra \"bỏ sót ≤ 0%\" — đúng cái yêu cầu mà chính công cụ này tuyên bố là không tồn tại về mặt toán học. Không có ngưỡng nào cho bỏ sót bằng 0 mà bắt ảo vẫn hữu hạn.",
+            "action": "Loại bài toán này cần một bộ chỉ tiêu khác (ví dụ tỷ lệ no-read cho đọc mã). Đặt chỉ tiêu theo đúng bản chất bài toán, hoặc sửa dải bỏ sót trong trang quản trị nếu con số 0 là do nhập thiếu."
+          },
+          "special-kpi": {
+            "title": "Loại bài toán này có bộ chỉ tiêu riêng",
+            "body": "Bỏ sót và bắt ảo không mô tả đúng bài toán này. Dẫn hướng robot đo bằng độ lặp lại và tỷ lệ gắp thành công; đọc mã đo bằng tỷ lệ no-read; web inspection không có trạm tái kiểm.",
+            "action": "Xem ghi chú của loại bài toán ở tab Chỉ tiêu để biết bộ KPI đúng, rồi soạn điều khoản theo bộ đó thay vì dùng mẫu chung."
+          },
+          "over-ceiling": {
+            "title": "Tổng tải phụ vượt trần thương mại",
+            "body": "Cam kết con số này nghĩa là cam kết một mức chi phí vận hành mà dự án gần như chắc chắn không nghiệm thu được, dù kỹ thuật chạy đúng.",
+            "action": "Chuyển sang mô hình hỗ trợ người kiểm (xem khối gợi ý ở tab Chỉ tiêu), hoặc thu hẹp phạm vi danh mục lỗi, hoặc thương lượng lại tiêu chuẩn với khách trước khi đưa ra con số."
+          },
+          "insufficient-samples": {
+            "title": "Số mẫu NG hiện có không đủ chứng minh mức đang cam kết",
+            "body": "Đến FAT sẽ không có cách nào chứng minh chỉ tiêu này đạt. Đây đúng là tình huống hứa liều rồi đến lúc nghiệm thu mới phát hiện.",
+            "action": "Xem cảnh báo ở tab Chỉ tiêu để biết cần bao nhiêu mẫu. Hoặc thu thập thêm mẫu NG, hoặc cam kết ở mức mà bộ mẫu hiện có chứng minh được, hoặc dùng cơ chế cam kết hai giai đoạn."
+          }
+        }
+      },
+      "copyFailed": "Trình duyệt chặn sao chép (thường gặp khi trang không chạy qua HTTPS). Dùng nút Tải .md, hoặc bôi đen phần văn bản bên dưới rồi copy tay."
+    },
+    "assist": {
+      "title": "Lối ra: mô hình hỗ trợ người kiểm",
+      "body": "Tải phụ đã vượt trần, nên đừng bán \"thay thế người kiểm\". Bán đúng thứ hệ thống làm được: lọc phần hàng chắc chắn OK, người chỉ kiểm phần còn lại.",
+      "autoClear": "Vision tự thông qua",
+      "headcountBefore": "Kiểm tay toàn bộ",
+      "headcountAfter": "Theo mô hình hỗ trợ",
+      "people": "{count} người",
+      "needInputs": "Nhập sản lượng mỗi giờ và thời gian kiểm một sản phẩm ở bước 4 để thấy con số nhân lực cụ thể.",
+      "pitch": "Con số này mới là thứ thuyết phục được khách: vẫn tiết kiệm phần lớn nhân công mà không phải cam kết một chỉ tiêu không đạt được."
     }
   }
 }

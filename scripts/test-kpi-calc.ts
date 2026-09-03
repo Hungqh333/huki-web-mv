@@ -19,6 +19,7 @@ import {
   computeTighteningScenario,
   computeTwoStage,
   computeRecheckFeasibility,
+  findContractBlockers,
   resolveCeiling,
   splitBurden,
 } from '../src/lib/kpi/calc';
@@ -140,10 +141,32 @@ test('siết bỏ sót n lần thì tổng tải phụ nhân theo hệ số củ
     { miss: { min: 0.5, max: 2 }, totalBurden: 5 },
     10,
     factors,
-    CONFIG
+    CONFIG.commercial_ceiling
   );
   assert.equal(tenfold.newTotalBurden, 25);
   assert.equal(tenfold.exceedsCeiling, true, 'phai canh bao vuot tran thuong mai');
+});
+
+test('cảnh báo vượt trần dùng đúng trần của dự án, không dùng cứng 8%', () => {
+  const factors = [{ miss_ratio: 2, burden_k: 1.6, label_vi: '', label_en: '' }];
+
+  // Tong tai phu moi = 5 x 1.6 = 8: vuot tran 8 thi khong, vuot tran 10 thi khong.
+  const strict = computeTighteningScenario(
+    { miss: { min: 0.5, max: 2 }, totalBurden: 5.7 },
+    2,
+    factors,
+    CONFIG.commercial_ceiling
+  );
+  const relaxed = computeTighteningScenario(
+    { miss: { min: 0.5, max: 2 }, totalBurden: 5.7 },
+    2,
+    factors,
+    CONFIG.commercial_ceiling_unclear_spec
+  );
+
+  assert.equal(strict.newTotalBurden, 9.12);
+  assert.equal(strict.exceedsCeiling, true, 'vuot tran 8%');
+  assert.equal(relaxed.exceedsCeiling, false, 'chua vuot tran 10% khi spec chua ro');
 });
 
 // ---------------------------------------------------------------- LỖI SỐ BA --
@@ -305,6 +328,90 @@ test('không có mẫu nào thì không chứng minh được gì', () => {
   const result = computeSampleAdequacy(0, 1);
   assert.equal(result.provableMiss, 100);
   assert.equal(result.isAdequate, false);
+});
+
+// ------------------------------------------------- CHẶN SINH ĐIỀU KHOẢN --
+
+const noBlockers = {
+  miss: 1.5,
+  totalBurden: 5,
+  ceiling: 8,
+  specialKpi: null,
+  sampleAdequacy: null,
+};
+
+test('trường hợp bình thường thì không chặn gì', () => {
+  assert.deepEqual(findContractBlockers(noBlockers), []);
+});
+
+test('chặn khi dải bỏ sót bằng 0 — không cam kết điều bất khả thi', () => {
+  // barcode-good va robot-guidance trong seed deu co miss_min = miss_max = 0
+  assert.deepEqual(findContractBlockers({ ...noBlockers, miss: 0 }), ['zero-miss']);
+});
+
+test('chặn khi loại bài toán có KPI riêng', () => {
+  assert.deepEqual(findContractBlockers({ ...noBlockers, specialKpi: 'robot_guidance' }), [
+    'special-kpi',
+  ]);
+  assert.deepEqual(findContractBlockers({ ...noBlockers, specialKpi: 'code_reading' }), [
+    'special-kpi',
+  ]);
+});
+
+test('chặn khi tổng tải phụ vượt trần', () => {
+  assert.deepEqual(findContractBlockers({ ...noBlockers, totalBurden: 9 }), ['over-ceiling']);
+  // Tran noi len 10% thi 9% khong con bi chan
+  assert.deepEqual(findContractBlockers({ ...noBlockers, totalBurden: 9, ceiling: 10 }), []);
+});
+
+test('chặn khi số mẫu NG không đủ chứng minh mức cam kết', () => {
+  const notEnough = computeSampleAdequacy(50, 1);
+  assert.deepEqual(findContractBlockers({ ...noBlockers, sampleAdequacy: notEnough }), [
+    'insufficient-samples',
+  ]);
+
+  const enough = computeSampleAdequacy(500, 1);
+  assert.deepEqual(findContractBlockers({ ...noBlockers, sampleAdequacy: enough }), []);
+});
+
+test('nhiều rào cản cùng lúc thì liệt kê hết, không dừng ở cái đầu', () => {
+  const blockers = findContractBlockers({
+    miss: 0,
+    totalBurden: 12,
+    ceiling: 8,
+    specialKpi: 'code_reading',
+    sampleAdequacy: computeSampleAdequacy(10, 1),
+  });
+
+  assert.equal(blockers.length, 4, `chi thay: ${blockers.join(', ')}`);
+});
+
+// --------------------------------------------- BẮT ẢO TUẦN ĐẦU NHÂN HỆ SỐ --
+
+test('bắt ảo tuần đầu nhân cùng hệ số với bắt ảo cam kết', () => {
+  const base = problem({ false_reject_week1_min: 10, false_reject_week1_max: 18 });
+  const adjusted = applyModifier(base, 2, CONFIG);
+
+  assert.equal(adjusted.falseRejectWeek1.min, 20);
+  assert.equal(adjusted.falseRejectWeek1.max, 36);
+});
+
+test('tuần đầu luôn lớn hơn cam kết ở phương án cân bằng', () => {
+  // Day la dieu ma dieu khoan khang dinh — phai dung, khong duoc de no nguoc lai.
+  const base = problem({
+    false_reject_week1_min: 10,
+    false_reject_week1_max: 18,
+    total_burden_max: 8,
+  });
+
+  for (const factor of [1, 2, 3, 5]) {
+    const adjusted = applyModifier(base, factor, CONFIG);
+    const split = splitBurden(adjusted.totalBurden, adjusted.miss, 'balanced', undefined, CONFIG);
+    assert.ok(
+      adjusted.falseRejectWeek1.max > split.falseReject,
+      `he so ${factor}: tuan dau ${adjusted.falseRejectWeek1.max} phai > cam ket ${split.falseReject}`
+    );
+  }
 });
 
 // ------------------------------------------------------------ TRẦN THƯƠNG MẠI --

@@ -703,7 +703,45 @@
       "gateAcknowledge": "I understand this is a draft and will review it before it goes into a contract",
       "copy": "Copy",
       "copied": "Copied",
-      "download": "Download .md"
+      "download": "Download .md",
+      "blocked": {
+        "title": "No contract clause can be generated for this case",
+        "intro": "The calculated numbers are still valid for reference, but turning them into a legal commitment would be wrong. Resolve the points below first.",
+        "whatToDo": "What to do:",
+        "reasons": {
+          "zero-miss": {
+            "title": "The miss rate range is zero",
+            "body": "The clause would print \"miss rate ≤ 0%\" — exactly the requirement this tool declares mathematically impossible. No threshold gives zero misses while keeping false rejects finite.",
+            "action": "This problem type needs a different metric set (for example no-read rate for code reading). Set targets that match the nature of the task, or fix the miss range in the admin area if the zero is a data entry gap."
+          },
+          "special-kpi": {
+            "title": "This problem type has its own metric set",
+            "body": "Miss and false reject do not describe this task. Robot guidance is measured by repeatability and pick success; code reading by no-read rate; web inspection has no recheck station at all.",
+            "action": "Check the problem type note on the Targets tab for the correct KPI set, then draft the clause around those instead of the generic template."
+          },
+          "over-ceiling": {
+            "title": "Total burden exceeds the commercial ceiling",
+            "body": "Committing to this number means committing to an operating cost that will almost certainly fail acceptance, even when the system runs correctly.",
+            "action": "Switch to the assist-the-inspector model (see the suggestion block on the Targets tab), narrow the defect list, or renegotiate the criteria with the customer before quoting a number."
+          },
+          "insufficient-samples": {
+            "title": "The available NG samples cannot prove the committed level",
+            "body": "At FAT there will be no way to demonstrate this target is met. This is exactly the over-promise that only surfaces at acceptance.",
+            "action": "See the warning on the Targets tab for how many samples are needed. Either collect more NG samples, commit at the level your current sample set can prove, or use a two-stage commitment."
+          }
+        }
+      },
+      "copyFailed": "The browser blocked copying (common when the page is not served over HTTPS). Use the Download .md button, or select the text below and copy manually."
+    },
+    "assist": {
+      "title": "The way out: assist-the-inspector model",
+      "body": "The burden is above the ceiling, so do not sell \"replace the inspector\". Sell what the system genuinely does: clear the certain-OK parts and let people review the rest.",
+      "autoClear": "Auto-cleared by vision",
+      "headcountBefore": "Full manual inspection",
+      "headcountAfter": "With the assist model",
+      "people": "{count} people",
+      "needInputs": "Enter units per hour and manual check time in step 4 to see the concrete headcount numbers.",
+      "pitch": "This is the number that convinces a customer: most of the labour is still saved, without committing to a target that cannot be met."
     }
   }
 }

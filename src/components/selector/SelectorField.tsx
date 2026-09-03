@@ -25,7 +25,7 @@ export function SelectorField({ def, error, defaultValue }: Props) {
     <div className="space-y-1.5">
       <label htmlFor={def.key} className="block text-sm font-medium text-slate-700 dark:text-slate-200">
         {label}
-        {def.unit ? <span className="ml-1 text-slate-400">({def.unit})</span> : null}
+        {def.unit ? <span className="ml-1 text-slate-500 dark:text-slate-400">({def.unit})</span> : null}
         {def.required ? <span className="ml-1 text-red-600">*</span> : null}
       </label>
 

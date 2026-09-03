@@ -168,10 +168,13 @@ export function KpiCalculator({ data, locale }: { data: KpiData; locale: 'vi' | 
             factor={result?.modifierResult ?? null}
             locale={locale}
             onLevelUp={() => {
-              // Nâng lên loại cùng nhóm nhưng mức khó cao hơn liền kề.
+              // Nâng lên loại CÙNG NHÓM nhưng mức khó cao hơn liền kề.
+              // Thiếu điều kiện cùng nhóm thì nút này nhảy sang một bài toán
+              // hoàn toàn khác — ví dụ từ OCR sang phân loại chi tiết — và đổi
+              // sạch dải chỉ tiêu mà không báo gì.
               if (!problem) return;
               const harder = data.problemTypes
-                .filter((p) => p.level > problem.level)
+                .filter((p) => p.problem_group === problem.problem_group && p.level > problem.level)
                 .sort((a, b) => a.level - b.level)[0];
               if (harder) setProblemSlug(harder.slug);
             }}

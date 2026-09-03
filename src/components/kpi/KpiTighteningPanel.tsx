@@ -6,7 +6,7 @@ import { computeTighteningScenario, computeTwoStage } from '@/lib/kpi/calc';
 import type { KpiData } from '@/lib/kpi/queries';
 import type { KpiComputed } from './KpiResultPanel';
 
-const pct = (value: number) => `${value.toLocaleString('vi-VN', { maximumFractionDigits: 3 })}%`;
+
 
 export function KpiTighteningPanel({
   result,
@@ -18,13 +18,15 @@ export function KpiTighteningPanel({
   locale: 'vi' | 'en';
 }) {
   const t = useTranslations('kpi.tightening');
+  const pct = (value: number) =>
+    `${value.toLocaleString(locale === 'en' ? 'en-US' : 'vi-VN', { maximumFractionDigits: 3 })}%`;
   const [scenario, setScenario] = useState<'zero' | number>('zero');
 
   const computed = computeTighteningScenario(
     { miss: result.split.miss, totalBurden: result.adjusted.totalBurden },
     scenario,
     data.tighteningFactors,
-    data.config
+    result.ceiling
   );
 
   // Kiểm hai tầng: dùng chính chỉ tiêu đang tính cho cả hai tầng, để cho thấy

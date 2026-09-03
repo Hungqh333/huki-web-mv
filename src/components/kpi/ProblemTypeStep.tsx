@@ -73,7 +73,7 @@ export function ProblemTypeStep({
             >
               <summary className="cursor-pointer px-4 py-3 text-sm font-medium">
                 {tGroup(group)}
-                <span className="ml-2 text-xs text-slate-400">({items.length})</span>
+                <span className="ml-2 text-xs text-slate-500 dark:text-slate-400">({items.length})</span>
               </summary>
 
               <ul className="border-t border-slate-200 dark:border-slate-800">

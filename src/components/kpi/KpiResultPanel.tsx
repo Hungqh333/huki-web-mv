@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { computeEscapeLadder } from '@/lib/kpi/calc';
+import { computeAssistModel, computeEscapeLadder } from '@/lib/kpi/calc';
 import type { KpiData } from '@/lib/kpi/queries';
 import type {
   AdjustedTargets,
@@ -30,7 +30,18 @@ export type KpiComputed = {
   production: { unitsPerHour: number | null; shifts: number; secondsPerCheck: number | null };
 };
 
-const pct = (value: number) => `${value.toLocaleString('vi-VN', { maximumFractionDigits: 2 })}%`;
+/**
+ * Định dạng phần trăm theo đúng ngôn ngữ đang xem.
+ *
+ * Trước đây luôn dùng 'vi-VN' nên bản tiếng Anh in "0,5%" — người đọc tiếng Anh
+ * hiểu dấu phẩy là phân cách hàng nghìn, tức đọc thành 5 lần giá trị thật. Đây
+ * là con số đưa vào hợp đồng nên sai kiểu này có hậu quả.
+ *
+ * maximumFractionDigits 3 thay vì 2: escape của bài toán bỏ sót thấp rơi vào
+ * khoảng 0,001–0,006% và bị làm tròn thành "0%" ở 2 chữ số.
+ */
+const fmtPct = (value: number, locale: 'vi' | 'en') =>
+  `${value.toLocaleString(locale === 'en' ? 'en-US' : 'vi-VN', { maximumFractionDigits: 3 })}%`;
 
 export function KpiResultPanel({
   result,
@@ -46,6 +57,7 @@ export function KpiResultPanel({
   const t = useTranslations('kpi.result');
   const [tab, setTab] = useState<'targets' | 'tightening' | 'contract'>('targets');
 
+  const pct = (value: number) => fmtPct(value, locale);
   const { problem, adjusted, split, ceiling } = result;
   const overCeiling = adjusted.totalBurden > ceiling;
   const burdenBarWidth = Math.min(100, (adjusted.totalBurden / Math.max(ceiling * 1.6, 1)) * 100);
@@ -120,7 +132,7 @@ export function KpiResultPanel({
               <dl className="mt-4 divide-y divide-slate-200 dark:divide-slate-800">
                 <Row
                   label={t('week1')}
-                  value={`${pct(problem.false_reject_week1_min)} – ${pct(problem.false_reject_week1_max)}`}
+                  value={`${pct(adjusted.falseRejectWeek1.min)} – ${pct(adjusted.falseRejectWeek1.max)}`}
                   hint={t('week1Hint')}
                 />
                 <Row
@@ -135,6 +147,8 @@ export function KpiResultPanel({
 
             <Warnings result={result} strategy={strategy} note={note} />
 
+            {overCeiling ? <AssistModel result={result} data={data} pct={pct} /> : null}
+
             {result.cost ? (
               <div>
                 <h3 className="text-sm font-semibold">{t('cost')}</h3>
@@ -145,7 +159,10 @@ export function KpiResultPanel({
                   />
                   <Row
                     label={t('annualScrap')}
-                    value={`${result.cost.annualScrapCost.toLocaleString('vi-VN')} ₫`}
+                    value={result.cost.annualScrapCost.toLocaleString(
+                      locale === 'en' ? 'en-US' : 'vi-VN',
+                      { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }
+                    )}
                   />
                 </dl>
               </div>
@@ -197,12 +214,74 @@ export function KpiResultPanel({
   );
 }
 
+/**
+ * Mô hình "hỗ trợ người kiểm" — lối thoát khi tổng tải phụ vượt trần.
+ *
+ * Trước đây computeAssistModel được viết đầy đủ và có test nhưng KHÔNG được gọi
+ * ở đâu cả, nên khi vượt trần người dùng chỉ nhận một câu chữ chung chung. Con
+ * số "trước 20 người, sau 3 người" mới là thứ cứu được cuộc đàm phán.
+ */
+function AssistModel({
+  result,
+  data,
+  pct,
+}: {
+  result: KpiComputed;
+  data: KpiData;
+  pct: (value: number) => string;
+}) {
+  const t = useTranslations('kpi.assist');
+
+  const { unitsPerHour, shifts, secondsPerCheck } = result.production;
+  if (unitsPerHour === null || secondsPerCheck === null) {
+    return (
+      <div className="rounded-lg border border-sky-300 bg-sky-50 p-4 dark:border-sky-900 dark:bg-sky-950/30">
+        <h3 className="text-sm font-semibold text-sky-900 dark:text-sky-200">{t('title')}</h3>
+        <p className="mt-2 text-sm text-sky-900/85 dark:text-sky-300/90">{t('body')}</p>
+        <p className="mt-2 text-xs text-sky-900/70 dark:text-sky-300/70">{t('needInputs')}</p>
+      </div>
+    );
+  }
+
+  const assist = computeAssistModel(unitsPerHour, secondsPerCheck, shifts, data.config);
+
+  return (
+    <div className="rounded-lg border border-sky-300 bg-sky-50 p-4 dark:border-sky-900 dark:bg-sky-950/30">
+      <h3 className="text-sm font-semibold text-sky-900 dark:text-sky-200">{t('title')}</h3>
+      <p className="mt-2 text-sm text-sky-900/85 dark:text-sky-300/90">{t('body')}</p>
+
+      <dl className="mt-3 space-y-1.5 text-sm">
+        <div className="flex justify-between gap-3">
+          <dt className="text-sky-900/80 dark:text-sky-300/80">{t('autoClear')}</dt>
+          <dd className="font-medium tabular-nums text-sky-900 dark:text-sky-200">
+            {pct(assist.autoClearShare)}
+          </dd>
+        </div>
+        <div className="flex justify-between gap-3">
+          <dt className="text-sky-900/80 dark:text-sky-300/80">{t('headcountBefore')}</dt>
+          <dd className="font-medium tabular-nums text-sky-900 dark:text-sky-200">
+            {t('people', { count: assist.headcountBefore })}
+          </dd>
+        </div>
+        <div className="flex justify-between gap-3">
+          <dt className="text-sky-900/80 dark:text-sky-300/80">{t('headcountAfter')}</dt>
+          <dd className="font-medium tabular-nums text-sky-900 dark:text-sky-200">
+            {t('people', { count: assist.headcountAfter })}
+          </dd>
+        </div>
+      </dl>
+
+      <p className="mt-3 text-xs text-sky-900/70 dark:text-sky-300/70">{t('pitch')}</p>
+    </div>
+  );
+}
+
 function Row({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
     <div className="flex flex-wrap items-baseline justify-between gap-2 py-2">
       <dt className="text-sm text-slate-600 dark:text-slate-400">
         {label}
-        {hint ? <span className="ml-1 text-xs text-slate-400">({hint})</span> : null}
+        {hint ? <span className="ml-1 text-xs text-slate-500 dark:text-slate-400">({hint})</span> : null}
       </dt>
       <dd className="text-sm font-medium tabular-nums">{value}</dd>
     </div>

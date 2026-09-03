@@ -17,6 +17,34 @@ export type ContractInput = {
 const n = (value: number) => value.toFixed(2).replace(/\.?0+$/, '');
 
 /**
+ * Câu mô tả bắt ảo tuần đầu.
+ *
+ * Chỉ khẳng định "cao hơn mức cam kết" khi nó thật sự cao hơn. Trước đây câu này
+ * được viết cứng, nên với hệ số điều chỉnh lớn nó in ra một khoảng NHỎ HƠN mức
+ * cam kết ngay phía trên kèm chữ "cao hơn" — điều khoản tự mâu thuẫn, khách hàng
+ * đọc ra ngay.
+ */
+function week1Sentence(week1: { min: number; max: number }, committed: number, locale: 'vi' | 'en') {
+  const isHigher = week1.max > committed;
+
+  if (locale === 'en') {
+    return isHigher
+      ? `False rejects in the first two weeks are expected at ${n(week1.min)}–${n(week1.max)}%, above the
+   committed level, because thresholds are set conservatively until the
+   system has enough real production data.`
+      : `False rejects in the first two weeks are expected at ${n(week1.min)}–${n(week1.max)}%. Thresholds are
+   set conservatively until the system has enough real production data.`;
+  }
+
+  return isHigher
+    ? `Tỷ lệ bắt ảo trong 2 tuần đầu dự kiến ở mức ${n(week1.min)}–${n(week1.max)}%, cao hơn
+   mức cam kết do ngưỡng được đặt thiên về an toàn khi hệ thống chưa đủ dữ
+   liệu thực tế.`
+    : `Tỷ lệ bắt ảo trong 2 tuần đầu dự kiến ở mức ${n(week1.min)}–${n(week1.max)}%. Ngưỡng trong
+   giai đoạn này được đặt thiên về an toàn khi hệ thống chưa đủ dữ liệu thực tế.`;
+}
+
+/**
  * Sinh BẢN NHÁP điều khoản chất lượng.
  *
  * Cố ý đóng dấu "BẢN NHÁP" ngay đầu văn bản và kèm khối cảnh báo. Lý do: các con
@@ -89,9 +117,7 @@ Bài toán: ${input.taskName}
 4. RAMP-UP ${n(input.rampUpWeeks.min)}–${n(input.rampUpWeeks.max)} tuần kể từ ngày sản xuất thương mại.
    Trong giai đoạn này chỉ tiêu vận hành là MỤC TIÊU THAM CHIẾU, KHÔNG phải
    điều kiện phạt.
-   Tỷ lệ bắt ảo trong 2 tuần đầu dự kiến ở mức ${n(input.falseRejectWeek1.min)}–${n(input.falseRejectWeek1.max)}%, cao hơn
-   mức cam kết do ngưỡng được đặt thiên về an toàn khi hệ thống chưa đủ dữ
-   liệu thực tế.
+   ${week1Sentence(input.falseRejectWeek1, input.falseReject, 'vi')}
    Kết thúc Ramp-up, hai bên lập biên bản chốt chỉ tiêu chính thức.
 
 5. RE-BASELINE — chỉ tiêu vận hành được tính lại khi:
@@ -173,9 +199,7 @@ Application: ${input.taskName}
 4. RAMP-UP ${n(input.rampUpWeeks.min)}–${n(input.rampUpWeeks.max)} weeks from the start of commercial production.
    During this period the operational targets are REFERENCE GOALS, not
    grounds for penalty.
-   False rejects in the first two weeks are expected at ${n(input.falseRejectWeek1.min)}–${n(input.falseRejectWeek1.max)}%, above the
-   committed level, because thresholds are set conservatively until the
-   system has enough real production data.
+   ${week1Sentence(input.falseRejectWeek1, input.falseReject, 'en')}
    At the end of ramp-up both parties record the final targets in writing.
 
 5. RE-BASELINE — operational targets are recalculated when:

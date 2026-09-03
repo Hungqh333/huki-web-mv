@@ -45,7 +45,7 @@ export function ModifierStep({
               />
               <span>
                 {name(item)}
-                <span className="ml-1.5 text-xs text-slate-400">
+                <span className="ml-1.5 text-xs text-slate-500 dark:text-slate-400">
                   ×{item.factor_min === item.factor_max
                     ? item.factor_min
                     : `${item.factor_min}–${item.factor_max}`}

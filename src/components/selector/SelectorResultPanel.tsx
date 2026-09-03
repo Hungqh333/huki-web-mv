@@ -97,7 +97,7 @@ export function SelectorResultPanel({
               <li key={`${note.ruleCode ?? 'note'}-${index}`} className="text-sm">
                 <p className="text-slate-700 dark:text-slate-300">{pickNote(note)}</p>
                 {note.ruleCode ? (
-                  <p className="mt-0.5 text-xs text-slate-400">{note.ruleCode}</p>
+                  <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{note.ruleCode}</p>
                 ) : null}
               </li>
             ))}
@@ -130,7 +130,9 @@ export function SelectorResultPanel({
         )}
 
         <p className="text-xs text-slate-500 dark:text-slate-400">
-          {historySaved === false ? t('historyNotSaved') : t('historySaved')}
+          {/* Chỉ khẳng định đã lưu khi thật sự biết là đã lưu. Trước đây
+              undefined cũng báo "đã lưu". */}
+          {historySaved === true ? t('historySaved') : t('historyNotSaved')}
         </p>
       </div>
     </section>

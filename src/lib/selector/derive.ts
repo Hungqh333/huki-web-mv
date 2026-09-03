@@ -23,10 +23,25 @@ export const DEFAULT_SAFETY_FACTOR = 3;
 const FEATURE_SOURCES: { key: string; pxPerFeature?: number; labelVi: string }[] = [
   { key: 'tolerance_mm', labelVi: 'dung sai' },
   { key: 'defect_min_size_mm', labelVi: 'lỗi nhỏ nhất' },
-  { key: 'pick_accuracy_mm', labelVi: 'độ chính xác gắp' },
   { key: 'module_size_mm', labelVi: 'ô module mã' },
   { key: 'character_height_mm', pxPerFeature: 20, labelVi: 'chiều cao ký tự' },
 ];
+
+/*
+ * CỐ Ý KHÔNG có 'pick_accuracy_mm' trong danh sách trên.
+ *
+ * Độ chính xác định vị của robot đạt được bằng ước lượng tâm DƯỚI PIXEL — thuật
+ * toán nội suy trọng tâm cho độ chính xác nhỏ hơn kích thước một pixel nhiều
+ * lần. Áp công thức "3 px phủ lên đặc trưng" cho nó là sai bản chất và làm phồng
+ * yêu cầu cảm biến lên khoảng một bậc.
+ *
+ * Ví dụ đã đo: FOV 500×400 mm, độ chính xác gắp 0,1 mm → công thức cũ đòi
+ * 15.000 px / 180 MP, đặt ngay cạnh ghi chú "chọn camera chính xác hơn robot là
+ * lãng phí". Con số đó đi thẳng vào báo giá thiết bị.
+ *
+ * pick_accuracy_mm vẫn dùng được làm ĐIỀU KIỆN trong bảng luật (luật
+ * ROBOT-TIGHT-ACCURACY so ngưỡng 0,1 mm), chỉ không vào công thức độ phân giải.
+ */
 
 function num(value: unknown): number | null {
   return typeof value === 'number' && Number.isFinite(value) ? value : null;

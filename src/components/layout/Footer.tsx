@@ -55,7 +55,7 @@ export async function Footer() {
         </nav>
       </div>
 
-      <div className="border-t border-slate-200 px-4 py-4 text-center text-xs text-slate-500 sm:px-6 dark:border-slate-800 dark:text-slate-500">
+      <div className="border-t border-slate-200 px-4 py-4 text-center text-xs text-slate-500 sm:px-6 dark:border-slate-800 dark:text-slate-400">
         © {new Date().getFullYear()} {tCommon('appName')} — {t('rights')}
       </div>
     </footer>

@@ -659,7 +659,7 @@
       "week1": "Bắt ảo tuần đầu",
       "week1Hint": "không cam kết",
       "rampUp": "Ramp-up",
-      "weeks": "{min}–{max} tuần",
+      "weeks": "{min, number}–{max, number} tuần",
       "cost": "Chi phí vận hành",
       "headcount": "Số người cần thêm",
       "people": "{count} người",

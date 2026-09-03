@@ -659,7 +659,7 @@
       "week1": "False reject, week 1",
       "week1Hint": "not committed",
       "rampUp": "Ramp-up",
-      "weeks": "{min}–{max} weeks",
+      "weeks": "{min, number}–{max, number} weeks",
       "cost": "Operating cost",
       "headcount": "Additional headcount",
       "people": "{count} people",

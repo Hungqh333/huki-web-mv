@@ -176,7 +176,7 @@ export function KpiCalculator({ data, locale }: { data: KpiData; locale: 'vi' | 
       </div>
 
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] xl:grid-cols-[minmax(0,3fr)_minmax(0,4fr)]">
-        <div className="space-y-8">
+        <div className="min-w-0 space-y-8">
           <ProblemTypeStep
             problemTypes={data.problemTypes}
             selected={problemSlug}
@@ -219,7 +219,7 @@ export function KpiCalculator({ data, locale }: { data: KpiData; locale: 'vi' | 
           />
         </div>
 
-        <div className="lg:sticky lg:top-6 lg:self-start">
+        <div className="min-w-0 lg:sticky lg:top-6 lg:self-start">
           {result ? (
             <KpiResultPanel
               result={result}

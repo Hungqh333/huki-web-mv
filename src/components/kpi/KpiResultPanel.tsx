@@ -77,7 +77,7 @@ export function KpiResultPanel({
             id={`kpi-tab-${key}`}
             aria-selected={tab === key}
             aria-controls="kpi-tabpanel"
-            className={`flex-1 px-3 py-2.5 text-sm font-medium transition ${
+            className={`flex-1 px-2 py-2.5 text-xs font-medium leading-tight transition sm:px-3 sm:text-sm ${
               tab === key
                 ? 'border-b-2 border-sky-600 text-sky-700 dark:text-sky-400'
                 : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'

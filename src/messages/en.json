@@ -521,6 +521,10 @@
         "tighteningKAtLeastOne": "Must be at least 1. Tightening the miss rate never reduces the burden.",
         "saved": "Saved."
       }
+    },
+    "common": {
+      "delete": "Delete",
+      "confirmDelete": "Delete \"{name}\"? This cannot be undone."
     }
   },
   "errors": {

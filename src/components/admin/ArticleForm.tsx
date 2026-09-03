@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useActionState } from 'react';
 import { useTranslations } from 'next-intl';
+import { AdminField } from './AdminField';
 import { saveArticleAction, type AdminState } from '@/app/actions/admin';
 import { RichTextEditor } from './RichTextEditor';
 import type { AccessTier } from '@/lib/auth';
@@ -49,11 +50,11 @@ export function ArticleForm({
       ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label={t('fieldSlug')} error={err('slug')} hint={t('slugHint')}>
+        <AdminField label={t('fieldSlug')} error={err('slug')} hint={t('slugHint')}>
           <input name="slug" defaultValue={draft.slug} required className={inputClass} />
-        </Field>
+        </AdminField>
 
-        <Field label={t('fieldTier')} error={err('access_tier')}>
+        <AdminField label={t('fieldTier')} error={err('access_tier')}>
           <select name="access_tier" defaultValue={draft.access_tier} className={inputClass}>
             {TIERS.map((tier) => (
               <option key={tier} value={tier}>
@@ -61,17 +62,17 @@ export function ArticleForm({
               </option>
             ))}
           </select>
-        </Field>
+        </AdminField>
 
-        <Field label={t('fieldTitleVi')} error={err('title_vi')}>
+        <AdminField label={t('fieldTitleVi')} error={err('title_vi')}>
           <input name="title_vi" defaultValue={draft.title_vi} required className={inputClass} />
-        </Field>
+        </AdminField>
 
-        <Field label={t('fieldTitleEn')} error={err('title_en')}>
+        <AdminField label={t('fieldTitleEn')} error={err('title_en')}>
           <input name="title_en" defaultValue={draft.title_en} required className={inputClass} />
-        </Field>
+        </AdminField>
 
-        <Field label={t('fieldCategory')}>
+        <AdminField label={t('fieldCategory')}>
           <select name="category_id" defaultValue={draft.category_id ?? ''} className={inputClass}>
             <option value="">—</option>
             {categories.map((category) => (
@@ -80,11 +81,11 @@ export function ArticleForm({
               </option>
             ))}
           </select>
-        </Field>
+        </AdminField>
 
-        <Field label={t('fieldCover')}>
+        <AdminField label={t('fieldCover')}>
           <input name="cover_image" defaultValue={draft.cover_image ?? ''} className={inputClass} />
-        </Field>
+        </AdminField>
       </div>
 
       <RichTextEditor name="content_vi" label={t('fieldContentVi')} defaultValue={draft.content_vi} />
@@ -119,23 +120,3 @@ export function ArticleForm({
   );
 }
 
-function Field({
-  label,
-  error,
-  hint,
-  children,
-}: {
-  label: string;
-  error?: string;
-  hint?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="space-y-1.5">
-      <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">{label}</label>
-      {children}
-      {hint ? <p className="text-xs text-slate-500 dark:text-slate-400">{hint}</p> : null}
-      {error ? <p className="text-xs text-red-600 dark:text-red-400">{error}</p> : null}
-    </div>
-  );
-}

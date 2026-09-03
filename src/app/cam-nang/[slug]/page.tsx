@@ -52,7 +52,7 @@ export default async function ArticlePage({ params }: PageProps<'/cam-nang/[slug
 
         {content ? (
           <div
-            className="mt-8 space-y-4 text-slate-700 [&_a]:text-sky-700 [&_a]:underline [&_em]:italic [&_h2]:mt-8 [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:text-slate-900 [&_li]:ml-5 [&_li]:list-disc [&_p]:leading-relaxed [&_strong]:font-semibold dark:text-slate-300 dark:[&_a]:text-sky-400 dark:[&_h2]:text-slate-100"
+            className="mt-8 space-y-4 text-slate-700 [&_a]:text-sky-700 [&_a]:underline [&_blockquote]:border-l-4 [&_blockquote]:border-slate-300 [&_blockquote]:pl-4 [&_blockquote]:italic [&_code]:rounded [&_code]:bg-slate-100 [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-sm [&_em]:italic [&_h2]:mt-8 [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:text-slate-900 [&_h3]:mt-6 [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:text-slate-900 [&_h4]:mt-4 [&_h4]:font-semibold [&_h4]:text-slate-900 [&_li]:ml-5 [&_ol]:list-decimal [&_ol_li]:list-decimal [&_p]:leading-relaxed [&_pre]:overflow-x-auto [&_pre]:rounded [&_pre]:bg-slate-100 [&_pre]:p-3 [&_pre]:text-sm [&_strong]:font-semibold [&_ul_li]:list-disc dark:text-slate-300 dark:[&_a]:text-sky-400 dark:[&_blockquote]:border-slate-700 dark:[&_code]:bg-slate-800 dark:[&_h2]:text-slate-100 dark:[&_h3]:text-slate-100 dark:[&_h4]:text-slate-100 dark:[&_pre]:bg-slate-800"
             dangerouslySetInnerHTML={{ __html: sanitizeHtml(content) }}
           />
         ) : (

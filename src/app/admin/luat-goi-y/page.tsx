@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { deleteRuleAction } from '@/app/actions/admin';
+import { DeleteButton } from '@/components/admin/DeleteButton';
 import { validateCondition } from '@/lib/selector/conditions';
 import type { SolutionApproach } from '@/lib/selector/types';
 import { createClient } from '@/lib/supabase/server';
@@ -104,15 +105,7 @@ export default async function AdminRulesPage({ searchParams }: PageProps<'/admin
                   </td>
                   <td className="py-3 pr-3 text-xs">{tApproach(rule.ai_or_rule_based)}</td>
                   <td className="py-3">
-                    <form action={deleteRuleAction}>
-                      <input type="hidden" name="id" value={rule.id} />
-                      <button
-                        type="submit"
-                        className="text-xs text-red-600 hover:underline dark:text-red-400"
-                      >
-                        {t('delete')}
-                      </button>
-                    </form>
+                    <DeleteButton action={deleteRuleAction} id={rule.id} itemName={rule.code ?? rule.id.slice(0, 8)} />
                   </td>
                 </tr>
               );

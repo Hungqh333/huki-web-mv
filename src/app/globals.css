@@ -1,26 +1,16 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-}
+/*
+ * Đã dọn phần sót lại của create-next-app:
+ *
+ * - font-family: Arial — Arial hiển thị dấu tiếng Việt kém ở cỡ nhỏ (dấu ngã và
+ *   dấu mũ đè lên chữ ở text-xs). Font giờ nạp bằng next/font/local trong
+ *   layout.tsx, dùng lại chính file đã có cho báo cáo PDF.
+ *
+ * - Biến --font-geist-sans / --font-geist-mono không được định nghĩa ở đâu cả,
+ *   vì layout không import next/font khi scaffold.
+ *
+ * - Khối @media (prefers-color-scheme: dark) là một cơ chế dark mode THỨ HAI
+ *   chạy song song với các class dark: dùng khắp dự án. Hai cơ chế cùng lúc là
+ *   nguồn lỗi khó lần khi ai đó sửa màu sau này.
+ */

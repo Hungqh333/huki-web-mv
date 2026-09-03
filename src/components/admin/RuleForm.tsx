@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useActionState, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { AdminField } from './AdminField';
 import { saveRuleAction, type AdminState } from '@/app/actions/admin';
 import { validateCondition } from '@/lib/selector/conditions';
 import type { SolutionApproach } from '@/lib/selector/types';
@@ -74,11 +75,11 @@ export function RuleForm({
       ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label={t('fieldCode')} hint={t('codeHint')}>
+        <AdminField label={t('fieldCode')} hint={t('codeHint')}>
           <input name="code" defaultValue={draft.code} className={inputClass} />
-        </Field>
+        </AdminField>
 
-        <Field label={t('fieldTaskType')} error={err('task_type_id')}>
+        <AdminField label={t('fieldTaskType')} error={err('task_type_id')}>
           <select name="task_type_id" defaultValue={draft.task_type_id} className={inputClass}>
             {taskTypes.map((task) => (
               <option key={task.id} value={task.id}>
@@ -86,9 +87,9 @@ export function RuleForm({
               </option>
             ))}
           </select>
-        </Field>
+        </AdminField>
 
-        <Field label={t('fieldPriority')} error={err('priority')} hint={t('priorityHint')}>
+        <AdminField label={t('fieldPriority')} error={err('priority')} hint={t('priorityHint')}>
           <input
             name="priority"
             type="number"
@@ -97,9 +98,9 @@ export function RuleForm({
             defaultValue={draft.priority}
             className={inputClass}
           />
-        </Field>
+        </AdminField>
 
-        <Field label={t('fieldApproach')} error={err('ai_or_rule_based')}>
+        <AdminField label={t('fieldApproach')} error={err('ai_or_rule_based')}>
           <select
             name="ai_or_rule_based"
             defaultValue={draft.ai_or_rule_based}
@@ -111,10 +112,10 @@ export function RuleForm({
               </option>
             ))}
           </select>
-        </Field>
+        </AdminField>
       </div>
 
-      <Field label={t('fieldCondition')} error={err('condition_json')} hint={t('conditionHint')}>
+      <AdminField label={t('fieldCondition')} error={err('condition_json')} hint={t('conditionHint')}>
         <textarea
           name="condition_json"
           value={condition}
@@ -123,7 +124,7 @@ export function RuleForm({
           spellCheck={false}
           className={`${inputClass} font-mono text-xs`}
         />
-      </Field>
+      </AdminField>
 
       {localProblems.length > 0 ? (
         <ul className="rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
@@ -142,24 +143,24 @@ export function RuleForm({
       </details>
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <Field label={t('fieldCamera')}>
+        <AdminField label={t('fieldCamera')}>
           <input name="recommended_camera" defaultValue={draft.recommended_camera} className={inputClass} />
-        </Field>
-        <Field label={t('fieldLighting')}>
+        </AdminField>
+        <AdminField label={t('fieldLighting')}>
           <input name="recommended_lighting" defaultValue={draft.recommended_lighting} className={inputClass} />
-        </Field>
-        <Field label={t('fieldLens')}>
+        </AdminField>
+        <AdminField label={t('fieldLens')}>
           <input name="recommended_lens" defaultValue={draft.recommended_lens} className={inputClass} />
-        </Field>
+        </AdminField>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label={t('fieldNotesVi')}>
+        <AdminField label={t('fieldNotesVi')}>
           <textarea name="notes_vi" rows={4} defaultValue={draft.notes_vi} className={inputClass} />
-        </Field>
-        <Field label={t('fieldNotesEn')}>
+        </AdminField>
+        <AdminField label={t('fieldNotesEn')}>
           <textarea name="notes_en" rows={4} defaultValue={draft.notes_en} className={inputClass} />
-        </Field>
+        </AdminField>
       </div>
 
       <label className="flex items-center gap-2 text-sm">
@@ -191,23 +192,3 @@ export function RuleForm({
   );
 }
 
-function Field({
-  label,
-  error,
-  hint,
-  children,
-}: {
-  label: string;
-  error?: string;
-  hint?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="space-y-1.5">
-      <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">{label}</label>
-      {children}
-      {hint ? <p className="text-xs text-slate-500 dark:text-slate-400">{hint}</p> : null}
-      {error ? <p className="text-xs text-red-600 dark:text-red-400">{error}</p> : null}
-    </div>
-  );
-}

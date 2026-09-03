@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useActionState, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { AdminField } from './AdminField';
 import { saveProblemTypeAction, type KpiAdminState } from '@/app/actions/kpi-admin';
 
 export type ProblemTypeDraft = {
@@ -57,7 +58,7 @@ export function KpiProblemTypeForm({ draft }: { draft: ProblemTypeDraft }) {
   const err = (key: string) => state.fieldErrors?.[key];
 
   const numberField = (key: keyof ProblemTypeDraft, label: string, step = '0.001') => (
-    <Field label={label} error={err(key)}>
+    <AdminField label={label} error={err(key)}>
       <input
         name={key}
         type="number"
@@ -66,7 +67,7 @@ export function KpiProblemTypeForm({ draft }: { draft: ProblemTypeDraft }) {
         defaultValue={String(draft[key])}
         className={inputClass}
       />
-    </Field>
+    </AdminField>
   );
 
   const rangeRow = (
@@ -91,11 +92,11 @@ export function KpiProblemTypeForm({ draft }: { draft: ProblemTypeDraft }) {
       ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label={t('fieldSlug')} error={err('slug')}>
+        <AdminField label={t('fieldSlug')} error={err('slug')}>
           <input name="slug" defaultValue={draft.slug} required className={inputClass} />
-        </Field>
+        </AdminField>
 
-        <Field label={t('fieldGroup')} error={err('problem_group')}>
+        <AdminField label={t('fieldGroup')} error={err('problem_group')}>
           <select name="problem_group" defaultValue={draft.problem_group} className={inputClass}>
             {GROUPS.map((group) => (
               <option key={group} value={group}>
@@ -103,17 +104,17 @@ export function KpiProblemTypeForm({ draft }: { draft: ProblemTypeDraft }) {
               </option>
             ))}
           </select>
-        </Field>
+        </AdminField>
 
-        <Field label={t('fieldNameVi')} error={err('name_vi')}>
+        <AdminField label={t('fieldNameVi')} error={err('name_vi')}>
           <input name="name_vi" defaultValue={draft.name_vi} required className={inputClass} />
-        </Field>
+        </AdminField>
 
-        <Field label={t('fieldNameEn')} error={err('name_en')}>
+        <AdminField label={t('fieldNameEn')} error={err('name_en')}>
           <input name="name_en" defaultValue={draft.name_en} required className={inputClass} />
-        </Field>
+        </AdminField>
 
-        <Field label={t('fieldLevel')} error={err('level')} hint={t('levelHint')}>
+        <AdminField label={t('fieldLevel')} error={err('level')} hint={t('levelHint')}>
           <input
             name="level"
             type="number"
@@ -123,9 +124,9 @@ export function KpiProblemTypeForm({ draft }: { draft: ProblemTypeDraft }) {
             defaultValue={draft.level}
             className={inputClass}
           />
-        </Field>
+        </AdminField>
 
-        <Field label={t('fieldSortOrder')}>
+        <AdminField label={t('fieldSortOrder')}>
           <input
             name="sort_order"
             type="number"
@@ -133,7 +134,7 @@ export function KpiProblemTypeForm({ draft }: { draft: ProblemTypeDraft }) {
             defaultValue={draft.sort_order}
             className={inputClass}
           />
-        </Field>
+        </AdminField>
       </div>
 
       <fieldset className="space-y-4 rounded-lg border border-slate-200 p-4 dark:border-slate-800">
@@ -145,7 +146,7 @@ export function KpiProblemTypeForm({ draft }: { draft: ProblemTypeDraft }) {
         {rangeRow(t('fieldFr'), 'false_reject_min', 'false_reject_max')}
         {rangeRow(t('fieldRecheck'), 'recheck_min', 'recheck_max')}
 
-        <Field
+        <AdminField
           label={t('fieldBurdenMax')}
           error={err('total_burden_max')}
           hint={t('burdenHint')}
@@ -158,13 +159,13 @@ export function KpiProblemTypeForm({ draft }: { draft: ProblemTypeDraft }) {
             defaultValue={draft.total_burden_max}
             className={inputClass}
           />
-        </Field>
+        </AdminField>
 
         {rangeRow(t('fieldRampUp'), 'ramp_up_weeks_min', 'ramp_up_weeks_max')}
       </fieldset>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label={t('fieldDeepLearning')} error={err('deep_learning')}>
+        <AdminField label={t('fieldDeepLearning')} error={err('deep_learning')}>
           <select name="deep_learning" defaultValue={draft.deep_learning} className={inputClass}>
             {DEEP_LEARNING.map((value) => (
               <option key={value} value={value}>
@@ -172,9 +173,9 @@ export function KpiProblemTypeForm({ draft }: { draft: ProblemTypeDraft }) {
               </option>
             ))}
           </select>
-        </Field>
+        </AdminField>
 
-        <Field label={t('fieldSpecialKpi')} error={err('special_kpi')} hint={t('specialHint')}>
+        <AdminField label={t('fieldSpecialKpi')} error={err('special_kpi')} hint={t('specialHint')}>
           <select name="special_kpi" defaultValue={draft.special_kpi} className={inputClass}>
             <option value="">—</option>
             {SPECIAL.map((value) => (
@@ -183,16 +184,16 @@ export function KpiProblemTypeForm({ draft }: { draft: ProblemTypeDraft }) {
               </option>
             ))}
           </select>
-        </Field>
+        </AdminField>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label={t('fieldNoteVi')}>
+        <AdminField label={t('fieldNoteVi')}>
           <textarea name="note_vi" rows={3} defaultValue={draft.note_vi} className={inputClass} />
-        </Field>
-        <Field label={t('fieldNoteEn')}>
+        </AdminField>
+        <AdminField label={t('fieldNoteEn')}>
           <textarea name="note_en" rows={3} defaultValue={draft.note_en} className={inputClass} />
-        </Field>
+        </AdminField>
       </div>
 
       {/*
@@ -204,7 +205,7 @@ export function KpiProblemTypeForm({ draft }: { draft: ProblemTypeDraft }) {
         <legend className="px-1 text-sm font-semibold">{t('calibrationSection')}</legend>
         <p className="text-xs text-sky-900/80 dark:text-sky-300/80">{t('calibrationHint')}</p>
 
-        <Field label={t('fieldDataSource')} error={err('data_source')}>
+        <AdminField label={t('fieldDataSource')} error={err('data_source')}>
           <select
             name="data_source"
             value={dataSource}
@@ -217,26 +218,26 @@ export function KpiProblemTypeForm({ draft }: { draft: ProblemTypeDraft }) {
               </option>
             ))}
           </select>
-        </Field>
+        </AdminField>
 
         {dataSource !== 'estimate' ? (
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label={t('fieldCalibrationVi')} hint={t('calibrationNoteHint')}>
+            <AdminField label={t('fieldCalibrationVi')} hint={t('calibrationNoteHint')}>
               <textarea
                 name="calibration_note_vi"
                 rows={3}
                 defaultValue={draft.calibration_note_vi}
                 className={inputClass}
               />
-            </Field>
-            <Field label={t('fieldCalibrationEn')}>
+            </AdminField>
+            <AdminField label={t('fieldCalibrationEn')}>
               <textarea
                 name="calibration_note_en"
                 rows={3}
                 defaultValue={draft.calibration_note_en}
                 className={inputClass}
               />
-            </Field>
+            </AdminField>
           </div>
         ) : null}
       </fieldset>
@@ -270,23 +271,3 @@ export function KpiProblemTypeForm({ draft }: { draft: ProblemTypeDraft }) {
   );
 }
 
-function Field({
-  label,
-  error,
-  hint,
-  children,
-}: {
-  label: string;
-  error?: string;
-  hint?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="space-y-1.5">
-      <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">{label}</label>
-      {children}
-      {hint ? <p className="text-xs text-slate-500 dark:text-slate-400">{hint}</p> : null}
-      {error ? <p className="text-xs text-red-600 dark:text-red-400">{error}</p> : null}
-    </div>
-  );
-}

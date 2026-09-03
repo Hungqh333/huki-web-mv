@@ -1,9 +1,30 @@
 import type { Metadata } from 'next';
+import localFont from 'next/font/local';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages, getTranslations } from 'next-intl/server';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import './globals.css';
+
+/**
+ * Font chính của giao diện.
+ *
+ * Dùng lại đúng hai file đã có sẵn cho báo cáo PDF (assets/fonts) nên web và
+ * PDF cùng một font, và không phụ thuộc mạng lúc build như next/font/google.
+ *
+ * Lý do phải có font riêng: Arial mặc định của scaffold hiển thị dấu tiếng Việt
+ * kém ở cỡ nhỏ — dấu ngã và dấu mũ đè lên chữ ở text-xs, mà giao diện dùng cỡ
+ * đó cho đơn vị đo và mã tra cứu.
+ */
+const beVietnamPro = localFont({
+  src: [
+    { path: '../../assets/fonts/BeVietnamPro-Regular.ttf', weight: '400', style: 'normal' },
+    { path: '../../assets/fonts/BeVietnamPro-Bold.ttf', weight: '700', style: 'normal' },
+  ],
+  variable: '--font-be-vietnam-pro',
+  display: 'swap',
+  fallback: ['system-ui', 'Segoe UI', 'Arial', 'sans-serif'],
+});
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('common');
@@ -39,8 +60,14 @@ export default async function RootLayout({ children }: LayoutProps<'/'>) {
   // không liên quan gì tới code của mình. Cờ này chỉ có tác dụng ở đúng thẻ này,
   // không giấu lỗi hydration thật ở bên trong.
   return (
-    <html lang={locale} className="h-full antialiased" suppressHydrationWarning>
-      <body className="flex min-h-full flex-col bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+    <html
+      lang={locale}
+      className={`h-full antialiased ${beVietnamPro.variable}`}
+      suppressHydrationWarning
+    >
+      <body
+        className="flex min-h-full flex-col bg-white font-[family-name:var(--font-be-vietnam-pro)] text-slate-900 dark:bg-slate-950 dark:text-slate-100"
+      >
         <NextIntlClientProvider messages={publicMessages}>
           <Header />
           <main className="flex-1">{children}</main>

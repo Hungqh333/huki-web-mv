@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { deleteModifierAction } from '@/app/actions/kpi-admin';
+import { DeleteButton } from '@/components/admin/DeleteButton';
 import { DataSourceBadge, KpiAdminNav } from '@/components/admin/KpiAdminNav';
 import { createClient } from '@/lib/supabase/server';
 
@@ -85,15 +86,7 @@ export default async function AdminKpiModifiersPage({
                   <DataSourceBadge source={row.data_source} />
                 </td>
                 <td className="py-3">
-                  <form action={deleteModifierAction}>
-                    <input type="hidden" name="id" value={row.id} />
-                    <button
-                      type="submit"
-                      className="text-xs text-red-600 hover:underline dark:text-red-400"
-                    >
-                      {t('delete')}
-                    </button>
-                  </form>
+                  <DeleteButton action={deleteModifierAction} id={row.id} itemName={row.name_vi} />
                 </td>
               </tr>
             ))}

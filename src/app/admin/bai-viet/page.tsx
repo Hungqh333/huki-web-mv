@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { getFormatter, getTranslations } from 'next-intl/server';
 import { deleteArticleAction } from '@/app/actions/admin';
+import { DeleteButton } from '@/components/admin/DeleteButton';
 import { TierBadge } from '@/components/handbook/TierBadge';
 import type { AccessTier } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
@@ -84,15 +85,7 @@ export default async function AdminArticlesPage({ searchParams }: PageProps<'/ad
                   {format.dateTime(new Date(article.updated_at), { dateStyle: 'short' })}
                 </td>
                 <td className="py-3">
-                  <form action={deleteArticleAction}>
-                    <input type="hidden" name="id" value={article.id} />
-                    <button
-                      type="submit"
-                      className="text-xs text-red-600 hover:underline dark:text-red-400"
-                    >
-                      {t('delete')}
-                    </button>
-                  </form>
+                  <DeleteButton action={deleteArticleAction} id={article.id} itemName={article.title_vi} />
                 </td>
               </tr>
             ))}

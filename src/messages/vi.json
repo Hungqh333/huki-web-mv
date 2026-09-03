@@ -521,6 +521,10 @@
         "tighteningKAtLeastOne": "Phải từ 1 trở lên. Siết bỏ sót không bao giờ làm tải phụ giảm.",
         "saved": "Đã lưu."
       }
+    },
+    "common": {
+      "delete": "Xoá",
+      "confirmDelete": "Xoá \"{name}\"? Thao tác này không hoàn tác được."
     }
   },
   "errors": {

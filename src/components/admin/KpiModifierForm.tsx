@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useActionState } from 'react';
 import { useTranslations } from 'next-intl';
+import { AdminField } from './AdminField';
 import { saveModifierAction, type KpiAdminState } from '@/app/actions/kpi-admin';
 
 export type ModifierDraft = {
@@ -45,26 +46,26 @@ export function KpiModifierForm({ draft }: { draft: ModifierDraft }) {
       ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label={t('fieldSlug')} error={err('slug')}>
+        <AdminField label={t('fieldSlug')} error={err('slug')}>
           <input name="slug" defaultValue={draft.slug} required className={inputClass} />
-        </Field>
+        </AdminField>
 
-        <Field label={t('fieldDirection')} error={err('direction')} hint={t('directionHint')}>
+        <AdminField label={t('fieldDirection')} error={err('direction')} hint={t('directionHint')}>
           <select name="direction" defaultValue={draft.direction} className={inputClass}>
             <option value="worse">{t('worse')}</option>
             <option value="better">{t('better')}</option>
           </select>
-        </Field>
+        </AdminField>
 
-        <Field label={t('fieldNameVi')} error={err('name_vi')}>
+        <AdminField label={t('fieldNameVi')} error={err('name_vi')}>
           <input name="name_vi" defaultValue={draft.name_vi} required className={inputClass} />
-        </Field>
+        </AdminField>
 
-        <Field label={t('fieldNameEn')} error={err('name_en')}>
+        <AdminField label={t('fieldNameEn')} error={err('name_en')}>
           <input name="name_en" defaultValue={draft.name_en} required className={inputClass} />
-        </Field>
+        </AdminField>
 
-        <Field label={t('fieldFactorMin')} error={err('factor_min')}>
+        <AdminField label={t('fieldFactorMin')} error={err('factor_min')}>
           <input
             name="factor_min"
             type="number"
@@ -73,9 +74,9 @@ export function KpiModifierForm({ draft }: { draft: ModifierDraft }) {
             defaultValue={draft.factor_min}
             className={inputClass}
           />
-        </Field>
+        </AdminField>
 
-        <Field label={t('fieldFactorMax')} error={err('factor_max')}>
+        <AdminField label={t('fieldFactorMax')} error={err('factor_max')}>
           <input
             name="factor_max"
             type="number"
@@ -84,9 +85,9 @@ export function KpiModifierForm({ draft }: { draft: ModifierDraft }) {
             defaultValue={draft.factor_max}
             className={inputClass}
           />
-        </Field>
+        </AdminField>
 
-        <Field label={t('fieldDataSource')}>
+        <AdminField label={t('fieldDataSource')}>
           <select name="data_source" defaultValue={draft.data_source} className={inputClass}>
             {['estimate', 'project_history', 'vendor_spec'].map((value) => (
               <option key={value} value={value}>
@@ -94,9 +95,9 @@ export function KpiModifierForm({ draft }: { draft: ModifierDraft }) {
               </option>
             ))}
           </select>
-        </Field>
+        </AdminField>
 
-        <Field label={t('fieldSortOrder')}>
+        <AdminField label={t('fieldSortOrder')}>
           <input
             name="sort_order"
             type="number"
@@ -104,16 +105,16 @@ export function KpiModifierForm({ draft }: { draft: ModifierDraft }) {
             defaultValue={draft.sort_order}
             className={inputClass}
           />
-        </Field>
+        </AdminField>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label={t('fieldNoteVi')}>
+        <AdminField label={t('fieldNoteVi')}>
           <textarea name="note_vi" rows={3} defaultValue={draft.note_vi} className={inputClass} />
-        </Field>
-        <Field label={t('fieldNoteEn')}>
+        </AdminField>
+        <AdminField label={t('fieldNoteEn')}>
           <textarea name="note_en" rows={3} defaultValue={draft.note_en} className={inputClass} />
-        </Field>
+        </AdminField>
       </div>
 
       <label className="flex items-center gap-2 text-sm">
@@ -145,23 +146,3 @@ export function KpiModifierForm({ draft }: { draft: ModifierDraft }) {
   );
 }
 
-function Field({
-  label,
-  error,
-  hint,
-  children,
-}: {
-  label: string;
-  error?: string;
-  hint?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="space-y-1.5">
-      <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">{label}</label>
-      {children}
-      {hint ? <p className="text-xs text-slate-500 dark:text-slate-400">{hint}</p> : null}
-      {error ? <p className="text-xs text-red-600 dark:text-red-400">{error}</p> : null}
-    </div>
-  );
-}

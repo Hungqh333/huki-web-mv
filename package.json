@@ -15,7 +15,8 @@
     "probe:rls": "node scripts/probe-rls.mjs",
     "test:pdf": "node scripts/test-pdf.mjs",
     "import:rules": "tsx scripts/import-rules.ts",
-    "import:rules:template": "tsx scripts/rules-template.ts"
+    "import:rules:template": "tsx scripts/rules-template.ts",
+    "build:sql": "node scripts/build-sql-bundle.mjs"
   },
   "dependencies": {
     "@react-pdf/renderer": "^4.8.1",

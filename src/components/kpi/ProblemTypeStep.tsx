@@ -42,14 +42,19 @@ export function ProblemTypeStep({
         <button
           type="button"
           onClick={() => setHelperOpen((open) => !open)}
-          className="text-sm text-sky-700 hover:underline dark:text-sky-400"
+          aria-expanded={helperOpen}
+          aria-controls="kpi-problem-helper"
+          className="rounded px-2 py-2 text-sm text-sky-700 hover:underline dark:text-sky-400"
         >
           {t('helperTrigger')}
         </button>
       </div>
 
       {helperOpen ? (
-        <div className="mt-3 rounded-lg border border-sky-200 bg-sky-50 p-4 text-sm dark:border-sky-900 dark:bg-sky-950/30">
+        <div
+          id="kpi-problem-helper"
+          className="mt-3 rounded-lg border border-sky-200 bg-sky-50 p-4 text-sm dark:border-sky-900 dark:bg-sky-950/30"
+        >
           <p className="font-medium text-sky-900 dark:text-sky-200">{t('helperTitle')}</p>
           <ol className="mt-2 list-decimal space-y-1 pl-5 text-sky-900/85 dark:text-sky-300/90">
             <li>{t('helperQ1')}</li>

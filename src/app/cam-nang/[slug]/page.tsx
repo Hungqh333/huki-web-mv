@@ -6,6 +6,7 @@ import { getSessionContext } from '@/lib/auth';
 import { sanitizeHtml, toTeaser, type ArticleFull, type ArticlePreview } from '@/lib/articles';
 import { hasSupabaseEnv } from '@/lib/supabase/env';
 import { createClient } from '@/lib/supabase/server';
+import { contactMailto } from '@/lib/contact';
 
 export default async function ArticlePage({ params }: PageProps<'/cam-nang/[slug]'>) {
   const { slug } = await params;
@@ -113,7 +114,7 @@ export default async function ArticlePage({ params }: PageProps<'/cam-nang/[slug
             </Link>
           )}
           <a
-            href="mailto:hungnv@soragroup.vn?subject=Machine%20Vision%20Hub%20-%20Yeu%20cau%20xem%20noi%20dung"
+            href={contactMailto('Machine Vision Hub - Yeu cau xem noi dung')}
             className="rounded-md border border-sky-300 px-4 py-2 text-sm font-medium text-sky-800 hover:bg-sky-100 dark:border-sky-800 dark:text-sky-300 dark:hover:bg-sky-950"
           >
             {t('contactCta')}

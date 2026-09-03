@@ -13,29 +13,44 @@
 -- 1. Kiểu dữ liệu
 -- -----------------------------------------------------------------------------
 
-create type public.kpi_problem_group as enum
-  ('presence', 'metrology', 'code', 'process', 'cosmetic');
+do $$ begin
+  create type public.kpi_problem_group as enum
+    ('presence', 'metrology', 'code', 'process', 'cosmetic');
+exception when duplicate_object then null;
+end $$;
 
-create type public.kpi_deep_learning as enum
-  ('no', 'sometimes', 'often', 'required');
+do $$ begin
+  create type public.kpi_deep_learning as enum
+    ('no', 'sometimes', 'often', 'required');
+exception when duplicate_object then null;
+end $$;
 
 -- Một số bài toán không dùng bộ chỉ số bỏ sót/bắt ảo, mà có KPI riêng.
-create type public.kpi_special as enum
-  ('robot_guidance', 'code_reading', 'web_inspection');
+do $$ begin
+  create type public.kpi_special as enum
+    ('robot_guidance', 'code_reading', 'web_inspection');
+exception when duplicate_object then null;
+end $$;
 
-create type public.kpi_modifier_direction as enum ('worse', 'better');
+do $$ begin
+  create type public.kpi_modifier_direction as enum ('worse', 'better');
+exception when duplicate_object then null;
+end $$;
 
 -- Nguồn gốc con số. Đây là cột quan trọng nhất về mặt QUẢN TRỊ RỦI RO: dữ liệu
 -- khởi tạo là ƯỚC LƯỢNG, chưa đối chiếu với lịch sử dự án của công ty. Giao
 -- diện phải hiển thị rõ điều này để không ai dán thẳng vào hợp đồng.
-create type public.kpi_data_source as enum
-  ('estimate', 'project_history', 'vendor_spec');
+do $$ begin
+  create type public.kpi_data_source as enum
+    ('estimate', 'project_history', 'vendor_spec');
+exception when duplicate_object then null;
+end $$;
 
 -- -----------------------------------------------------------------------------
 -- 2. Loại bài toán và dải chỉ tiêu tương ứng
 -- -----------------------------------------------------------------------------
 
-create table public.kpi_problem_types (
+create table if not exists public.kpi_problem_types (
   id                        uuid primary key default gen_random_uuid(),
   slug                      text not null unique,
   problem_group             public.kpi_problem_group not null,
@@ -111,8 +126,9 @@ comment on column public.kpi_problem_types.data_source is
 comment on column public.kpi_problem_types.total_burden_max is
   'Trần của (bắt ảo + tái kiểm). Chỉnh ngưỡng chỉ chuyển hàng giữa hai nhánh, không làm tổng nhỏ đi.';
 
-create index kpi_problem_types_group_idx on public.kpi_problem_types (problem_group, sort_order);
+create index if not exists kpi_problem_types_group_idx on public.kpi_problem_types (problem_group, sort_order);
 
+drop trigger if exists kpi_problem_types_set_updated_at on public.kpi_problem_types;
 create trigger kpi_problem_types_set_updated_at
   before update on public.kpi_problem_types
   for each row execute function public.set_updated_at();
@@ -121,7 +137,7 @@ create trigger kpi_problem_types_set_updated_at
 -- 3. Hệ số điều chỉnh theo điều kiện thực tế
 -- -----------------------------------------------------------------------------
 
-create table public.kpi_modifiers (
+create table if not exists public.kpi_modifiers (
   id           uuid primary key default gen_random_uuid(),
   slug         text not null unique,
   name_vi      text not null,
@@ -140,6 +156,7 @@ create table public.kpi_modifiers (
   constraint kpi_modifier_range_ordered check (factor_min <= factor_max)
 );
 
+drop trigger if exists kpi_modifiers_set_updated_at on public.kpi_modifiers;
 create trigger kpi_modifiers_set_updated_at
   before update on public.kpi_modifiers
   for each row execute function public.set_updated_at();
@@ -148,11 +165,13 @@ create trigger kpi_modifiers_set_updated_at
 -- 4. Hằng số của mô hình
 --
 -- Những con số này là ước lượng có cơ sở kinh nghiệm chứ không phải hằng số vật
--- lý — ví dụ vì sao tái kiểm tăng theo CĂN BẬC HAI của hệ số chứ không phải mũ
--- 0,7. Để ở đây thì đội kỹ thuật chỉnh được khi có dữ liệu thật.
+-- lý. Ví dụ recheck_exponent hiện để 1,0: tái kiểm tăng ĐÚNG BẰNG hệ số điều
+-- kiện, không giảm nhẹ. Mũ nhỏ hơn 1 từng được thử nhưng cho ra mâu thuẫn —
+-- mức tái kiểm hiển thị thấp hơn mức mà phép chia tải thực sự tính ra. Để ở đây
+-- thì đội kỹ thuật chỉnh được khi có dữ liệu thật.
 -- -----------------------------------------------------------------------------
 
-create table public.kpi_config (
+create table if not exists public.kpi_config (
   key         text primary key,
   value       numeric(10,4) not null,
   name_vi     text not null,
@@ -162,6 +181,7 @@ create table public.kpi_config (
   updated_at  timestamptz not null default now()
 );
 
+drop trigger if exists kpi_config_set_updated_at on public.kpi_config;
 create trigger kpi_config_set_updated_at
   before update on public.kpi_config
   for each row execute function public.set_updated_at();
@@ -170,7 +190,7 @@ create trigger kpi_config_set_updated_at
 -- 5. Hệ số khi khách đòi siết bỏ sót
 -- -----------------------------------------------------------------------------
 
-create table public.kpi_tightening_factors (
+create table if not exists public.kpi_tightening_factors (
   id          uuid primary key default gen_random_uuid(),
   miss_ratio  numeric(6,2) not null unique,  -- siết bỏ sót bao nhiêu lần
   burden_k    numeric(6,2) not null,          -- tổng tải phụ nhân lên bấy nhiêu
@@ -193,34 +213,42 @@ alter table public.kpi_modifiers          enable row level security;
 alter table public.kpi_config             enable row level security;
 alter table public.kpi_tightening_factors enable row level security;
 
+drop policy if exists "kpi_problem_types_select_member_plus" on public.kpi_problem_types;
 create policy "kpi_problem_types_select_member_plus"
   on public.kpi_problem_types for select to authenticated
   using (public.is_member_plus() and (is_active or public.is_admin()));
 
+drop policy if exists "kpi_problem_types_write_admin" on public.kpi_problem_types;
 create policy "kpi_problem_types_write_admin"
   on public.kpi_problem_types for all to authenticated
   using (public.is_admin()) with check (public.is_admin());
 
+drop policy if exists "kpi_modifiers_select_member_plus" on public.kpi_modifiers;
 create policy "kpi_modifiers_select_member_plus"
   on public.kpi_modifiers for select to authenticated
   using (public.is_member_plus() and (is_active or public.is_admin()));
 
+drop policy if exists "kpi_modifiers_write_admin" on public.kpi_modifiers;
 create policy "kpi_modifiers_write_admin"
   on public.kpi_modifiers for all to authenticated
   using (public.is_admin()) with check (public.is_admin());
 
+drop policy if exists "kpi_config_select_member_plus" on public.kpi_config;
 create policy "kpi_config_select_member_plus"
   on public.kpi_config for select to authenticated
   using (public.is_member_plus());
 
+drop policy if exists "kpi_config_write_admin" on public.kpi_config;
 create policy "kpi_config_write_admin"
   on public.kpi_config for all to authenticated
   using (public.is_admin()) with check (public.is_admin());
 
+drop policy if exists "kpi_tightening_select_member_plus" on public.kpi_tightening_factors;
 create policy "kpi_tightening_select_member_plus"
   on public.kpi_tightening_factors for select to authenticated
   using (public.is_member_plus());
 
+drop policy if exists "kpi_tightening_write_admin" on public.kpi_tightening_factors;
 create policy "kpi_tightening_write_admin"
   on public.kpi_tightening_factors for all to authenticated
   using (public.is_admin()) with check (public.is_admin());

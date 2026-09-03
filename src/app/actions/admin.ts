@@ -6,6 +6,7 @@ import { getTranslations } from 'next-intl/server';
 import { getSessionContext, isAdmin, type UserRole } from '@/lib/auth';
 import { sanitizeArticleHtml } from '@/lib/html';
 import { validateCondition } from '@/lib/selector/conditions';
+import { dbError } from '@/lib/db-error';
 import { createClient } from '@/lib/supabase/server';
 
 export type AdminState = {
@@ -57,7 +58,7 @@ export async function updateUserRoleAction(
   const supabase = await createClient();
   const { error } = await supabase.from('profiles').update({ role }).eq('id', userId);
 
-  if (error) return { error: error.message };
+  if (error) return { error: await dbError(error, 'updateUserRole') };
 
   revalidatePath('/admin/nguoi-dung');
   return { notice: t('roleUpdated') };
@@ -123,7 +124,7 @@ export async function saveArticleAction(
       .update({ ...payload, published_at: publishedAt })
       .eq('id', id);
 
-    if (error) return { error: error.message };
+    if (error) return { error: await dbError(error, 'saveArticle:update') };
   } else {
     const { error } = await supabase.from('articles').insert({
       ...payload,
@@ -131,7 +132,7 @@ export async function saveArticleAction(
       published_at: publish ? new Date().toISOString() : null,
     });
 
-    if (error) return { error: error.message };
+    if (error) return { error: await dbError(error, 'saveArticle:insert') };
   }
 
   revalidatePath('/admin/bai-viet');
@@ -213,7 +214,7 @@ export async function saveRuleAction(
     ? await supabase.from('selector_rules').update(payload).eq('id', id)
     : await supabase.from('selector_rules').insert(payload);
 
-  if (error) return { error: error.message };
+  if (error) return { error: await dbError(error, 'saveRule') };
 
   revalidatePath('/admin/luat-goi-y');
   redirect('/admin/luat-goi-y?saved=1');

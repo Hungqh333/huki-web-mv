@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { getSessionContext, isAdmin } from '@/lib/auth';
+import { dbError } from '@/lib/db-error';
 import { createClient } from '@/lib/supabase/server';
 
 export type KpiAdminState = {
@@ -147,7 +148,7 @@ export async function saveProblemTypeAction(
     ? await supabase.from('kpi_problem_types').update(payload).eq('id', id)
     : await supabase.from('kpi_problem_types').insert(payload);
 
-  if (error) return { error: error.message };
+  if (error) return { error: await dbError(error, 'saveProblemType') };
 
   revalidatePath('/admin/chi-tieu');
   revalidatePath('/cong-cu-chi-tieu');
@@ -223,7 +224,7 @@ export async function saveModifierAction(
     ? await supabase.from('kpi_modifiers').update(payload).eq('id', id)
     : await supabase.from('kpi_modifiers').insert(payload);
 
-  if (error) return { error: error.message };
+  if (error) return { error: await dbError(error, 'saveModifier') };
 
   revalidatePath('/admin/chi-tieu/he-so');
   revalidatePath('/cong-cu-chi-tieu');
@@ -276,7 +277,7 @@ export async function saveConfigAction(
       .from('kpi_config')
       .update({ value: update.value })
       .eq('key', update.key);
-    if (error) return { error: error.message };
+    if (error) return { error: await dbError(error, 'saveConfig') };
   }
 
   revalidatePath('/admin/chi-tieu/tham-so');
@@ -318,7 +319,7 @@ export async function saveTighteningAction(
       .from('kpi_tightening_factors')
       .update({ burden_k: update.k })
       .eq('miss_ratio', update.ratio);
-    if (error) return { error: error.message };
+    if (error) return { error: await dbError(error, 'saveTightening') };
   }
 
   revalidatePath('/admin/chi-tieu/tham-so');

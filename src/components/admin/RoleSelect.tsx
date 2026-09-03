@@ -38,7 +38,7 @@ export function RoleSelect({
         name="role"
         defaultValue={role}
         disabled={pending}
-        className="rounded-md border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-700 dark:bg-slate-900"
+        className="rounded-md border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
       >
         {ROLES.map((option) => (
           <option key={option} value={option}>
@@ -53,8 +53,12 @@ export function RoleSelect({
       >
         {pending ? t('saving') : t('save')}
       </button>
-      {state.error ? <span className="text-xs text-red-600">{state.error}</span> : null}
-      {state.notice ? <span className="text-xs text-emerald-600">{state.notice}</span> : null}
+      {state.error ? (
+        <span className="text-xs text-red-600 dark:text-red-400">{state.error}</span>
+      ) : null}
+      {state.notice ? (
+        <span className="text-xs text-emerald-600 dark:text-emerald-400">{state.notice}</span>
+      ) : null}
     </form>
   );
 }

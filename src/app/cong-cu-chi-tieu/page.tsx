@@ -5,6 +5,7 @@ import { KpiCalculator } from '@/components/kpi/KpiCalculator';
 import { canUseSelector, getSessionContext } from '@/lib/auth';
 import { getKpiData } from '@/lib/kpi/queries';
 import { hasSupabaseEnv } from '@/lib/supabase/env';
+import { contactMailto } from '@/lib/contact';
 
 export default async function KpiToolPage() {
   const t = await getTranslations('kpi');
@@ -37,7 +38,7 @@ export default async function KpiToolPage() {
               </Link>
             )}
             <a
-              href="mailto:hungnv@soragroup.vn?subject=Machine%20Vision%20Hub%20-%20Bo%20tinh%20chi%20tieu"
+              href={contactMailto('Machine Vision Hub - Bo tinh chi tieu')}
               className="rounded-md border border-sky-300 px-4 py-2 text-sm font-medium text-sky-800 hover:bg-sky-100 dark:border-sky-800 dark:text-sky-300 dark:hover:bg-sky-950"
             >
               {t('locked.contact')}

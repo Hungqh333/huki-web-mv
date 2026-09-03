@@ -2,8 +2,7 @@
   "common": {
     "appName": "Machine Vision Hub",
     "appTagline": "Nền tảng kỹ thuật cho bộ phận Vision",
-    "loading": "Đang tải...",
-    "comingSoon": "Sắp ra mắt"
+    "loading": "Đang tải..."
   },
   "nav": {
     "home": "Trang chủ",
@@ -14,8 +13,6 @@
     "signIn": "Đăng nhập",
     "signUp": "Đăng ký",
     "signOut": "Đăng xuất",
-    "openMenu": "Mở menu",
-    "closeMenu": "Đóng menu",
     "kpi": "Bộ tính chỉ tiêu"
   },
   "language": {
@@ -109,8 +106,7 @@
     "task": {
       "backToTasks": "Tất cả bài toán",
       "noFields": "Bài toán này chưa khai báo trường nhập liệu nào. Kiểm tra cột input_fields của task_types.",
-      "unknownFields": "Có trường chưa được hỗ trợ nên đã bị bỏ qua: {keys}. Cần bổ sung vào catalog trong src/lib/selector/fields.ts.",
-      "requiredNote": "Trường có dấu * là bắt buộc."
+      "unknownFields": "Có trường chưa được hỗ trợ nên đã bị bỏ qua: {keys}. Cần bổ sung vào catalog trong src/lib/selector/fields.ts."
     },
     "form": {
       "submit": "Tính toán gợi ý",
@@ -525,6 +521,16 @@
     "common": {
       "delete": "Xoá",
       "confirmDelete": "Xoá \"{name}\"? Thao tác này không hoàn tác được."
+    },
+    "dbErrors": {
+      "duplicate": "Giá trị này đã tồn tại — kiểm tra lại mã (slug) hoặc khoá, mỗi bản ghi phải khác nhau.",
+      "inUse": "Không xoá/sửa được vì bản ghi đang được nơi khác tham chiếu tới.",
+      "checkFailed": "Số nhập vào vi phạm ràng buộc dữ liệu — ví dụ giá trị nhỏ nhất lớn hơn giá trị lớn nhất.",
+      "missingField": "Còn trường bắt buộc bị bỏ trống.",
+      "outOfRange": "Số nhập vào vượt quá phạm vi cho phép của cột.",
+      "badFormat": "Có ô nhập sai định dạng.",
+      "notAllowed": "Tài khoản không đủ quyền cho thao tác này.",
+      "unknown": "Không lưu được. Thử lại; nếu vẫn lỗi, báo quản trị viên kèm thời điểm thao tác."
     }
   },
   "errors": {
@@ -543,6 +549,7 @@
     "title": "Bộ tính chỉ tiêu Vision",
     "subtitle": "Xác định chỉ tiêu chất lượng cam kết được cho một dự án, quy ra chi phí vận hành, và sinh bản nháp điều khoản hợp đồng.",
     "progress": "Tiến độ nhập liệu",
+    "reset": "Bắt đầu lại",
     "emptyState": "Chọn loại bài toán ở bước 1 để bắt đầu. Kết quả cập nhật ngay khi bạn thay đổi bất kỳ thông số nào.",
     "noData": "Chưa có dữ liệu chỉ tiêu trong database. Chạy supabase/seed_kpi.sql để nạp.",
     "locked": {

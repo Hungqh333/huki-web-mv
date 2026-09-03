@@ -14,13 +14,22 @@ create extension if not exists pgcrypto;
 
 -- Vai trò người dùng. 'guest' không nằm ở đây: khách chưa đăng nhập đơn giản là
 -- không có dòng nào trong profiles.
-create type public.user_role as enum ('registered', 'member', 'vip', 'admin');
+do $$ begin
+  create type public.user_role as enum ('registered', 'member', 'vip', 'admin');
+exception when duplicate_object then null;
+end $$;
 
 -- Mức truy cập gắn trên từng bài viết / tính năng.
-create type public.access_tier as enum ('public', 'registered', 'member', 'vip');
+do $$ begin
+  create type public.access_tier as enum ('public', 'registered', 'member', 'vip');
+exception when duplicate_object then null;
+end $$;
 
 -- Hướng giải quyết bài toán mà bảng luật gợi ý (CLAUDE.md mục 4).
-create type public.solution_approach as enum ('rule_based', 'deep_learning', 'hybrid');
+do $$ begin
+  create type public.solution_approach as enum ('rule_based', 'deep_learning', 'hybrid');
+exception when duplicate_object then null;
+end $$;
 
 -- -----------------------------------------------------------------------------
 -- 2. Hàm tiện ích chung
@@ -68,7 +77,7 @@ $$;
 -- 3. Bảng profiles — mở rộng auth.users của Supabase
 -- -----------------------------------------------------------------------------
 
-create table public.profiles (
+create table if not exists public.profiles (
   id         uuid primary key references auth.users (id) on delete cascade,
   email      text not null,
   name       text,
@@ -81,8 +90,9 @@ create table public.profiles (
 comment on column public.profiles.role is
   'Mặc định luôn là registered. Chỉ admin mới đổi được (xem trigger enforce_profile_role_change).';
 
-create index profiles_role_idx on public.profiles (role);
+create index if not exists profiles_role_idx on public.profiles (role);
 
+drop trigger if exists profiles_set_updated_at on public.profiles;
 create trigger profiles_set_updated_at
   before update on public.profiles
   for each row execute function public.set_updated_at();
@@ -168,6 +178,7 @@ begin
 end;
 $$;
 
+drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
@@ -187,6 +198,7 @@ begin
 end;
 $$;
 
+drop trigger if exists on_auth_user_email_changed on auth.users;
 create trigger on_auth_user_email_changed
   after update of email on auth.users
   for each row execute function public.handle_user_email_change();
@@ -216,6 +228,7 @@ begin
 end;
 $$;
 
+drop trigger if exists profiles_enforce_role_change on public.profiles;
 create trigger profiles_enforce_role_change
   before update on public.profiles
   for each row execute function public.enforce_profile_role_change();
@@ -224,7 +237,7 @@ create trigger profiles_enforce_role_change
 -- 7. task_types — danh mục bài toán
 -- -----------------------------------------------------------------------------
 
-create table public.task_types (
+create table if not exists public.task_types (
   id             uuid primary key default gen_random_uuid(),
   slug           text not null unique,
   name_vi        text not null,
@@ -240,6 +253,7 @@ create table public.task_types (
 comment on table public.task_types is
   'Thêm bài toán mới (3D, OCR/OCV, barcode, robot guidance) = thêm dòng ở đây, không sửa code.';
 
+drop trigger if exists task_types_set_updated_at on public.task_types;
 create trigger task_types_set_updated_at
   before update on public.task_types
   for each row execute function public.set_updated_at();
@@ -248,7 +262,7 @@ create trigger task_types_set_updated_at
 -- 8. selector_rules — bảng luật gợi ý thiết bị
 -- -----------------------------------------------------------------------------
 
-create table public.selector_rules (
+create table if not exists public.selector_rules (
   id                   uuid primary key default gen_random_uuid(),
   task_type_id         uuid not null references public.task_types (id) on delete cascade,
   condition_json       jsonb not null default '{}'::jsonb,
@@ -267,9 +281,10 @@ create table public.selector_rules (
 comment on column public.selector_rules.priority is
   'Số nhỏ = ưu tiên cao. Thứ tự ưu tiên nghiệp vụ: ổn định > chính xác > tốc độ > bảo trì > triển khai > chi phí.';
 
-create index selector_rules_task_type_idx on public.selector_rules (task_type_id, priority);
-create index selector_rules_condition_idx on public.selector_rules using gin (condition_json);
+create index if not exists selector_rules_task_type_idx on public.selector_rules (task_type_id, priority);
+create index if not exists selector_rules_condition_idx on public.selector_rules using gin (condition_json);
 
+drop trigger if exists selector_rules_set_updated_at on public.selector_rules;
 create trigger selector_rules_set_updated_at
   before update on public.selector_rules
   for each row execute function public.set_updated_at();
@@ -278,7 +293,7 @@ create trigger selector_rules_set_updated_at
 -- 9. selector_history — lịch sử chạy công cụ
 -- -----------------------------------------------------------------------------
 
-create table public.selector_history (
+create table if not exists public.selector_history (
   id           uuid primary key default gen_random_uuid(),
   user_id      uuid not null references auth.users (id) on delete cascade,
   task_type_id uuid references public.task_types (id) on delete set null,
@@ -287,13 +302,13 @@ create table public.selector_history (
   created_at   timestamptz not null default now()
 );
 
-create index selector_history_user_idx on public.selector_history (user_id, created_at desc);
+create index if not exists selector_history_user_idx on public.selector_history (user_id, created_at desc);
 
 -- -----------------------------------------------------------------------------
 -- 10. categories + articles — cẩm nang
 -- -----------------------------------------------------------------------------
 
-create table public.categories (
+create table if not exists public.categories (
   id         uuid primary key default gen_random_uuid(),
   slug       text not null unique,
   name_vi    text not null,
@@ -303,11 +318,12 @@ create table public.categories (
   updated_at timestamptz not null default now()
 );
 
+drop trigger if exists categories_set_updated_at on public.categories;
 create trigger categories_set_updated_at
   before update on public.categories
   for each row execute function public.set_updated_at();
 
-create table public.articles (
+create table if not exists public.articles (
   id           uuid primary key default gen_random_uuid(),
   slug         text not null unique,
   title_vi     text not null,
@@ -326,10 +342,11 @@ create table public.articles (
 comment on column public.articles.published_at is
   'NULL = bản nháp, chỉ admin xem được.';
 
-create index articles_published_idx on public.articles (published_at desc);
-create index articles_category_idx on public.articles (category_id);
-create index articles_tier_idx on public.articles (access_tier);
+create index if not exists articles_published_idx on public.articles (published_at desc);
+create index if not exists articles_category_idx on public.articles (category_id);
+create index if not exists articles_tier_idx on public.articles (access_tier);
 
+drop trigger if exists articles_set_updated_at on public.articles;
 create trigger articles_set_updated_at
   before update on public.articles
   for each row execute function public.set_updated_at();
@@ -348,18 +365,21 @@ alter table public.articles         enable row level security;
 -- --- profiles ---------------------------------------------------------------
 -- Chỉ xem được profile của chính mình; admin xem được tất cả.
 
+drop policy if exists "profiles_select_own_or_admin" on public.profiles;
 create policy "profiles_select_own_or_admin"
   on public.profiles for select
   to authenticated
   using (id = auth.uid() or public.is_admin());
 
 -- Sửa được dòng của mình (tên, công ty). Cột role bị trigger ở mục 6 chặn.
+drop policy if exists "profiles_update_own" on public.profiles;
 create policy "profiles_update_own"
   on public.profiles for update
   to authenticated
   using (id = auth.uid())
   with check (id = auth.uid());
 
+drop policy if exists "profiles_update_admin" on public.profiles;
 create policy "profiles_update_admin"
   on public.profiles for update
   to authenticated
@@ -374,11 +394,13 @@ create policy "profiles_update_admin"
 -- cần liệt kê tên các bài toán để làm marketing. Bản thân tên bài toán không
 -- phải thông tin nhạy cảm — dữ liệu nhạy cảm nằm ở selector_rules.
 
+drop policy if exists "task_types_select_all" on public.task_types;
 create policy "task_types_select_all"
   on public.task_types for select
   to anon, authenticated
   using (is_active or public.is_admin());
 
+drop policy if exists "task_types_write_admin" on public.task_types;
 create policy "task_types_write_admin"
   on public.task_types for all
   to authenticated
@@ -388,11 +410,13 @@ create policy "task_types_write_admin"
 -- --- selector_rules ---------------------------------------------------------
 -- Chỉ Member trở lên được đọc. Chỉ admin được ghi (CLAUDE.md mục 6).
 
+drop policy if exists "selector_rules_select_member_plus" on public.selector_rules;
 create policy "selector_rules_select_member_plus"
   on public.selector_rules for select
   to authenticated
   using (public.is_member_plus() and (is_active or public.is_admin()));
 
+drop policy if exists "selector_rules_write_admin" on public.selector_rules;
 create policy "selector_rules_write_admin"
   on public.selector_rules for all
   to authenticated
@@ -402,16 +426,19 @@ create policy "selector_rules_write_admin"
 -- --- selector_history -------------------------------------------------------
 -- Chỉ Member trở lên được ghi, và chỉ đọc được lịch sử của chính mình.
 
+drop policy if exists "selector_history_select_own" on public.selector_history;
 create policy "selector_history_select_own"
   on public.selector_history for select
   to authenticated
   using ((user_id = auth.uid() and public.is_member_plus()) or public.is_admin());
 
+drop policy if exists "selector_history_insert_own_member_plus" on public.selector_history;
 create policy "selector_history_insert_own_member_plus"
   on public.selector_history for insert
   to authenticated
   with check (user_id = auth.uid() and public.is_member_plus());
 
+drop policy if exists "selector_history_delete_own" on public.selector_history;
 create policy "selector_history_delete_own"
   on public.selector_history for delete
   to authenticated
@@ -419,11 +446,13 @@ create policy "selector_history_delete_own"
 
 -- --- categories -------------------------------------------------------------
 
+drop policy if exists "categories_select_all" on public.categories;
 create policy "categories_select_all"
   on public.categories for select
   to anon, authenticated
   using (true);
 
+drop policy if exists "categories_write_admin" on public.categories;
 create policy "categories_write_admin"
   on public.categories for all
   to authenticated
@@ -435,6 +464,7 @@ create policy "categories_write_admin"
 -- khi tier của bài <= quyền của người đọc. Bài bị khoá không lộ content dù gọi
 -- thẳng REST API. Phần teaser cho marketing đi qua view article_previews ở dưới.
 
+drop policy if exists "articles_select_by_tier" on public.articles;
 create policy "articles_select_by_tier"
   on public.articles for select
   to anon, authenticated
@@ -444,6 +474,7 @@ create policy "articles_select_by_tier"
     or public.is_admin()
   );
 
+drop policy if exists "articles_write_admin" on public.articles;
 create policy "articles_write_admin"
   on public.articles for all
   to authenticated
@@ -459,7 +490,7 @@ create policy "articles_write_admin"
 -- và một đoạn teaser đã cắt ngắn, không bao giờ trả về toàn văn content.
 -- -----------------------------------------------------------------------------
 
-create view public.article_previews
+create or replace view public.article_previews
 with (security_invoker = off) as
 select
   a.id,

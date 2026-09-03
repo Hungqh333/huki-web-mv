@@ -22,7 +22,7 @@ export function LanguageSwitcher() {
             setUserLocale(next);
           });
         }}
-        className="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-slate-700 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+        className="min-h-11 rounded-md border border-slate-300 bg-white px-2 text-slate-700 disabled:opacity-60 sm:min-h-0 sm:py-1.5 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
       >
         {locales.map((item) => (
           <option key={item} value={item}>

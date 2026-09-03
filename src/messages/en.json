@@ -2,8 +2,7 @@
   "common": {
     "appName": "Machine Vision Hub",
     "appTagline": "Engineering platform for the Vision department",
-    "loading": "Loading...",
-    "comingSoon": "Coming soon"
+    "loading": "Loading..."
   },
   "nav": {
     "home": "Home",
@@ -14,8 +13,6 @@
     "signIn": "Sign in",
     "signUp": "Sign up",
     "signOut": "Sign out",
-    "openMenu": "Open menu",
-    "closeMenu": "Close menu",
     "kpi": "KPI calculator"
   },
   "language": {
@@ -109,8 +106,7 @@
     "task": {
       "backToTasks": "All tasks",
       "noFields": "This task has no input fields declared. Check the input_fields column on task_types.",
-      "unknownFields": "Unsupported fields were skipped: {keys}. Add them to the catalog in src/lib/selector/fields.ts.",
-      "requiredNote": "Fields marked * are required."
+      "unknownFields": "Unsupported fields were skipped: {keys}. Add them to the catalog in src/lib/selector/fields.ts."
     },
     "form": {
       "submit": "Calculate recommendation",
@@ -525,6 +521,16 @@
     "common": {
       "delete": "Delete",
       "confirmDelete": "Delete \"{name}\"? This cannot be undone."
+    },
+    "dbErrors": {
+      "duplicate": "This value already exists — check the slug or key, each record must be unique.",
+      "inUse": "Cannot delete or change it: another record still refers to this one.",
+      "checkFailed": "A number breaks a data constraint — for example a minimum larger than its maximum.",
+      "missingField": "A required field is still empty.",
+      "outOfRange": "A number is outside the range this column allows.",
+      "badFormat": "One of the fields has the wrong format.",
+      "notAllowed": "This account does not have permission for that action.",
+      "unknown": "Could not save. Try again; if it persists, report it with the time it happened."
     }
   },
   "errors": {
@@ -543,6 +549,7 @@
     "title": "Vision KPI calculator",
     "subtitle": "Work out the quality targets you can actually commit to for a project, convert them into operating cost, and generate a draft contract clause.",
     "progress": "Input progress",
+    "reset": "Start over",
     "emptyState": "Pick a problem type in step 1 to start. Results update immediately as you change any input.",
     "noData": "No KPI data in the database yet. Run supabase/seed_kpi.sql to load it.",
     "locked": {

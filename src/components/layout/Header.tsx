@@ -31,12 +31,12 @@ export async function Header() {
           </span>
         </Link>
 
-        <nav className="order-3 flex w-full gap-4 text-sm sm:order-none sm:w-auto">
+        <nav className="order-3 -mx-2 flex w-full items-center gap-1 text-sm sm:order-none sm:mx-0 sm:w-auto sm:gap-4">
           {navItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="text-slate-600 hover:text-sky-700 dark:text-slate-300 dark:hover:text-sky-400"
+              className="inline-flex min-h-11 items-center rounded-md px-2 text-slate-600 hover:bg-slate-100 hover:text-sky-700 sm:min-h-0 sm:px-0 sm:hover:bg-transparent dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-sky-400 dark:sm:hover:bg-transparent"
             >
               {t(item.key)}
             </Link>
@@ -44,7 +44,7 @@ export async function Header() {
           {isAdmin(role) ? (
             <Link
               href="/admin"
-              className="text-slate-600 hover:text-sky-700 dark:text-slate-300 dark:hover:text-sky-400"
+              className="inline-flex min-h-11 items-center rounded-md px-2 text-slate-600 hover:bg-slate-100 hover:text-sky-700 sm:min-h-0 sm:px-0 sm:hover:bg-transparent dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-sky-400 dark:sm:hover:bg-transparent"
             >
               {t('admin')}
             </Link>
@@ -64,7 +64,7 @@ export async function Header() {
               {role ? <RoleBadge role={role} /> : null}
               <Link
                 href="/tai-khoan"
-                className="rounded-md px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+                className="inline-flex min-h-11 items-center rounded-md px-3 text-sm text-slate-700 hover:bg-slate-100 sm:min-h-0 sm:py-1.5 dark:text-slate-200 dark:hover:bg-slate-800"
               >
                 {t('account')}
               </Link>
@@ -74,13 +74,13 @@ export async function Header() {
             <>
               <Link
                 href="/dang-nhap"
-                className="rounded-md px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+                className="inline-flex min-h-11 items-center rounded-md px-3 text-sm text-slate-700 hover:bg-slate-100 sm:min-h-0 sm:py-1.5 dark:text-slate-200 dark:hover:bg-slate-800"
               >
                 {t('signIn')}
               </Link>
               <Link
                 href="/dang-ky"
-                className="rounded-md bg-sky-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-sky-700"
+                className="inline-flex min-h-11 items-center rounded-md bg-sky-600 px-3 text-sm font-medium text-white hover:bg-sky-700 sm:min-h-0 sm:py-1.5"
               >
                 {t('signUp')}
               </Link>

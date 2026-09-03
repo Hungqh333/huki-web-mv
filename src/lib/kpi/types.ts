@@ -121,7 +121,6 @@ export type BurdenSplit = {
   recheck: number;
   miss: Range;
   /** true khi tổng tải phụ bị cắt xuống cho vừa trần. */
-  clampedToCeiling: boolean;
 };
 
 export type OperationalCost = {

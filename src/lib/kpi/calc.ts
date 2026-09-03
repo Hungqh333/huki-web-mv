@@ -148,7 +148,6 @@ export function splitBurden(
     falseReject,
     recheck,
     miss: adjustedMiss,
-    clampedToCeiling: false,
   };
 }
 

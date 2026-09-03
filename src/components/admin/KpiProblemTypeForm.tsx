@@ -75,7 +75,7 @@ export function KpiProblemTypeForm({ draft }: { draft: ProblemTypeDraft }) {
     minKey: keyof ProblemTypeDraft,
     maxKey: keyof ProblemTypeDraft
   ) => (
-    <div className="grid grid-cols-2 gap-3">
+    <div className="grid gap-3 sm:grid-cols-2">
       {numberField(minKey, `${label} — ${t('min')}`)}
       {numberField(maxKey, `${label} — ${t('max')}`)}
     </div>

@@ -1,7 +1,7 @@
-import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations } from 'next-intl/server';
+import { AdminNav } from '@/components/admin/AdminNav';
 import { getSessionContext, isAdmin } from '@/lib/auth';
 import { hasSupabaseEnv } from '@/lib/supabase/env';
 
@@ -33,17 +33,10 @@ export default async function AdminLayout({ children }: LayoutProps<'/admin'>) {
       <h1 className="text-2xl font-bold tracking-tight">{t('title')}</h1>
 
       <div className="mt-6 grid gap-8 lg:grid-cols-[200px_minmax(0,1fr)]">
-        <nav aria-label={t('title')} className="flex gap-2 overflow-x-auto lg:flex-col lg:overflow-visible">
-          {NAV.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="whitespace-nowrap rounded-md px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
-            >
-              {t(item.key)}
-            </Link>
-          ))}
-        </nav>
+        <AdminNav
+          label={t('title')}
+          items={NAV.map((item) => ({ href: item.href, label: t(item.key) }))}
+        />
 
         <div className="min-w-0">
           <NextIntlClientProvider messages={{ admin: messages.admin }}>

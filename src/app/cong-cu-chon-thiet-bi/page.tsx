@@ -3,6 +3,7 @@ import { getLocale, getTranslations } from 'next-intl/server';
 import { canUseSelector, getSessionContext } from '@/lib/auth';
 import { hasSupabaseEnv } from '@/lib/supabase/env';
 import { createClient } from '@/lib/supabase/server';
+import { contactMailto } from '@/lib/contact';
 
 type TaskTypeRow = {
   slug: string;
@@ -74,7 +75,7 @@ export default async function SelectorHomePage() {
         </>
       ) : (
         <div className="mt-10 space-y-8">
-          <ul className="grid gap-4 sm:grid-cols-3">
+          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {taskTypes.map((task) => (
               <li
                 key={task.slug}
@@ -95,7 +96,7 @@ export default async function SelectorHomePage() {
             </p>
             <div className="mt-5 flex flex-wrap gap-3">
               <a
-                href="mailto:hungnv@soragroup.vn?subject=Machine%20Vision%20Hub%20-%20Yeu%20cau%20tu%20van"
+                href={contactMailto('Machine Vision Hub - Yeu cau tu van')}
                 className="rounded-md bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700"
               >
                 {t('contactCta')}

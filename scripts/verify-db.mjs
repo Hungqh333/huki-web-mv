@@ -59,9 +59,24 @@ for (const file of migrations) {
   ok = (await step(db, file, stripPgcrypto(read('migrations', file)))) && ok;
 }
 
+/*
+ * Áp lại toàn bộ migration lần thứ hai.
+ *
+ * Dự án không chạy Supabase CLI — mọi thay đổi database đều dán tay vào SQL
+ * Editor, nên dán trùng một file là chuyện bình thường chứ không phải tai nạn
+ * hiếm. Migration phải chịu được điều đó, nếu không người dán chỉ nhận về
+ * "type ... already exists" và không biết database đang ở trạng thái nào.
+ */
+console.log('\nÁp lại migration lần hai (phải idempotent)');
+for (const file of migrations) {
+  ok = (await step(db, `${file} (lần 2)`, stripPgcrypto(read('migrations', file)))) && ok;
+}
+
 console.log('\nNạp dữ liệu tham chiếu');
-ok = (await step(db, 'seed.sql', read('seed.sql'))) && ok;
-ok = (await step(db, 'seed.sql (lần 2 — phải idempotent)', read('seed.sql'))) && ok;
+for (const seed of ['seed.sql', 'seed_kpi.sql']) {
+  ok = (await step(db, seed, read(seed))) && ok;
+  ok = (await step(db, `${seed} (lần 2 — phải idempotent)`, read(seed))) && ok;
+}
 
 console.log('\nKiểm chứng phân quyền');
 ok = (await step(db, 'rls_smoke_test.sql', read('tests', 'rls_smoke_test.sql'))) && ok;

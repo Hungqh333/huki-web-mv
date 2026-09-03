@@ -23,6 +23,7 @@ import {
   resolveCeiling,
   splitBurden,
 } from '../src/lib/kpi/calc';
+import { digitsOnly, parseNumber, parseShifts } from '../src/lib/kpi/input';
 import { DEFAULT_KPI_CONFIG, type Modifier, type ProblemType } from '../src/lib/kpi/types';
 
 const CONFIG = DEFAULT_KPI_CONFIG;
@@ -474,4 +475,31 @@ test('mô hình hỗ trợ người kiểm cắt phần lớn nhân công', () =
   assert.equal(result.headcountBefore, 20, 'kiem tay 100%');
   assert.equal(result.headcountAfter, 3, 'chi con 15%');
   assert.ok(result.headcountAfter < result.headcountBefore);
+});
+
+// -------------------------------------------------------- ĐỌC SỐ TỪ Ô NHẬP --
+
+test('ô số lớn hiểu đúng dấu phân cách nghìn kiểu Việt Nam', () => {
+  // "50.000" là năm mươi nghìn đồng. Number("50.000") ra 50 — sai một nghìn lần
+  // và không có gì báo, chi phí phế hàng năm chỉ hiện ra bé đi.
+  assert.equal(Number(digitsOnly('50.000')), 50_000);
+  assert.equal(Number(digitsOnly('1.200.000')), 1_200_000);
+  assert.equal(Number(digitsOnly('50,000')), 50_000, 'dau phay cung phai hieu');
+  assert.equal(Number(digitsOnly('50 000 ')), 50_000, 'dau cach cung phai hieu');
+  assert.equal(digitsOnly(''), '', 'o trong van phai la o trong');
+});
+
+test('số ca không bao giờ nhỏ hơn 1', () => {
+  assert.equal(parseShifts('0'), 1, 'so ca 0 se lam moi chi phi ra 0 dong');
+  assert.equal(parseShifts(''), 1, 'bo trong thi coi nhu 1 ca');
+  assert.equal(parseShifts('-2'), 1);
+  assert.equal(parseShifts('abc'), 1);
+  assert.equal(parseShifts('3'), 3, 'gia tri hop le giu nguyen');
+});
+
+test('ô trống khác với số 0 người dùng cố ý nhập', () => {
+  assert.equal(parseNumber(''), null);
+  assert.equal(parseNumber('   '), null);
+  assert.equal(parseNumber('0'), 0);
+  assert.equal(parseNumber('khong phai so'), null);
 });

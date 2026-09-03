@@ -11,6 +11,7 @@ import {
   resolveCeiling,
   splitBurden,
 } from '@/lib/kpi/calc';
+import { parseNumber, parseShifts } from '@/lib/kpi/input';
 import type { KpiData } from '@/lib/kpi/queries';
 import type { BurdenStrategy, ProblemType } from '@/lib/kpi/types';
 import { ProblemTypeStep } from './ProblemTypeStep';
@@ -39,13 +40,6 @@ const EMPTY_PRODUCTION: ProductionInputs = {
   p0: '',
   ngSamples: '',
   availableHeadcount: '',
-};
-
-const numberOrNull = (text: string): number | null => {
-  const trimmed = text.trim();
-  if (trimmed === '') return null;
-  const value = Number(trimmed);
-  return Number.isFinite(value) ? value : null;
 };
 
 export function KpiCalculator({ data, locale }: { data: KpiData; locale: 'vi' | 'en' }) {
@@ -79,14 +73,14 @@ export function KpiCalculator({ data, locale }: { data: KpiData; locale: 'vi' | 
 
     const ceiling = resolveCeiling(specUnclear, data.config);
 
-    const unitsPerHour = numberOrNull(production.unitsPerHour);
-    const shifts = numberOrNull(production.shifts) ?? 1;
-    const secondsPerCheck = numberOrNull(production.secondsPerCheck);
-    const annualVolume = numberOrNull(production.annualVolume);
-    const unitValue = numberOrNull(production.unitValue);
-    const p0 = numberOrNull(production.p0);
-    const ngSamples = numberOrNull(production.ngSamples);
-    const availableHeadcount = numberOrNull(production.availableHeadcount);
+    const unitsPerHour = parseNumber(production.unitsPerHour);
+    const shifts = parseShifts(production.shifts);
+    const secondsPerCheck = parseNumber(production.secondsPerCheck);
+    const annualVolume = parseNumber(production.annualVolume);
+    const unitValue = parseNumber(production.unitValue);
+    const p0 = parseNumber(production.p0);
+    const ngSamples = parseNumber(production.ngSamples);
+    const availableHeadcount = parseNumber(production.availableHeadcount);
 
     const cost =
       unitsPerHour !== null && secondsPerCheck !== null && annualVolume !== null && unitValue !== null
@@ -129,11 +123,22 @@ export function KpiCalculator({ data, locale }: { data: KpiData; locale: 'vi' | 
     };
   }, [problem, data, modifierSlugs, strategy, customShare, specUnclear, production]);
 
+  // Sang dự án khác thì phải xoá sạch, không để sót hệ số của dự án trước —
+  // hệ số cũ nằm im ở bước 2 mà vẫn đang nhân vào kết quả.
+  const reset = () => {
+    setProblemSlug(null);
+    setModifierSlugs([]);
+    setStrategy('balanced');
+    setCustomShare(50);
+    setSpecUnclear(false);
+    setProduction(EMPTY_PRODUCTION);
+  };
+
   const stepsDone = [
     problemSlug !== null,
     problemSlug !== null,
     problemSlug !== null,
-    numberOrNull(production.unitsPerHour) !== null,
+    parseNumber(production.unitsPerHour) !== null,
   ];
   const progress = Math.round((stepsDone.filter(Boolean).length / stepsDone.length) * 100);
 
@@ -142,9 +147,27 @@ export function KpiCalculator({ data, locale }: { data: KpiData; locale: 'vi' | 
       <div className="mb-6">
         <div className="flex items-center justify-between text-sm">
           <span className="font-medium text-slate-700 dark:text-slate-300">{t('progress')}</span>
-          <span className="text-slate-500 dark:text-slate-400">{progress}%</span>
+          <div className="flex items-center gap-3">
+            <span className="text-slate-500 dark:text-slate-400">{progress}%</span>
+            {progress > 0 ? (
+              <button
+                type="button"
+                onClick={reset}
+                className="rounded px-2 py-1 text-sm text-slate-500 underline-offset-2 hover:text-slate-800 hover:underline dark:text-slate-400 dark:hover:text-slate-200"
+              >
+                {t('reset')}
+              </button>
+            ) : null}
+          </div>
         </div>
-        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+        <div
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={progress}
+          aria-label={t('progress')}
+          className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800"
+        >
           <div
             className="h-full rounded-full bg-sky-600 transition-all"
             style={{ width: `${progress}%` }}
@@ -192,6 +215,7 @@ export function KpiCalculator({ data, locale }: { data: KpiData; locale: 'vi' | 
             onChange={setProduction}
             specUnclear={specUnclear}
             onSpecUnclearChange={setSpecUnclear}
+            locale={locale}
           />
         </div>
 

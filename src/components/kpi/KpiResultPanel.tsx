@@ -67,13 +67,16 @@ export function KpiResultPanel({
 
   return (
     <div className="rounded-lg border border-slate-200 dark:border-slate-800">
-      <div className="flex border-b border-slate-200 dark:border-slate-800">
+      <div role="tablist" className="flex border-b border-slate-200 dark:border-slate-800">
         {(['targets', 'tightening', 'contract'] as const).map((key) => (
           <button
             key={key}
             type="button"
             onClick={() => setTab(key)}
-            aria-current={tab === key ? 'page' : undefined}
+            role="tab"
+            id={`kpi-tab-${key}`}
+            aria-selected={tab === key}
+            aria-controls="kpi-tabpanel"
             className={`flex-1 px-3 py-2.5 text-sm font-medium transition ${
               tab === key
                 ? 'border-b-2 border-sky-600 text-sky-700 dark:text-sky-400'
@@ -85,7 +88,13 @@ export function KpiResultPanel({
         ))}
       </div>
 
-      <div className="p-5">
+      <div
+        id="kpi-tabpanel"
+        role="tabpanel"
+        aria-labelledby={`kpi-tab-${tab}`}
+        aria-live="polite"
+        className="p-5"
+      >
         {tab === 'targets' ? (
           <div className="space-y-6">
             {problem.data_source === 'estimate' ? (

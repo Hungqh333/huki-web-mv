@@ -196,6 +196,8 @@ export function SelectorForm({
         {state.result ? (
           <SelectorResultPanel
             result={state.result}
+            input={state.input ?? {}}
+            components={state.components ?? []}
             historySaved={state.historySaved}
             historyId={state.historyId}
             canExport={canExport}

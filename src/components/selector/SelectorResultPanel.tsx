@@ -2,7 +2,9 @@
 
 import { useLocale, useTranslations } from 'next-intl';
 import { IconBadge, type BadgeTone, type IconName } from '@/components/ui/Icon';
-import type { SelectorResult } from '@/lib/selector/types';
+import type { Component } from '@/lib/components/specs';
+import type { SelectorInput, SelectorResult } from '@/lib/selector/types';
+import { ComponentPicker } from './ComponentPicker';
 
 /**
  * Danh mục vật tư, xếp theo THỨ TỰ PHỤ THUỘC chứ không theo thói quen mua hàng.
@@ -28,11 +30,15 @@ const APPROACH_STYLES: Record<string, string> = {
 
 export function SelectorResultPanel({
   result,
+  input,
+  components,
   historySaved,
   historyId,
   canExport,
 }: {
   result: SelectorResult;
+  input: SelectorInput;
+  components: Component[];
   historySaved?: boolean;
   historyId?: string;
   canExport: boolean;
@@ -97,6 +103,10 @@ export function SelectorResultPanel({
           })}
         </ol>
       </div>
+
+      {components.length > 0 ? (
+        <ComponentPicker result={result} input={input} components={components} />
+      ) : null}
 
       {result.approachReason ? (
         <div className="rounded-lg border border-slate-200 p-4 dark:border-slate-800">

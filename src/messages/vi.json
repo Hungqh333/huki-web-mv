@@ -304,6 +304,27 @@
       "no": "Không",
       "page": "Trang",
       "disclaimer": "Báo cáo được sinh tự động từ bảng luật kỹ thuật của Machine Vision Hub. Đây là gợi ý khởi điểm, không thay thế cho việc thử nghiệm thực tế với mẫu sản phẩm. Vui lòng kiểm chứng lại các phép tính và điều kiện triển khai trước khi chốt phương án mua sắm."
+    },
+    "picker": {
+      "title": "Thiết bị cụ thể",
+      "hint": "Đổi được sang thiết bị khác — danh sách chỉ liệt kê thứ TƯƠNG THÍCH với lựa chọn phía trên.",
+      "none": "Không có thiết bị nào trong catalog đáp ứng. Thêm thiết bị ở trang Quản trị → Linh kiện.",
+      "optionsCount": "{count} lựa chọn tương thích",
+      "reset": "Về đề xuất",
+      "changed": "đã đổi",
+      "cameraChanged": "Đổi camera nên ống kính và máy tính đã được gợi ý lại.",
+      "fitCamera": "Cần ≥ {required} MP",
+      "fitRate": "băng thông {rate} MB/s",
+      "fitLensFocal": "Tiêu cự cần ≈ {target} mm",
+      "fitLensMag": "Độ phóng đại cần ≈ {target}x",
+      "fitLightType": "Kiểu đèn suy từ luật: {type}",
+      "fitLightUnknown": "Không suy được kiểu đèn từ luật — chọn tay.",
+      "fitGpu": "Bài toán cần deep learning nên máy phải có GPU.",
+      "sources": {
+        "unverified": "Chưa kiểm chứng",
+        "datasheet": "Theo datasheet",
+        "measured": "Đã đo"
+      }
     }
   },
   "handbook": {

@@ -6,6 +6,7 @@ import { getSessionContext, canUseSelector } from '@/lib/auth';
 import { getFieldDefs, parseInput } from '@/lib/selector/fields';
 import { runSelector } from '@/lib/selector/engine';
 import type { SelectorInput, SelectorResult, SelectorRule } from '@/lib/selector/types';
+import type { Component } from '@/lib/components/specs';
 
 export type SelectorState = {
   error?: string;
@@ -16,6 +17,15 @@ export type SelectorState = {
   historySaved?: boolean;
   /** Có id thì mới xuất được PDF — báo cáo đọc lại từ database theo id này. */
   historyId?: string;
+  /**
+   * Catalog linh kiện gửi kèm để phía trình duyệt tự khớp và đổi thiết bị.
+   *
+   * Gửi cả danh sách thay vì chỉ gửi thiết bị đã chọn: đổi camera là phải tính
+   * lại tiêu cự rồi lọc lại ống kính theo cảm biến mới. Làm ở trình duyệt thì
+   * đổi xong thấy ngay, không phải chờ gọi lại server. Dữ liệu này chỉ tới được
+   * tay người đã qua cổng Member+ ở trên.
+   */
+  components?: Component[];
 };
 
 export async function runSelectorAction(
@@ -67,6 +77,16 @@ export async function runSelectorAction(
 
   const result = runSelector(rules as unknown as SelectorRule[], input);
 
+  // RLS lo phần quyền: không phải Member+ thì truy vấn này trả rỗng.
+  const { data: componentRows } = await supabase
+    .from('components')
+    .select(
+      'id, code, kind, brand, model, spec, price_vnd, datasheet_url, source, notes_vi, notes_en, is_active, sort_order'
+    )
+    .eq('is_active', true)
+    .order('kind')
+    .order('sort_order');
+
   // Lưu lịch sử cho Member+ (RLS cũng yêu cầu đúng như vậy).
   // Lấy lại id để nút xuất PDF trỏ tới đúng bản ghi này.
   const { data: saved, error: historyError } = await supabase
@@ -85,5 +105,6 @@ export async function runSelectorAction(
     input,
     historySaved: !historyError,
     historyId: saved?.id,
+    components: (componentRows ?? []) as Component[],
   };
 }

@@ -304,6 +304,27 @@
       "no": "No",
       "page": "Page",
       "disclaimer": "This report is generated automatically from the Machine Vision Hub engineering rule table. It is a starting recommendation and does not replace trials with real samples. Verify the calculations and deployment conditions before committing to a purchase."
+    },
+    "picker": {
+      "title": "Actual devices",
+      "hint": "You can swap devices — the list only shows items COMPATIBLE with the choices above.",
+      "none": "No component in the catalog meets this. Add one under Admin → Components.",
+      "optionsCount": "{count} compatible options",
+      "reset": "Back to suggestion",
+      "changed": "changed",
+      "cameraChanged": "Camera changed, so the lens and computer were re-suggested.",
+      "fitCamera": "Needs >= {required} MP",
+      "fitRate": "bandwidth {rate} MB/s",
+      "fitLensFocal": "Focal length needed ~ {target} mm",
+      "fitLensMag": "Magnification needed ~ {target}x",
+      "fitLightType": "Light type inferred from the rule: {type}",
+      "fitLightUnknown": "Could not infer the light type from the rule — pick manually.",
+      "fitGpu": "The task needs deep learning, so the computer must have a GPU.",
+      "sources": {
+        "unverified": "Unverified",
+        "datasheet": "From datasheet",
+        "measured": "Measured"
+      }
     }
   },
   "handbook": {

@@ -12,6 +12,8 @@ type Row = {
   task_type_id: string;
   condition_json: unknown;
   recommended_camera: string | null;
+  recommended_processing: string | null;
+  recommended_accessories: string | null;
   recommended_lighting: string | null;
   recommended_lens: string | null;
   ai_or_rule_based: SolutionApproach;
@@ -30,7 +32,7 @@ export default async function EditRulePage({ params }: PageProps<'/admin/luat-go
     supabase
       .from('selector_rules')
       .select(
-        'id, code, task_type_id, condition_json, recommended_camera, recommended_lighting, recommended_lens, ai_or_rule_based, notes_vi, notes_en, priority, is_active'
+        'id, code, task_type_id, condition_json, recommended_camera, recommended_lighting, recommended_lens, recommended_processing, recommended_accessories, ai_or_rule_based, notes_vi, notes_en, priority, is_active'
       )
       .eq('id', id)
       .maybeSingle<Row>(),
@@ -54,6 +56,8 @@ export default async function EditRulePage({ params }: PageProps<'/admin/luat-go
             task_type_id: rule.task_type_id,
             condition_json: JSON.stringify(rule.condition_json ?? {}, null, 2),
             recommended_camera: rule.recommended_camera ?? '',
+            recommended_processing: rule.recommended_processing ?? '',
+            recommended_accessories: rule.recommended_accessories ?? '',
             recommended_lighting: rule.recommended_lighting ?? '',
             recommended_lens: rule.recommended_lens ?? '',
             ai_or_rule_based: rule.ai_or_rule_based,

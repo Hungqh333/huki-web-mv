@@ -30,6 +30,8 @@ export default async function NewRulePage() {
             recommended_camera: '',
             recommended_lighting: '',
             recommended_lens: '',
+            recommended_processing: '',
+            recommended_accessories: '',
             ai_or_rule_based: 'rule_based',
             notes_vi: '',
             notes_en: '',

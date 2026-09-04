@@ -16,6 +16,8 @@ export type RuleDraft = {
   task_type_id: string;
   condition_json: string;
   recommended_camera: string;
+  recommended_processing: string;
+  recommended_accessories: string;
   recommended_lighting: string;
   recommended_lens: string;
   ai_or_rule_based: SolutionApproach;
@@ -151,6 +153,23 @@ export function RuleForm({
         </AdminField>
         <AdminField label={t('fieldLens')}>
           <input name="recommended_lens" defaultValue={draft.recommended_lens} className={inputClass} />
+        </AdminField>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <AdminField label={t('fieldProcessing')} hint={t('fieldProcessingHint')}>
+          <input
+            name="recommended_processing"
+            defaultValue={draft.recommended_processing}
+            className={inputClass}
+          />
+        </AdminField>
+        <AdminField label={t('fieldAccessories')} hint={t('fieldAccessoriesHint')}>
+          <input
+            name="recommended_accessories"
+            defaultValue={draft.recommended_accessories}
+            className={inputClass}
+          />
         </AdminField>
       </div>
 

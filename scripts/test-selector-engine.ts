@@ -23,6 +23,8 @@ function rule(partial: Partial<SelectorRule> & { code: string }): SelectorRule {
     recommended_camera: null,
     recommended_lighting: null,
     recommended_lens: null,
+    recommended_processing: null,
+    recommended_accessories: null,
     ai_or_rule_based: 'rule_based',
     notes_vi: null,
     notes_en: null,
@@ -211,4 +213,104 @@ test('không luật nào khớp thì báo rõ thay vì trả kết quả rỗng 
   );
   assert.equal(result.noRuleMatched, true);
   assert.equal(result.camera, null);
+});
+
+// ------------------------------------------------ BĂNG THÔNG & CỤM BOM MỚI --
+
+test('băng thông dữ liệu tính đúng từ độ phân giải và nhịp sản xuất', () => {
+  // FOV 100×100 mm, lỗi nhỏ nhất 0,1 mm, hệ số 3 px → 3000×3000 px = 9 MP.
+  // 60 sp/phút = 1 ảnh/giây, ảnh đơn sắc → 9 MB/s.
+  const { context } = deriveMetrics({
+    fov_width_mm: 100,
+    fov_height_mm: 100,
+    defect_min_size_mm: 0.1,
+    throughput_ppm: 60,
+  });
+
+  assert.equal(context.required_sensor_mp, 9);
+  assert.equal(context.fps_required, 1);
+  assert.equal(context.data_rate_mbytes_s, 9);
+});
+
+test('ảnh màu nhân băng thông lên ba lần', () => {
+  const mono = deriveMetrics({
+    fov_width_mm: 100,
+    fov_height_mm: 100,
+    defect_min_size_mm: 0.1,
+    throughput_ppm: 60,
+    color_critical: false,
+  }).context;
+
+  const color = deriveMetrics({
+    fov_width_mm: 100,
+    fov_height_mm: 100,
+    defect_min_size_mm: 0.1,
+    throughput_ppm: 60,
+    color_critical: true,
+  }).context;
+
+  assert.equal(mono.data_rate_mbytes_s, 9);
+  assert.equal(color.data_rate_mbytes_s, 27, '3 byte/px thay vi 1');
+});
+
+test('không nhập nhịp sản xuất thì không bịa ra băng thông', () => {
+  const { context } = deriveMetrics({
+    fov_width_mm: 100,
+    fov_height_mm: 100,
+    defect_min_size_mm: 0.1,
+  });
+
+  assert.equal(context.data_rate_mbytes_s, undefined);
+  assert.equal(context.fps_required, undefined);
+});
+
+test('luật viết điều kiện được theo băng thông vừa tính', () => {
+  const result = runSelector(
+    [
+      rule({ code: 'BASE', recommended_processing: 'GigE, PC i5', priority: 100 }),
+      rule({
+        code: 'FAST',
+        priority: 10,
+        condition_json: {
+          all: [{ field: 'data_rate_mbytes_s', op: 'gt', value: 110 }],
+        },
+        recommended_processing: '5GigE hoac CoaXPress',
+      }),
+    ],
+    // 200×200 mm, lỗi 0,1 mm → 6000×6000 px = 36 MP; 600 sp/phut = 10 fps
+    // → 360 MB/s, vuot nguong 110.
+    {
+      fov_width_mm: 200,
+      fov_height_mm: 200,
+      defect_min_size_mm: 0.1,
+      throughput_ppm: 600,
+    }
+  );
+
+  assert.equal(result.processing, '5GigE hoac CoaXPress', 'luat uu tien cao thang');
+});
+
+test('hai cụm mới gộp độc lập với các cụm cũ', () => {
+  const result = runSelector(
+    [
+      rule({
+        code: 'BASE',
+        priority: 100,
+        recommended_camera: 'Area scan 5 MP',
+        recommended_processing: 'GigE, PC i5',
+        recommended_accessories: 'Cap GigE, ga camera',
+      }),
+      // Luật ưu tiên cao chỉ quyết định phụ kiện, không đụng tới ô khác.
+      rule({
+        code: 'IP65',
+        priority: 10,
+        recommended_accessories: 'Vo bao ve IP65',
+      }),
+    ],
+    {}
+  );
+
+  assert.equal(result.accessories, 'Vo bao ve IP65', 'luat cu the hon thang o phu kien');
+  assert.equal(result.camera, 'Area scan 5 MP', 'o camera van do luat nen quyet dinh');
+  assert.equal(result.processing, 'GigE, PC i5');
 });

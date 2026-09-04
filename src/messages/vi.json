@@ -142,7 +142,25 @@
     "form": {
       "submit": "Tính toán gợi ý",
       "submitting": "Đang tính...",
-      "emptyState": "Điền tham số bên trái rồi bấm \"Tính toán gợi ý\". Kết quả sẽ hiện ở đây kèm công thức đã thay số để bạn tự kiểm chứng."
+      "emptyState": "Điền tham số bên trái rồi bấm \"Tính toán gợi ý\". Kết quả sẽ hiện ở đây kèm công thức đã thay số để bạn tự kiểm chứng.",
+      "stepLabel": "Bước {current}/{total}",
+      "next": "Tiếp",
+      "back": "Quay lại",
+      "fixErrors": "Còn ô chưa hợp lệ — bấm để tới nơi:",
+      "groups": {
+        "subject": {
+          "title": "Vật thể & lỗi cần phát hiện",
+          "hint": "Quyết định độ phân giải cần thiết và kỹ thuật chiếu sáng."
+        },
+        "line": {
+          "title": "Dây chuyền & cơ khí",
+          "hint": "Quyết định tiêu cự ống kính và băng thông dữ liệu."
+        },
+        "environment": {
+          "title": "Môi trường lắp đặt",
+          "hint": "Quyết định vỏ bảo vệ, kính lọc và cách gá."
+        }
+      }
     },
     "fields": {
       "fov_width_mm": "Chiều rộng vùng quan sát (FOV)",
@@ -250,9 +268,22 @@
         "required_resolution_px": "Độ phân giải cần thiết",
         "px_per_mm": "Mật độ điểm ảnh",
         "required_sensor_mp": "Cảm biến tối thiểu",
-        "px_per_feature": "Số pixel trên mỗi đặc trưng"
+        "px_per_feature": "Số pixel trên mỗi đặc trưng",
+        "fps_required": "Nhịp ảnh cần thiết",
+        "data_rate_mbytes_s": "Băng thông dữ liệu"
       },
-      "exportNeedsHistory": "Chưa lưu được vào lịch sử nên chưa xuất báo cáo được."
+      "exportNeedsHistory": "Chưa lưu được vào lịch sử nên chưa xuất báo cáo được.",
+      "processing": "Máy tính / giao tiếp",
+      "accessories": "Phụ kiện",
+      "bomTitle": "Danh mục vật tư",
+      "bomHint": "Xếp theo thứ tự phụ thuộc: chiếu sáng quyết định lỗi có hiện lên được không, rồi mới tới quang học và cảm biến.",
+      "constraints": {
+        "lighting": "Ràng buộc khoảng cách làm việc tối thiểu — kiểm tra lại tiêu cự ống kính bên dưới.",
+        "lens": "Phải phủ hết cỡ cảm biến của camera; telecentric còn giới hạn cỡ cảm biến tối đa.",
+        "camera": "Độ phân giải phải ≥ mức tính được, và cỡ cảm biến phải nằm trong vòng ảnh ống kính.",
+        "processing": "Giao tiếp phải tải nổi băng thông tính ở phần dưới.",
+        "accessories": "Kính lọc khớp bước sóng đèn; chiều dài cáp theo khoảng cách làm việc."
+      }
     },
     "errors": {
       "unknownTask": "Không tìm thấy bài toán này.",
@@ -392,7 +423,11 @@
       "activeLabel": "Đang bật (bỏ chọn để tạm tắt luật mà không xoá)",
       "save": "Lưu luật",
       "saving": "Đang lưu...",
-      "cancel": "Huỷ"
+      "cancel": "Huỷ",
+      "fieldProcessing": "Máy tính / giao tiếp",
+      "fieldProcessingHint": "Ví dụ: \"GigE, PC công nghiệp i5, 16 GB RAM\". Viết điều kiện theo data_rate_mbytes_s.",
+      "fieldAccessories": "Phụ kiện",
+      "fieldAccessoriesHint": "Kính lọc, cáp, gá đỡ, vỏ bảo vệ — những thứ hay bị quên khi báo giá."
     },
     "editor": {
       "loading": "Đang tải trình soạn thảo...",

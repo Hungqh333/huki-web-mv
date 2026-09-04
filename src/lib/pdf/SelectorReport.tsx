@@ -12,6 +12,8 @@ export type ReportLabels = {
   camera: string;
   lighting: string;
   lens: string;
+  processing: string;
+  accessories: string;
   approach: string;
   approachReason: string;
   calculations: string;
@@ -111,9 +113,11 @@ export function SelectorReport({ data, labels }: { data: ReportData; labels: Rep
   const pick = (note: { vi: string; en: string }) => (data.locale === 'en' ? note.en : note.vi);
 
   const outputs = [
-    { label: labels.camera, value: result.camera },
     { label: labels.lighting, value: result.lighting },
     { label: labels.lens, value: result.lens },
+    { label: labels.camera, value: result.camera },
+    { label: labels.processing, value: result.processing },
+    { label: labels.accessories, value: result.accessories },
   ];
 
   return (

@@ -13,4 +13,6 @@ export const DERIVED_FIELD_KEYS = [
   'required_sensor_mp',
   'safety_factor',
   'px_per_feature',
+  'fps_required',
+  'data_rate_mbytes_s',
 ] as const;

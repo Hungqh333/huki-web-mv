@@ -128,6 +128,39 @@ export function deriveMetrics(
     });
   }
 
+  /*
+   * Băng thông dữ liệu — thứ quyết định giao tiếp camera và cấu hình máy tính.
+   *
+   * Cố ý CHỈ tính ra con số, không tự chọn GigE hay CoaXPress: ngưỡng nào dùng
+   * chuẩn nào là quyết định kỹ thuật, phải nằm trong bảng luật admin sửa được
+   * (CLAUDE.md mục 9). Luật viết điều kiện theo data_rate_mbytes_s.
+   *
+   *   fps      = sản phẩm mỗi phút ÷ 60   (giả định một ảnh cho một sản phẩm)
+   *   byte/px  = 3 nếu cần phân biệt màu, 1 nếu ảnh đơn sắc
+   *   MB/s     = MP × byte/px × fps
+   */
+  const throughput = num(input.throughput_ppm);
+  const sensorMp = num(derived.required_sensor_mp);
+
+  if (throughput !== null && throughput > 0 && sensorMp !== null && sensorMp > 0) {
+    const fps = throughput / 60;
+    derived.fps_required = round(fps);
+    metrics.push({
+      key: 'fps_required',
+      value: round(fps),
+      formula: `${throughput} sp/phút ÷ 60 = ${round(fps)} ảnh/giây`,
+    });
+
+    const bytesPerPixel = input.color_critical === true ? 3 : 1;
+    const dataRate = sensorMp * bytesPerPixel * fps;
+    derived.data_rate_mbytes_s = round(dataRate);
+    metrics.push({
+      key: 'data_rate_mbytes_s',
+      value: round(dataRate),
+      formula: `${sensorMp} MP × ${bytesPerPixel} byte/px × ${round(fps)} fps ≈ ${round(dataRate)} MB/s`,
+    });
+  }
+
   derived.safety_factor = safetyFactor;
 
   return { context: { ...input, ...derived }, metrics };

@@ -200,6 +200,8 @@ export async function saveRuleAction(
     task_type_id: taskTypeId,
     condition_json: condition,
     recommended_camera: nullable(formData, 'recommended_camera'),
+    recommended_processing: nullable(formData, 'recommended_processing'),
+    recommended_accessories: nullable(formData, 'recommended_accessories'),
     recommended_lighting: nullable(formData, 'recommended_lighting'),
     recommended_lens: nullable(formData, 'recommended_lens'),
     ai_or_rule_based: approach,

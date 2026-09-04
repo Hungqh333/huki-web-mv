@@ -55,6 +55,7 @@ export async function runSelectorAction(
     .from('selector_rules')
     .select(
       'id, code, task_type_id, condition_json, recommended_camera, recommended_lighting, ' +
+      'recommended_processing, recommended_accessories, ' +
         'recommended_lens, ai_or_rule_based, notes_vi, notes_en, priority, is_active'
     )
     .eq('task_type_id', taskType.id)

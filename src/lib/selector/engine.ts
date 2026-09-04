@@ -32,8 +32,8 @@ function noteFrom(rule: SelectorRule): SourcedNote | null {
  * khớp. Muốn đổi gợi ý thì sửa bảng selector_rules, không sửa code.
  *
  * Cách ghép: luật priority nhỏ hơn thì thắng ở từng ô kết quả (camera, ánh
- * sáng, lens). Ghi chú thì gom từ TẤT CẢ luật khớp, vì mỗi luật cảnh báo một
- * rủi ro khác nhau và bỏ đi cái nào cũng tiếc.
+ * sáng, lens, máy tính, phụ kiện). Ghi chú thì gom từ TẤT CẢ luật khớp, vì mỗi
+ * luật cảnh báo một rủi ro khác nhau và bỏ đi cái nào cũng tiếc.
  */
 export function runSelector(rules: SelectorRule[], input: SelectorInput): SelectorResult {
   const { context, metrics } = deriveMetrics(input);
@@ -46,6 +46,8 @@ export function runSelector(rules: SelectorRule[], input: SelectorInput): Select
   let camera: string | null = null;
   let lighting: string | null = null;
   let lens: string | null = null;
+  let processing: string | null = null;
+  let accessories: string | null = null;
   let approach: SolutionApproach = 'rule_based';
   let approachReason: SourcedNote | null = null;
   const notes: SourcedNote[] = [];
@@ -55,6 +57,8 @@ export function runSelector(rules: SelectorRule[], input: SelectorInput): Select
     camera ??= rule.recommended_camera?.trim() || null;
     lighting ??= rule.recommended_lighting?.trim() || null;
     lens ??= rule.recommended_lens?.trim() || null;
+    processing ??= rule.recommended_processing?.trim() || null;
+    accessories ??= rule.recommended_accessories?.trim() || null;
 
     if (APPROACH_WEIGHT[rule.ai_or_rule_based] > APPROACH_WEIGHT[approach]) {
       approach = rule.ai_or_rule_based;
@@ -71,6 +75,8 @@ export function runSelector(rules: SelectorRule[], input: SelectorInput): Select
     camera,
     lighting,
     lens,
+    processing,
+    accessories,
     approach,
     approachReason,
     notes,

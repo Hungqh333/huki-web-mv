@@ -1,7 +1,24 @@
 'use client';
 
 import { useLocale, useTranslations } from 'next-intl';
+import { IconBadge, type BadgeTone, type IconName } from '@/components/ui/Icon';
 import type { SelectorResult } from '@/lib/selector/types';
+
+/**
+ * Danh mục vật tư, xếp theo THỨ TỰ PHỤ THUỘC chứ không theo thói quen mua hàng.
+ *
+ * Chiếu sáng đứng trước camera là có chủ đích: nếu lỗi không hiện lên được thì
+ * camera nào cũng vô nghĩa. Mỗi cụm kèm một dòng nhắc nó ràng buộc gì lên cụm
+ * sau — để sự phụ thuộc hiện ra thay vì bị giấu.
+ */
+const BOM: { key: 'lighting' | 'lens' | 'camera' | 'processing' | 'accessories';
+  icon: IconName; tone: BadgeTone }[] = [
+  { key: 'lighting', icon: 'sun', tone: 'amber' },
+  { key: 'lens', icon: 'selector', tone: 'violet' },
+  { key: 'camera', icon: 'camera', tone: 'sky' },
+  { key: 'processing', icon: 'monitor', tone: 'emerald' },
+  { key: 'accessories', icon: 'rules', tone: 'slate' },
+];
 
 const APPROACH_STYLES: Record<string, string> = {
   rule_based: 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300',
@@ -25,11 +42,7 @@ export function SelectorResultPanel({
   const locale = useLocale();
   const pickNote = (note: { vi: string; en: string }) => (locale === 'en' ? note.en : note.vi);
 
-  const rows = [
-    { label: t('camera'), value: result.camera },
-    { label: t('lighting'), value: result.lighting },
-    { label: t('lens'), value: result.lens },
-  ];
+  const valueOf = (key: (typeof BOM)[number]['key']) => result[key];
 
   return (
     <section aria-live="polite" className="space-y-6">
@@ -50,16 +63,40 @@ export function SelectorResultPanel({
         </p>
       ) : null}
 
-      <dl className="divide-y divide-slate-200 rounded-lg border border-slate-200 dark:divide-slate-800 dark:border-slate-800">
-        {rows.map((row) => (
-          <div key={row.label} className="grid gap-1 px-4 py-3 sm:grid-cols-3 sm:gap-4">
-            <dt className="text-sm font-medium text-slate-600 dark:text-slate-400">{row.label}</dt>
-            <dd className="text-sm sm:col-span-2">
-              {row.value ?? <span className="text-slate-400">{t('notSpecified')}</span>}
-            </dd>
-          </div>
-        ))}
-      </dl>
+      <div>
+        <h3 className="font-semibold">{t('bomTitle')}</h3>
+        <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{t('bomHint')}</p>
+
+        <ol className="mt-4 space-y-3">
+          {BOM.map((item, index) => {
+            const value = valueOf(item.key);
+            return (
+              <li
+                key={item.key}
+                className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900"
+              >
+                <div className="flex items-start gap-3">
+                  <IconBadge name={item.icon} tone={item.tone} className="size-9" />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-xs font-semibold text-slate-400">{index + 1}</span>
+                      <h4 className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                        {t(item.key)}
+                      </h4>
+                    </div>
+                    <p className="mt-1 text-sm">
+                      {value ?? <span className="text-slate-400">{t('notSpecified')}</span>}
+                    </p>
+                    <p className="mt-2 border-t border-slate-100 pt-2 text-xs leading-relaxed text-slate-500 dark:border-slate-800 dark:text-slate-400">
+                      {t(`constraints.${item.key}`)}
+                    </p>
+                  </div>
+                </div>
+              </li>
+            );
+          })}
+        </ol>
+      </div>
 
       {result.approachReason ? (
         <div className="rounded-lg border border-slate-200 p-4 dark:border-slate-800">

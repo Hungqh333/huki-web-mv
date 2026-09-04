@@ -20,6 +20,7 @@ export type IconName =
   | 'lock'
   | 'sun'
   | 'moon'
+  | 'camera'
   | 'monitor';
 
 const PATHS: Record<IconName, React.ReactNode> = {
@@ -85,6 +86,12 @@ const PATHS: Record<IconName, React.ReactNode> = {
     </>
   ),
   moon: <path d="M20 13.5A8 8 0 1 1 10.5 4a6.5 6.5 0 0 0 9.5 9.5Z" />,
+  camera: (
+    <>
+      <path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h2.2l1.2-2h6.2l1.2 2h4.2A1.5 1.5 0 0 1 21 8.5v9A1.5 1.5 0 0 1 19.5 19h-15A1.5 1.5 0 0 1 3 17.5v-9Z" />
+      <circle cx="12" cy="13" r="3.5" />
+    </>
+  ),
   monitor: (
     <>
       <rect x="3" y="4" width="18" height="12" rx="2" />

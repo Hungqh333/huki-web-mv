@@ -142,7 +142,25 @@
     "form": {
       "submit": "Calculate recommendation",
       "submitting": "Calculating...",
-      "emptyState": "Fill in the parameters on the left and press \"Calculate recommendation\". Results appear here, including the formulas with your numbers substituted so you can check them."
+      "emptyState": "Fill in the parameters on the left and press \"Calculate recommendation\". Results appear here, including the formulas with your numbers substituted so you can check them.",
+      "stepLabel": "Step {current}/{total}",
+      "next": "Next",
+      "back": "Back",
+      "fixErrors": "Some fields are not valid — click to jump there:",
+      "groups": {
+        "subject": {
+          "title": "Part & defect to detect",
+          "hint": "Drives the required resolution and the lighting technique."
+        },
+        "line": {
+          "title": "Line & mechanics",
+          "hint": "Drives lens focal length and data bandwidth."
+        },
+        "environment": {
+          "title": "Installation environment",
+          "hint": "Drives enclosure, filters and mounting."
+        }
+      }
     },
     "fields": {
       "fov_width_mm": "Field of view width",
@@ -250,9 +268,22 @@
         "required_resolution_px": "Required resolution",
         "px_per_mm": "Pixel density",
         "required_sensor_mp": "Minimum sensor size",
-        "px_per_feature": "Pixels per feature"
+        "px_per_feature": "Pixels per feature",
+        "fps_required": "Required frame rate",
+        "data_rate_mbytes_s": "Data bandwidth"
       },
-      "exportNeedsHistory": "The run was not saved to history, so no report can be exported."
+      "exportNeedsHistory": "The run was not saved to history, so no report can be exported.",
+      "processing": "Computer / interface",
+      "accessories": "Accessories",
+      "bomTitle": "Bill of materials",
+      "bomHint": "Ordered by dependency: lighting decides whether the defect is visible at all, before optics and sensor.",
+      "constraints": {
+        "lighting": "Sets the minimum working distance — re-check the lens focal length below.",
+        "lens": "Must cover the camera sensor; a telecentric lens also caps the maximum sensor size.",
+        "camera": "Resolution must meet the computed minimum, and the sensor must fit the lens image circle.",
+        "processing": "The interface must carry the bandwidth computed below.",
+        "accessories": "Filter must match the light wavelength; cable length follows the working distance."
+      }
     },
     "errors": {
       "unknownTask": "That task could not be found.",
@@ -392,7 +423,11 @@
       "activeLabel": "Active (uncheck to disable the rule without deleting it)",
       "save": "Save rule",
       "saving": "Saving...",
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "fieldProcessing": "Computer / interface",
+      "fieldProcessingHint": "E.g. \"GigE, industrial i5 PC, 16 GB RAM\". Write conditions against data_rate_mbytes_s.",
+      "fieldAccessories": "Accessories",
+      "fieldAccessoriesHint": "Filters, cables, mounts, enclosures — the items most often missed in a quote."
     },
     "editor": {
       "loading": "Loading editor...",

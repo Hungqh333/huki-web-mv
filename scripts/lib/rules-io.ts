@@ -16,6 +16,8 @@ export const COLUMNS = [
   'recommended_camera',
   'recommended_lighting',
   'recommended_lens',
+  'recommended_processing',
+  'recommended_accessories',
   'ai_or_rule_based',
   'notes_vi',
   'notes_en',
@@ -37,6 +39,8 @@ export type ParsedRule = {
   recommended_camera: string | null;
   recommended_lighting: string | null;
   recommended_lens: string | null;
+  recommended_processing: string | null;
+  recommended_accessories: string | null;
   ai_or_rule_based: string;
   notes_vi: string | null;
   notes_en: string | null;
@@ -195,6 +199,8 @@ export function parseRules(
       priority: Number.isFinite(priority) ? priority : 100,
       condition_json: condition,
       recommended_camera: optional(row.recommended_camera),
+      recommended_processing: optional(row.recommended_processing),
+      recommended_accessories: optional(row.recommended_accessories),
       recommended_lighting: optional(row.recommended_lighting),
       recommended_lens: optional(row.recommended_lens),
       ai_or_rule_based: approach,
@@ -220,6 +226,8 @@ export function toSql(rules: ParsedRule[]): string {
  ${sqlText(rule.recommended_camera)},
  ${sqlText(rule.recommended_lighting)},
  ${sqlText(rule.recommended_lens)},
+ ${sqlText(rule.recommended_processing)},
+ ${sqlText(rule.recommended_accessories)},
  '${rule.ai_or_rule_based}',
  ${sqlText(rule.notes_vi)},
  ${sqlText(rule.notes_en)},
@@ -239,7 +247,8 @@ export function toSql(rules: ParsedRule[]): string {
 
 insert into public.selector_rules
   (code, task_type_id, condition_json, recommended_camera, recommended_lighting,
-   recommended_lens, ai_or_rule_based, notes_vi, notes_en, priority, is_active)
+   recommended_lens, recommended_processing, recommended_accessories,
+   ai_or_rule_based, notes_vi, notes_en, priority, is_active)
 values
 
 ${values}
@@ -250,6 +259,8 @@ on conflict (code) where code is not null do update set
   recommended_camera   = excluded.recommended_camera,
   recommended_lighting = excluded.recommended_lighting,
   recommended_lens     = excluded.recommended_lens,
+  recommended_processing  = excluded.recommended_processing,
+  recommended_accessories = excluded.recommended_accessories,
   ai_or_rule_based     = excluded.ai_or_rule_based,
   notes_vi             = excluded.notes_vi,
   notes_en             = excluded.notes_en,

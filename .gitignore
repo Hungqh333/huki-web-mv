@@ -47,3 +47,4 @@ CHAY-BUOC-NAY.sql
 # File Excel/SQL bang luat do doi ky thuat dien, khong commit
 bang-luat*.xlsx
 bang-luat*.sql
+CHAY-BUOC-NAY-*.sql

@@ -42,6 +42,8 @@ export type SelectorRule = {
   recommended_camera: string | null;
   recommended_lighting: string | null;
   recommended_lens: string | null;
+  recommended_processing: string | null;
+  recommended_accessories: string | null;
   ai_or_rule_based: SolutionApproach;
   notes_vi: string | null;
   notes_en: string | null;
@@ -67,6 +69,8 @@ export type SelectorResult = {
   camera: string | null;
   lighting: string | null;
   lens: string | null;
+  processing: string | null;
+  accessories: string | null;
   approach: SolutionApproach;
   /** Ghi chú của chính luật đã quyết định approach — chính là "lý do". */
   approachReason: SourcedNote | null;

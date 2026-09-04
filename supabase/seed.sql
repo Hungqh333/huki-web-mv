@@ -779,3 +779,77 @@ on conflict (code) where code is not null do update set
   notes_en             = excluded.notes_en,
   priority             = excluded.priority,
   is_active            = true;
+
+
+-- =============================================================================
+-- Hai cụm BOM mới: máy tính/giao tiếp và phụ kiện
+--
+-- Tách riêng bằng UPDATE thay vì thêm hai cột vào 55 dòng VALUES ở trên — vừa
+-- gọn, vừa idempotent, vừa dễ đọc xem luật nào phụ trách cụm nào.
+--
+-- Nguyên tắc như các cụm cũ: luật nền điền cấu hình mặc định, luật cụ thể hơn
+-- (priority nhỏ hơn) chỉ điền ô nào nó thực sự quyết định.
+-- =============================================================================
+
+-- Luật nền của bốn bài toán chính: cấu hình máy tính và phụ kiện tối thiểu.
+update public.selector_rules set
+  recommended_processing  = 'GigE Vision, PC công nghiệp i5, 16 GB RAM, không cần GPU',
+  recommended_accessories = 'Cáp GigE có khoá, gá camera 3 trục, nguồn 24 V cho đèn'
+where code = 'APPEAR-BASE';
+
+update public.selector_rules set
+  recommended_processing  = 'GigE Vision, PC công nghiệp i5, 16 GB RAM',
+  recommended_accessories = 'Cáp GigE có khoá, gá camera cứng vững, chuẩn hiệu chuẩn (calibration target)'
+where code = 'MEAS-BASE';
+
+update public.selector_rules set
+  recommended_processing  = 'GigE Vision, PC công nghiệp i5, 16 GB RAM',
+  recommended_accessories = 'Cáp GigE có khoá, gá camera, tấm hiệu chuẩn toạ độ'
+where code = 'ALIGN-BASE';
+
+-- Băng thông cao thì GigE (~125 MB/s) không tải nổi. Ngưỡng để trong luật chứ
+-- không hard-code trong code — engine chỉ tính ra data_rate_mbytes_s.
+insert into public.selector_rules
+  (code, task_type_id, condition_json, recommended_camera, recommended_lighting,
+   recommended_lens, ai_or_rule_based, notes_vi, notes_en, priority)
+values
+('BOM-BANDWIDTH-5GIGE',
+ (select id from public.task_types where slug = 'appearance-inspection'),
+ '{"all":[{"field":"data_rate_mbytes_s","op":"gt","value":110}]}'::jsonb,
+ null, null, null,
+ 'rule_based',
+ 'Băng thông vượt ~110 MB/s: GigE (125 MB/s lý thuyết) không còn dư địa an toàn. Phải lên 5GigE hoặc CoaXPress, và card mạng phải hỗ trợ jumbo frame.',
+ 'Data rate above ~110 MB/s leaves no safety margin on GigE (125 MB/s theoretical). Move to 5GigE or CoaXPress, and the NIC must support jumbo frames.',
+ 25),
+
+('BOM-DUST-ENCLOSURE',
+ (select id from public.task_types where slug = 'appearance-inspection'),
+ '{"all":[{"field":"ip_rating","op":"in","value":["ip65","ip67"]}]}'::jsonb,
+ null, null, null,
+ 'rule_based',
+ 'Yêu cầu IP65 trở lên: camera công nghiệp thường chỉ IP40, phải có vỏ bảo vệ kèm cửa sổ kính và khí nén thổi sạch.',
+ 'IP65 or above: industrial cameras are typically only IP40, so an enclosure with a glass window and an air purge is required.',
+ 25)
+on conflict (code) where code is not null do update set
+  condition_json = excluded.condition_json,
+  notes_vi       = excluded.notes_vi,
+  notes_en       = excluded.notes_en,
+  priority       = excluded.priority;
+
+update public.selector_rules set
+  recommended_processing = 'Giao tiếp 5GigE hoặc CoaXPress; card mạng hỗ trợ jumbo frame'
+where code = 'BOM-BANDWIDTH-5GIGE';
+
+update public.selector_rules set
+  recommended_accessories = 'Vỏ bảo vệ IP65 có cửa sổ kính, bộ thổi khí nén làm sạch cửa sổ'
+where code = 'BOM-DUST-ENCLOSURE';
+
+-- Deep learning thì cần GPU — gắn vào chính luật đã quyết định hướng đó.
+update public.selector_rules set
+  recommended_processing = 'PC có GPU rời (>= 8 GB VRAM) cho suy luận deep learning'
+where code = 'APPEAR-DL-HIGH-VAR';
+
+-- Bề mặt phản chiếu hay dùng kính lọc phân cực chéo để cắt loá.
+update public.selector_rules set
+  recommended_accessories = 'Kính lọc phân cực chéo (trên đèn và trên ống kính) để cắt điểm loá'
+where code = 'APPEAR-REFLECTIVE';

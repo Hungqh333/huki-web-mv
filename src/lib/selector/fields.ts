@@ -19,8 +19,19 @@ export type FieldOption = {
   labelKey: string;
 };
 
+/**
+ * Nhóm câu hỏi. Chia form thành nhiều bước theo CHỦ ĐỀ chứ không theo linh kiện:
+ * camera/lens/đèn ràng buộc lẫn nhau nên không hỏi rời từng cụm được, còn các
+ * câu hỏi thì tách theo chủ đề rất tự nhiên.
+ */
+export type FieldGroup = 'subject' | 'line' | 'environment';
+
+/** Thứ tự hỏi. Bước nào không có trường nào thì tự ẩn. */
+export const FIELD_GROUPS: FieldGroup[] = ['subject', 'line', 'environment'];
+
 export type FieldDef = {
   key: string;
+  group: FieldGroup;
   kind: FieldKind;
   /** Khoá i18n dưới namespace selector.fields */
   labelKey: string;
@@ -91,6 +102,7 @@ const GUIDANCE_MODE_OPTIONS: FieldOption[] = [
 export const FIELD_CATALOG: Record<string, FieldDef> = {
   fov_width_mm: {
     key: 'fov_width_mm',
+    group: 'subject',
     kind: 'number',
     labelKey: 'fov_width_mm',
     unit: 'mm',
@@ -100,6 +112,7 @@ export const FIELD_CATALOG: Record<string, FieldDef> = {
   },
   fov_height_mm: {
     key: 'fov_height_mm',
+    group: 'subject',
     kind: 'number',
     labelKey: 'fov_height_mm',
     unit: 'mm',
@@ -109,6 +122,7 @@ export const FIELD_CATALOG: Record<string, FieldDef> = {
   },
   tolerance_mm: {
     key: 'tolerance_mm',
+    group: 'subject',
     kind: 'number',
     labelKey: 'tolerance_mm',
     unit: 'mm',
@@ -118,6 +132,7 @@ export const FIELD_CATALOG: Record<string, FieldDef> = {
   },
   working_distance_mm: {
     key: 'working_distance_mm',
+    group: 'line',
     kind: 'number',
     labelKey: 'working_distance_mm',
     unit: 'mm',
@@ -126,6 +141,7 @@ export const FIELD_CATALOG: Record<string, FieldDef> = {
   },
   throughput_ppm: {
     key: 'throughput_ppm',
+    group: 'line',
     kind: 'number',
     labelKey: 'throughput_ppm',
     unit: 'part/min',
@@ -134,6 +150,7 @@ export const FIELD_CATALOG: Record<string, FieldDef> = {
   },
   line_speed_mms: {
     key: 'line_speed_mms',
+    group: 'line',
     kind: 'number',
     labelKey: 'line_speed_mms',
     unit: 'mm/s',
@@ -142,6 +159,7 @@ export const FIELD_CATALOG: Record<string, FieldDef> = {
   },
   surface: {
     key: 'surface',
+    group: 'subject',
     kind: 'select',
     labelKey: 'surface',
     options: SURFACE_OPTIONS,
@@ -149,18 +167,21 @@ export const FIELD_CATALOG: Record<string, FieldDef> = {
   },
   environment: {
     key: 'environment',
+    group: 'environment',
     kind: 'multiselect',
     labelKey: 'environment',
     options: ENVIRONMENT_OPTIONS,
   },
   ip_rating: {
     key: 'ip_rating',
+    group: 'environment',
     kind: 'select',
     labelKey: 'ip_rating',
     options: IP_RATING_OPTIONS,
   },
   rotation_range_deg: {
     key: 'rotation_range_deg',
+    group: 'subject',
     kind: 'number',
     labelKey: 'rotation_range_deg',
     unit: '°',
@@ -170,6 +191,7 @@ export const FIELD_CATALOG: Record<string, FieldDef> = {
   },
   defect_min_size_mm: {
     key: 'defect_min_size_mm',
+    group: 'subject',
     kind: 'number',
     labelKey: 'defect_min_size_mm',
     unit: 'mm',
@@ -179,6 +201,7 @@ export const FIELD_CATALOG: Record<string, FieldDef> = {
   },
   defect_variability: {
     key: 'defect_variability',
+    group: 'subject',
     kind: 'select',
     labelKey: 'defect_variability',
     options: VARIABILITY_OPTIONS,
@@ -186,11 +209,13 @@ export const FIELD_CATALOG: Record<string, FieldDef> = {
   },
   color_critical: {
     key: 'color_critical',
+    group: 'subject',
     kind: 'boolean',
     labelKey: 'color_critical',
   },
   measure_type: {
     key: 'measure_type',
+    group: 'subject',
     kind: 'select',
     labelKey: 'measure_type',
     options: MEASURE_TYPE_OPTIONS,
@@ -198,6 +223,7 @@ export const FIELD_CATALOG: Record<string, FieldDef> = {
   },
   perspective_free: {
     key: 'perspective_free',
+    group: 'subject',
     kind: 'boolean',
     labelKey: 'perspective_free',
   },
@@ -207,6 +233,7 @@ export const FIELD_CATALOG: Record<string, FieldDef> = {
   // 3D
   height_range_mm: {
     key: 'height_range_mm',
+    group: 'subject',
     kind: 'number',
     labelKey: 'height_range_mm',
     unit: 'mm',
@@ -216,6 +243,7 @@ export const FIELD_CATALOG: Record<string, FieldDef> = {
   },
   z_resolution_mm: {
     key: 'z_resolution_mm',
+    group: 'subject',
     kind: 'number',
     labelKey: 'z_resolution_mm',
     unit: 'mm',
@@ -227,6 +255,7 @@ export const FIELD_CATALOG: Record<string, FieldDef> = {
   // OCR / OCV
   character_height_mm: {
     key: 'character_height_mm',
+    group: 'subject',
     kind: 'number',
     labelKey: 'character_height_mm',
     unit: 'mm',
@@ -236,6 +265,7 @@ export const FIELD_CATALOG: Record<string, FieldDef> = {
   },
   print_contrast: {
     key: 'print_contrast',
+    group: 'subject',
     kind: 'select',
     labelKey: 'print_contrast',
     options: PRINT_CONTRAST_OPTIONS,
@@ -245,6 +275,7 @@ export const FIELD_CATALOG: Record<string, FieldDef> = {
   // Đọc mã vạch
   code_type: {
     key: 'code_type',
+    group: 'subject',
     kind: 'select',
     labelKey: 'code_type',
     options: CODE_TYPE_OPTIONS,
@@ -252,6 +283,7 @@ export const FIELD_CATALOG: Record<string, FieldDef> = {
   },
   module_size_mm: {
     key: 'module_size_mm',
+    group: 'subject',
     kind: 'number',
     labelKey: 'module_size_mm',
     unit: 'mm',
@@ -263,6 +295,7 @@ export const FIELD_CATALOG: Record<string, FieldDef> = {
   // Robot guidance
   guidance_mode: {
     key: 'guidance_mode',
+    group: 'subject',
     kind: 'select',
     labelKey: 'guidance_mode',
     options: GUIDANCE_MODE_OPTIONS,
@@ -270,6 +303,7 @@ export const FIELD_CATALOG: Record<string, FieldDef> = {
   },
   pick_accuracy_mm: {
     key: 'pick_accuracy_mm',
+    group: 'subject',
     kind: 'number',
     labelKey: 'pick_accuracy_mm',
     unit: 'mm',

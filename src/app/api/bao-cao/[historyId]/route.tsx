@@ -127,6 +127,8 @@ export async function GET(
         inputs: tReport('inputs'),
         result: tResult('title'),
         camera: tResult('camera'),
+        processing: tResult('processing'),
+        accessories: tResult('accessories'),
         lighting: tResult('lighting'),
         lens: tResult('lens'),
         approach: tReport('approach'),

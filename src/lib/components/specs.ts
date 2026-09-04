@@ -59,13 +59,16 @@ export const INTERFACE_BANDWIDTH: Record<string, number> = {
   USB3: 350,
   '5GigE': 550,
   '10GigE': 1100,
-  CXP: 2000,
+  'CXP-6': 600,
 };
 
 // ---------------------------------------------------------------- CAMERA --
 export type CameraSpec = {
   /** Độ phân giải, megapixel. */
   resolution_mp: number;
+  /** Số pixel thật theo từng trục — cần để kiểm đủ pixel trên CẢ HAI trục. */
+  resolution_w_px: number;
+  resolution_h_px: number;
   /** Optical format, khớp khoá của SENSOR_FORMATS. Ví dụ '1/1.8'. */
   sensor_format: string;
   /** Kích thước điểm ảnh (µm) — cùng độ phân giải, pixel nhỏ đòi ống kính tốt hơn. */
@@ -99,7 +102,15 @@ export type LensSpec = {
 // ----------------------------------------------------------------- LIGHT --
 export type LightSpec = {
   /** Kiểu chiếu sáng — khoá dùng để khớp với câu mô tả trong bảng luật. */
-  light_type: 'ring' | 'dome' | 'backlight' | 'bar' | 'coaxial' | 'darkfield';
+  light_type:
+    | 'ring'
+    | 'dome'
+    | 'backlight'
+    | 'bar'
+    | 'coaxial'
+    | 'darkfield'
+    /** Cần bốn đèn chiếu bốn hướng, không phải một thiết bị đơn lẻ. */
+    | 'photometric_stereo';
   color: 'white' | 'red' | 'blue' | 'green' | 'ir' | 'uv';
   /** Kích thước danh nghĩa (mm) — so với FOV để biết có phủ đủ không. */
   size_mm?: number;
@@ -134,6 +145,14 @@ export function sensorWidthMm(spec: Record<string, unknown>): number | null {
   const format = specString(spec, 'sensor_format');
   if (!format) return null;
   return SENSOR_FORMATS[format]?.widthMm ?? null;
+}
+
+/** Đường chéo cảm biến (mm) — so với vòng ảnh ống kính. */
+export function sensorDiagonalMm(format: string | null): number | null {
+  if (!format) return null;
+  const size = SENSOR_FORMATS[format];
+  if (!size) return null;
+  return Math.sqrt(size.widthMm ** 2 + size.heightMm ** 2);
 }
 
 /** Vòng ảnh của ống kính có phủ nổi cảm biến này không. */
@@ -177,6 +196,8 @@ const INTERFACES = Object.keys(INTERFACE_BANDWIDTH);
 export const SPEC_FIELDS: Record<ComponentKind, SpecFieldDef[]> = {
   camera: [
     { key: 'resolution_mp', type: 'number', unit: 'MP', required: true, step: 0.1 },
+    { key: 'resolution_w_px', type: 'number', unit: 'px', required: true, step: 1 },
+    { key: 'resolution_h_px', type: 'number', unit: 'px', required: true, step: 1 },
     { key: 'sensor_format', type: 'select', options: SENSOR_FORMAT_ORDER, required: true },
     { key: 'pixel_size_um', type: 'number', unit: 'µm', step: 0.01 },
     { key: 'mount', type: 'select', options: MOUNTS, required: true },
@@ -197,7 +218,7 @@ export const SPEC_FIELDS: Record<ComponentKind, SpecFieldDef[]> = {
     {
       key: 'light_type',
       type: 'select',
-      options: ['ring', 'dome', 'backlight', 'bar', 'coaxial', 'darkfield'],
+      options: ['ring', 'dome', 'backlight', 'bar', 'coaxial', 'darkfield', 'photometric_stereo'],
       required: true,
     },
     {

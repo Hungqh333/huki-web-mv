@@ -78,7 +78,18 @@ export function computeFocalLength(
  */
 export function pickCamera(
   components: Component[],
-  req: { requiredMp: number | null; dataRateMbytesS: number | null; needsColor: boolean }
+  req: {
+    requiredMp: number | null;
+    dataRateMbytesS: number | null;
+    needsColor: boolean;
+    /**
+     * Số pixel cần trên từng trục. Bắt buộc phải kiểm RIÊNG hai trục: cảm biến
+     * có tỉ lệ khung hình cố định, nên "đủ megapixel" không đồng nghĩa với đủ
+     * pixel trên trục dài của FOV.
+     */
+    requiredWidthPx?: number | null;
+    requiredHeightPx?: number | null;
+  }
 ): ComponentChoice<CameraFit> {
   const fit: CameraFit = {
     requiredMp: req.requiredMp,
@@ -90,6 +101,15 @@ export function pickCamera(
     const mp = specNumber(camera.spec, 'resolution_mp');
     if (mp === null) return false;
     if (req.requiredMp !== null && mp < req.requiredMp) return false;
+
+    const widthPx = specNumber(camera.spec, 'resolution_w_px');
+    const heightPx = specNumber(camera.spec, 'resolution_h_px');
+    if (req.requiredWidthPx != null) {
+      if (widthPx === null || widthPx < req.requiredWidthPx) return false;
+    }
+    if (req.requiredHeightPx != null) {
+      if (heightPx === null || heightPx < req.requiredHeightPx) return false;
+    }
 
     const color = specString(camera.spec, 'color');
     // Cần phân biệt màu thì bắt buộc camera màu. Không cần màu thì camera màu

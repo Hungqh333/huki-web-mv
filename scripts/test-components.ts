@@ -235,3 +235,26 @@ test('máy không có giao tiếp cần thiết thì bị loại', () => {
 
   assert.equal(result.chosen?.model, 'IPC-RTX', 'chi may nay co 5GigE');
 });
+
+test('lọc camera theo CẢ HAI trục, không chỉ theo megapixel', () => {
+  // FOV rat dai va hep: can 3000 px ngang nhung chi 300 px doc.
+  const wide = part('camera', 'Test', 'WIDE', {
+    resolution_mp: 5, resolution_w_px: 2592, resolution_h_px: 1944,
+    sensor_format: '2/3', mount: 'C', interface: 'GigE', color: 'mono',
+  });
+  const tall = part('camera', 'Test', 'BIG', {
+    resolution_mp: 20, resolution_w_px: 5472, resolution_h_px: 3648,
+    sensor_format: '1', mount: 'C', interface: 'GigE', color: 'mono',
+  });
+
+  const result = pickCamera([wide, tall], {
+    requiredMp: 1,
+    dataRateMbytesS: null,
+    needsColor: false,
+    requiredWidthPx: 3000,
+    requiredHeightPx: 300,
+  });
+
+  assert.equal(result.chosen?.model, 'BIG', '2592 px ngang khong du 3000 du thua megapixel');
+  assert.equal(result.alternatives.length, 0, 'camera thieu pixel truc ngang phai bi loai han');
+});

@@ -2,15 +2,16 @@ import { notFound, redirect } from 'next/navigation';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations } from 'next-intl/server';
 import { AdminNav } from '@/components/admin/AdminNav';
+import type { BadgeTone, IconName } from '@/components/ui/Icon';
 import { getSessionContext, isAdmin } from '@/lib/auth';
 import { hasSupabaseEnv } from '@/lib/supabase/env';
 
-const NAV = [
-  { href: '/admin/nguoi-dung', key: 'users' },
-  { href: '/admin/bai-viet', key: 'articles' },
-  { href: '/admin/luat-goi-y', key: 'rules' },
-  { href: '/admin/chi-tieu', key: 'kpi' },
-] as const;
+const NAV: { href: string; key: string; icon: IconName; tone: BadgeTone }[] = [
+  { href: '/admin/nguoi-dung', key: 'users', icon: 'users', tone: 'sky' },
+  { href: '/admin/bai-viet', key: 'articles', icon: 'article', tone: 'violet' },
+  { href: '/admin/luat-goi-y', key: 'rules', icon: 'rules', tone: 'emerald' },
+  { href: '/admin/chi-tieu', key: 'kpi', icon: 'kpi', tone: 'amber' },
+];
 
 export default async function AdminLayout({ children }: LayoutProps<'/admin'>) {
   const t = await getTranslations('admin.nav');
@@ -35,7 +36,12 @@ export default async function AdminLayout({ children }: LayoutProps<'/admin'>) {
       <div className="mt-6 grid gap-8 lg:grid-cols-[200px_minmax(0,1fr)]">
         <AdminNav
           label={t('title')}
-          items={NAV.map((item) => ({ href: item.href, label: t(item.key) }))}
+          items={NAV.map((item) => ({
+            href: item.href,
+            label: t(item.key),
+            icon: item.icon,
+            tone: item.tone,
+          }))}
         />
 
         <div className="min-w-0">

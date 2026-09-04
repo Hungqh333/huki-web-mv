@@ -29,7 +29,25 @@
   "home": {
     "title": "Machine Vision Hub",
     "subtitle": "Task-driven equipment selection and a technical handbook for the Vision team.",
-    "cta": "Explore the handbook"
+    "cta": "Explore the handbook",
+    "ctaSecondary": "Equipment selector",
+    "modulesHeading": "Three core tools",
+    "modulesSub": "Select equipment by task, look up knowledge, and set commitments you can actually meet.",
+    "open": "Open",
+    "modules": {
+      "handbook": {
+        "title": "Technical handbook",
+        "desc": "Fundamentals of optics, lighting and sensors; new technology and lessons from real projects."
+      },
+      "selector": {
+        "title": "Equipment selector",
+        "desc": "Enter task parameters; the engine reads the rule table and suggests camera, lighting and lens with reasons."
+      },
+      "kpi": {
+        "title": "KPI calculator",
+        "desc": "Define commitable quality targets, translate them into operating cost, and draft a contract clause."
+      }
+    }
   },
   "auth": {
     "fields": {

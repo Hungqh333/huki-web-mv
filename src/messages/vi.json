@@ -29,7 +29,25 @@
   "home": {
     "title": "Machine Vision Hub",
     "subtitle": "Bộ chọn thiết bị theo bài toán và cẩm nang kỹ thuật cho đội ngũ Vision.",
-    "cta": "Khám phá cẩm nang"
+    "cta": "Khám phá cẩm nang",
+    "ctaSecondary": "Bộ chọn thiết bị",
+    "modulesHeading": "Ba công cụ chính",
+    "modulesSub": "Chọn thiết bị theo bài toán, tra cứu kiến thức, và xác định chỉ tiêu cam kết được.",
+    "open": "Mở",
+    "modules": {
+      "handbook": {
+        "title": "Cẩm nang kỹ thuật",
+        "desc": "Kiến thức nền về optics, chiếu sáng, cảm biến; công nghệ mới và bài học từ dự án đã triển khai."
+      },
+      "selector": {
+        "title": "Bộ chọn thiết bị",
+        "desc": "Nhập tham số bài toán, hệ thống tra bảng luật và gợi ý camera, ánh sáng, ống kính kèm lý do."
+      },
+      "kpi": {
+        "title": "Bộ tính chỉ tiêu",
+        "desc": "Xác định chỉ tiêu chất lượng cam kết được, quy ra chi phí vận hành và sinh bản nháp điều khoản."
+      }
+    }
   },
   "auth": {
     "fields": {

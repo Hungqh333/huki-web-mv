@@ -151,3 +151,128 @@ export function interfaceCarries(interfaceName: string | null, dataRateMbytesS: 
   const capacity = INTERFACE_BANDWIDTH[interfaceName];
   return capacity !== undefined && capacity >= dataRateMbytesS;
 }
+
+// =============================================================================
+// Định nghĩa trường spec theo từng loại linh kiện.
+//
+// Dùng chung cho CẢ HAI phía: form quản trị render ô nhập theo đây, và server
+// action cũng dựng lại object spec theo đây. Một nguồn sự thật, nên không thể
+// có chuyện form cho nhập một khoá mà server lại bỏ qua.
+// =============================================================================
+
+export type SpecFieldType = 'number' | 'text' | 'select' | 'multiselect';
+
+export type SpecFieldDef = {
+  key: string;
+  type: SpecFieldType;
+  unit?: string;
+  options?: string[];
+  required?: boolean;
+  step?: number;
+};
+
+const MOUNTS = ['C', 'CS', 'F'];
+const INTERFACES = Object.keys(INTERFACE_BANDWIDTH);
+
+export const SPEC_FIELDS: Record<ComponentKind, SpecFieldDef[]> = {
+  camera: [
+    { key: 'resolution_mp', type: 'number', unit: 'MP', required: true, step: 0.1 },
+    { key: 'sensor_format', type: 'select', options: SENSOR_FORMAT_ORDER, required: true },
+    { key: 'pixel_size_um', type: 'number', unit: 'µm', step: 0.01 },
+    { key: 'mount', type: 'select', options: MOUNTS, required: true },
+    { key: 'interface', type: 'select', options: INTERFACES, required: true },
+    { key: 'max_fps', type: 'number', unit: 'fps', step: 0.1 },
+    { key: 'color', type: 'select', options: ['mono', 'color'], required: true },
+  ],
+  lens: [
+    { key: 'lens_type', type: 'select', options: ['fixed', 'telecentric', 'macro'], required: true },
+    { key: 'focal_length_mm', type: 'number', unit: 'mm', step: 0.1 },
+    { key: 'magnification', type: 'number', unit: 'x', step: 0.01 },
+    { key: 'image_circle', type: 'select', options: SENSOR_FORMAT_ORDER, required: true },
+    { key: 'mount', type: 'select', options: MOUNTS, required: true },
+    { key: 'wd_min_mm', type: 'number', unit: 'mm', step: 1 },
+    { key: 'wd_max_mm', type: 'number', unit: 'mm', step: 1 },
+  ],
+  light: [
+    {
+      key: 'light_type',
+      type: 'select',
+      options: ['ring', 'dome', 'backlight', 'bar', 'coaxial', 'darkfield'],
+      required: true,
+    },
+    {
+      key: 'color',
+      type: 'select',
+      options: ['white', 'red', 'blue', 'green', 'ir', 'uv'],
+      required: true,
+    },
+    { key: 'size_mm', type: 'number', unit: 'mm', step: 1 },
+    { key: 'wd_min_mm', type: 'number', unit: 'mm', step: 1 },
+    { key: 'wd_max_mm', type: 'number', unit: 'mm', step: 1 },
+  ],
+  controller: [
+    { key: 'cpu', type: 'text' },
+    { key: 'ram_gb', type: 'number', unit: 'GB', step: 1 },
+    { key: 'gpu', type: 'text' },
+    { key: 'interfaces', type: 'multiselect', options: INTERFACES },
+  ],
+  // Phụ kiện quá đa dạng để ép vào khuôn — mô tả bằng ghi chú là đủ.
+  accessory: [],
+};
+
+export const COMPONENT_KINDS: ComponentKind[] = [
+  'camera',
+  'lens',
+  'light',
+  'controller',
+  'accessory',
+];
+
+export const COMPONENT_SOURCES: ComponentSource[] = ['unverified', 'datasheet', 'measured'];
+
+/**
+ * Dựng object spec từ dữ liệu form, chỉ giữ khoá thuộc đúng loại linh kiện.
+ *
+ * Lọc theo loại là có chủ đích: đổi loại từ camera sang đèn mà vẫn giữ lại
+ * resolution_mp thì spec sẽ chứa rác, và logic chọn sẽ đọc nhầm.
+ */
+export function buildSpec(
+  kind: ComponentKind,
+  read: (key: string) => string | string[] | null
+): { spec: Record<string, unknown>; missing: string[] } {
+  const spec: Record<string, unknown> = {};
+  const missing: string[] = [];
+
+  for (const field of SPEC_FIELDS[kind]) {
+    const raw = read(field.key);
+
+    if (field.type === 'multiselect') {
+      const values = Array.isArray(raw) ? raw : raw ? [raw] : [];
+      if (values.length > 0) spec[field.key] = values;
+      else if (field.required) missing.push(field.key);
+      continue;
+    }
+
+    const value = typeof raw === 'string' ? raw.trim() : '';
+    if (value === '') {
+      if (field.required) missing.push(field.key);
+      continue;
+    }
+
+    if (field.type === 'number') {
+      const parsed = Number(value);
+      if (!Number.isFinite(parsed)) missing.push(field.key);
+      else spec[field.key] = parsed;
+      continue;
+    }
+
+    if (field.type === 'select' && field.options && !field.options.includes(value)) {
+      missing.push(field.key);
+      continue;
+    }
+
+    spec[field.key] = value;
+  }
+
+  return { spec, missing };
+}

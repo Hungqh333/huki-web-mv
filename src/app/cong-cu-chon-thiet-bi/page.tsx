@@ -4,6 +4,10 @@ import { canUseSelector, getSessionContext } from '@/lib/auth';
 import { hasSupabaseEnv } from '@/lib/supabase/env';
 import { createClient } from '@/lib/supabase/server';
 import { contactMailto } from '@/lib/contact';
+import { IconBadge, type BadgeTone } from '@/components/ui/Icon';
+
+// Xoay vòng tông màu cho huy hiệu icon để danh sách bài toán không đơn điệu.
+const TASK_TONES: BadgeTone[] = ['violet', 'sky', 'emerald', 'amber'];
 
 type TaskTypeRow = {
   slug: string;
@@ -55,18 +59,22 @@ export default async function SelectorHomePage() {
             {t('pickTask')}
           </p>
           <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {taskTypes.map((task) => (
+            {taskTypes.map((task, index) => (
               <li key={task.slug}>
                 <Link
                   href={`/cong-cu-chon-thiet-bi/${task.slug}`}
-                  className="flex h-full flex-col rounded-lg border border-slate-200 p-5 transition hover:border-sky-500 hover:shadow-sm dark:border-slate-800 dark:hover:border-sky-500"
+                  className="group flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700"
                 >
-                  <span className="font-semibold">{pickName(task)}</span>
-                  <span className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+                  <IconBadge name="selector" tone={TASK_TONES[index % TASK_TONES.length]} />
+                  <span className="mt-4 font-semibold">{pickName(task)}</span>
+                  <span className="mt-2 flex-1 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
                     {pickDesc(task)}
                   </span>
-                  <span className="mt-4 text-sm font-medium text-sky-700 dark:text-sky-400">
-                    {t('openTask')} →
+                  <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-sky-700 dark:text-sky-400">
+                    {t('openTask')}
+                    <span aria-hidden="true" className="transition group-hover:translate-x-0.5">
+                      →
+                    </span>
                   </span>
                 </Link>
               </li>

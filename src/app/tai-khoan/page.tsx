@@ -4,6 +4,7 @@ import { ProfileForm } from '@/components/auth/ProfileForm';
 import { RoleBadge } from '@/components/auth/RoleBadge';
 import { SignOutButton } from '@/components/auth/SignOutButton';
 import { SupabaseNotConfigured } from '@/components/auth/SupabaseNotConfigured';
+import { IconBadge } from '@/components/ui/Icon';
 import { canUseSelector, getSessionContext } from '@/lib/auth';
 import { hasSupabaseEnv } from '@/lib/supabase/env';
 import { createClient } from '@/lib/supabase/server';
@@ -38,40 +39,36 @@ export default async function AccountPage() {
 
   return (
     <section className="mx-auto w-full max-w-3xl px-4 py-12 sm:px-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">{t('title')}</h1>
-          <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{user.email}</p>
+      {/* Đầu trang: huy hiệu icon + email + nút đăng xuất, kiểu trang cài đặt mẫu */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <IconBadge name="user" tone="sky" className="size-12" />
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">{t('title')}</h1>
+            <p className="mt-0.5 text-sm text-slate-600 dark:text-slate-400">{user.email}</p>
+          </div>
         </div>
         <SignOutButton />
       </div>
 
-      <div className="mt-8 space-y-8">
-        <div className="rounded-lg border border-slate-200 p-5 dark:border-slate-800">
-          <div className="flex items-center justify-between gap-4">
-            <h2 className="text-sm font-semibold">{t('roleTitle')}</h2>
-            <RoleBadge role={role} />
-          </div>
-          <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+      <div className="mt-8 space-y-4">
+        <SettingCard iconTone="violet" icon="shield" title={t('roleTitle')} action={<RoleBadge role={role} />}>
+          <p className="text-sm text-slate-600 dark:text-slate-400">
             {canUseSelector(role) ? t('roleSelectorAllowed') : t('roleSelectorBlocked')}
           </p>
-        </div>
+        </SettingCard>
 
-        <div className="rounded-lg border border-slate-200 p-5 dark:border-slate-800">
-          <h2 className="text-sm font-semibold">{t('profileTitle')}</h2>
-          <div className="mt-4">
-            <ProfileForm name={profile?.name ?? null} company={profile?.company ?? null} />
-          </div>
-        </div>
+        <SettingCard iconTone="emerald" icon="user" title={t('profileTitle')}>
+          <ProfileForm name={profile?.name ?? null} company={profile?.company ?? null} />
+        </SettingCard>
 
-        <div className="rounded-lg border border-slate-200 p-5 dark:border-slate-800">
-          <h2 className="text-sm font-semibold">{t('historyTitle')}</h2>
+        <SettingCard iconTone="amber" icon="clock" title={t('historyTitle')}>
           {history.length > 0 ? (
-            <ul className="mt-4 divide-y divide-slate-200 text-sm dark:divide-slate-800">
+            <ul className="divide-y divide-slate-200 text-sm dark:divide-slate-800">
               {history.map((row) => (
-                <li key={row.id} className="flex justify-between gap-4 py-2">
+                <li key={row.id} className="flex justify-between gap-4 py-2.5 first:pt-0 last:pb-0">
                   <span>{row.task_types?.name_vi ?? '—'}</span>
-                  <span className="text-slate-500 dark:text-slate-400">
+                  <span className="text-slate-500 tabular-nums dark:text-slate-400">
                     {format.dateTime(new Date(row.created_at), {
                       dateStyle: 'medium',
                       timeStyle: 'short',
@@ -81,10 +78,43 @@ export default async function AccountPage() {
               ))}
             </ul>
           ) : (
-            <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">{t('historyEmpty')}</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">{t('historyEmpty')}</p>
           )}
-        </div>
+        </SettingCard>
       </div>
     </section>
+  );
+}
+
+/**
+ * Thẻ một mục cài đặt: huy hiệu icon bên trái, tiêu đề + hành động ở hàng đầu,
+ * nội dung bên dưới. Dựng theo bố cục hàng-thẻ của trang cài đặt mẫu.
+ */
+function SettingCard({
+  icon,
+  iconTone,
+  title,
+  action,
+  children,
+}: {
+  icon: 'shield' | 'user' | 'clock';
+  iconTone: 'violet' | 'emerald' | 'amber';
+  title: string;
+  action?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div className="flex items-start gap-4">
+        <IconBadge name={icon} tone={iconTone} />
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="font-semibold">{title}</h2>
+            {action}
+          </div>
+          <div className="mt-3">{children}</div>
+        </div>
+      </div>
+    </div>
   );
 }

@@ -8,13 +8,21 @@ const ROLE_STYLES: Record<UserRole, string> = {
   admin: 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300',
 };
 
+const ROLE_DOT: Record<UserRole, string> = {
+  registered: 'bg-slate-400',
+  member: 'bg-sky-500',
+  vip: 'bg-amber-500',
+  admin: 'bg-purple-500',
+};
+
 export async function RoleBadge({ role }: { role: UserRole }) {
   const t = await getTranslations('roles');
 
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${ROLE_STYLES[role]}`}
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${ROLE_STYLES[role]}`}
     >
+      <span className={`size-1.5 rounded-full ${ROLE_DOT[role]}`} aria-hidden="true" />
       {t(role)}
     </span>
   );

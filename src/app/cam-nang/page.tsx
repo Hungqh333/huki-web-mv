@@ -81,7 +81,7 @@ export default async function HandbookPage({ searchParams }: PageProps<'/cam-nan
             return (
               <li
                 key={article.id}
-                className="flex flex-col rounded-lg border border-slate-200 p-5 dark:border-slate-800"
+                className="flex flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700"
               >
                 <div className="flex flex-wrap items-center gap-2">
                   <TierBadge tier={article.access_tier} locked={article.is_locked} />

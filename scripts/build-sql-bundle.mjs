@@ -26,6 +26,13 @@ const BUNDLES = {
       ['PHAN 2/2: SEED — nap lai bang luat kem hai cum moi', 'supabase/seed.sql'],
     ],
   },
+  components: {
+    out: 'CHAY-BUOC-NAY-LINHKIEN.sql',
+    parts: [
+      ['PHAN 1/2: MIGRATION — bang catalog linh kien', 'supabase/migrations/20260904000002_components.sql'],
+      ['PHAN 2/2: SEED — nap thiet bi mau cua Basler, Hikrobot, iRayple, HZ, Coolens', 'supabase/seed_components.sql'],
+    ],
+  },
 };
 
 const name = process.argv[2];

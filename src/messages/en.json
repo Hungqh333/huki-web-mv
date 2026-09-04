@@ -119,7 +119,20 @@
       "lockedForGuest": "The equipment selector is for internal engineers and approved partners. Sign in with a granted account, or contact the Vision department for direct consulting on your application.",
       "lockedForRegistered": "Your account is at the \"Registered\" level, so this tool is not available yet. Contact the Vision department to have your access upgraded, or to get direct consulting on your application.",
       "contactCta": "Contact us for consulting",
-      "signInCta": "Sign in"
+      "signInCta": "Sign in",
+      "guideTitle": "How the tool chooses",
+      "guideIntro": "When several options qualify, the priority order is:",
+      "guidePriority": [
+        "Stability",
+        "Accuracy",
+        "Processing speed",
+        "Maintainability",
+        "Ease of deployment",
+        "Cost"
+      ],
+      "guideRuleFirst": "Traditional / rule-based first. Deep learning is suggested only when fixed thresholds cannot describe the task.",
+      "recentTitle": "Recently used",
+      "recentEmpty": "No history yet. Open a task to begin."
     },
     "task": {
       "backToTasks": "All tasks",

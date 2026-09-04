@@ -119,7 +119,20 @@
       "lockedForGuest": "Bộ chọn thiết bị dành cho kỹ sư nội bộ và đối tác được cấp quyền. Đăng nhập bằng tài khoản đã được cấp, hoặc liên hệ bộ phận Vision để được tư vấn trực tiếp cho bài toán của bạn.",
       "lockedForRegistered": "Tài khoản của bạn đang ở mức \"Đã đăng ký\" nên chưa dùng được công cụ này. Liên hệ bộ phận Vision để được nâng cấp quyền, hoặc để chúng tôi tư vấn trực tiếp cho bài toán của bạn.",
       "contactCta": "Liên hệ để được tư vấn",
-      "signInCta": "Đăng nhập"
+      "signInCta": "Đăng nhập",
+      "guideTitle": "Công cụ chọn thế nào",
+      "guideIntro": "Khi nhiều phương án cùng thoả điều kiện, ưu tiên theo thứ tự:",
+      "guidePriority": [
+        "Độ ổn định",
+        "Độ chính xác",
+        "Tốc độ xử lý",
+        "Khả năng bảo trì",
+        "Dễ triển khai",
+        "Chi phí"
+      ],
+      "guideRuleFirst": "Luôn ưu tiên xử lý truyền thống / rule-based. Chỉ gợi ý deep learning khi ngưỡng cố định không mô tả được bài toán.",
+      "recentTitle": "Bài toán vừa dùng",
+      "recentEmpty": "Chưa có lịch sử. Mở một bài toán để bắt đầu."
     },
     "task": {
       "backToTasks": "Tất cả bài toán",

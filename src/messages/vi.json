@@ -785,5 +785,12 @@
       "needInputs": "Nhập sản lượng mỗi giờ và thời gian kiểm một sản phẩm ở bước 4 để thấy con số nhân lực cụ thể.",
       "pitch": "Con số này mới là thứ thuyết phục được khách: vẫn tiết kiệm phần lớn nhân công mà không phải cam kết một chỉ tiêu không đạt được."
     }
+  },
+  "theme": {
+    "title": "Giao diện",
+    "hint": "Áp dụng cho trình duyệt này.",
+    "light": "Sáng",
+    "dark": "Tối",
+    "system": "Hệ thống"
   }
 }

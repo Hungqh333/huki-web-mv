@@ -17,7 +17,10 @@ export type IconName =
   | 'users'
   | 'article'
   | 'rules'
-  | 'lock';
+  | 'lock'
+  | 'sun'
+  | 'moon'
+  | 'monitor';
 
 const PATHS: Record<IconName, React.ReactNode> = {
   handbook: (
@@ -73,6 +76,19 @@ const PATHS: Record<IconName, React.ReactNode> = {
     <>
       <rect x="5" y="10.5" width="14" height="9.5" rx="2" />
       <path d="M8 10.5V7a4 4 0 0 1 8 0v3.5" />
+    </>
+  ),
+  sun: (
+    <>
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+    </>
+  ),
+  moon: <path d="M20 13.5A8 8 0 1 1 10.5 4a6.5 6.5 0 0 0 9.5 9.5Z" />,
+  monitor: (
+    <>
+      <rect x="3" y="4" width="18" height="12" rx="2" />
+      <path d="M8 20h8M12 16v4" />
     </>
   ),
 };

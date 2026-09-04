@@ -785,5 +785,12 @@
       "needInputs": "Enter units per hour and manual check time in step 4 to see the concrete headcount numbers.",
       "pitch": "This is the number that convinces a customer: most of the labour is still saved, without committing to a target that cannot be met."
     }
+  },
+  "theme": {
+    "title": "Appearance",
+    "hint": "Applies to this browser.",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
   }
 }

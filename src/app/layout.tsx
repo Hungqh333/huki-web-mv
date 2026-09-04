@@ -4,6 +4,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages, getTranslations } from 'next-intl/server';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
+import { THEME_INIT_SCRIPT } from '@/lib/theme';
 import './globals.css';
 
 /**
@@ -65,6 +66,13 @@ export default async function RootLayout({ children }: LayoutProps<'/'>) {
       className={`h-full antialiased ${beVietnamPro.variable}`}
       suppressHydrationWarning
     >
+      <head>
+        {/*
+          Gắn class .dark trước khi trang vẽ để không nháy nền sáng một nhịp.
+          Phải là script thô đặt sớm; next/script strategy nào cũng chạy muộn hơn.
+        */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
       <body
         className="flex min-h-full flex-col bg-white font-[family-name:var(--font-be-vietnam-pro)] text-slate-900 dark:bg-slate-950 dark:text-slate-100"
       >

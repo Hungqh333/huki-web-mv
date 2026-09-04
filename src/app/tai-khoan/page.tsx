@@ -4,7 +4,8 @@ import { ProfileForm } from '@/components/auth/ProfileForm';
 import { RoleBadge } from '@/components/auth/RoleBadge';
 import { SignOutButton } from '@/components/auth/SignOutButton';
 import { SupabaseNotConfigured } from '@/components/auth/SupabaseNotConfigured';
-import { IconBadge } from '@/components/ui/Icon';
+import { ThemeToggle } from '@/components/settings/ThemeToggle';
+import { IconBadge, type BadgeTone, type IconName } from '@/components/ui/Icon';
 import { canUseSelector, getSessionContext } from '@/lib/auth';
 import { hasSupabaseEnv } from '@/lib/supabase/env';
 import { createClient } from '@/lib/supabase/server';
@@ -23,6 +24,7 @@ export default async function AccountPage() {
   const session = await getSessionContext();
   if (!session) redirect('/dang-nhap');
 
+  const tTheme = await getTranslations('theme');
   const { user, profile } = session;
   const role = profile?.role ?? 'registered';
 
@@ -62,6 +64,13 @@ export default async function AccountPage() {
           <ProfileForm name={profile?.name ?? null} company={profile?.company ?? null} />
         </SettingCard>
 
+        <SettingCard iconTone="sky" icon="monitor" title={tTheme('title')}>
+          <p className="text-sm text-slate-600 dark:text-slate-400">{tTheme('hint')}</p>
+          <div className="mt-3">
+            <ThemeToggle />
+          </div>
+        </SettingCard>
+
         <SettingCard iconTone="amber" icon="clock" title={t('historyTitle')}>
           {history.length > 0 ? (
             <ul className="divide-y divide-slate-200 text-sm dark:divide-slate-800">
@@ -97,8 +106,8 @@ function SettingCard({
   action,
   children,
 }: {
-  icon: 'shield' | 'user' | 'clock';
-  iconTone: 'violet' | 'emerald' | 'amber';
+  icon: IconName;
+  iconTone: BadgeTone;
   title: string;
   action?: React.ReactNode;
   children: React.ReactNode;

@@ -1,6 +1,14 @@
 @import "tailwindcss";
 
 /*
+ * Dark mode điều khiển bằng class .dark trên <html>, KHÔNG theo
+ * prefers-color-scheme nữa. Nhờ vậy người dùng tự chọn Sáng/Tối/Hệ thống được
+ * (xem src/lib/theme.ts + ThemeToggle). Khi chọn "Hệ thống", JS tự gắn/gỡ .dark
+ * theo máy — CSS không cần biết tới media query.
+ */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
  * Đã dọn phần sót lại của create-next-app:
  *
  * - font-family: Arial — Arial hiển thị dấu tiếng Việt kém ở cỡ nhỏ (dấu ngã và

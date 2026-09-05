@@ -171,17 +171,17 @@
       }
     },
     "fields": {
-      "fov_width_mm": "Field of view width",
-      "fov_height_mm": "Field of view height",
+      "fov_width_mm": "FOV width",
+      "fov_height_mm": "FOV height",
       "tolerance_mm": "Required tolerance",
-      "working_distance_mm": "Available working distance",
+      "working_distance_mm": "Working distance",
       "throughput_ppm": "Line throughput",
       "line_speed_mms": "Conveyor speed",
-      "surface": "Material surface characteristics",
+      "surface": "Material surface",
       "environment": "Environmental conditions",
       "ip_rating": "Required IP rating",
       "rotation_range_deg": "Free rotation range of the part",
-      "defect_min_size_mm": "Smallest defect to detect",
+      "defect_min_size_mm": "Smallest visible defect",
       "defect_variability": "Defect variability",
       "color_critical": "Colour grading",
       "color_criticalHint": "The task requires distinguishing colours",
@@ -198,17 +198,16 @@
       "pick_accuracy_mm": "Required pick accuracy",
       "px_per_defect": "Pixels across the defect (N)",
       "defect_type": "Defect type to detect",
-      "height_tolerance_mm": "Part height tolerance",
+      "height_tolerance_mm": "Height tolerance",
       "n_view": "Images per product",
-      "duty_percent": "Time the product is in view",
+      "duty_percent": "Product in view",
       "total_length_mm": "Length to cover",
       "pixel_format": "Pixel format",
       "f_number": "Lens aperture (F#)",
       "blur_px": "Allowed blur",
-      "overlap_percent": "Overlap between cameras",
-      "exposure_ms": "Desired exposure time",
+      "overlap_percent": "Camera overlap",
+      "exposure_ms": "Desired exposure",
       "process_ms": "Image processing time",
-      "px_per_defectHint": "3 = presence/absence with high contrast · 4-6 = appearance on textured background · 8-10 = defect classification or deep learning · >=10 with subpixel = measuring defect size.",
       "defect_typeHint": "Drives the suggested lighting technique.",
       "height_tolerance_mmHint": "Compared against the depth of field.",
       "n_viewHint": "More views multiply the time budget accordingly.",
@@ -219,7 +218,26 @@
       "blur_pxHint": "1 px for normal defects, 0.5 px when the defect is very small.",
       "overlap_percentHint": "Keep 10-15% so a defect on the seam is still fully seen.",
       "exposure_msHint": "Will be capped if motion blur demands a shorter exposure.",
-      "process_msHint": "Algorithm run time per product."
+      "process_msHint": "Algorithm run time per product.",
+      "px_per_defectGuide": [
+        {
+          "value": "3",
+          "meaning": "Presence/absence, high contrast"
+        },
+        {
+          "value": "4-6",
+          "meaning": "Appearance on textured background"
+        },
+        {
+          "value": "8-10",
+          "meaning": "Defect classification, or deep learning"
+        },
+        {
+          "value": ">=10",
+          "meaning": "With subpixel - measuring defect size"
+        }
+      ],
+      "guideToggle": "How to choose N?"
     },
     "options": {
       "surface": {
@@ -437,7 +455,8 @@
         "transparent": "Transparent parts must be lit through, tilted or DOAL, so defects appear as shadows.",
         "surfaceTransparent": "A transparent surface overrides the defect type: it must be lit through first.",
         "surfaceReflective": "A mirror-like surface overrides the defect type: plain dark field only shows glare."
-      }
+      },
+      "checkCount": "{count} steps"
     }
   },
   "handbook": {

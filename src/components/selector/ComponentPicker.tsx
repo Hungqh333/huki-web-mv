@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { IconBadge, type BadgeTone, type IconName } from '@/components/ui/Icon';
 import { pickCamera, pickController, pickLens, pickLight } from '@/lib/components/match';
-import { SPEC_FIELDS, specString, type Component } from '@/lib/components/specs';
+import { SPEC_FIELDS, SUMMARY_KEYS, specString, type Component } from '@/lib/components/specs';
 import type { SelectorInput, SelectorResult } from '@/lib/selector/types';
 import { analyseAppearance, requiredPixels } from '@/lib/vision';
 import { appearanceInputFromForm } from '@/lib/vision/fromInput';
@@ -41,8 +41,9 @@ const SOURCE_STYLES: Record<string, string> = {
 
 /** Tóm tắt thông số chính để nhận ra thiết bị ngay trong danh sách chọn. */
 function summarise(component: Component): string {
+  const keys = SUMMARY_KEYS[component.kind] ?? [];
   return (SPEC_FIELDS[component.kind] ?? [])
-    .filter((field) => field.required)
+    .filter((field) => keys.includes(field.key))
     .map((field) => {
       const value = component.spec[field.key];
       if (value === undefined || value === null || value === '') return null;

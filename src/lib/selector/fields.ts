@@ -39,6 +39,12 @@ export type FieldDef = {
   hintKey?: string;
   /** Chiếm trọn hàng trong lưới hai cột — dùng cho ô có hướng dẫn dài. */
   wide?: boolean;
+  /**
+   * Khoá i18n trỏ tới một MẢNG {value, meaning} — hiện thành bảng tra thu gọn
+   * dưới ô nhập. Dùng khi một dòng chữ không đủ: ví dụ chọn N theo mục tiêu
+   * kiểm tra thì phải thấy cả bốn mức mới so sánh được.
+   */
+  guideKey?: string;
   kind: FieldKind;
   /** Khoá i18n dưới namespace selector.fields */
   labelKey: string;
@@ -344,8 +350,7 @@ export const FIELD_CATALOG: Record<string, FieldDef> = {
     group: 'subject',
     kind: 'number',
     labelKey: 'px_per_defect',
-    hintKey: 'px_per_defectHint',
-    wide: true,
+    guideKey: 'px_per_defectGuide',
     unit: 'px',
     min: 1,
     step: 1,

@@ -171,18 +171,18 @@
       }
     },
     "fields": {
-      "fov_width_mm": "Chiều rộng vùng quan sát (FOV)",
-      "fov_height_mm": "Chiều cao vùng quan sát (FOV)",
+      "fov_width_mm": "Chiều rộng FOV",
+      "fov_height_mm": "Chiều cao FOV",
       "tolerance_mm": "Dung sai yêu cầu",
-      "working_distance_mm": "Khoảng cách làm việc khả dụng",
+      "working_distance_mm": "Khoảng cách làm việc",
       "throughput_ppm": "Năng suất dây chuyền",
       "line_speed_mms": "Tốc độ băng tải",
-      "surface": "Đặc tính bề mặt vật liệu",
+      "surface": "Bề mặt vật liệu",
       "environment": "Điều kiện môi trường",
       "ip_rating": "Yêu cầu IP rating",
       "rotation_range_deg": "Khoảng xoay tự do của vật",
-      "defect_min_size_mm": "Kích thước lỗi nhỏ nhất cần phát hiện",
-      "defect_variability": "Mức biến thiên của lỗi",
+      "defect_min_size_mm": "Lỗi nhỏ nhất cần thấy",
+      "defect_variability": "Biến thiên của lỗi",
       "color_critical": "Đánh giá màu sắc",
       "color_criticalHint": "Bài toán có yêu cầu phân biệt màu",
       "measure_type": "Loại phép đo",
@@ -198,17 +198,16 @@
       "pick_accuracy_mm": "Độ chính xác gắp yêu cầu",
       "px_per_defect": "Số pixel phủ lên lỗi (N)",
       "defect_type": "Loại lỗi cần phát hiện",
-      "height_tolerance_mm": "Dung sai chiều cao chi tiết",
+      "height_tolerance_mm": "Dung sai chiều cao",
       "n_view": "Số ảnh mỗi sản phẩm",
-      "duty_percent": "Thời gian sản phẩm trong tầm nhìn",
+      "duty_percent": "Sản phẩm trong tầm nhìn",
       "total_length_mm": "Chiều dài cần phủ",
       "pixel_format": "Định dạng ảnh",
       "f_number": "Khẩu độ ống kính (F#)",
       "blur_px": "Nhoè cho phép",
-      "overlap_percent": "Chồng lấn giữa các camera",
-      "exposure_ms": "Thời gian phơi sáng mong muốn",
+      "overlap_percent": "Chồng lấn camera",
+      "exposure_ms": "Phơi sáng mong muốn",
       "process_ms": "Thời gian xử lý ảnh",
-      "px_per_defectHint": "3 = phát hiện có/không, tương phản cao · 4–6 = ngoại quan trên nền có vân · 8–10 = phân loại loại lỗi hoặc deep learning · ≥10 kèm subpixel = đo kích thước lỗi.",
       "defect_typeHint": "Quyết định kiểu chiếu sáng đề xuất.",
       "height_tolerance_mmHint": "Dùng để so với chiều sâu trường ảnh (DOF).",
       "n_viewHint": "Chụp nhiều góc thì nhân lên chừng đó lần thời gian.",
@@ -219,7 +218,26 @@
       "blur_pxHint": "1 px cho lỗi thường, 0,5 px khi lỗi rất nhỏ.",
       "overlap_percentHint": "Nên để 10–15% để lỗi nằm đúng đường ghép vẫn thấy đủ.",
       "exposure_msHint": "Sẽ bị siết xuống nếu nhoè chuyển động đòi ngắn hơn.",
-      "process_msHint": "Thời gian thuật toán chạy trên một sản phẩm."
+      "process_msHint": "Thời gian thuật toán chạy trên một sản phẩm.",
+      "px_per_defectGuide": [
+        {
+          "value": "3",
+          "meaning": "Phát hiện có/không, tương phản cao"
+        },
+        {
+          "value": "4–6",
+          "meaning": "Ngoại quan trên nền có vân"
+        },
+        {
+          "value": "8–10",
+          "meaning": "Phân loại loại lỗi, hoặc deep learning"
+        },
+        {
+          "value": "≥10",
+          "meaning": "Kèm subpixel — đo kích thước lỗi"
+        }
+      ],
+      "guideToggle": "Chọn N thế nào?"
     },
     "options": {
       "surface": {
@@ -437,7 +455,8 @@
         "transparent": "Vật trong suốt phải soi xuyên, chiếu nghiêng hoặc DOAL để lỗi hiện thành bóng.",
         "surfaceTransparent": "Bề mặt trong suốt lấn át loại lỗi: phải soi xuyên trước đã.",
         "surfaceReflective": "Bề mặt bóng như gương lấn át loại lỗi: dark field thông thường chỉ thấy loá."
-      }
+      },
+      "checkCount": "{count} bước"
     }
   },
   "handbook": {

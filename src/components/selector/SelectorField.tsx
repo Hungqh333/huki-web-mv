@@ -93,6 +93,29 @@ export function SelectorField({ def, error, defaultValue }: Props) {
         </label>
       ) : null}
 
+      {def.guideKey ? (
+        <details className="rounded-md border border-slate-200 px-2.5 py-1.5 dark:border-slate-700">
+          <summary className="cursor-pointer text-xs text-sky-700 dark:text-sky-400">
+            {t('guideToggle')}
+          </summary>
+          <table className="mt-2 w-full text-xs">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              {(t.raw(def.guideKey) as { value: string; meaning: string }[]).map((row) => (
+                <tr key={row.value}>
+                  <th
+                    scope="row"
+                    className="whitespace-nowrap py-1 pr-3 text-left font-semibold text-slate-700 dark:text-slate-300"
+                  >
+                    {row.value}
+                  </th>
+                  <td className="py-1 text-slate-600 dark:text-slate-400">{row.meaning}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </details>
+      ) : null}
+
       {/* Hint nằm dưới ô nhập; ô checkbox đã dùng hint làm nhãn nên bỏ qua. */}
       {def.hintKey && def.kind !== 'boolean' ? (
         <p className="text-xs leading-relaxed text-slate-500 dark:text-slate-400">

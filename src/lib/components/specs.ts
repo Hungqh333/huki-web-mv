@@ -241,6 +241,21 @@ export const SPEC_FIELDS: Record<ComponentKind, SpecFieldDef[]> = {
   accessory: [],
 };
 
+/**
+ * Thông số dùng để NHẬN RA thiết bị trong danh sách chọn.
+ *
+ * Khác với danh sách trường bắt buộc: camera có 7 trường bắt buộc, liệt kê hết
+ * thì nhãn trong ô chọn dài quá màn điện thoại và không đọc nổi. Ở đây chỉ giữ
+ * những thông số phân biệt được thiết bị này với thiết bị khác.
+ */
+export const SUMMARY_KEYS: Record<ComponentKind, string[]> = {
+  camera: ['resolution_mp', 'sensor_format', 'interface', 'color'],
+  lens: ['lens_type', 'focal_length_mm', 'magnification', 'image_circle'],
+  light: ['light_type', 'color', 'size_mm'],
+  controller: ['cpu', 'ram_gb', 'gpu'],
+  accessory: [],
+};
+
 export const COMPONENT_KINDS: ComponentKind[] = [
   'camera',
   'lens',

@@ -207,7 +207,7 @@ export function SelectorForm({
         </div>
       </form>
 
-      <div className="min-w-0">
+      <div className="min-w-0 self-start">
         {state.result ? (
           <SelectorResultPanel
             result={state.result}

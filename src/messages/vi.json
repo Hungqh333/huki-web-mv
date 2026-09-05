@@ -150,19 +150,23 @@
       "groups": {
         "subject": {
           "title": "Vật thể & lỗi cần phát hiện",
-          "hint": "Quyết định độ phân giải cần thiết và kỹ thuật chiếu sáng."
+          "hint": "Quyết định độ phân giải cần thiết và kỹ thuật chiếu sáng.",
+          "short": "Vật thể"
         },
         "line": {
           "title": "Dây chuyền & cơ khí",
-          "hint": "Quyết định tiêu cự ống kính và băng thông dữ liệu."
+          "hint": "Quyết định tiêu cự ống kính và băng thông dữ liệu.",
+          "short": "Dây chuyền"
         },
         "environment": {
           "title": "Môi trường lắp đặt",
-          "hint": "Quyết định vỏ bảo vệ, kính lọc và cách gá."
+          "hint": "Quyết định vỏ bảo vệ, kính lọc và cách gá.",
+          "short": "Môi trường"
         },
         "system": {
           "title": "Thông số hệ thống",
-          "hint": "Đều có mặc định hợp lý — chỉ sửa khi bạn biết rõ."
+          "hint": "Đều có mặc định hợp lý — chỉ sửa khi bạn biết rõ.",
+          "short": "Hệ thống"
         }
       }
     },
@@ -321,10 +325,10 @@
       "bomTitle": "Danh mục vật tư",
       "bomHint": "Xếp theo thứ tự phụ thuộc: chiếu sáng quyết định lỗi có hiện lên được không, rồi mới tới quang học và cảm biến.",
       "constraints": {
-        "lighting": "Ràng buộc khoảng cách làm việc tối thiểu — kiểm tra lại tiêu cự ống kính bên dưới.",
-        "lens": "Phải phủ hết cỡ cảm biến của camera; telecentric còn giới hạn cỡ cảm biến tối đa.",
-        "camera": "Độ phân giải phải ≥ mức tính được, và cỡ cảm biến phải nằm trong vòng ảnh ống kính.",
-        "processing": "Giao tiếp phải tải nổi băng thông tính ở phần dưới.",
+        "lighting": "Quyết định khoảng cách làm việc tối thiểu — ảnh hưởng tới tiêu cự ống kính bên dưới.",
+        "lens": "Tiêu cự suy từ cảm biến đã chọn ở trên; vòng ảnh phải phủ hết đường chéo của chính cảm biến đó.",
+        "camera": "Độ phân giải phải ≥ mức tính được. Cỡ cảm biến chọn ở đây quyết định tiêu cự và vòng ảnh của ống kính bên dưới.",
+        "processing": "Giao tiếp phải khớp camera đã chọn và tải nổi băng thông tính ở phần dưới.",
         "accessories": "Kính lọc khớp bước sóng đèn; chiều dài cáp theo khoảng cách làm việc."
       }
     },
@@ -367,7 +371,8 @@
         "unverified": "Chưa kiểm chứng",
         "datasheet": "Theo datasheet",
         "measured": "Đã đo"
-      }
+      },
+      "fromRule": "Bảng luật gợi ý: {text}"
     },
     "vision": {
       "title": "Kiểm tra tính khả thi",

@@ -103,7 +103,7 @@ export function SelectorForm({
                 >
                   {index + 1}
                 </span>
-                {t(`groups.${entry.group}.title`)}
+                {t(`groups.${entry.group}.short`)}
               </button>
             );
           })}
@@ -138,7 +138,7 @@ export function SelectorForm({
         ) : null}
 
         {steps.map((entry, index) => (
-          <div key={entry.group} data-step={index} hidden={index !== step} className="mt-6 space-y-5">
+          <div key={entry.group} data-step={index} hidden={index !== step} className="mt-6">
             <div>
               <h2 className="font-semibold">{t(`groups.${entry.group}.title`)}</h2>
               <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
@@ -146,14 +146,29 @@ export function SelectorForm({
               </p>
             </div>
 
-            {entry.fields.map((def) => (
-              <SelectorField
-                key={def.key}
-                def={def}
-                error={state.fieldErrors?.[def.key]}
-                defaultValue={state.input?.[def.key]}
-              />
-            ))}
+            {/*
+              Lưới hai cột: bài ngoại quan có tới 9 ô ở bước đầu, xếp một cột dọc
+              thì phải cuộn dài và mắt khó bắt cặp ô liên quan (rộng/cao FOV).
+              Ô nhiều lựa chọn và ô có hướng dẫn dài thì chiếm trọn hàng.
+            */}
+            <div className="mt-5 grid gap-x-5 gap-y-4 sm:grid-cols-2">
+              {entry.fields.map((def) => (
+                <div
+                  key={def.key}
+                  className={
+                    def.wide || def.kind === 'multiselect' || def.kind === 'boolean'
+                      ? 'sm:col-span-2'
+                      : undefined
+                  }
+                >
+                  <SelectorField
+                    def={def}
+                    error={state.fieldErrors?.[def.key]}
+                    defaultValue={state.input?.[def.key]}
+                  />
+                </div>
+              ))}
+            </div>
           </div>
         ))}
 

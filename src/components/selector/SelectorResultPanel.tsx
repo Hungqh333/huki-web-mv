@@ -4,20 +4,26 @@ import { useLocale, useTranslations } from 'next-intl';
 import { IconBadge, type BadgeTone, type IconName } from '@/components/ui/Icon';
 import type { Component } from '@/lib/components/specs';
 import type { SelectorInput, SelectorResult } from '@/lib/selector/types';
+import { appearanceInputFromForm } from '@/lib/vision/fromInput';
 import { ComponentPicker } from './ComponentPicker';
 
 /**
  * Danh mục vật tư, xếp theo THỨ TỰ PHỤ THUỘC chứ không theo thói quen mua hàng.
  *
- * Chiếu sáng đứng trước camera là có chủ đích: nếu lỗi không hiện lên được thì
- * camera nào cũng vô nghĩa. Mỗi cụm kèm một dòng nhắc nó ràng buộc gì lên cụm
- * sau — để sự phụ thuộc hiện ra thay vì bị giấu.
+ * Chiếu sáng đứng đầu là có chủ đích: lỗi không hiện lên được thì camera nào
+ * cũng vô nghĩa. Camera đứng TRƯỚC ống kính vì tiêu cự và vòng ảnh đều suy từ
+ * cảm biến đã chọn — xếp ngược lại thì danh sách ống kính bị lọc theo một thứ
+ * người dùng chưa chọn tới. Mỗi cụm kèm một dòng nhắc nó ràng buộc gì lên cụm
+ * sau, để sự phụ thuộc hiện ra thay vì bị giấu.
  */
-const BOM: { key: 'lighting' | 'lens' | 'camera' | 'processing' | 'accessories';
-  icon: IconName; tone: BadgeTone }[] = [
+const BOM: {
+  key: 'lighting' | 'camera' | 'lens' | 'processing' | 'accessories';
+  icon: IconName;
+  tone: BadgeTone;
+}[] = [
   { key: 'lighting', icon: 'sun', tone: 'amber' },
-  { key: 'lens', icon: 'selector', tone: 'violet' },
   { key: 'camera', icon: 'camera', tone: 'sky' },
+  { key: 'lens', icon: 'selector', tone: 'violet' },
   { key: 'processing', icon: 'monitor', tone: 'emerald' },
   { key: 'accessories', icon: 'rules', tone: 'slate' },
 ];
@@ -50,6 +56,17 @@ export function SelectorResultPanel({
 
   const valueOf = (key: (typeof BOM)[number]['key']) => result[key];
 
+  /*
+   * Có catalog thì phần chọn thiết bị đã liệt kê đúng những cụm này kèm mã hàng
+   * thật, nên danh sách dạng chữ chỉ còn là bản lặp. Chỉ giữ lại khi catalog
+   * rỗng — lúc đó nó là kết quả duy nhất.
+   */
+  const hasCatalog = components.length > 0;
+
+  /* Khung kiểm tra khả thi đã trình bày lại các phép tính này theo mm/px và kèm
+     PASS/FAIL, nên khối "Cách tính" cũ thành thừa. */
+  const hasVisionChecks = appearanceInputFromForm(input) !== null;
+
   return (
     <section aria-live="polite" className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -69,7 +86,7 @@ export function SelectorResultPanel({
         </p>
       ) : null}
 
-      <div>
+      <div hidden={hasCatalog}>
         <h3 className="font-semibold">{t('bomTitle')}</h3>
         <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{t('bomHint')}</p>
 
@@ -117,7 +134,7 @@ export function SelectorResultPanel({
         </div>
       ) : null}
 
-      {result.derived.length > 0 ? (
+      {result.derived.length > 0 && !hasVisionChecks ? (
         <div className="rounded-lg border border-slate-200 p-4 dark:border-slate-800">
           <h3 className="text-sm font-semibold">{t('calculations')}</h3>
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('calculationsHint')}</p>

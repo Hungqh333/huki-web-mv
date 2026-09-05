@@ -23,13 +23,13 @@ import { VisionChecks } from './VisionChecks';
  */
 
 const ROWS: {
-  key: 'lighting' | 'lens' | 'camera' | 'processing';
+  key: 'lighting' | 'camera' | 'lens' | 'processing';
   icon: IconName;
   tone: BadgeTone;
 }[] = [
   { key: 'lighting', icon: 'sun', tone: 'amber' },
-  { key: 'lens', icon: 'selector', tone: 'violet' },
   { key: 'camera', icon: 'camera', tone: 'sky' },
+  { key: 'lens', icon: 'selector', tone: 'violet' },
   { key: 'processing', icon: 'monitor', tone: 'emerald' },
 ];
 
@@ -210,9 +210,10 @@ export function ComponentPicker({
       ) : null}
 
       <ol className="mt-4 space-y-3">
-        {ROWS.map((row) => {
+        {ROWS.map((row, index) => {
           const entry = byKey[row.key];
           const fit = fitLine(row.key);
+          const ruleText = result[row.key];
 
           return (
             <li
@@ -224,6 +225,7 @@ export function ComponentPicker({
 
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-xs font-semibold text-slate-400">{index + 1}</span>
                     <h4 className="text-sm font-medium text-slate-600 dark:text-slate-400">
                       {tResult(row.key)}
                     </h4>
@@ -281,10 +283,16 @@ export function ComponentPicker({
                     </>
                   )}
 
-                  {fit ? (
-                    <p className="mt-2 border-t border-slate-100 pt-2 text-xs leading-relaxed text-slate-500 dark:border-slate-800 dark:text-slate-400">
-                      {fit}
-                    </p>
+                  {/*
+                    Gợi ý dạng chữ của bảng luật gộp vào đây luôn. Trước đây nó
+                    là một danh sách 5 thẻ riêng ngay phía trên, lặp lại đúng
+                    những cụm này — đọc hai lần mà không thêm thông tin.
+                  */}
+                  {fit || ruleText ? (
+                    <div className="mt-2 space-y-1 border-t border-slate-100 pt-2 text-xs leading-relaxed text-slate-500 dark:border-slate-800 dark:text-slate-400">
+                      {fit ? <p>{fit}</p> : null}
+                      {ruleText ? <p>{t('fromRule', { text: ruleText })}</p> : null}
+                    </div>
                   ) : null}
                 </div>
               </div>
@@ -292,6 +300,24 @@ export function ComponentPicker({
           );
         })}
       </ol>
+
+      {/* Phụ kiện chưa có thiết bị cụ thể trong catalog — chỉ hiện gợi ý dạng chữ. */}
+      {result.accessories ? (
+        <div className="mt-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="flex items-start gap-3">
+            <IconBadge name="rules" tone="slate" className="size-9" />
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-semibold text-slate-400">5</span>
+                <h4 className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                  {tResult('accessories')}
+                </h4>
+              </div>
+              <p className="mt-1 text-sm">{result.accessories}</p>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {analysis ? (
         <div className="mt-6 border-t border-slate-200 pt-6 dark:border-slate-800">

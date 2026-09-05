@@ -32,6 +32,13 @@ export const FIELD_GROUPS: FieldGroup[] = ['subject', 'line', 'environment', 'sy
 export type FieldDef = {
   key: string;
   group: FieldGroup;
+  /**
+   * Khoá i18n cho dòng giải thích dưới ô nhập. Chỉ đặt khi thật sự cần — mỗi
+   * dòng hint thêm vào là một dòng nữa người dùng phải đọc.
+   */
+  hintKey?: string;
+  /** Chiếm trọn hàng trong lưới hai cột — dùng cho ô có hướng dẫn dài. */
+  wide?: boolean;
   kind: FieldKind;
   /** Khoá i18n dưới namespace selector.fields */
   labelKey: string;
@@ -337,6 +344,8 @@ export const FIELD_CATALOG: Record<string, FieldDef> = {
     group: 'subject',
     kind: 'number',
     labelKey: 'px_per_defect',
+    hintKey: 'px_per_defectHint',
+    wide: true,
     unit: 'px',
     min: 1,
     step: 1,
@@ -347,6 +356,7 @@ export const FIELD_CATALOG: Record<string, FieldDef> = {
     group: 'subject',
     kind: 'select',
     labelKey: 'defect_type',
+    hintKey: 'defect_typeHint',
     options: DEFECT_TYPE_OPTIONS,
   },
   height_tolerance_mm: {
@@ -354,6 +364,7 @@ export const FIELD_CATALOG: Record<string, FieldDef> = {
     group: 'subject',
     kind: 'number',
     labelKey: 'height_tolerance_mm',
+    hintKey: 'height_tolerance_mmHint',
     unit: 'mm',
     min: 0,
     step: 0.1,
@@ -364,6 +375,7 @@ export const FIELD_CATALOG: Record<string, FieldDef> = {
     group: 'line',
     kind: 'number',
     labelKey: 'n_view',
+    hintKey: 'n_viewHint',
     min: 1,
     step: 1,
   },
@@ -372,6 +384,7 @@ export const FIELD_CATALOG: Record<string, FieldDef> = {
     group: 'line',
     kind: 'number',
     labelKey: 'duty_percent',
+    hintKey: 'duty_percentHint',
     unit: '%',
     min: 1,
     max: 100,
@@ -382,6 +395,7 @@ export const FIELD_CATALOG: Record<string, FieldDef> = {
     group: 'line',
     kind: 'number',
     labelKey: 'total_length_mm',
+    hintKey: 'total_length_mmHint',
     unit: 'mm',
     min: 0,
     step: 1,
@@ -392,6 +406,7 @@ export const FIELD_CATALOG: Record<string, FieldDef> = {
     group: 'system',
     kind: 'select',
     labelKey: 'pixel_format',
+    hintKey: 'pixel_formatHint',
     options: PIXEL_FORMAT_OPTIONS,
   },
   f_number: {
@@ -399,6 +414,7 @@ export const FIELD_CATALOG: Record<string, FieldDef> = {
     group: 'system',
     kind: 'number',
     labelKey: 'f_number',
+    hintKey: 'f_numberHint',
     min: 1,
     step: 0.1,
   },
@@ -407,6 +423,7 @@ export const FIELD_CATALOG: Record<string, FieldDef> = {
     group: 'system',
     kind: 'number',
     labelKey: 'blur_px',
+    hintKey: 'blur_pxHint',
     unit: 'px',
     min: 0.1,
     step: 0.1,
@@ -416,6 +433,7 @@ export const FIELD_CATALOG: Record<string, FieldDef> = {
     group: 'system',
     kind: 'number',
     labelKey: 'overlap_percent',
+    hintKey: 'overlap_percentHint',
     unit: '%',
     min: 0,
     max: 50,
@@ -426,6 +444,7 @@ export const FIELD_CATALOG: Record<string, FieldDef> = {
     group: 'system',
     kind: 'number',
     labelKey: 'exposure_ms',
+    hintKey: 'exposure_msHint',
     unit: 'ms',
     min: 0.01,
     step: 0.1,
@@ -435,6 +454,7 @@ export const FIELD_CATALOG: Record<string, FieldDef> = {
     group: 'system',
     kind: 'number',
     labelKey: 'process_ms',
+    hintKey: 'process_msHint',
     unit: 'ms',
     min: 0,
     step: 1,

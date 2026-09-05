@@ -93,6 +93,13 @@ export function SelectorField({ def, error, defaultValue }: Props) {
         </label>
       ) : null}
 
+      {/* Hint nằm dưới ô nhập; ô checkbox đã dùng hint làm nhãn nên bỏ qua. */}
+      {def.hintKey && def.kind !== 'boolean' ? (
+        <p className="text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+          {t(def.hintKey)}
+        </p>
+      ) : null}
+
       {error ? (
         <p id={describedBy} className="text-xs text-red-600 dark:text-red-400">
           {tError(error)}

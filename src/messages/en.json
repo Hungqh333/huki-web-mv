@@ -150,19 +150,23 @@
       "groups": {
         "subject": {
           "title": "Part & defect to detect",
-          "hint": "Drives the required resolution and the lighting technique."
+          "hint": "Drives the required resolution and the lighting technique.",
+          "short": "Part"
         },
         "line": {
           "title": "Line & mechanics",
-          "hint": "Drives lens focal length and data bandwidth."
+          "hint": "Drives lens focal length and data bandwidth.",
+          "short": "Line"
         },
         "environment": {
           "title": "Installation environment",
-          "hint": "Drives enclosure, filters and mounting."
+          "hint": "Drives enclosure, filters and mounting.",
+          "short": "Environment"
         },
         "system": {
           "title": "System parameters",
-          "hint": "All have sensible defaults — change only if you know."
+          "hint": "All have sensible defaults — change only if you know.",
+          "short": "System"
         }
       }
     },
@@ -321,10 +325,10 @@
       "bomTitle": "Bill of materials",
       "bomHint": "Ordered by dependency: lighting decides whether the defect is visible at all, before optics and sensor.",
       "constraints": {
-        "lighting": "Sets the minimum working distance — re-check the lens focal length below.",
-        "lens": "Must cover the camera sensor; a telecentric lens also caps the maximum sensor size.",
-        "camera": "Resolution must meet the computed minimum, and the sensor must fit the lens image circle.",
-        "processing": "The interface must carry the bandwidth computed below.",
+        "lighting": "Sets the minimum working distance, which feeds the lens focal length below.",
+        "lens": "Focal length follows from the sensor chosen above; the image circle must cover that sensor diagonal.",
+        "camera": "Resolution must meet the computed minimum. The sensor chosen here drives the focal length and image circle of the lens below.",
+        "processing": "The interface must match the chosen camera and carry the bandwidth computed below.",
         "accessories": "Filter must match the light wavelength; cable length follows the working distance."
       }
     },
@@ -367,7 +371,8 @@
         "unverified": "Unverified",
         "datasheet": "From datasheet",
         "measured": "Measured"
-      }
+      },
+      "fromRule": "Rule table suggests: {text}"
     },
     "vision": {
       "title": "Feasibility checks",

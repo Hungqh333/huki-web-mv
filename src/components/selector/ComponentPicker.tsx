@@ -6,6 +6,9 @@ import { IconBadge, type BadgeTone, type IconName } from '@/components/ui/Icon';
 import { pickCamera, pickController, pickLens, pickLight } from '@/lib/components/match';
 import { SPEC_FIELDS, specString, type Component } from '@/lib/components/specs';
 import type { SelectorInput, SelectorResult } from '@/lib/selector/types';
+import { analyseAppearance, requiredPixels } from '@/lib/vision';
+import { appearanceInputFromForm } from '@/lib/vision/fromInput';
+import { VisionChecks } from './VisionChecks';
 
 /**
  * Chọn thiết bị cụ thể, và cho đổi sang thiết bị khác.
@@ -80,6 +83,14 @@ export function ComponentPicker({
   const needTelecentric = /telecentric/i.test(result.lens ?? '');
   const needsGpu = result.approach === 'deep_learning';
 
+  /*
+   * Đầu vào bài ngoại quan phải tính TRƯỚC khi chọn camera: số pixel cần trên
+   * từng trục là điều kiện lọc, không phải thứ tính sau. Bài khác không có
+   * defect_min_size_mm nên trả null và mọi thứ chạy như cũ.
+   */
+  const appearance = appearanceInputFromForm(input);
+  const need = appearance ? requiredPixels(appearance) : null;
+
   /* Không bọc useMemo: đây là vài phép lọc trên danh sách nhỏ, và React
      Compiler tự lo phần ghi nhớ. Bọc tay còn khiến compiler cảnh báo vì dep là
      giá trị dẫn xuất từ chính chuỗi tính toán này. */
@@ -87,6 +98,8 @@ export function ComponentPicker({
     requiredMp,
     dataRateMbytesS: dataRate,
     needsColor,
+    requiredWidthPx: need?.nx ?? null,
+    requiredHeightPx: need?.ny ?? null,
   });
   const cameraOptions = cameraChoice.chosen
     ? [cameraChoice.chosen, ...cameraChoice.alternatives]
@@ -166,6 +179,24 @@ export function ComponentPicker({
     }
     return needsGpu ? t('fitGpu') : null;
   };
+
+  // Bộ tính toán chạy trên camera ĐANG CHỌN, nên đổi camera là các phép kiểm
+  // PASS/FAIL đổi theo ngay.
+  const analysis = appearance
+    ? analyseAppearance(
+        appearance,
+        camera
+          ? {
+              widthPx: (camera.spec.resolution_w_px as number) ?? 0,
+              heightPx: (camera.spec.resolution_h_px as number) ?? 0,
+              pixelSizeUm: (camera.spec.pixel_size_um as number) ?? null,
+              sensorFormat: specString(camera.spec, 'sensor_format'),
+              interfaceName: specString(camera.spec, 'interface'),
+            }
+          : null,
+        lens ? { imageCircleFormat: specString(lens.spec, 'image_circle') } : null
+      )
+    : null;
 
   return (
     <div>
@@ -261,6 +292,12 @@ export function ComponentPicker({
           );
         })}
       </ol>
+
+      {analysis ? (
+        <div className="mt-6 border-t border-slate-200 pt-6 dark:border-slate-800">
+          <VisionChecks analysis={analysis} hasCamera={camera !== null} />
+        </div>
+      ) : null}
     </div>
   );
 }

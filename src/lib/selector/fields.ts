@@ -24,10 +24,10 @@ export type FieldOption = {
  * camera/lens/đèn ràng buộc lẫn nhau nên không hỏi rời từng cụm được, còn các
  * câu hỏi thì tách theo chủ đề rất tự nhiên.
  */
-export type FieldGroup = 'subject' | 'line' | 'environment';
+export type FieldGroup = 'subject' | 'line' | 'environment' | 'system';
 
 /** Thứ tự hỏi. Bước nào không có trường nào thì tự ẩn. */
-export const FIELD_GROUPS: FieldGroup[] = ['subject', 'line', 'environment'];
+export const FIELD_GROUPS: FieldGroup[] = ['subject', 'line', 'environment', 'system'];
 
 export type FieldDef = {
   key: string;
@@ -65,6 +65,23 @@ const IP_RATING_OPTIONS: FieldOption[] = [
   { value: 'ip54', labelKey: 'ipRating.ip54' },
   { value: 'ip65', labelKey: 'ipRating.ip65' },
   { value: 'ip67', labelKey: 'ipRating.ip67' },
+];
+
+const DEFECT_TYPE_OPTIONS: FieldOption[] = [
+  { value: 'scratch', labelKey: 'defectType.scratch' },
+  { value: 'glossy_curved', labelKey: 'defectType.glossy_curved' },
+  { value: 'print_color', labelKey: 'defectType.print_color' },
+  { value: 'profile_hole_burr', labelKey: 'defectType.profile_hole_burr' },
+  { value: 'shallow_dent', labelKey: 'defectType.shallow_dent' },
+  { value: 'transparent', labelKey: 'defectType.transparent' },
+];
+
+const PIXEL_FORMAT_OPTIONS: FieldOption[] = [
+  { value: 'Mono8', labelKey: 'pixelFormat.Mono8' },
+  { value: 'BayerRG8', labelKey: 'pixelFormat.BayerRG8' },
+  { value: 'Mono12packed', labelKey: 'pixelFormat.Mono12packed' },
+  { value: 'Mono16', labelKey: 'pixelFormat.Mono16' },
+  { value: 'RGB8', labelKey: 'pixelFormat.RGB8' },
 ];
 
 const VARIABILITY_OPTIONS: FieldOption[] = [
@@ -310,6 +327,117 @@ export const FIELD_CATALOG: Record<string, FieldDef> = {
     min: 0.01,
     step: 0.01,
     required: true,
+  },
+
+  // --- Kiểm tra ngoại quan: tham số của bộ tính toán quang học/thời gian ---
+
+  /** N — số pixel phủ lên lỗi nhỏ nhất. Trước đây đóng cứng ở 3. */
+  px_per_defect: {
+    key: 'px_per_defect',
+    group: 'subject',
+    kind: 'number',
+    labelKey: 'px_per_defect',
+    unit: 'px',
+    min: 1,
+    step: 1,
+    required: true,
+  },
+  defect_type: {
+    key: 'defect_type',
+    group: 'subject',
+    kind: 'select',
+    labelKey: 'defect_type',
+    options: DEFECT_TYPE_OPTIONS,
+  },
+  height_tolerance_mm: {
+    key: 'height_tolerance_mm',
+    group: 'subject',
+    kind: 'number',
+    labelKey: 'height_tolerance_mm',
+    unit: 'mm',
+    min: 0,
+    step: 0.1,
+  },
+
+  n_view: {
+    key: 'n_view',
+    group: 'line',
+    kind: 'number',
+    labelKey: 'n_view',
+    min: 1,
+    step: 1,
+  },
+  duty_percent: {
+    key: 'duty_percent',
+    group: 'line',
+    kind: 'number',
+    labelKey: 'duty_percent',
+    unit: '%',
+    min: 1,
+    max: 100,
+    step: 1,
+  },
+  total_length_mm: {
+    key: 'total_length_mm',
+    group: 'line',
+    kind: 'number',
+    labelKey: 'total_length_mm',
+    unit: 'mm',
+    min: 0,
+    step: 1,
+  },
+
+  pixel_format: {
+    key: 'pixel_format',
+    group: 'system',
+    kind: 'select',
+    labelKey: 'pixel_format',
+    options: PIXEL_FORMAT_OPTIONS,
+  },
+  f_number: {
+    key: 'f_number',
+    group: 'system',
+    kind: 'number',
+    labelKey: 'f_number',
+    min: 1,
+    step: 0.1,
+  },
+  blur_px: {
+    key: 'blur_px',
+    group: 'system',
+    kind: 'number',
+    labelKey: 'blur_px',
+    unit: 'px',
+    min: 0.1,
+    step: 0.1,
+  },
+  overlap_percent: {
+    key: 'overlap_percent',
+    group: 'system',
+    kind: 'number',
+    labelKey: 'overlap_percent',
+    unit: '%',
+    min: 0,
+    max: 50,
+    step: 1,
+  },
+  exposure_ms: {
+    key: 'exposure_ms',
+    group: 'system',
+    kind: 'number',
+    labelKey: 'exposure_ms',
+    unit: 'ms',
+    min: 0.01,
+    step: 0.1,
+  },
+  process_ms: {
+    key: 'process_ms',
+    group: 'system',
+    kind: 'number',
+    labelKey: 'process_ms',
+    unit: 'ms',
+    min: 0,
+    step: 1,
   },
 };
 

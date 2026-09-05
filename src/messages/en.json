@@ -159,6 +159,10 @@
         "environment": {
           "title": "Installation environment",
           "hint": "Drives enclosure, filters and mounting."
+        },
+        "system": {
+          "title": "System parameters",
+          "hint": "All have sensible defaults — change only if you know."
         }
       }
     },
@@ -187,7 +191,31 @@
       "code_type": "Code type",
       "module_size_mm": "Module size (X-dimension)",
       "guidance_mode": "Guidance mode",
-      "pick_accuracy_mm": "Required pick accuracy"
+      "pick_accuracy_mm": "Required pick accuracy",
+      "px_per_defect": "Pixels across the defect (N)",
+      "defect_type": "Defect type to detect",
+      "height_tolerance_mm": "Part height tolerance",
+      "n_view": "Images per product",
+      "duty_percent": "Time the product is in view",
+      "total_length_mm": "Length to cover",
+      "pixel_format": "Pixel format",
+      "f_number": "Lens aperture (F#)",
+      "blur_px": "Allowed blur",
+      "overlap_percent": "Overlap between cameras",
+      "exposure_ms": "Desired exposure time",
+      "process_ms": "Image processing time",
+      "px_per_defectHint": "3 = presence/absence with high contrast · 4-6 = appearance on textured background · 8-10 = defect classification or deep learning · >=10 with subpixel = measuring defect size.",
+      "defect_typeHint": "Drives the suggested lighting technique.",
+      "height_tolerance_mmHint": "Compared against the depth of field.",
+      "n_viewHint": "More views multiply the time budget accordingly.",
+      "duty_percentHint": "Percentage of the cycle the product is inside the field of view.",
+      "total_length_mmHint": "Leave blank when a single camera is enough.",
+      "pixel_formatHint": "Colour cameras send raw Bayer at 1 byte/px, not 3.",
+      "f_numberHint": "Stopping down deepens focus but diffraction starts to blur.",
+      "blur_pxHint": "1 px for normal defects, 0.5 px when the defect is very small.",
+      "overlap_percentHint": "Keep 10-15% so a defect on the seam is still fully seen.",
+      "exposure_msHint": "Will be capped if motion blur demands a shorter exposure.",
+      "process_msHint": "Algorithm run time per product."
     },
     "options": {
       "surface": {
@@ -237,6 +265,21 @@
         "plane_2d": "2D on a plane — parts at the same height",
         "pose_3d": "3D pose — position and tilt both needed",
         "bin_picking": "Bin picking — parts jumbled in a bin"
+      },
+      "defectType": {
+        "scratch": "Scratch / shallow crack",
+        "glossy_curved": "Glossy or curved surface",
+        "print_color": "Print defect / colour deviation",
+        "profile_hole_burr": "Profile, hole, burr",
+        "shallow_dent": "Very shallow dent or bump",
+        "transparent": "Transparent part"
+      },
+      "pixelFormat": {
+        "Mono8": "Mono8 (1 byte/px)",
+        "BayerRG8": "BayerRG8 (1 byte/px)",
+        "Mono12packed": "Mono12packed (1.5 byte/px)",
+        "Mono16": "Mono16 (2 byte/px)",
+        "RGB8": "RGB8 (3 byte/px)"
       }
     },
     "fieldErrors": {
@@ -324,6 +367,71 @@
         "unverified": "Unverified",
         "datasheet": "From datasheet",
         "measured": "Measured"
+      }
+    },
+    "vision": {
+      "title": "Feasibility checks",
+      "hint": "Each step shows the formula with the numbers filled in so you can verify it.",
+      "contrastDisclaimer": "Enough resolution does not guarantee the defect is detectable — target contrast must be >= 3-5x the background noise. Confirm with real samples.",
+      "needCamera": "Pick a camera above to run the sensor-dependent checks.",
+      "status": {
+        "pass": "PASS",
+        "warn": "CHECK",
+        "fail": "FAIL",
+        "info": "Value"
+      },
+      "sections": {
+        "resolution": "Resolution",
+        "timing": "Throughput & bandwidth",
+        "optics": "Optics",
+        "lighting": "Lighting"
+      },
+      "checks": {
+        "mmPerPxTarget": "Target size of one pixel",
+        "requiredPixels": "Pixels needed on each axis",
+        "sensorFits": "Sensor has enough pixels on both axes",
+        "actualMmPerPx": "Actual size of one pixel",
+        "actualPxPerDefect": "Actual pixels across the defect",
+        "cameraCount": "Cameras needed for full coverage",
+        "motionBlur": "Exposure ceiling from motion blur",
+        "frameSize": "Frame size",
+        "transferTime": "Transfer time per image",
+        "peakBandwidth": "Peak bandwidth at the host",
+        "cycleTime": "Cycle time per product",
+        "timeAvailable": "Time available",
+        "timeConsumed": "Time consumed",
+        "magnification": "Magnification beta",
+        "focalLength": "Estimated focal length",
+        "imageCircle": "Image circle covers the sensor",
+        "airyDisk": "Airy disk versus pixel size",
+        "lpPerMm": "Lens resolution required",
+        "depthOfField": "Depth of field",
+        "lightingSuggestion": "Suggested lighting"
+      },
+      "notes": {
+        "sensorTooSmall": "The sensor lacks pixels on at least one axis — change camera or narrow the field of view.",
+        "belowTarget": "Only {actual} px per defect against a target of {target} px. Narrow the field of view, raise resolution, or split across cameras.",
+        "cameraCountNote": "{count} cameras needed. Bandwidth and timing below are per camera.",
+        "blurNeedsStrobe": "Exposure must stay under 1 ms: a global shutter and a strobe light are mandatory, continuous lighting will be too dim.",
+        "blurOk": "Exposure has headroom, continuous lighting is fine.",
+        "peakBandwidthNote": "The NIC and switch must sustain this when the cameras transfer together.",
+        "overTimeBudget": "Consumes {consumed} ms but only {available} ms are available. Reduce views or resolution, or move to a faster interface.",
+        "focalIsEstimate": "This is an ESTIMATE that ignores principal-plane position. Check the vendor table for the real lens.",
+        "imageCircleTooSmall": "The image circle is smaller than the sensor diagonal — the corners will vignette.",
+        "airyBottleneck": "Diffraction already exceeds two pixels: open the aperture, otherwise the lens, not the sensor, is the bottleneck.",
+        "lensMustBeHighRes": "{lp} lp/mm required — a high-resolution lens is needed, a general-purpose one will not resolve it.",
+        "dofTooShallow": "Depth of field is shallower than the part height tolerance — parts at different heights will go out of focus.",
+        "lightingUnknown": "No defect type selected yet, so no lighting can be suggested."
+      },
+      "lightingReason": {
+        "scratch": "Scratches and shallow cracks only stand out under a very low angle against a dark background.",
+        "glossy_curved": "Glossy or curved surfaces need even illumination, otherwise hot spots get mistaken for defects.",
+        "print_color": "Print and colour defects need flat illumination: coaxial for glossy flats, diffuse bar otherwise.",
+        "profile_hole_burr": "For profile measurement a backlight gives the sharpest edge.",
+        "shallow_dent": "Very shallow dents need four directions to reconstruct the surface normal — one direction is not enough.",
+        "transparent": "Transparent parts must be lit through, tilted or DOAL, so defects appear as shadows.",
+        "surfaceTransparent": "A transparent surface overrides the defect type: it must be lit through first.",
+        "surfaceReflective": "A mirror-like surface overrides the defect type: plain dark field only shows glare."
       }
     }
   },

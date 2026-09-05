@@ -159,6 +159,10 @@
         "environment": {
           "title": "Môi trường lắp đặt",
           "hint": "Quyết định vỏ bảo vệ, kính lọc và cách gá."
+        },
+        "system": {
+          "title": "Thông số hệ thống",
+          "hint": "Đều có mặc định hợp lý — chỉ sửa khi bạn biết rõ."
         }
       }
     },
@@ -187,7 +191,31 @@
       "code_type": "Loại mã",
       "module_size_mm": "Kích thước ô module (X-dimension)",
       "guidance_mode": "Kiểu dẫn hướng",
-      "pick_accuracy_mm": "Độ chính xác gắp yêu cầu"
+      "pick_accuracy_mm": "Độ chính xác gắp yêu cầu",
+      "px_per_defect": "Số pixel phủ lên lỗi (N)",
+      "defect_type": "Loại lỗi cần phát hiện",
+      "height_tolerance_mm": "Dung sai chiều cao chi tiết",
+      "n_view": "Số ảnh mỗi sản phẩm",
+      "duty_percent": "Thời gian sản phẩm trong tầm nhìn",
+      "total_length_mm": "Chiều dài cần phủ",
+      "pixel_format": "Định dạng ảnh",
+      "f_number": "Khẩu độ ống kính (F#)",
+      "blur_px": "Nhoè cho phép",
+      "overlap_percent": "Chồng lấn giữa các camera",
+      "exposure_ms": "Thời gian phơi sáng mong muốn",
+      "process_ms": "Thời gian xử lý ảnh",
+      "px_per_defectHint": "3 = phát hiện có/không, tương phản cao · 4–6 = ngoại quan trên nền có vân · 8–10 = phân loại loại lỗi hoặc deep learning · ≥10 kèm subpixel = đo kích thước lỗi.",
+      "defect_typeHint": "Quyết định kiểu chiếu sáng đề xuất.",
+      "height_tolerance_mmHint": "Dùng để so với chiều sâu trường ảnh (DOF).",
+      "n_viewHint": "Chụp nhiều góc thì nhân lên chừng đó lần thời gian.",
+      "duty_percentHint": "Phần trăm chu kỳ mà sản phẩm nằm trong tầm nhìn camera.",
+      "total_length_mmHint": "Bỏ trống nếu chỉ dùng một camera.",
+      "pixel_formatHint": "Camera màu truyền Bayer thô 1 byte/px, không phải 3.",
+      "f_numberHint": "Khép khẩu nhiều thì sâu trường tăng nhưng nhiễu xạ làm mờ ảnh.",
+      "blur_pxHint": "1 px cho lỗi thường, 0,5 px khi lỗi rất nhỏ.",
+      "overlap_percentHint": "Nên để 10–15% để lỗi nằm đúng đường ghép vẫn thấy đủ.",
+      "exposure_msHint": "Sẽ bị siết xuống nếu nhoè chuyển động đòi ngắn hơn.",
+      "process_msHint": "Thời gian thuật toán chạy trên một sản phẩm."
     },
     "options": {
       "surface": {
@@ -237,6 +265,21 @@
         "plane_2d": "2D trên mặt phẳng — vật nằm cùng cao độ",
         "pose_3d": "3D pose — cần cả vị trí và góc nghiêng",
         "bin_picking": "Bin picking — vật chồng lộn xộn trong khay"
+      },
+      "defectType": {
+        "scratch": "Trầy xước / nứt nông",
+        "glossy_curved": "Bề mặt bóng hoặc cong",
+        "print_color": "Lỗi in / sai màu",
+        "profile_hole_burr": "Biên dạng, lỗ, bavia",
+        "shallow_dent": "Lõm lồi rất nông",
+        "transparent": "Vật trong suốt"
+      },
+      "pixelFormat": {
+        "Mono8": "Mono8 (1 byte/px)",
+        "BayerRG8": "BayerRG8 (1 byte/px)",
+        "Mono12packed": "Mono12packed (1,5 byte/px)",
+        "Mono16": "Mono16 (2 byte/px)",
+        "RGB8": "RGB8 (3 byte/px)"
       }
     },
     "fieldErrors": {
@@ -324,6 +367,71 @@
         "unverified": "Chưa kiểm chứng",
         "datasheet": "Theo datasheet",
         "measured": "Đã đo"
+      }
+    },
+    "vision": {
+      "title": "Kiểm tra tính khả thi",
+      "hint": "Từng bước hiện công thức đã thay số để bạn tự kiểm chứng lại.",
+      "contrastDisclaimer": "Đủ độ phân giải không đảm bảo phát hiện được lỗi — tương phản mục tiêu cần ≥ 3–5 lần nhiễu nền. Phải xác nhận bằng mẫu thật.",
+      "needCamera": "Chọn camera ở trên để chạy các phép kiểm phụ thuộc cảm biến.",
+      "status": {
+        "pass": "ĐẠT",
+        "warn": "LƯU Ý",
+        "fail": "KHÔNG ĐẠT",
+        "info": "Số liệu"
+      },
+      "sections": {
+        "resolution": "Độ phân giải",
+        "timing": "Nhịp sản xuất & băng thông",
+        "optics": "Quang học",
+        "lighting": "Chiếu sáng"
+      },
+      "checks": {
+        "mmPerPxTarget": "Kích thước một pixel cần đạt",
+        "requiredPixels": "Số pixel cần trên từng trục",
+        "sensorFits": "Cảm biến đủ pixel cả hai trục",
+        "actualMmPerPx": "Kích thước một pixel thực tế",
+        "actualPxPerDefect": "Số pixel thực tế phủ lên lỗi",
+        "cameraCount": "Số camera cần để phủ hết",
+        "motionBlur": "Trần thời gian phơi sáng do nhoè",
+        "frameSize": "Kích thước một ảnh",
+        "transferTime": "Thời gian truyền một ảnh",
+        "peakBandwidth": "Băng thông đỉnh tại máy tính",
+        "cycleTime": "Chu kỳ một sản phẩm",
+        "timeAvailable": "Thời gian khả dụng",
+        "timeConsumed": "Thời gian tiêu thụ",
+        "magnification": "Độ phóng đại β",
+        "focalLength": "Tiêu cự ước lượng",
+        "imageCircle": "Vòng ảnh phủ cảm biến",
+        "airyDisk": "Đĩa Airy so với cỡ pixel",
+        "lpPerMm": "Độ phân giải ống kính cần có",
+        "depthOfField": "Chiều sâu trường ảnh",
+        "lightingSuggestion": "Kiểu chiếu sáng đề xuất"
+      },
+      "notes": {
+        "sensorTooSmall": "Cảm biến thiếu pixel trên ít nhất một trục — đổi camera hoặc thu hẹp FOV.",
+        "belowTarget": "Chỉ đạt {actual} px/lỗi so với mục tiêu {target} px. Thu hẹp FOV, tăng độ phân giải, hoặc chia thành nhiều camera.",
+        "cameraCountNote": "Cần {count} camera. Băng thông và thời gian bên dưới tính cho từng camera.",
+        "blurNeedsStrobe": "Phơi sáng phải dưới 1 ms: bắt buộc global shutter và đèn strobe, đèn thường sẽ không đủ sáng.",
+        "blurOk": "Phơi sáng còn dư địa, đèn liên tục dùng được.",
+        "peakBandwidthNote": "Cạc mạng và switch phải chịu được mức này khi các camera cùng truyền.",
+        "overTimeBudget": "Tiêu thụ {consumed} ms nhưng chỉ có {available} ms. Giảm số ảnh, giảm độ phân giải, hoặc dùng giao tiếp nhanh hơn.",
+        "focalIsEstimate": "Đây là ƯỚC LƯỢNG, bỏ qua vị trí điểm chính. Ống kính thật phải tra bảng của hãng.",
+        "imageCircleTooSmall": "Vòng ảnh nhỏ hơn đường chéo cảm biến — ảnh sẽ tối bốn góc.",
+        "airyBottleneck": "Nhiễu xạ đã lớn hơn hai pixel: mở khẩu hơn, nếu không ống kính là nút cổ chai chứ không phải cảm biến.",
+        "lensMustBeHighRes": "Cần {lp} lp/mm — phải dùng ống kính high-resolution, ống kính phổ thông không đạt.",
+        "dofTooShallow": "Chiều sâu trường ảnh nông hơn dung sai chiều cao chi tiết — chi tiết cao thấp khác nhau sẽ mất nét.",
+        "lightingUnknown": "Chưa chọn loại lỗi nên chưa gợi ý được kiểu chiếu sáng."
+      },
+      "lightingReason": {
+        "scratch": "Xước và nứt nông chỉ nổi lên khi chiếu góc rất thấp, nền tối hẳn.",
+        "glossy_curved": "Bề mặt bóng hoặc cong cần nền sáng đều, nếu không điểm loá sẽ bị nhận nhầm thành lỗi.",
+        "print_color": "Lỗi in và sai màu cần chiếu đều: đồng trục cho mặt phẳng bóng, bar khuếch tán cho mặt thường.",
+        "profile_hole_burr": "Đo biên dạng thì đèn nền cho biên sắc nét nhất.",
+        "shallow_dent": "Lõm lồi rất nông cần chụp bốn hướng rồi dựng lại pháp tuyến bề mặt — một hướng chiếu không đủ.",
+        "transparent": "Vật trong suốt phải soi xuyên, chiếu nghiêng hoặc DOAL để lỗi hiện thành bóng.",
+        "surfaceTransparent": "Bề mặt trong suốt lấn át loại lỗi: phải soi xuyên trước đã.",
+        "surfaceReflective": "Bề mặt bóng như gương lấn át loại lỗi: dark field thông thường chỉ thấy loá."
       }
     }
   },

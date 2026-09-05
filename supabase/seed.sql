@@ -853,3 +853,21 @@ where code = 'APPEAR-DL-HIGH-VAR';
 update public.selector_rules set
   recommended_accessories = 'Kính lọc phân cực chéo (trên đèn và trên ống kính) để cắt điểm loá'
 where code = 'APPEAR-REFLECTIVE';
+
+
+-- =============================================================================
+-- Bài Kiểm tra ngoại quan: bổ sung tham số cho bộ tính toán quang học/thời gian
+--
+-- Tách riêng bằng UPDATE thay vì sửa mảng ở khối insert phía trên, để thấy rõ
+-- những trường nào mới thêm và vì sao. Nhóm "system" đều có mặc định hợp lý nên
+-- kỹ sư bỏ qua được — không bắt điền mười ô mới cho một phép tính nhanh.
+-- =============================================================================
+
+update public.task_types set input_fields = '[
+  "fov_width_mm","fov_height_mm","defect_min_size_mm","px_per_defect","defect_type",
+  "defect_variability","color_critical","surface","height_tolerance_mm",
+  "working_distance_mm","throughput_ppm","line_speed_mms","n_view","duty_percent","total_length_mm",
+  "environment","ip_rating",
+  "pixel_format","f_number","blur_px","overlap_percent","exposure_ms","process_ms"
+]'::jsonb
+where slug = 'appearance-inspection';

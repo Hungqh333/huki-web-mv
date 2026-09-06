@@ -25,10 +25,18 @@ export type Check = {
   noteValues?: Record<string, string | number>;
 };
 
+/** Ba kiểu chụp — quyết định cả bộ công thức phía sau. */
+export type CaptureMode = 'static' | 'moving_area' | 'line_scan';
+
 /** Camera tối thiểu cần biết gì để kiểm chứng được cấu hình. */
 export type CameraLike = {
+  /** 'area' hoặc 'line'. Hai họ dùng bộ công thức khác nhau. */
+  cameraType?: 'area' | 'line';
   widthPx: number;
   heightPx: number;
+  /** Chỉ có ở line scan: số pixel một hàng. */
+  lineWidthPx?: number | null;
+  maxLineRateKhz?: number | null;
   pixelSizeUm: number | null;
   sensorFormat: string | null;
   interfaceName: string | null;

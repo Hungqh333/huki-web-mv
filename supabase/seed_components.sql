@@ -18,49 +18,49 @@ values
 
 -- ----------------------------------------------------------------- CAMERA --
 ('CAM-BASLER-A2A2590-GM', 'camera', 'Basler', 'a2A2590-22gmBAS',
- '{"resolution_mp":5,"resolution_w_px":2592,"resolution_h_px":1944,"sensor_format":"1/1.8","pixel_size_um":2.74,"mount":"C","interface":"GigE","max_fps":22,"color":"mono"}'::jsonb,
+ '{"camera_type":"area","resolution_mp":5,"resolution_w_px":2592,"resolution_h_px":1944,"sensor_format":"1/1.8","pixel_size_um":2.74,"mount":"C","interface":"GigE","max_fps":22,"color":"mono"}'::jsonb,
  'unverified',
  'Pixel 2,74 µm khá nhỏ — ống kính phải phân giải tốt, đừng ghép với lens phổ thông giá rẻ.',
  'The 2.74 um pixel is small, so the lens must resolve well; do not pair it with a low-cost general lens.',
  10),
 
 ('CAM-BASLER-ACA2440-UM', 'camera', 'Basler', 'acA2440-35um',
- '{"resolution_mp":5,"resolution_w_px":2448,"resolution_h_px":2048,"sensor_format":"2/3","pixel_size_um":3.45,"mount":"C","interface":"USB3","max_fps":35,"color":"mono"}'::jsonb,
+ '{"camera_type":"area","resolution_mp":5,"resolution_w_px":2448,"resolution_h_px":2048,"sensor_format":"2/3","pixel_size_um":3.45,"mount":"C","interface":"USB3","max_fps":35,"color":"mono"}'::jsonb,
  'unverified',
  'USB3 cho băng thông cao nhưng cáp ngắn (~5 m). Dây chuyền dài nên cân nhắc GigE.',
  'USB3 gives high bandwidth but short cables (~5 m). On a long line consider GigE instead.',
  20),
 
 ('CAM-BASLER-A2A5320-GM', 'camera', 'Basler', 'a2A5320-23gmBAS',
- '{"resolution_mp":16,"resolution_w_px":5320,"resolution_h_px":3032,"sensor_format":"1","pixel_size_um":2.4,"mount":"C","interface":"5GigE","max_fps":23,"color":"mono"}'::jsonb,
+ '{"camera_type":"area","resolution_mp":16,"resolution_w_px":5320,"resolution_h_px":3032,"sensor_format":"1","pixel_size_um":2.4,"mount":"C","interface":"5GigE","max_fps":23,"color":"mono"}'::jsonb,
  'unverified',
  'Cảm biến 1 inch: kiểm lại vòng ảnh ống kính, lens 2/3 inch sẽ bị tối bốn góc.',
  'One-inch sensor: re-check the lens image circle, a 2/3-inch lens will vignette.',
  30),
 
 ('CAM-HIK-MVCS050-GM', 'camera', 'Hikrobot', 'MV-CS050-10GM',
- '{"resolution_mp":5,"resolution_w_px":2448,"resolution_h_px":2048,"sensor_format":"2/3","pixel_size_um":3.45,"mount":"C","interface":"GigE","max_fps":24,"color":"mono"}'::jsonb,
+ '{"camera_type":"area","resolution_mp":5,"resolution_w_px":2448,"resolution_h_px":2048,"sensor_format":"2/3","pixel_size_um":3.45,"mount":"C","interface":"GigE","max_fps":24,"color":"mono"}'::jsonb,
  'unverified',
  'Cấu hình phổ thông, dễ mua và dễ thay thế tại Việt Nam.',
  'A common configuration, easy to source and replace locally.',
  40),
 
 ('CAM-HIK-MVCS200-GC', 'camera', 'Hikrobot', 'MV-CS200-10GC',
- '{"resolution_mp":20,"resolution_w_px":5472,"resolution_h_px":3648,"sensor_format":"1","pixel_size_um":2.4,"mount":"C","interface":"GigE","max_fps":15,"color":"color"}'::jsonb,
+ '{"camera_type":"area","resolution_mp":20,"resolution_w_px":5472,"resolution_h_px":3648,"sensor_format":"1","pixel_size_um":2.4,"mount":"C","interface":"GigE","max_fps":15,"color":"color"}'::jsonb,
  'unverified',
  '20 MP trên GigE: ở full frame băng thông đã chạm trần, tính lại nhịp ảnh trước khi chốt.',
  '20 MP over GigE: at full frame the bandwidth is already at the limit, re-check the frame rate.',
  50),
 
 ('CAM-IRAYPLE-A5031MG', 'camera', 'iRayple', 'A5031MG14',
- '{"resolution_mp":3.1,"resolution_w_px":2048,"resolution_h_px":1536,"sensor_format":"1/1.8","pixel_size_um":3.45,"mount":"C","interface":"GigE","max_fps":14,"color":"mono"}'::jsonb,
+ '{"camera_type":"area","resolution_mp":3.1,"resolution_w_px":2048,"resolution_h_px":1536,"sensor_format":"1/1.8","pixel_size_um":3.45,"mount":"C","interface":"GigE","max_fps":14,"color":"mono"}'::jsonb,
  'unverified',
  'Lựa chọn tiết kiệm cho bài toán độ phân giải thấp.',
  'A cost-effective option for low-resolution tasks.',
  60),
 
 ('CAM-IRAYPLE-A7500MG', 'camera', 'iRayple', 'A7500MG10',
- '{"resolution_mp":12,"resolution_w_px":4096,"resolution_h_px":3000,"sensor_format":"1","pixel_size_um":2.74,"mount":"C","interface":"GigE","max_fps":10,"color":"mono"}'::jsonb,
+ '{"camera_type":"area","resolution_mp":12,"resolution_w_px":4096,"resolution_h_px":3000,"sensor_format":"1","pixel_size_um":2.74,"mount":"C","interface":"GigE","max_fps":10,"color":"mono"}'::jsonb,
  'unverified',
  'Nhịp ảnh 10 fps — không hợp dây chuyền nhanh.',
  'Only 10 fps, so not suitable for a fast line.',
@@ -280,6 +280,52 @@ values
  '{"option_type":"monitor"}'::jsonb, 'unverified', null, null, 930),
 ('PCOPT-KEYBOARD', 'pc_option', 'Generic', 'Bàn phím + chuột công nghiệp',
  '{"option_type":"keyboard"}'::jsonb, 'unverified', null, null, 940)
+
+on conflict (code) do update set
+  kind       = excluded.kind,
+  brand      = excluded.brand,
+  model      = excluded.model,
+  spec       = excluded.spec,
+  source     = excluded.source,
+  notes_vi   = excluded.notes_vi,
+  notes_en   = excluded.notes_en,
+  sort_order = excluded.sort_order,
+  is_active  = true;
+
+
+-- =============================================================================
+-- Camera quét dòng và đèn dòng
+--
+-- Line scan không phải "một loại camera khác" — nó đổi cả bộ công thức. Cảm
+-- biến chỉ có MỘT hàng pixel; độ phân giải dọc đường chạy = tốc độ ÷ tần số
+-- dòng. Vì mỗi dòng chỉ được phơi sáng vài trăm micro giây nên đèn dòng cường
+-- độ cao là bắt buộc, không phải tuỳ chọn.
+-- =============================================================================
+
+insert into public.components
+  (code, kind, brand, model, spec, source, notes_vi, notes_en, sort_order)
+values
+
+('CAM-BASLER-RACER-2K', 'camera', 'Basler', 'raL2048-48gm',
+ '{"camera_type":"line","line_width_px":2048,"max_line_rate_khz":48,"pixel_size_um":7,"mount":"C","interface":"GigE","color":"mono"}'::jsonb,
+ 'unverified',
+ 'Pixel 7 µm khá lớn nên thu được nhiều sáng — điều này quan trọng với line scan hơn là với area scan.',
+ 'The 7 um pixel collects a lot of light, which matters far more for line scan than for area scan.',
+ 80),
+
+('CAM-HIK-LINE-4K', 'camera', 'Hikrobot', 'MV-CL042-91GM',
+ '{"camera_type":"line","line_width_px":4096,"max_line_rate_khz":45,"pixel_size_um":3.5,"mount":"C","interface":"5GigE","color":"mono"}'::jsonb,
+ 'unverified',
+ '4096 px một hàng: đủ cho khổ rộng, nhưng băng thông liên tục cao nên phải 5GigE.',
+ '4096 px per line covers a wide web, but the continuous bandwidth needs 5GigE.',
+ 90),
+
+('LIGHT-HZ-LINE-W', 'light', 'HZ', 'HZ-LN300-W',
+ '{"light_type":"bar","color":"white","size_mm":300,"wd_min_mm":30,"wd_max_mm":150}'::jsonb,
+ 'unverified',
+ 'Đèn dòng cường độ cao cho line scan. Đèn thanh thường KHÔNG đủ sáng ở vài chục nghìn dòng/giây.',
+ 'High-intensity line light for line scan. An ordinary bar light is not bright enough at tens of thousands of lines per second.',
+ 270)
 
 on conflict (code) do update set
   kind       = excluded.kind,

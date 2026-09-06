@@ -237,7 +237,15 @@
           "meaning": "With subpixel - measuring defect size"
         }
       ],
-      "guideToggle": "How to choose N?"
+      "guideToggle": "How to choose N?",
+      "capture_mode": "Capture mode",
+      "capture_modeHint": "This question drives everything else — static has no motion blur, line scan has no FOV height.",
+      "settle_time_ms": "Vibration settle time",
+      "settle_time_msHint": "After the mechanism stops, how long before a sharp image is possible.",
+      "trigger_jitter_ms": "Trigger timing jitter",
+      "trigger_jitter_msHint": "Jitter times speed becomes position error, which sets how much FOV margin is needed.",
+      "encoder_resolution_um": "Encoder resolution",
+      "encoder_resolution_umHint": "Without an encoder the along-travel resolution drifts with conveyor speed."
     },
     "options": {
       "surface": {
@@ -302,6 +310,11 @@
         "Mono12packed": "Mono12packed (1.5 byte/px)",
         "Mono16": "Mono16 (2 byte/px)",
         "RGB8": "RGB8 (3 byte/px)"
+      },
+      "captureMode": {
+        "static": "Static - the part stops before imaging",
+        "moving_area": "Moving - area scan while the part travels",
+        "line_scan": "Moving - line scan"
       }
     },
     "fieldErrors": {
@@ -433,7 +446,8 @@
         "resolution": "Resolution",
         "timing": "Throughput & bandwidth",
         "optics": "Optics",
-        "lighting": "Lighting"
+        "lighting": "Lighting",
+        "linescan": "Line scan"
       },
       "checks": {
         "mmPerPxTarget": "Target size of one pixel",
@@ -455,7 +469,12 @@
         "airyDisk": "Airy disk versus pixel size",
         "lpPerMm": "Lens resolution required",
         "depthOfField": "Depth of field",
-        "lightingSuggestion": "Suggested lighting"
+        "lightingSuggestion": "Suggested lighting",
+        "lineRateRequired": "Required line rate",
+        "lineRateFits": "Camera can reach the line rate",
+        "lineExposure": "Exposure per line",
+        "lineDataRate": "Continuous bandwidth",
+        "encoder": "Encoder"
       },
       "notes": {
         "sensorTooSmall": "The sensor lacks pixels on at least one axis — change camera or narrow the field of view.",
@@ -470,7 +489,14 @@
         "airyBottleneck": "Diffraction already exceeds two pixels: open the aperture, otherwise the lens, not the sensor, is the bottleneck.",
         "lensMustBeHighRes": "{lp} lp/mm required — a high-resolution lens is needed, a general-purpose one will not resolve it.",
         "dofTooShallow": "Depth of field is shallower than the part height tolerance — parts at different heights will go out of focus.",
-        "lightingUnknown": "No defect type selected yet, so no lighting can be suggested."
+        "lightingUnknown": "No defect type selected yet, so no lighting can be suggested.",
+        "staticNoBlur": "Static capture has no motion blur — exposure is free and continuous lighting is enough.",
+        "lineRateSquarePixel": "At this rate pixels are square. Slower stretches the image, faster squeezes it.",
+        "lineRateTooHigh": "The camera cannot reach this rate — slow the conveyor or pick a faster line scan camera.",
+        "lineNeedsBrightLight": "Each line gets only this much exposure. A high-intensity line light is mandatory.",
+        "lineBandwidthTooHigh": "Line scan streams continuously with no idle gap — the interface must sustain this all shift.",
+        "encoderTooCoarse": "The encoder is coarser than one pixel, so along-travel resolution will drift.",
+        "encoderMissing": "No encoder specified. Without one, any conveyor speed drift stretches or squeezes the image."
       },
       "lightingReason": {
         "scratch": "Scratches and shallow cracks only stand out under a very low angle against a dark background.",

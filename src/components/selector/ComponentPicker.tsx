@@ -108,12 +108,18 @@ export function ComponentPicker({
   };
 
   // --- 1. Camera
+  /* Line scan và area scan không thay thế cho nhau được — đây là điều kiện
+     lọc cứng, không phải tiêu chí xếp hạng. */
+  const wantsLineScan = appearance?.captureMode === 'line_scan';
+
   const cameraChoice = pickCamera(components, {
     requiredMp,
     dataRateMbytesS: dataRate,
     needsColor,
     requiredWidthPx: need?.nx ?? null,
-    requiredHeightPx: need?.ny ?? null,
+    // Line scan không bị cảm biến giới hạn chiều dọc.
+    requiredHeightPx: wantsLineScan ? null : (need?.ny ?? null),
+    cameraType: appearance ? (wantsLineScan ? 'line' : 'area') : null,
   });
   const camera = resolve('camera', cameraChoice);
 
@@ -150,8 +156,11 @@ export function ComponentPicker({
    */
   const cameraLike = camera
     ? {
+        cameraType: (specString(camera.spec, 'camera_type') ?? 'area') as 'area' | 'line',
         widthPx: (camera.spec.resolution_w_px as number) ?? 0,
         heightPx: (camera.spec.resolution_h_px as number) ?? 0,
+        lineWidthPx: (camera.spec.line_width_px as number) ?? null,
+        maxLineRateKhz: (camera.spec.max_line_rate_khz as number) ?? null,
         pixelSizeUm: (camera.spec.pixel_size_um as number) ?? null,
         sensorFormat: specString(camera.spec, 'sensor_format'),
         interfaceName: specString(camera.spec, 'interface'),
@@ -160,11 +169,14 @@ export function ComponentPicker({
 
   const verdict = cameraLike && appearance ? verifyResolution(cameraLike, appearance) : null;
   const mmPerPx = verdict ? Math.max(verdict.mmPerPxX, verdict.mmPerPxY) : null;
+  /* Chụp tĩnh thì không có nhoè, nên cũng không cần bộ điều khiển đánh xung —
+     hỏi strobe cho bài chụp tĩnh là bán thừa. */
   const blur =
-    appearance?.speedMmS && mmPerPx
+    appearance?.captureMode === 'moving_area' && appearance.speedMmS && mmPerPx
       ? maxExposureForBlur({ blurPx: appearance.blurPx, mmPerPx, speedMmS: appearance.speedMmS })
       : null;
-  const needsStrobe = blur?.needsStrobe ?? false;
+  // Line scan luôn phơi sáng cực ngắn nên đèn phải đánh xung / cường độ cao.
+  const needsStrobe = appearance?.captureMode === 'line_scan' || (blur?.needsStrobe ?? false);
 
   // --- 6. Bộ điều khiển đèn
   const lightControllerChoice = pickLightController(components, {

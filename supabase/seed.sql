@@ -871,3 +871,17 @@ update public.task_types set input_fields = '[
   "pixel_format","f_number","blur_px","overlap_percent","exposure_ms","process_ms"
 ]'::jsonb
 where slug = 'appearance-inspection';
+
+
+-- Bài ngoại quan: thêm câu hỏi kiểu chụp và ba tham số đi kèm.
+-- capture_mode đặt ĐẦU danh sách vì nó quyết định những ô còn lại có hiện không.
+update public.task_types set input_fields = '[
+  "capture_mode",
+  "fov_width_mm","fov_height_mm","defect_min_size_mm","px_per_defect","defect_type",
+  "defect_variability","color_critical","surface","height_tolerance_mm",
+  "working_distance_mm","throughput_ppm","line_speed_mms","n_view","duty_percent","total_length_mm",
+  "settle_time_ms","trigger_jitter_ms","encoder_resolution_um",
+  "environment","ip_rating",
+  "pixel_format","f_number","blur_px","overlap_percent","exposure_ms","process_ms"
+]'::jsonb
+where slug = 'appearance-inspection';

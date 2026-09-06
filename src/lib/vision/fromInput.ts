@@ -21,16 +21,30 @@ const str = (input: SelectorInput, key: string): string | null => {
 /** Trả null khi thiếu ba tham số bắt buộc — không đoán thay người dùng. */
 export function appearanceInputFromForm(input: SelectorInput): AppearanceInput | null {
   const fovWidthMm = num(input, 'fov_width_mm');
-  const fovHeightMm = num(input, 'fov_height_mm');
   const defectMinSizeMm = num(input, 'defect_min_size_mm');
 
-  if (fovWidthMm === null || fovHeightMm === null || defectMinSizeMm === null) return null;
+  if (fovWidthMm === null || defectMinSizeMm === null) return null;
+
+  /* Line scan không hỏi chiều cao FOV — ảnh dựng theo chiều quét nên không có
+     giới hạn đó. Lấy tạm bằng bề rộng để các công thức chung vẫn chạy; nhánh
+     line scan không dùng tới con số này. */
+  const fovHeightMm = num(input, 'fov_height_mm') ?? fovWidthMm;
 
   const dutyPercent = num(input, 'duty_percent');
   const overlapPercent = num(input, 'overlap_percent');
 
+  const mode = str(input, 'capture_mode');
+
   return {
     ...DEFAULT_APPEARANCE_INPUT,
+
+    captureMode:
+      mode === 'moving_area' || mode === 'line_scan' || mode === 'static'
+        ? mode
+        : DEFAULT_APPEARANCE_INPUT.captureMode,
+    settleTimeMs: num(input, 'settle_time_ms') ?? DEFAULT_APPEARANCE_INPUT.settleTimeMs,
+    triggerJitterMs: num(input, 'trigger_jitter_ms') ?? DEFAULT_APPEARANCE_INPUT.triggerJitterMs,
+    encoderResolutionUm: num(input, 'encoder_resolution_um'),
 
     fovWidthMm,
     fovHeightMm,

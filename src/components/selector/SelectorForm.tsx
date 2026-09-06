@@ -3,7 +3,7 @@
 import { useActionState, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { runSelectorAction, type SelectorState } from '@/app/actions/selector';
-import { FIELD_GROUPS, type FieldDef } from '@/lib/selector/fields';
+import { FIELD_GROUPS, visibleFieldDefs, type FieldDef } from '@/lib/selector/fields';
 import { SelectorField } from './SelectorField';
 import { SelectorResultPanel } from './SelectorResultPanel';
 
@@ -26,6 +26,17 @@ export function SelectorForm({
   const [step, setStep] = useState(0);
 
   /*
+   * Vài ô chỉ có nghĩa với một kiểu chụp nhất định (tốc độ băng tải với bài
+   * chụp tĩnh chẳng hạn). Theo dõi giá trị đó để ẩn/hiện. Bắt sự kiện ở cấp
+   * form thay vì gắn onChange vào từng ô — chỉ cần một chỗ, và không phải
+   * biến mọi ô thành controlled.
+   */
+  const [conditionValues, setConditionValues] = useState<Record<string, string>>({});
+
+  const readCondition = (key: string): string | null => conditionValues[key] ?? null;
+  const shownFields = visibleFieldDefs(fields, readCondition);
+
+  /*
    * Chia trường theo CHỦ ĐỀ, không theo linh kiện: camera/lens/đèn ràng buộc
    * lẫn nhau (tiêu cự cần cỡ cảm biến, lens telecentric giới hạn cảm biến) nên
    * hỏi rời từng cụm sẽ dựng ra cấu hình bất khả thi. Các CÂU HỎI thì tách theo
@@ -33,7 +44,7 @@ export function SelectorForm({
    */
   const steps = FIELD_GROUPS.map((group) => ({
     group,
-    fields: fields.filter((field) => field.group === group),
+    fields: shownFields.filter((field) => field.group === group),
   })).filter((entry) => entry.fields.length > 0);
 
   const last = steps.length - 1;
@@ -75,7 +86,21 @@ export function SelectorForm({
 
   return (
     <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-      <form ref={formRef} action={formAction} onSubmit={handleSubmit} noValidate className="min-w-0">
+      <form
+        ref={formRef}
+        action={formAction}
+        onSubmit={handleSubmit}
+        onChange={(event) => {
+          // React gõ event.target theo thẻ gắn handler (form), nhưng sự kiện
+          // nổi bọt lên từ ô con — phải ép kiểu qua unknown.
+          const target = event.target as unknown as HTMLInputElement | HTMLSelectElement;
+          if (target.name) {
+            setConditionValues((current) => ({ ...current, [target.name]: target.value }));
+          }
+        }}
+        noValidate
+        className="min-w-0"
+      >
         <input type="hidden" name="task_slug" value={taskSlug} />
 
         {/* Thanh bước */}

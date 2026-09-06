@@ -156,8 +156,20 @@ export function specString(spec: Record<string, unknown>, key: string): string |
   return typeof value === 'string' && value.trim() !== '' ? value.trim() : null;
 }
 
-/** Bề rộng cảm biến (mm) của một camera — thứ cần để tính tiêu cự. */
+/**
+ * Bề rộng cảm biến (mm) — thứ cần để tính tiêu cự.
+ *
+ * Camera line scan không có "optical format" theo nghĩa thông thường: cảm biến
+ * là một hàng pixel, bề rộng = số pixel × cỡ pixel. Tính thẳng từ đó thay vì
+ * tra bảng.
+ */
 export function sensorWidthMm(spec: Record<string, unknown>): number | null {
+  if (specString(spec, 'camera_type') === 'line') {
+    const px = specNumber(spec, 'line_width_px');
+    const size = specNumber(spec, 'pixel_size_um');
+    if (px !== null && size !== null) return (px * size) / 1000;
+    return null;
+  }
   const format = specString(spec, 'sensor_format');
   if (!format) return null;
   return SENSOR_FORMATS[format]?.widthMm ?? null;
@@ -211,10 +223,14 @@ const INTERFACES = Object.keys(INTERFACE_BANDWIDTH);
 
 export const SPEC_FIELDS: Record<ComponentKind, SpecFieldDef[]> = {
   camera: [
-    { key: 'resolution_mp', type: 'number', unit: 'MP', required: true, step: 0.1 },
-    { key: 'resolution_w_px', type: 'number', unit: 'px', required: true, step: 1 },
-    { key: 'resolution_h_px', type: 'number', unit: 'px', required: true, step: 1 },
-    { key: 'sensor_format', type: 'select', options: SENSOR_FORMAT_ORDER, required: true },
+    { key: 'camera_type', type: 'select', options: ['area', 'line'], required: true },
+    { key: 'resolution_mp', type: 'number', unit: 'MP', step: 0.1 },
+    { key: 'resolution_w_px', type: 'number', unit: 'px', step: 1 },
+    { key: 'resolution_h_px', type: 'number', unit: 'px', step: 1 },
+    /* Line scan chỉ có một hàng pixel; ảnh dựng dần theo chiều vật chạy. */
+    { key: 'line_width_px', type: 'number', unit: 'px', step: 1 },
+    { key: 'max_line_rate_khz', type: 'number', unit: 'kHz', step: 0.1 },
+    { key: 'sensor_format', type: 'select', options: SENSOR_FORMAT_ORDER },
     { key: 'pixel_size_um', type: 'number', unit: 'µm', step: 0.01 },
     { key: 'mount', type: 'select', options: MOUNTS, required: true },
     { key: 'interface', type: 'select', options: INTERFACES, required: true },
@@ -293,7 +309,7 @@ export const SPEC_FIELDS: Record<ComponentKind, SpecFieldDef[]> = {
  * những thông số phân biệt được thiết bị này với thiết bị khác.
  */
 export const SUMMARY_KEYS: Record<ComponentKind, string[]> = {
-  camera: ['resolution_mp', 'sensor_format', 'interface', 'color'],
+  camera: ['camera_type', 'resolution_mp', 'line_width_px', 'sensor_format', 'interface', 'color'],
   lens: ['lens_type', 'focal_length_mm', 'magnification', 'image_circle'],
   tube: ['length_mm', 'mount'],
   light: ['light_type', 'color', 'size_mm'],

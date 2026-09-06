@@ -3,7 +3,7 @@
 import { getTranslations } from 'next-intl/server';
 import { createClient } from '@/lib/supabase/server';
 import { getSessionContext, canUseSelector } from '@/lib/auth';
-import { getFieldDefs, parseInput } from '@/lib/selector/fields';
+import { getFieldDefs, parseInput, visibleFieldDefs } from '@/lib/selector/fields';
 import { runSelector } from '@/lib/selector/engine';
 import type { SelectorInput, SelectorResult, SelectorRule } from '@/lib/selector/types';
 import type { Component } from '@/lib/components/specs';
@@ -53,8 +53,15 @@ export async function runSelectorAction(
 
   if (!taskType) return { error: t('unknownTask') };
 
-  const defs = getFieldDefs(taskType.input_fields);
-  if (defs.length === 0) return { error: t('noFields') };
+  const allDefs = getFieldDefs(taskType.input_fields);
+  if (allDefs.length === 0) return { error: t('noFields') };
+
+  /* Chỉ kiểm những ô form thực sự đang hỏi. Ô bị ẩn theo kiểu chụp mà vẫn bắt
+     buộc thì người dùng nhận lỗi "thiếu dữ liệu" cho một ô không nhìn thấy. */
+  const defs = visibleFieldDefs(allDefs, (key) => {
+    const value = formData.get(key);
+    return typeof value === 'string' && value !== '' ? value : null;
+  });
 
   const { input, errors } = parseInput(defs, formData);
   if (Object.keys(errors).length > 0) {

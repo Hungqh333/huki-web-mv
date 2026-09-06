@@ -89,6 +89,11 @@ export function pickCamera(
      */
     requiredWidthPx?: number | null;
     requiredHeightPx?: number | null;
+    /**
+     * 'area' hoặc 'line'. Hai họ camera không thay thế cho nhau được, nên đây là
+     * điều kiện lọc cứng chứ không phải tiêu chí xếp hạng.
+     */
+    cameraType?: 'area' | 'line' | null;
   }
 ): ComponentChoice<CameraFit> {
   const fit: CameraFit = {
@@ -102,13 +107,25 @@ export function pickCamera(
     if (mp === null) return false;
     if (req.requiredMp !== null && mp < req.requiredMp) return false;
 
-    const widthPx = specNumber(camera.spec, 'resolution_w_px');
-    const heightPx = specNumber(camera.spec, 'resolution_h_px');
-    if (req.requiredWidthPx != null) {
-      if (widthPx === null || widthPx < req.requiredWidthPx) return false;
-    }
-    if (req.requiredHeightPx != null) {
-      if (heightPx === null || heightPx < req.requiredHeightPx) return false;
+    const type = specString(camera.spec, 'camera_type') ?? 'area';
+    if (req.cameraType && type !== req.cameraType) return false;
+
+    if (type === 'line') {
+      /* Line scan chỉ kiểm bề ngang: chiều dọc do quét sinh ra, không giới hạn
+         bởi cảm biến. */
+      const lineWidth = specNumber(camera.spec, 'line_width_px');
+      if (req.requiredWidthPx != null && (lineWidth === null || lineWidth < req.requiredWidthPx)) {
+        return false;
+      }
+    } else {
+      const widthPx = specNumber(camera.spec, 'resolution_w_px');
+      const heightPx = specNumber(camera.spec, 'resolution_h_px');
+      if (req.requiredWidthPx != null) {
+        if (widthPx === null || widthPx < req.requiredWidthPx) return false;
+      }
+      if (req.requiredHeightPx != null) {
+        if (heightPx === null || heightPx < req.requiredHeightPx) return false;
+      }
     }
 
     const color = specString(camera.spec, 'color');
@@ -123,8 +140,13 @@ export function pickCamera(
   });
 
   const ranked = [...candidates].sort((a, b) => {
-    const mpA = specNumber(a.spec, 'resolution_mp') ?? Infinity;
-    const mpB = specNumber(b.spec, 'resolution_mp') ?? Infinity;
+    // Line scan xếp theo số pixel một hàng; area scan xếp theo megapixel.
+    const sizeOf = (c: Component) =>
+      specString(c.spec, 'camera_type') === 'line'
+        ? (specNumber(c.spec, 'line_width_px') ?? Infinity)
+        : (specNumber(c.spec, 'resolution_mp') ?? Infinity);
+    const mpA = sizeOf(a);
+    const mpB = sizeOf(b);
     if (mpA !== mpB) return mpA - mpB;
 
     // Không cần màu thì ưu tiên đơn sắc: cùng megapixel, đơn sắc cho ảnh sắc

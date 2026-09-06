@@ -152,6 +152,9 @@ export function cycleBudget(input: {
 // --------------------------------------------------------------- CÁC BƯỚC --
 
 export function timingChecks(input: {
+  captureMode: 'static' | 'moving_area' | 'line_scan';
+  /** Chờ hết rung sau khi cơ cấu dừng — chỉ có ở bài chụp tĩnh. */
+  settleTimeMs: number;
   widthPx: number | null;
   heightPx: number | null;
   pixelFormat: string;
@@ -171,9 +174,20 @@ export function timingChecks(input: {
 }): Check[] {
   const checks: Check[] = [];
 
-  // --- Nhoè chuyển động: quyết định trần thời gian phơi sáng.
+  // --- Nhoè chuyển động: chỉ có nghĩa khi chụp lúc vật đang chạy.
   let exposureMs = input.exposureMs;
-  if (input.speedMmS !== null && input.mmPerPx !== null) {
+  if (input.captureMode === 'static') {
+    checks.push({
+      key: 'motionBlur',
+      status: 'pass',
+      formula: '—',
+      noteKey: 'staticNoBlur',
+    });
+  } else if (
+    input.captureMode === 'moving_area' &&
+    input.speedMmS !== null &&
+    input.mmPerPx !== null
+  ) {
     const blur = maxExposureForBlur({
       blurPx: input.blurPx,
       mmPerPx: input.mmPerPx,
@@ -229,7 +243,9 @@ export function timingChecks(input: {
     }
   }
 
-  // --- Ngân sách thời gian chu kỳ.
+  // --- Ngân sách thời gian chu kỳ. Bài chụp tĩnh phải cộng thêm thời gian
+  //     chờ hết rung, nếu không ngân sách trông rộng rãi hơn thực tế.
+  const settleMs = input.captureMode === 'static' ? input.settleTimeMs : 0;
   if (input.throughputPpm !== null) {
     const budget = cycleBudget({
       throughputPpm: input.throughputPpm,
@@ -239,7 +255,7 @@ export function timingChecks(input: {
       exposureMs,
       readoutMs: input.readoutMs,
       transferMs,
-      processMs: input.processMs,
+      processMs: input.processMs + settleMs,
       outputMs: input.outputMs,
     });
 
@@ -261,7 +277,7 @@ export function timingChecks(input: {
         status: budget.fits ? 'pass' : 'fail',
         formula:
           `${input.nView} × (${fmt(input.triggerMs, 2)} + ${fmt(exposureMs, 3)} + ${fmt(input.readoutMs, 2)} + ${fmt(transferMs, 2)}) ` +
-          `+ ${fmt(input.processMs, 2)} + ${fmt(input.outputMs, 2)} = ${fmt(budget.consumedMs, 1)} ms ` +
+          `+ ${fmt(input.processMs, 2)}${settleMs > 0 ? ` + ${fmt(settleMs, 1)} (chờ hết rung)` : ''} + ${fmt(input.outputMs, 2)} = ${fmt(budget.consumedMs, 1)} ms ` +
           `${budget.fits ? '≤' : '>'} ${fmt(budget.availableMs, 1)} ms`,
         noteKey: budget.fits ? undefined : 'overTimeBudget',
         noteValues: { consumed: budget.consumedMs, available: budget.availableMs },

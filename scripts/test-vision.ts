@@ -21,6 +21,7 @@ import {
   peakHostBandwidth,
   PIXEL_FORMAT_BYTES,
   requiredLpPerMm,
+  lineScanNeed,
   requiredPixels,
   suggestLighting,
   verifyResolution,
@@ -284,14 +285,18 @@ function makeInput(over: Partial<AppearanceInput> = {}): AppearanceInput {
   };
 }
 
-test('phân tích tổng thể trả về đủ bốn nhóm và trạng thái xấu nhất', () => {
+test('phân tích tổng thể trả về đủ các nhóm và trạng thái xấu nhất', () => {
   const analysis = analyseAppearance(makeInput(), CAMERA, { imageCircleFormat: '2/3' });
 
   assert.deepEqual(
     analysis.sections.map((s) => s.key),
-    ['resolution', 'timing', 'optics', 'lighting']
+    ['resolution', 'timing', 'linescan', 'optics', 'lighting']
   );
-  assert.ok(analysis.sections.every((s) => s.checks.length > 0), 'nhom nao cung phai co phep kiem');
+  // Khoi line scan co y de rong o che do khac — nhung nhom con lai phai co.
+  assert.ok(
+    analysis.sections.filter((s) => s.key !== 'linescan').every((s) => s.checks.length > 0),
+    'nhom nao cung phai co phep kiem'
+  );
   assert.equal(analysis.standingWarningKey, 'contrastDisclaimer', 'canh bao co dinh luon co');
 });
 
@@ -321,10 +326,164 @@ test('vòng ảnh nhỏ hơn đường chéo cảm biến bị đánh FAIL', () 
 });
 
 test('nhoè chuyển động siết phơi sáng xuống và cảnh báo strobe', () => {
-  const analysis = analyseAppearance(makeInput({ speedMmS: 500 }), CAMERA, null);
+  // Phai noi ro la chup khi vat dang chay — mac dinh gio la chup tinh.
+  const analysis = analyseAppearance(
+    makeInput({ captureMode: 'moving_area', speedMmS: 500 }),
+    CAMERA,
+    null
+  );
   const timing = analysis.sections.find((s) => s.key === 'timing')!;
   const blur = timing.checks.find((c) => c.key === 'motionBlur')!;
 
   assert.equal(blur.status, 'warn');
   assert.equal(blur.noteKey, 'blurNeedsStrobe');
+});
+
+// ------------------------------------------------------------ KIỂU CHỤP --
+
+test('chụp tĩnh thì KHÔNG có nhoè chuyển động', () => {
+  const analysis = analyseAppearance(
+    makeInput({ captureMode: 'static', speedMmS: 500 }),
+    CAMERA,
+    null
+  );
+  const timing = analysis.sections.find((s) => s.key === 'timing')!;
+  const blur = timing.checks.find((c) => c.key === 'motionBlur')!;
+
+  // Toc do 500 mm/s van nam trong input, nhung chup tinh thi no vo nghia.
+  assert.equal(blur.status, 'pass');
+  assert.equal(blur.noteKey, 'staticNoBlur');
+});
+
+test('chụp tĩnh cộng thời gian chờ hết rung vào ngân sách', () => {
+  const base = makeInput({ captureMode: 'static', throughputPpm: 60, settleTimeMs: 0 });
+  const withSettle = makeInput({ captureMode: 'static', throughputPpm: 60, settleTimeMs: 200 });
+
+  /* Do HIEU SO thay vi nguong PASS/FAIL: dieu can khang dinh la thoi gian cho
+     duoc CONG VAO, khong phai la no vuot nguong o mot cau hinh cu the. */
+  const consumedMs = (input: AppearanceInput) => {
+    const timing = analyseAppearance(input, CAMERA, null).sections.find((s) => s.key === 'timing')!;
+    const formula = timing.checks.find((c) => c.key === 'timeConsumed')!.formula;
+    // "... = 278.8 ms ≤ 350 ms" -> lấy con số ngay sau dấu bằng.
+    return Number(formula.split('= ')[1].split(' ms')[0]);
+  };
+
+  assert.equal(
+    Math.round(consumedMs(withSettle) - consumedMs(base)),
+    200,
+    'cho 200 ms het rung phai an vao ngan sach chu khong bien mat'
+  );
+});
+
+test('động area scan vẫn tính nhoè như cũ', () => {
+  const analysis = analyseAppearance(
+    makeInput({ captureMode: 'moving_area', speedMmS: 500 }),
+    CAMERA,
+    null
+  );
+  const timing = analysis.sections.find((s) => s.key === 'timing')!;
+  const blur = timing.checks.find((c) => c.key === 'motionBlur')!;
+
+  assert.equal(blur.status, 'warn');
+  assert.equal(blur.noteKey, 'blurNeedsStrobe');
+});
+
+// ------------------------------------------------------------- LINE SCAN --
+
+const LINE_CAMERA: CameraLike = {
+  cameraType: 'line',
+  widthPx: 0,
+  heightPx: 0,
+  lineWidthPx: 4096,
+  maxLineRateKhz: 45,
+  pixelSizeUm: 3.5,
+  sensorFormat: null,
+  interfaceName: '5GigE',
+};
+
+test('tần số dòng cần thiết để pixel vuông', () => {
+  // FOV 100 mm tren 4096 px -> 0,0244 mm/px. Toc do 200 mm/s -> 8192 dong/s.
+  const need = lineScanNeed({
+    speedMmS: 200,
+    mmPerPxCross: 100 / 4096,
+    lineWidthPx: 4096,
+    bytesPerPixel: 1,
+  })!;
+
+  assert.equal(need.lineRateHz, 8192);
+  assert.equal(need.maxExposureMs, 0.1221, 'moi dong chi duoc phoi sang 0,12 ms');
+  // 4096 px x 8192 dong/s x 1 byte = 33,55 MB/s
+  assert.equal(need.dataRateMbytesS, 33.55);
+});
+
+test('line scan chỉ kiểm bề ngang, không kiểm chiều dọc', () => {
+  // Camera line scan co heightPx = 0. Neu kiem ca hai truc thi luon FAIL.
+  const analysis = analyseAppearance(
+    makeInput({ captureMode: 'line_scan', speedMmS: 200 }),
+    LINE_CAMERA,
+    null
+  );
+  const resolution = analysis.sections.find((s) => s.key === 'resolution')!;
+  const fits = resolution.checks.find((c) => c.key === 'sensorFits')!;
+
+  // 100 mm / (0,2/3) = 1500 px can theo be ngang; 4096 >= 1500.
+  assert.equal(fits.status, 'pass', 'chieu doc do quet sinh ra, khong bi cam bien gioi han');
+});
+
+test('khối line scan chỉ xuất hiện ở chế độ quét dòng', () => {
+  const line = analyseAppearance(
+    makeInput({ captureMode: 'line_scan', speedMmS: 200 }),
+    LINE_CAMERA,
+    null
+  );
+  const area = analyseAppearance(makeInput({ captureMode: 'moving_area' }), CAMERA, null);
+
+  const lineSection = (a: typeof line) => a.sections.find((s) => s.key === 'linescan')!;
+  assert.ok(lineSection(line).checks.length > 0, 'che do quet dong phai co khoi rieng');
+  assert.equal(lineSection(area).checks.length, 0, 'che do khac thi khoi nay rong');
+});
+
+test('camera không chạy nổi tần số dòng thì FAIL', () => {
+  const slowCamera: CameraLike = { ...LINE_CAMERA, maxLineRateKhz: 5 };
+  const analysis = analyseAppearance(
+    makeInput({ captureMode: 'line_scan', speedMmS: 200 }),
+    slowCamera,
+    null
+  );
+  const check = analysis.sections
+    .find((s) => s.key === 'linescan')!
+    .checks.find((c) => c.key === 'lineRateFits')!;
+
+  // Can 8192 dong/s nhung camera chi 5000.
+  assert.equal(check.status, 'fail');
+  assert.equal(check.noteKey, 'lineRateTooHigh');
+});
+
+test('thiếu encoder thì cảnh báo, encoder thô hơn một pixel cũng cảnh báo', () => {
+  const noEncoder = analyseAppearance(
+    makeInput({ captureMode: 'line_scan', speedMmS: 200 }),
+    LINE_CAMERA,
+    null
+  );
+  const check = (a: typeof noEncoder) =>
+    a.sections.find((s) => s.key === 'linescan')!.checks.find((c) => c.key === 'encoder')!;
+
+  assert.equal(check(noEncoder).status, 'warn');
+  assert.equal(check(noEncoder).noteKey, 'encoderMissing');
+
+  // 0,0244 mm/px = 24,4 um. Encoder 50 um/xung la tho hon mot pixel.
+  const coarse = analyseAppearance(
+    makeInput({ captureMode: 'line_scan', speedMmS: 200, encoderResolutionUm: 50 }),
+    LINE_CAMERA,
+    null
+  );
+  assert.equal(check(coarse).status, 'warn');
+  assert.equal(check(coarse).noteKey, 'encoderTooCoarse');
+
+  const fine = analyseAppearance(
+    makeInput({ captureMode: 'line_scan', speedMmS: 200, encoderResolutionUm: 10 }),
+    LINE_CAMERA,
+    null
+  );
+  assert.equal(check(fine).status, 'pass');
 });

@@ -40,6 +40,14 @@ export type FieldDef = {
   /** Chiếm trọn hàng trong lưới hai cột — dùng cho ô có hướng dẫn dài. */
   wide?: boolean;
   /**
+   * Chỉ hỏi ô này khi một trường khác đang mang giá trị nhất định.
+   *
+   * Ví dụ tốc độ băng tải chỉ có nghĩa khi chụp lúc vật đang chạy — hỏi nó
+   * cho bài chụp tĩnh là bắt người dùng nhập một con số vô nghĩa, rồi con số
+   * đó lại chui vào công thức nhoè chuyển động.
+   */
+  showWhen?: { field: string; in: string[] };
+  /**
    * Khoá i18n trỏ tới một MẢNG {value, meaning} — hiện thành bảng tra thu gọn
    * dưới ô nhập. Dùng khi một dòng chữ không đủ: ví dụ chọn N theo mục tiêu
    * kiểm tra thì phải thấy cả bốn mức mới so sánh được.
@@ -78,6 +86,12 @@ const IP_RATING_OPTIONS: FieldOption[] = [
   { value: 'ip54', labelKey: 'ipRating.ip54' },
   { value: 'ip65', labelKey: 'ipRating.ip65' },
   { value: 'ip67', labelKey: 'ipRating.ip67' },
+];
+
+const CAPTURE_MODE_OPTIONS: FieldOption[] = [
+  { value: 'static', labelKey: 'captureMode.static' },
+  { value: 'moving_area', labelKey: 'captureMode.moving_area' },
+  { value: 'line_scan', labelKey: 'captureMode.line_scan' },
 ];
 
 const DEFECT_TYPE_OPTIONS: FieldOption[] = [
@@ -142,6 +156,7 @@ export const FIELD_CATALOG: Record<string, FieldDef> = {
   },
   fov_height_mm: {
     key: 'fov_height_mm',
+    showWhen: { field: 'capture_mode', in: ['static', 'moving_area'] },
     group: 'subject',
     kind: 'number',
     labelKey: 'fov_height_mm',
@@ -180,6 +195,7 @@ export const FIELD_CATALOG: Record<string, FieldDef> = {
   },
   line_speed_mms: {
     key: 'line_speed_mms',
+    showWhen: { field: 'capture_mode', in: ['moving_area', 'line_scan'] },
     group: 'line',
     kind: 'number',
     labelKey: 'line_speed_mms',
@@ -344,6 +360,63 @@ export const FIELD_CATALOG: Record<string, FieldDef> = {
 
   // --- Kiểm tra ngoại quan: tham số của bộ tính toán quang học/thời gian ---
 
+  /**
+   * Câu hỏi quyết định cả bộ công thức phía sau, nên đặt đầu tiên.
+   *
+   * Chụp tĩnh thì không có nhoè chuyển động. Line scan thì không có chiều
+   * cao FOV, và độ phân giải dọc đường chạy do tốc độ chia tần số dòng quyết
+   * định chứ không phải do cảm biến.
+   */
+  capture_mode: {
+    key: 'capture_mode',
+    group: 'subject',
+    kind: 'select',
+    labelKey: 'capture_mode',
+    hintKey: 'capture_modeHint',
+    options: CAPTURE_MODE_OPTIONS,
+    required: true,
+    wide: true,
+  },
+
+  /** Chụp tĩnh: cơ cấu dừng rồi mới chụp, phải chờ hết rung. */
+  settle_time_ms: {
+    key: 'settle_time_ms',
+    group: 'line',
+    kind: 'number',
+    labelKey: 'settle_time_ms',
+    hintKey: 'settle_time_msHint',
+    unit: 'ms',
+    min: 0,
+    step: 1,
+    showWhen: { field: 'capture_mode', in: ['static'] },
+  },
+
+  /** Động area scan: sai lệch thời điểm trigger đổi thành sai lệch vị trí. */
+  trigger_jitter_ms: {
+    key: 'trigger_jitter_ms',
+    group: 'line',
+    kind: 'number',
+    labelKey: 'trigger_jitter_ms',
+    hintKey: 'trigger_jitter_msHint',
+    unit: 'ms',
+    min: 0,
+    step: 0.1,
+    showWhen: { field: 'capture_mode', in: ['moving_area'] },
+  },
+
+  /** Line scan: không có encoder thì độ phân giải dọc trôi theo tốc độ. */
+  encoder_resolution_um: {
+    key: 'encoder_resolution_um',
+    group: 'line',
+    kind: 'number',
+    labelKey: 'encoder_resolution_um',
+    hintKey: 'encoder_resolution_umHint',
+    unit: 'µm/xung',
+    min: 0.1,
+    step: 0.1,
+    showWhen: { field: 'capture_mode', in: ['line_scan'] },
+  },
+
   /** N — số pixel phủ lên lỗi nhỏ nhất. Trước đây đóng cứng ở 3. */
   px_per_defect: {
     key: 'px_per_defect',
@@ -377,6 +450,7 @@ export const FIELD_CATALOG: Record<string, FieldDef> = {
 
   n_view: {
     key: 'n_view',
+    showWhen: { field: 'capture_mode', in: ['static', 'moving_area'] },
     group: 'line',
     kind: 'number',
     labelKey: 'n_view',
@@ -386,6 +460,7 @@ export const FIELD_CATALOG: Record<string, FieldDef> = {
   },
   duty_percent: {
     key: 'duty_percent',
+    showWhen: { field: 'capture_mode', in: ['static', 'moving_area'] },
     group: 'line',
     kind: 'number',
     labelKey: 'duty_percent',
@@ -425,6 +500,7 @@ export const FIELD_CATALOG: Record<string, FieldDef> = {
   },
   blur_px: {
     key: 'blur_px',
+    showWhen: { field: 'capture_mode', in: ['moving_area'] },
     group: 'system',
     kind: 'number',
     labelKey: 'blur_px',
@@ -488,6 +564,24 @@ export type ParseResult = {
 };
 
 /** Đọc FormData theo đúng catalog. Bỏ qua mọi field lạ do client tự thêm. */
+/**
+ * Lọc ra những trường đang thực sự được hỏi.
+ *
+ * Dùng chung cho cả giao diện lẫn server: form ẩn ô nào thì server cũng phải
+ * bỏ qua đúng ô đó, nếu không ô bắt buộc đang ẩn sẽ báo "thiếu dữ liệu" mà
+ * người dùng không thấy nó ở đâu để điền.
+ */
+export function visibleFieldDefs(
+  defs: FieldDef[],
+  read: (key: string) => string | null
+): FieldDef[] {
+  return defs.filter((def) => {
+    if (!def.showWhen) return true;
+    const value = read(def.showWhen.field);
+    return value !== null && def.showWhen.in.includes(value);
+  });
+}
+
 export function parseInput(defs: FieldDef[], formData: FormData): ParseResult {
   const input: SelectorInput = {};
   const errors: Record<string, 'required' | 'invalid'> = {};

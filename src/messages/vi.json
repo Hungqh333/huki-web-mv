@@ -237,7 +237,15 @@
           "meaning": "Kèm subpixel — đo kích thước lỗi"
         }
       ],
-      "guideToggle": "Chọn N thế nào?"
+      "guideToggle": "Chọn N thế nào?",
+      "capture_mode": "Kiểu chụp",
+      "capture_modeHint": "Câu hỏi này quyết định toàn bộ phần còn lại — chụp tĩnh thì không có nhoè chuyển động, line scan thì không có chiều cao FOV.",
+      "settle_time_ms": "Thời gian chờ hết rung",
+      "settle_time_msHint": "Sau khi cơ cấu dừng, phải chờ bao lâu mới chụp được ảnh nét.",
+      "trigger_jitter_ms": "Sai lệch thời điểm trigger",
+      "trigger_jitter_msHint": "Sai lệch này nhân với tốc độ ra sai lệch vị trí — quyết định FOV phải dư bao nhiêu.",
+      "encoder_resolution_um": "Độ phân giải encoder",
+      "encoder_resolution_umHint": "Không có encoder thì độ phân giải dọc đường chạy trôi theo tốc độ băng tải."
     },
     "options": {
       "surface": {
@@ -302,6 +310,11 @@
         "Mono12packed": "Mono12packed (1,5 byte/px)",
         "Mono16": "Mono16 (2 byte/px)",
         "RGB8": "RGB8 (3 byte/px)"
+      },
+      "captureMode": {
+        "static": "Tĩnh — vật dừng lại rồi mới chụp",
+        "moving_area": "Động — chụp bằng area scan khi vật đang chạy",
+        "line_scan": "Động — quét dòng (line scan)"
       }
     },
     "fieldErrors": {
@@ -433,7 +446,8 @@
         "resolution": "Độ phân giải",
         "timing": "Nhịp sản xuất & băng thông",
         "optics": "Quang học",
-        "lighting": "Chiếu sáng"
+        "lighting": "Chiếu sáng",
+        "linescan": "Quét dòng (line scan)"
       },
       "checks": {
         "mmPerPxTarget": "Kích thước một pixel cần đạt",
@@ -455,7 +469,12 @@
         "airyDisk": "Đĩa Airy so với cỡ pixel",
         "lpPerMm": "Độ phân giải ống kính cần có",
         "depthOfField": "Chiều sâu trường ảnh",
-        "lightingSuggestion": "Kiểu chiếu sáng đề xuất"
+        "lightingSuggestion": "Kiểu chiếu sáng đề xuất",
+        "lineRateRequired": "Tần số dòng cần thiết",
+        "lineRateFits": "Camera đáp ứng được tần số dòng",
+        "lineExposure": "Phơi sáng mỗi dòng",
+        "lineDataRate": "Băng thông liên tục",
+        "encoder": "Encoder"
       },
       "notes": {
         "sensorTooSmall": "Cảm biến thiếu pixel trên ít nhất một trục — đổi camera hoặc thu hẹp FOV.",
@@ -470,7 +489,14 @@
         "airyBottleneck": "Nhiễu xạ đã lớn hơn hai pixel: mở khẩu hơn, nếu không ống kính là nút cổ chai chứ không phải cảm biến.",
         "lensMustBeHighRes": "Cần {lp} lp/mm — phải dùng ống kính high-resolution, ống kính phổ thông không đạt.",
         "dofTooShallow": "Chiều sâu trường ảnh nông hơn dung sai chiều cao chi tiết — chi tiết cao thấp khác nhau sẽ mất nét.",
-        "lightingUnknown": "Chưa chọn loại lỗi nên chưa gợi ý được kiểu chiếu sáng."
+        "lightingUnknown": "Chưa chọn loại lỗi nên chưa gợi ý được kiểu chiếu sáng.",
+        "staticNoBlur": "Chụp tĩnh nên không có nhoè chuyển động — phơi sáng thoải mái, đèn liên tục là đủ.",
+        "lineRateSquarePixel": "Chạy đúng tần số này thì pixel vuông. Chậm hơn ảnh bị kéo dãn, nhanh hơn bị nén.",
+        "lineRateTooHigh": "Camera không chạy nổi tần số này — giảm tốc độ băng tải, hoặc đổi camera có tần số dòng cao hơn.",
+        "lineNeedsBrightLight": "Mỗi dòng chỉ được phơi sáng bằng chừng này. Bắt buộc đèn dòng cường độ cao, đèn thường sẽ tối om.",
+        "lineBandwidthTooHigh": "Line scan truyền liên tục, không có lúc nghỉ — giao tiếp phải gánh mức này suốt ca.",
+        "encoderTooCoarse": "Encoder thô hơn một pixel — độ phân giải dọc sẽ trôi. Cần encoder mịn hơn.",
+        "encoderMissing": "Chưa khai encoder. Không có encoder thì tốc độ băng tải trôi bao nhiêu, ảnh dãn/nén bấy nhiêu."
       },
       "lightingReason": {
         "scratch": "Xước và nứt nông chỉ nổi lên khi chiếu góc rất thấp, nền tối hẳn.",

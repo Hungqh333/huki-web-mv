@@ -141,7 +141,40 @@ export function resolutionChecks(
       `Y: ${fmt(input.fovHeightMm)} ÷ ${fmt(need.mmPerPxTarget, 5)} = ${need.ny} px`,
   });
 
-  if (camera) {
+  /*
+   * Line scan chỉ có một hàng pixel: chiều dọc do quét sinh ra nên không bị
+   * cảm biến giới hạn. Kiểm cả hai trục như area scan sẽ luôn báo FAIL sai.
+   */
+  const lineCamera = camera as { lineWidthPx?: number | null } | null;
+  const isLine = Boolean(lineCamera?.lineWidthPx);
+
+  if (isLine && lineCamera?.lineWidthPx) {
+    const lineWidth = lineCamera.lineWidthPx;
+    const fits = lineWidth >= need.nx;
+    checks.push({
+      key: 'sensorFits',
+      status: fits ? 'pass' : 'fail',
+      formula: `${lineWidth} px một hàng ≥ ${need.nx} px cần theo bề ngang`,
+      noteKey: fits ? undefined : 'sensorTooSmall',
+    });
+
+    const mmPerPx = input.fovWidthMm / lineWidth;
+    const pxPerDefect = input.defectMinSizeMm / mmPerPx;
+    const ok = pxPerDefect >= input.pxPerDefect;
+
+    checks.push({
+      key: 'actualMmPerPx',
+      status: 'info',
+      formula: `${fmt(input.fovWidthMm)} ÷ ${lineWidth} = ${fmt(mmPerPx, 5)} mm/px theo bề ngang`,
+    });
+    checks.push({
+      key: 'actualPxPerDefect',
+      status: ok ? 'pass' : 'fail',
+      formula: `${fmt(input.defectMinSizeMm)} ÷ ${fmt(mmPerPx, 5)} = ${fmt(pxPerDefect, 2)} px (mục tiêu ${input.pxPerDefect} px)`,
+      noteKey: ok ? undefined : 'belowTarget',
+      noteValues: { actual: round(pxPerDefect, 2), target: input.pxPerDefect },
+    });
+  } else if (camera) {
     const fits = cameraCoversNeed(camera, need);
     checks.push({
       key: 'sensorFits',

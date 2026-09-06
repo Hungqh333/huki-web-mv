@@ -1,14 +1,16 @@
 import { lightingChecks } from './lighting';
+import { lineScanChecks } from './linescan';
 import { opticsChecks } from './optics';
 import { DEFAULT_PX_PER_DEFECT, resolutionChecks, requiredPixels, verifyResolution } from './resolution';
 import { DEFAULT_PIXEL_FORMAT, timingChecks } from './timing';
-import type { CameraLike, Check, CheckStatus } from './types';
+import type { CameraLike, CaptureMode, Check, CheckStatus } from './types';
 
 export * from './types';
 export * from './resolution';
 export * from './timing';
 export * from './optics';
 export * from './lighting';
+export * from './linescan';
 
 /**
  * Bộ tính toán cho bài Kiểm tra ngoại quan.
@@ -18,6 +20,15 @@ export * from './lighting';
  */
 
 export type AppearanceInput = {
+  /**
+   * Kiểu chụp — quyết định nhánh công thức nào chạy.
+   *
+   * Đây là tham số quan trọng nhất của cả bộ tính: chụp tĩnh thì không có nhoè
+   * chuyển động, line scan thì độ phân giải dọc do tốc độ chia tần số dòng
+   * quyết định chứ không phải do cảm biến.
+   */
+  captureMode: CaptureMode;
+
   // Vật thể & lỗi
   fovWidthMm: number;
   fovHeightMm: number;
@@ -38,6 +49,12 @@ export type AppearanceInput = {
   speedMmS: number | null;
   totalLengthMm: number | null;
   overlapRatio: number;
+  /** Chụp tĩnh: chờ hết rung sau khi cơ cấu dừng (ms). */
+  settleTimeMs: number;
+  /** Động area scan: sai lệch thời điểm trigger (ms). */
+  triggerJitterMs: number;
+  /** Line scan: độ phân giải encoder (µm mỗi xung). */
+  encoderResolutionUm: number | null;
 
   // Thời gian thành phần (ms)
   triggerMs: number;
@@ -55,7 +72,7 @@ export type AppearanceInput = {
 };
 
 export type AppearanceSection = {
-  key: 'resolution' | 'timing' | 'optics' | 'lighting';
+  key: 'resolution' | 'timing' | 'linescan' | 'optics' | 'lighting';
   checks: Check[];
 };
 
@@ -87,7 +104,15 @@ export const DEFAULT_APPEARANCE_INPUT: Pick<
   | 'pixelFormat'
   | 'blurPx'
   | 'circleOfConfusionPx'
+  | 'captureMode'
+  | 'settleTimeMs'
+  | 'triggerJitterMs'
+  | 'encoderResolutionUm'
 > = {
+  captureMode: 'static',
+  settleTimeMs: 100,
+  triggerJitterMs: 1,
+  encoderResolutionUm: null,
   pxPerDefect: DEFAULT_PX_PER_DEFECT,
   nView: 1,
   dutyRatio: 0.5,
@@ -133,6 +158,8 @@ export function analyseAppearance(
       : 1;
 
   const timing = timingChecks({
+    captureMode: input.captureMode,
+    settleTimeMs: input.settleTimeMs,
     widthPx: camera?.widthPx ?? null,
     heightPx: camera?.heightPx ?? null,
     pixelFormat: input.pixelFormat,
@@ -164,9 +191,28 @@ export function analyseAppearance(
 
   const lighting = lightingChecks({ defectType: input.defectType, surface: input.surface });
 
+  /* Line scan có bộ công thức riêng: tần số dòng, phơi sáng mỗi dòng, băng
+     thông liên tục và encoder. Chế độ khác thì khối này rỗng và tự biến mất. */
+  const linescan =
+    input.captureMode === 'line_scan'
+      ? lineScanChecks({
+          speedMmS: input.speedMmS,
+          mmPerPxCross:
+            camera?.lineWidthPx && camera.lineWidthPx > 0
+              ? input.fovWidthMm / camera.lineWidthPx
+              : null,
+          lineWidthPx: camera?.lineWidthPx ?? null,
+          maxLineRateKhz: camera?.maxLineRateKhz ?? null,
+          pixelFormat: input.pixelFormat,
+          interfaceName: camera?.interfaceName ?? null,
+          encoderResolutionUm: input.encoderResolutionUm,
+        })
+      : [];
+
   const sections: AppearanceSection[] = [
     { key: 'resolution', checks: resolution },
     { key: 'timing', checks: timing },
+    { key: 'linescan', checks: linescan },
     { key: 'optics', checks: optics },
     { key: 'lighting', checks: lighting },
   ];

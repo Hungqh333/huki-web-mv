@@ -210,14 +210,14 @@ values
 
 -- -------------------------------------------------------------- CÁP CAMERA --
 ('CABLE-CAM-GIGE-5', 'cable', 'Generic', 'Cat6 RJ45 5m',
- '{"cable_for":"camera","connector":"RJ45 Cat6","length_m":5}'::jsonb, 'unverified',
+ '{"cable_for":"camera_data","connector":"RJ45 Cat6","length_m":5}'::jsonb, 'unverified',
  'GigE đi được tới 100 m. Cáp phải có chống nhiễu nếu chạy gần biến tần.',
  'GigE runs up to 100 m. Use shielded cable when routed near a VFD.',
  510),
 ('CABLE-CAM-GIGE-10', 'cable', 'Generic', 'Cat6 RJ45 10m',
- '{"cable_for":"camera","connector":"RJ45 Cat6","length_m":10}'::jsonb, 'unverified', null, null, 520),
+ '{"cable_for":"camera_data","connector":"RJ45 Cat6","length_m":10}'::jsonb, 'unverified', null, null, 520),
 ('CABLE-CAM-USB3-3', 'cable', 'Generic', 'USB3 Micro-B 3m',
- '{"cable_for":"camera","connector":"USB3 Micro-B khoá vít","length_m":3}'::jsonb, 'unverified',
+ '{"cable_for":"camera_data","connector":"USB3 Micro-B khoá vít","length_m":3}'::jsonb, 'unverified',
  'USB3 thực tế chỉ ổn định tới ~5 m. Dài hơn phải dùng cáp quang active.',
  'USB3 is only reliable to about 5 m; beyond that an active optical cable is needed.',
  530),
@@ -326,6 +326,59 @@ values
  'Đèn dòng cường độ cao cho line scan. Đèn thanh thường KHÔNG đủ sáng ở vài chục nghìn dòng/giây.',
  'High-intensity line light for line scan. An ordinary bar light is not bright enough at tens of thousands of lines per second.',
  270)
+
+on conflict (code) do update set
+  kind       = excluded.kind,
+  brand      = excluded.brand,
+  model      = excluded.model,
+  spec       = excluded.spec,
+  source     = excluded.source,
+  notes_vi   = excluded.notes_vi,
+  notes_en   = excluded.notes_en,
+  sort_order = excluded.sort_order,
+  is_active  = true;
+
+
+-- =============================================================================
+-- Vật tư bổ sung, lấy theo đúng file BOM đội kỹ thuật đang dùng
+--
+-- Ba thứ trước đây bộ chọn không hề biết tới, nhưng danh mục thật luôn có:
+--   - Cáp NGUỒN camera, tách riêng khỏi cáp data
+--   - Card giao tiếp GigE cắm vào máy tính (nhiều kênh cho nhiều camera)
+--   - Cáp phụ trợ quanh máy tính (HDMI, USB nối dài, USB-to-COM)
+-- =============================================================================
+
+insert into public.components
+  (code, kind, brand, model, spec, source, notes_vi, notes_en, sort_order)
+values
+
+('CABLE-CAM-POWER-10', 'cable', 'Hikrobot', 'MV-ACP-H6p-open-HF-10m',
+ '{"cable_for":"camera_power","connector":"Hirose 6 chân","length_m":10}'::jsonb, 'unverified',
+ 'Camera GigE cần cáp nguồn/IO riêng, không lấy điện qua cáp mạng.',
+ 'A GigE camera needs a separate power/IO cable; it is not powered over the network cable.',
+ 540),
+('CABLE-CAM-POWER-5', 'cable', 'Hikrobot', 'MV-ACP-H6p-open-HF-5m',
+ '{"cable_for":"camera_power","connector":"Hirose 6 chân","length_m":5}'::jsonb, 'unverified', null, null, 550),
+
+('IFCARD-IRAYPLE-4CH', 'interface_card', 'iRayple', 'GE-5G40E',
+ '{"interface":"5GigE","channels":4}'::jsonb, 'unverified',
+ 'Bốn kênh độc lập — mỗi camera một cổng, không chia băng thông qua switch.',
+ 'Four independent channels: one port per camera, no bandwidth shared through a switch.',
+ 610),
+('IFCARD-ADLINK-4CH', 'interface_card', 'ADLINK', 'PCIe-GIE74V',
+ '{"interface":"GigE","channels":4}'::jsonb, 'unverified',
+ 'Card GigE bốn cổng, có cấp nguồn PoE cho camera.',
+ 'Four-port GigE card with PoE for the cameras.',
+ 620),
+('IFCARD-ONBOARD-1CH', 'interface_card', 'Onboard', 'Cổng mạng sẵn trên main',
+ '{"interface":"GigE","channels":1}'::jsonb, 'unverified',
+ 'Dùng cổng mạng có sẵn — chỉ đủ cho một camera và phải tách khỏi mạng nhà máy.',
+ 'Use the onboard port: enough for a single camera only, and it must be isolated from the plant network.',
+ 630),
+
+('ACC-CABLE-HDMI-10', 'accessory', 'Ugreen', 'Cáp HDMI 10m', '{}'::jsonb, 'unverified', null, null, 960),
+('ACC-CABLE-USB-EXT-10', 'accessory', 'Ugreen', 'Cáp USB nối dài 10m', '{}'::jsonb, 'unverified', null, null, 965),
+('ACC-USB-COM', 'accessory', 'Ugreen', 'USB to COM 1.5m', '{}'::jsonb, 'unverified', null, null, 970)
 
 on conflict (code) do update set
   kind       = excluded.kind,

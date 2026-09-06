@@ -409,10 +409,12 @@
         "lens": "Ống kính",
         "tube": "Vòng nối dài (tube)",
         "light": "Đèn",
-        "cableCamera": "Cáp camera",
+        "cableCameraData": "Cáp data camera",
+        "cableCameraPower": "Cáp nguồn camera",
         "cableLight": "Cáp đèn",
         "lightController": "Bộ điều khiển đèn",
         "pc": "Máy tính",
+        "interfaceCard": "Card giao tiếp",
         "software": "Phần mềm xử lý ảnh"
       },
       "computed": "Tính ra",
@@ -429,7 +431,24 @@
       "extrasTitle": "Phụ kiện thêm",
       "extrasHint": "Tích thêm những gì dự án cần. Danh sách này mở, thêm được ở trang Quản trị → Linh kiện.",
       "extrasEmpty": "Chưa có phụ kiện nào trong catalog.",
-      "selectedCount": "Đã chọn {count}"
+      "selectedCount": "Đã chọn {count}",
+      "groups": {
+        "vision": "VISION",
+        "pc": "MÁY TÍNH",
+        "other": "KHÁC"
+      },
+      "stations": "× {count} bộ",
+      "colName": "Tên vật tư",
+      "colDevice": "Mã thiết bị / Hãng",
+      "colSpec": "Thông số",
+      "colQty": "SL",
+      "notNeeded": "Không cần",
+      "noOption": "Chưa có trong catalog",
+      "computedShort": "tính",
+      "suggestedShort": "gợi ý",
+      "legend": "\"tính\" = máy suy ra từ thông số bài toán · \"gợi ý\" = bạn tự quyết",
+      "detailsToggle": "Vì sao chọn thế này?",
+      "stationsHint": "Số bộ vision — cụm VISION nhân theo số này."
     },
     "vision": {
       "title": "Kiểm tra tính khả thi",

@@ -409,10 +409,12 @@
         "lens": "Lens",
         "tube": "Extension tube",
         "light": "Light",
-        "cableCamera": "Camera cable",
+        "cableCameraData": "Camera data cable",
+        "cableCameraPower": "Camera power cable",
         "cableLight": "Light cable",
         "lightController": "Light controller",
         "pc": "Computer",
+        "interfaceCard": "Interface card",
         "software": "Vision software"
       },
       "computed": "Computed",
@@ -429,7 +431,24 @@
       "extrasTitle": "Extra accessories",
       "extrasHint": "Tick whatever the project needs. This list is open — add items under Admin > Components.",
       "extrasEmpty": "No accessories in the catalog yet.",
-      "selectedCount": "{count} selected"
+      "selectedCount": "{count} selected",
+      "groups": {
+        "vision": "VISION",
+        "pc": "COMPUTER",
+        "other": "OTHER"
+      },
+      "stations": "x {count} sets",
+      "colName": "Item",
+      "colDevice": "Part / Maker",
+      "colSpec": "Spec",
+      "colQty": "Qty",
+      "notNeeded": "Not needed",
+      "noOption": "Not in the catalog yet",
+      "computedShort": "computed",
+      "suggestedShort": "suggested",
+      "legend": "\"computed\" = derived from the task parameters · \"suggested\" = your call",
+      "detailsToggle": "Why this one?",
+      "stationsHint": "Number of vision sets — the VISION group scales with this."
     },
     "vision": {
       "title": "Feasibility checks",

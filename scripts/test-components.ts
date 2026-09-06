@@ -16,6 +16,8 @@ import {
   pickLight,
   pickTube,
   pickCameraCable,
+  pickCameraPowerCable,
+  pickInterfaceCard,
   pickLightController,
   pickSoftware,
   listPcOptions,
@@ -302,9 +304,12 @@ test('cần tube khi cơ khí ép camera vào gần hơn ống kính cho phép',
 });
 
 test('cáp camera phải khớp chuẩn giao tiếp, không gán bừa', () => {
+  /* File BOM that tach rieng cap DATA va cap NGUON camera — gop lai thi bao gia
+     thieu mot dong, nen day la ba loai khac nhau. */
   const cables = [
-    part('cable', 'Generic', 'CAT6-5M', { cable_for: 'camera', connector: 'RJ45 Cat6', length_m: 5 }),
-    part('cable', 'Generic', 'USB3-3M', { cable_for: 'camera', connector: 'USB3 Micro-B', length_m: 3 }),
+    part('cable', 'Generic', 'CAT6-5M', { cable_for: 'camera_data', connector: 'RJ45 Cat6', length_m: 5 }),
+    part('cable', 'Generic', 'USB3-3M', { cable_for: 'camera_data', connector: 'USB3 Micro-B', length_m: 3 }),
+    part('cable', 'Generic', 'POWER-10M', { cable_for: 'camera_power', connector: 'Hirose 6 chân', length_m: 10 }),
     part('cable', 'Generic', 'LIGHT-2M', { cable_for: 'light', connector: 'Hirose 4 chân', length_m: 2 }),
   ];
 
@@ -318,9 +323,48 @@ test('cáp camera phải khớp chuẩn giao tiếp, không gán bừa', () => {
     'cap den khong phai cap camera'
   );
 
+  // Cap NGUON cung khong duoc lot vao danh sach cap data.
+  assert.ok(
+    ![gige.chosen, ...gige.alternatives].some((c) => c?.model === 'POWER-10M'),
+    'cap nguon khong phai cap data'
+  );
+
   // Chuan la khong suy duoc thi liet ke chu khong gan bua.
   const unknown = pickCameraCable(cables, { interfaceName: 'CXP-6' });
   assert.equal(unknown.chosen, null, 'khong co cap coax thi khong duoc gan cap RJ45');
+
+  // Cap nguon lay rieng, va chi lay dung loai do.
+  const power = pickCameraPowerCable(cables);
+  assert.equal(power.chosen?.model, 'POWER-10M');
+  assert.equal(power.alternatives.length, 0, 'chi co mot cap nguon trong danh sach');
+});
+
+test('card giao tiếp phải đủ cổng cho số camera, không bán dư', () => {
+  const cards = [
+    part('interface_card', 'Onboard', '1CH', { interface: 'GigE', channels: 1 }),
+    part('interface_card', 'ADLINK', '4CH', { interface: 'GigE', channels: 4 }),
+    part('interface_card', 'iRayple', '4CH-5G', { interface: '5GigE', channels: 4 }),
+  ];
+
+  // Mot camera GigE -> dung cong san tren main, dung mua card 4 cong.
+  assert.equal(
+    pickInterfaceCard(cards, { interfaceName: 'GigE', cameraCount: 1 }).chosen?.model,
+    '1CH'
+  );
+
+  // Hai camera -> cong onboard khong du, phai len card 4 cong.
+  const two = pickInterfaceCard(cards, { interfaceName: 'GigE', cameraCount: 2 });
+  assert.equal(two.chosen?.model, '4CH');
+  assert.ok(
+    ![two.chosen, ...two.alternatives].some((c) => c?.model === '1CH'),
+    'card thieu cong phai bi loai han'
+  );
+
+  // Chuan giao tiep phai khop: camera 5GigE khong cam vao card GigE duoc.
+  assert.equal(
+    pickInterfaceCard(cards, { interfaceName: '5GigE', cameraCount: 2 }).chosen?.model,
+    '4CH-5G'
+  );
 });
 
 test('bộ điều khiển đèn phải có đánh xung khi phơi sáng dưới 1 ms', () => {

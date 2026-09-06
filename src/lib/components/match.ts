@@ -395,7 +395,7 @@ export function pickCameraCable(
 ): ComponentChoice<{ connectorKeyword: string | null }> {
   const keyword = req.interfaceName ? CONNECTOR_FOR_INTERFACE[req.interfaceName] : undefined;
   const all = active(components, 'cable').filter(
-    (cable) => specString(cable.spec, 'cable_for') === 'camera'
+    (cable) => specString(cable.spec, 'cable_for') === 'camera_data'
   );
 
   const matching = keyword
@@ -485,4 +485,43 @@ export function listPcOptions(components: Component[]): Component[] {
 /** Phụ kiện thêm — danh sách mở, người dùng tự thêm vào báo giá. */
 export function listAccessories(components: Component[]): Component[] {
   return active(components, 'accessory').sort((a, b) => a.sort_order - b.sort_order);
+}
+
+/** Cáp nguồn camera: không suy được gì từ thông số, chỉ liệt kê. */
+export function pickCameraPowerCable(components: Component[]): ComponentChoice<null> {
+  const ranked = active(components, 'cable')
+    .filter((cable) => specString(cable.spec, 'cable_for') === 'camera_power')
+    .sort((a, b) => a.sort_order - b.sort_order);
+  return { chosen: ranked[0] ?? null, alternatives: ranked.slice(1), fit: null };
+}
+
+/**
+ * Card giao tiếp: phải đúng chuẩn của camera và đủ cổng cho số camera.
+ *
+ * Dùng chung một cổng qua switch thì các camera chia nhau băng thông — chạy
+ * được lúc chạy thử một camera, rồi nghẽn khi lắp đủ.
+ */
+export function pickInterfaceCard(
+  components: Component[],
+  req: { interfaceName: string | null; cameraCount: number }
+): ComponentChoice<{ interfaceName: string | null; cameraCount: number }> {
+  const candidates = active(components, 'interface_card').filter((card) => {
+    if (req.interfaceName && specString(card.spec, 'interface') !== req.interfaceName) return false;
+    const channels = specNumber(card.spec, 'channels');
+    return channels !== null && channels >= Math.max(1, req.cameraCount);
+  });
+
+  const ranked = [...candidates].sort((a, b) => {
+    // Đủ cổng là được, đừng bán dư.
+    const chA = specNumber(a.spec, 'channels') ?? Infinity;
+    const chB = specNumber(b.spec, 'channels') ?? Infinity;
+    if (chA !== chB) return chA - chB;
+    return a.sort_order - b.sort_order;
+  });
+
+  return {
+    chosen: ranked[0] ?? null,
+    alternatives: ranked.slice(1),
+    fit: { interfaceName: req.interfaceName, cameraCount: req.cameraCount },
+  };
 }

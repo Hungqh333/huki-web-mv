@@ -20,6 +20,7 @@ export type ComponentKind =
   | 'light'
   | 'cable'
   | 'light_controller'
+  | 'interface_card'
   | 'controller'
   | 'software'
   | 'pc_option'
@@ -275,9 +276,21 @@ export const SPEC_FIELDS: Record<ComponentKind, SpecFieldDef[]> = {
     { key: 'mount', type: 'select', options: MOUNTS, required: true },
   ],
   cable: [
-    { key: 'cable_for', type: 'select', options: ['camera', 'light'], required: true },
+    {
+      key: 'cable_for',
+      type: 'select',
+      /* File BOM thật tách riêng cáp data và cáp nguồn camera — gộp lại thì báo
+         giá thiếu một dòng. */
+      options: ['camera_data', 'camera_power', 'light'],
+      required: true,
+    },
     { key: 'connector', type: 'text', required: true },
     { key: 'length_m', type: 'number', unit: 'm', required: true, step: 0.5 },
+  ],
+  /** Card mạng / frame grabber cắm vào máy tính, tách khỏi bản thân máy tính. */
+  interface_card: [
+    { key: 'interface', type: 'select', options: INTERFACES, required: true },
+    { key: 'channels', type: 'number', unit: 'kênh', required: true, step: 1 },
   ],
   light_controller: [
     { key: 'channels', type: 'number', unit: 'kênh', required: true, step: 1 },
@@ -315,6 +328,7 @@ export const SUMMARY_KEYS: Record<ComponentKind, string[]> = {
   light: ['light_type', 'color', 'size_mm'],
   cable: ['cable_for', 'connector', 'length_m'],
   light_controller: ['channels', 'strobe', 'max_current_a'],
+  interface_card: ['interface', 'channels'],
   controller: ['cpu', 'ram_gb', 'gpu'],
   software: ['software_type', 'license'],
   pc_option: ['option_type'],
@@ -328,6 +342,7 @@ export const COMPONENT_KINDS: ComponentKind[] = [
   'light',
   'cable',
   'light_controller',
+  'interface_card',
   'controller',
   'software',
   'pc_option',

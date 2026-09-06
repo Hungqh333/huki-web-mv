@@ -134,11 +134,20 @@ const COMPONENTS: Component[] = [
   part('TUBE-C-5', 'tube', 'Generic', 'C-Mount 5mm', { length_mm: 5, mount: 'C' }, 410),
   part('TUBE-C-10', 'tube', 'Generic', 'C-Mount 10mm', { length_mm: 10, mount: 'C' }, 420),
   part('CABLE-CAM-GIGE-5', 'cable', 'Generic', 'Cat6 RJ45 5m', {
-    cable_for: 'camera', connector: 'RJ45 Cat6', length_m: 5,
+    cable_for: 'camera_data', connector: 'RJ45 Cat6', length_m: 5,
   }, 510),
   part('CABLE-CAM-GIGE-10', 'cable', 'Generic', 'Cat6 RJ45 10m', {
-    cable_for: 'camera', connector: 'RJ45 Cat6', length_m: 10,
+    cable_for: 'camera_data', connector: 'RJ45 Cat6', length_m: 10,
   }, 520),
+  part('CABLE-CAM-POWER-10', 'cable', 'Hikrobot', 'MV-ACP-H6p-open-HF-10m', {
+    cable_for: 'camera_power', connector: 'Hirose 6 chân', length_m: 10,
+  }, 540),
+  part('IFCARD-ADLINK-4CH', 'interface_card', 'ADLINK', 'PCIe-GIE74V', {
+    interface: 'GigE', channels: 4,
+  }, 620),
+  part('IFCARD-ONBOARD-1CH', 'interface_card', 'Onboard', 'Cổng mạng sẵn trên main', {
+    interface: 'GigE', channels: 1,
+  }, 630),
   part('CABLE-LIGHT-2', 'cable', 'Generic', 'Cáp đèn 2m', {
     cable_for: 'light', connector: 'Hirose 4 chân', length_m: 2,
   }, 610),

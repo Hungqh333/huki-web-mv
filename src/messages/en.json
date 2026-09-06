@@ -390,7 +390,33 @@
         "datasheet": "From datasheet",
         "measured": "Measured"
       },
-      "fromRule": "Rule table suggests: {text}"
+      "fromRule": "Rule table suggests: {text}",
+      "rows": {
+        "camera": "Camera",
+        "lens": "Lens",
+        "tube": "Extension tube",
+        "light": "Light",
+        "cableCamera": "Camera cable",
+        "cableLight": "Light cable",
+        "lightController": "Light controller",
+        "pc": "Computer",
+        "software": "Vision software"
+      },
+      "computed": "Computed",
+      "suggested": "Suggested",
+      "tubeNotNeeded": "Not needed — the working distance is within the lens range.",
+      "fitTube": "Lens needs at least {min} mm, mechanics allow only {actual} mm -> add about {length} mm",
+      "fitCableCamera": "Connector follows the {connector} standard",
+      "fitLightController": "{channels} channels · {strobe}",
+      "strobeRequired": "strobing required (exposure < 1 ms)",
+      "strobeNotRequired": "no strobing needed",
+      "fitSoftwareDl": "The task needs deep learning — avoid free libraries, there is no field support.",
+      "pcOptionsTitle": "Computer add-ons",
+      "pcOptionsHint": "Tick what belongs in the quote. The Windows licence is the most forgotten item.",
+      "extrasTitle": "Extra accessories",
+      "extrasHint": "Tick whatever the project needs. This list is open — add items under Admin > Components.",
+      "extrasEmpty": "No accessories in the catalog yet.",
+      "selectedCount": "{count} selected"
     },
     "vision": {
       "title": "Feasibility checks",

@@ -287,3 +287,180 @@ export function pickController(
     fit: { interfaceName: req.interfaceName, needsGpu: req.needsGpu },
   };
 }
+
+// =============================================================================
+// Các cụm còn lại của danh mục vật tư.
+//
+// Chia làm hai nhóm rõ ràng:
+//   - TÍNH ĐƯỢC: tube (theo khoảng cách làm việc và độ phóng đại), cáp camera
+//     (theo chuẩn giao tiếp), bộ điều khiển đèn (theo số đèn và nhu cầu đánh
+//     xung). Những cụm này có điều kiện lọc thật.
+//   - CHỈ GỢI Ý: cáp đèn, phần mềm, hàng đi kèm máy tính. Không có công thức
+//     nào quyết định thay được, nên chỉ liệt kê cho người dùng chọn.
+// =============================================================================
+
+export type TubeFit = {
+  /** Có cần tube không — và vì sao. */
+  needed: boolean;
+  /** Chiều dài nối thêm cần thiết (mm), xấp xỉ. */
+  requiredLengthMm: number | null;
+  lensMinWdMm: number | null;
+};
+
+/**
+ * Vòng nối dài chỉ cần khi cơ khí buộc đặt camera GẦN hơn khoảng cách làm việc
+ * tối thiểu của ống kính. Chiều dài xấp xỉ theo công thức quen dùng:
+ *
+ *   extension ≈ độ_phóng_đại × tiêu_cự
+ *
+ * Là ƯỚC LƯỢNG cho thấu kính mỏng — tube thật phải thử trên bàn quang học, vì
+ * lắp tube là mất khả năng lấy nét vô cực.
+ */
+export function pickTube(
+  components: Component[],
+  req: {
+    lens: Component | null;
+    workingDistanceMm: number | null;
+    magnification: number | null;
+  }
+): ComponentChoice<TubeFit> {
+  const lensMinWd = req.lens ? specNumber(req.lens.spec, 'wd_min_mm') : null;
+  const focal = req.lens ? specNumber(req.lens.spec, 'focal_length_mm') : null;
+
+  const needed =
+    lensMinWd !== null && req.workingDistanceMm !== null && req.workingDistanceMm < lensMinWd;
+
+  const requiredLengthMm =
+    needed && focal !== null && req.magnification !== null
+      ? Math.round(req.magnification * focal * 10) / 10
+      : null;
+
+  const fit: TubeFit = { needed, requiredLengthMm, lensMinWdMm: lensMinWd };
+
+  if (!needed) return { chosen: null, alternatives: [], fit };
+
+  const lensMount = req.lens ? specString(req.lens.spec, 'mount') : null;
+  const usable = active(components, 'tube').filter(
+    (tube) => !lensMount || specString(tube.spec, 'mount') === lensMount
+  );
+
+  const ranked = [...usable].sort((a, b) => {
+    if (requiredLengthMm !== null) {
+      const diff = (tube: Component) =>
+        Math.abs((specNumber(tube.spec, 'length_mm') ?? Infinity) - requiredLengthMm);
+      const d = diff(a) - diff(b);
+      if (d !== 0) return d;
+    }
+    return a.sort_order - b.sort_order;
+  });
+
+  return { chosen: ranked[0] ?? null, alternatives: ranked.slice(1), fit };
+}
+
+/** Chuẩn giao tiếp camera → từ khoá đầu nối của cáp. */
+const CONNECTOR_FOR_INTERFACE: Record<string, string> = {
+  GigE: 'RJ45',
+  '5GigE': 'RJ45',
+  '10GigE': 'RJ45',
+  USB3: 'USB3',
+  'CXP-6': 'Coax',
+};
+
+/** Cáp camera: đầu nối phải khớp chuẩn giao tiếp của camera đã chọn. */
+export function pickCameraCable(
+  components: Component[],
+  req: { interfaceName: string | null }
+): ComponentChoice<{ connectorKeyword: string | null }> {
+  const keyword = req.interfaceName ? CONNECTOR_FOR_INTERFACE[req.interfaceName] : undefined;
+  const all = active(components, 'cable').filter(
+    (cable) => specString(cable.spec, 'cable_for') === 'camera'
+  );
+
+  const matching = keyword
+    ? all.filter((cable) => (specString(cable.spec, 'connector') ?? '').includes(keyword))
+    : [];
+
+  const ranked = (matching.length > 0 ? matching : all).sort((a, b) => a.sort_order - b.sort_order);
+
+  return {
+    // Không suy được đầu nối thì liệt kê hết chứ không gán bừa một sợi sai chuẩn.
+    chosen: matching.length > 0 ? ranked[0] : null,
+    alternatives: matching.length > 0 ? ranked.slice(1) : ranked,
+    fit: { connectorKeyword: keyword ?? null },
+  };
+}
+
+/** Cáp đèn: không có gì để tính, chỉ liệt kê theo thứ tự. */
+export function pickLightCable(components: Component[]): ComponentChoice<null> {
+  const ranked = active(components, 'cable')
+    .filter((cable) => specString(cable.spec, 'cable_for') === 'light')
+    .sort((a, b) => a.sort_order - b.sort_order);
+  return { chosen: ranked[0] ?? null, alternatives: ranked.slice(1), fit: null };
+}
+
+/**
+ * Bộ điều khiển đèn: đủ kênh cho số đèn, và PHẢI có đánh xung khi thời gian
+ * phơi sáng bị nhoè chuyển động ép xuống dưới 1 ms.
+ */
+export function pickLightController(
+  components: Component[],
+  req: { lightCount: number; needsStrobe: boolean }
+): ComponentChoice<{ lightCount: number; needsStrobe: boolean }> {
+  const candidates = active(components, 'light_controller').filter((ctrl) => {
+    const channels = specNumber(ctrl.spec, 'channels');
+    if (channels === null || channels < Math.max(1, req.lightCount)) return false;
+    if (req.needsStrobe && specString(ctrl.spec, 'strobe') !== 'yes') return false;
+    return true;
+  });
+
+  const ranked = [...candidates].sort((a, b) => {
+    // Đừng bán dư kênh: ít kênh nhất mà vẫn đủ thì thắng.
+    const chA = specNumber(a.spec, 'channels') ?? Infinity;
+    const chB = specNumber(b.spec, 'channels') ?? Infinity;
+    if (chA !== chB) return chA - chB;
+    return a.sort_order - b.sort_order;
+  });
+
+  return {
+    chosen: ranked[0] ?? null,
+    alternatives: ranked.slice(1),
+    fit: { lightCount: req.lightCount, needsStrobe: req.needsStrobe },
+  };
+}
+
+/**
+ * Phần mềm xử lý ảnh: không có công thức nào chọn thay được, chỉ gợi ý.
+ *
+ * Ràng buộc duy nhất áp được: bài cần deep learning thì đừng mặc định vào thư
+ * viện miễn phí — không phải vì nó không làm được, mà vì ra hiện trường không
+ * có ai hỗ trợ.
+ */
+export function pickSoftware(
+  components: Component[],
+  req: { needsDeepLearning: boolean }
+): ComponentChoice<{ needsDeepLearning: boolean }> {
+  const ranked = active(components, 'software').sort((a, b) => {
+    if (req.needsDeepLearning) {
+      const freeA = specString(a.spec, 'software_type') === 'free' ? 1 : 0;
+      const freeB = specString(b.spec, 'software_type') === 'free' ? 1 : 0;
+      if (freeA !== freeB) return freeA - freeB;
+    }
+    return a.sort_order - b.sort_order;
+  });
+
+  return {
+    chosen: ranked[0] ?? null,
+    alternatives: ranked.slice(1),
+    fit: { needsDeepLearning: req.needsDeepLearning },
+  };
+}
+
+/** Hàng đi kèm máy tính (Windows, Office, màn hình, bàn phím) — người dùng tự tích. */
+export function listPcOptions(components: Component[]): Component[] {
+  return active(components, 'pc_option').sort((a, b) => a.sort_order - b.sort_order);
+}
+
+/** Phụ kiện thêm — danh sách mở, người dùng tự thêm vào báo giá. */
+export function listAccessories(components: Component[]): Component[] {
+  return active(components, 'accessory').sort((a, b) => a.sort_order - b.sort_order);
+}

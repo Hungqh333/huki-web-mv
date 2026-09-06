@@ -390,7 +390,33 @@
         "datasheet": "Theo datasheet",
         "measured": "Đã đo"
       },
-      "fromRule": "Bảng luật gợi ý: {text}"
+      "fromRule": "Bảng luật gợi ý: {text}",
+      "rows": {
+        "camera": "Camera",
+        "lens": "Ống kính",
+        "tube": "Vòng nối dài (tube)",
+        "light": "Đèn",
+        "cableCamera": "Cáp camera",
+        "cableLight": "Cáp đèn",
+        "lightController": "Bộ điều khiển đèn",
+        "pc": "Máy tính",
+        "software": "Phần mềm xử lý ảnh"
+      },
+      "computed": "Tính ra",
+      "suggested": "Gợi ý",
+      "tubeNotNeeded": "Không cần — khoảng cách làm việc nằm trong tầm của ống kính.",
+      "fitTube": "Ống kính cần tối thiểu {min} mm, cơ khí chỉ cho {actual} mm → nối thêm ≈ {length} mm",
+      "fitCableCamera": "Đầu nối theo chuẩn {connector}",
+      "fitLightController": "{channels} kênh · {strobe}",
+      "strobeRequired": "bắt buộc đánh xung (phơi sáng < 1 ms)",
+      "strobeNotRequired": "không cần đánh xung",
+      "fitSoftwareDl": "Bài cần deep learning — tránh thư viện miễn phí vì không có hỗ trợ hiện trường.",
+      "pcOptionsTitle": "Hàng đi kèm máy tính",
+      "pcOptionsHint": "Tích thứ cần đưa vào báo giá. Bản quyền Windows hay bị quên nhất.",
+      "extrasTitle": "Phụ kiện thêm",
+      "extrasHint": "Tích thêm những gì dự án cần. Danh sách này mở, thêm được ở trang Quản trị → Linh kiện.",
+      "extrasEmpty": "Chưa có phụ kiện nào trong catalog.",
+      "selectedCount": "Đã chọn {count}"
     },
     "vision": {
       "title": "Kiểm tra tính khả thi",

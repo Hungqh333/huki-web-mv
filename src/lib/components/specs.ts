@@ -7,7 +7,23 @@
  * chưa từng có mới phải sửa file này.
  */
 
-export type ComponentKind = 'camera' | 'lens' | 'light' | 'controller' | 'accessory';
+/**
+ * Loại linh kiện, xếp theo đúng trình tự mua hàng.
+ *
+ * "controller" là MÁY TÍNH công nghiệp, "light_controller" là bộ điều khiển
+ * đèn — hai thứ hoàn toàn khác nhau, tên gần giống nhau là do lịch sử.
+ */
+export type ComponentKind =
+  | 'camera'
+  | 'lens'
+  | 'tube'
+  | 'light'
+  | 'cable'
+  | 'light_controller'
+  | 'controller'
+  | 'software'
+  | 'pc_option'
+  | 'accessory';
 
 /** Thông số đã đối chiếu tới đâu. Giao diện phải hiện cờ này. */
 export type ComponentSource = 'unverified' | 'datasheet' | 'measured';
@@ -237,6 +253,34 @@ export const SPEC_FIELDS: Record<ComponentKind, SpecFieldDef[]> = {
     { key: 'gpu', type: 'text' },
     { key: 'interfaces', type: 'multiselect', options: INTERFACES },
   ],
+  /** Vòng nối dài, dùng khi cần khoảng cách làm việc ngắn hơn lens cho phép. */
+  tube: [
+    { key: 'length_mm', type: 'number', unit: 'mm', required: true, step: 0.5 },
+    { key: 'mount', type: 'select', options: MOUNTS, required: true },
+  ],
+  cable: [
+    { key: 'cable_for', type: 'select', options: ['camera', 'light'], required: true },
+    { key: 'connector', type: 'text', required: true },
+    { key: 'length_m', type: 'number', unit: 'm', required: true, step: 0.5 },
+  ],
+  light_controller: [
+    { key: 'channels', type: 'number', unit: 'kênh', required: true, step: 1 },
+    { key: 'strobe', type: 'select', options: ['yes', 'no'], required: true },
+    { key: 'max_current_a', type: 'number', unit: 'A', step: 0.1 },
+  ],
+  software: [
+    { key: 'software_type', type: 'select', options: ['library', 'platform', 'free'], required: true },
+    { key: 'license', type: 'text' },
+  ],
+  /** Hàng đi kèm máy tính: Windows, Office, màn hình, bàn phím. */
+  pc_option: [
+    {
+      key: 'option_type',
+      type: 'select',
+      options: ['os', 'office', 'monitor', 'keyboard'],
+      required: true,
+    },
+  ],
   // Phụ kiện quá đa dạng để ép vào khuôn — mô tả bằng ghi chú là đủ.
   accessory: [],
 };
@@ -251,16 +295,26 @@ export const SPEC_FIELDS: Record<ComponentKind, SpecFieldDef[]> = {
 export const SUMMARY_KEYS: Record<ComponentKind, string[]> = {
   camera: ['resolution_mp', 'sensor_format', 'interface', 'color'],
   lens: ['lens_type', 'focal_length_mm', 'magnification', 'image_circle'],
+  tube: ['length_mm', 'mount'],
   light: ['light_type', 'color', 'size_mm'],
+  cable: ['cable_for', 'connector', 'length_m'],
+  light_controller: ['channels', 'strobe', 'max_current_a'],
   controller: ['cpu', 'ram_gb', 'gpu'],
+  software: ['software_type', 'license'],
+  pc_option: ['option_type'],
   accessory: [],
 };
 
 export const COMPONENT_KINDS: ComponentKind[] = [
   'camera',
   'lens',
+  'tube',
   'light',
+  'cable',
+  'light_controller',
   'controller',
+  'software',
+  'pc_option',
   'accessory',
 ];
 

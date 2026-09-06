@@ -180,3 +180,114 @@ on conflict (code) do update set
   notes_en   = excluded.notes_en,
   sort_order = excluded.sort_order,
   is_active  = true;
+
+
+-- =============================================================================
+-- Các cụm còn lại của danh mục vật tư, theo đúng trình tự mua hàng:
+--   ... → Tube → Cáp camera → Cáp đèn → Bộ điều khiển đèn →
+--   Máy tính (kèm Windows/Office/màn hình/bàn phím) → Phần mềm → Phụ kiện
+--
+-- Vẫn nguyên tắc cũ: mọi dòng 'unverified', giá để trống.
+-- =============================================================================
+
+insert into public.components
+  (code, kind, brand, model, spec, source, notes_vi, notes_en, sort_order)
+values
+
+-- ------------------------------------------------------------------- TUBE --
+('TUBE-C-5', 'tube', 'Generic', 'C-Mount 5mm',
+ '{"length_mm":5,"mount":"C"}'::jsonb, 'unverified',
+ 'Vòng nối dài 5 mm: kéo khoảng cách làm việc gần lại một chút, đổi lại mất vô cực.',
+ 'A 5 mm extension tube shortens the working distance slightly, at the cost of infinity focus.',
+ 410),
+('TUBE-C-10', 'tube', 'Generic', 'C-Mount 10mm',
+ '{"length_mm":10,"mount":"C"}'::jsonb, 'unverified', null, null, 420),
+('TUBE-C-20', 'tube', 'Generic', 'C-Mount 20mm',
+ '{"length_mm":20,"mount":"C"}'::jsonb, 'unverified',
+ 'Tube càng dài thì độ phóng đại càng lớn nhưng ánh sáng tới cảm biến càng yếu.',
+ 'A longer tube gives more magnification but less light reaching the sensor.',
+ 430),
+
+-- -------------------------------------------------------------- CÁP CAMERA --
+('CABLE-CAM-GIGE-5', 'cable', 'Generic', 'Cat6 RJ45 5m',
+ '{"cable_for":"camera","connector":"RJ45 Cat6","length_m":5}'::jsonb, 'unverified',
+ 'GigE đi được tới 100 m. Cáp phải có chống nhiễu nếu chạy gần biến tần.',
+ 'GigE runs up to 100 m. Use shielded cable when routed near a VFD.',
+ 510),
+('CABLE-CAM-GIGE-10', 'cable', 'Generic', 'Cat6 RJ45 10m',
+ '{"cable_for":"camera","connector":"RJ45 Cat6","length_m":10}'::jsonb, 'unverified', null, null, 520),
+('CABLE-CAM-USB3-3', 'cable', 'Generic', 'USB3 Micro-B 3m',
+ '{"cable_for":"camera","connector":"USB3 Micro-B khoá vít","length_m":3}'::jsonb, 'unverified',
+ 'USB3 thực tế chỉ ổn định tới ~5 m. Dài hơn phải dùng cáp quang active.',
+ 'USB3 is only reliable to about 5 m; beyond that an active optical cable is needed.',
+ 530),
+
+-- ----------------------------------------------------------------- CÁP ĐÈN --
+('CABLE-LIGHT-2', 'cable', 'Generic', 'Cáp đèn 2m',
+ '{"cable_for":"light","connector":"Hirose 4 chân","length_m":2}'::jsonb, 'unverified',
+ 'Cáp đèn nối từ đèn về bộ điều khiển, không nối thẳng vào camera.',
+ 'The light cable runs from the light to its controller, not to the camera.',
+ 610),
+('CABLE-LIGHT-5', 'cable', 'Generic', 'Cáp đèn 5m',
+ '{"cable_for":"light","connector":"Hirose 4 chân","length_m":5}'::jsonb, 'unverified', null, null, 620),
+
+-- ------------------------------------------------------- ĐIỀU KHIỂN ĐÈN --
+('LCTRL-HZ-1CH', 'light_controller', 'HZ', 'HZ-PS1CH-24V',
+ '{"channels":1,"strobe":"no","max_current_a":2}'::jsonb, 'unverified',
+ 'Chỉ cấp nguồn liên tục, không đánh xung. Đủ cho băng tải chậm.',
+ 'Continuous power only, no strobe. Fine for a slow conveyor.',
+ 710),
+('LCTRL-HZ-2CH-STROBE', 'light_controller', 'HZ', 'HZ-ST2CH-24V',
+ '{"channels":2,"strobe":"yes","max_current_a":4}'::jsonb, 'unverified',
+ 'Có đánh xung: bắt buộc khi thời gian phơi sáng phải xuống dưới 1 ms.',
+ 'Supports strobing, which is mandatory when exposure must drop below 1 ms.',
+ 720),
+('LCTRL-HZ-4CH-STROBE', 'light_controller', 'HZ', 'HZ-ST4CH-24V',
+ '{"channels":4,"strobe":"yes","max_current_a":8}'::jsonb, 'unverified',
+ 'Bốn kênh — dùng cho photometric stereo bốn hướng chiếu.',
+ 'Four channels, for four-direction photometric stereo.',
+ 730),
+
+-- ------------------------------------------------------------ PHẦN MỀM --
+('SW-HALCON', 'software', 'MVTec', 'HALCON Runtime',
+ '{"software_type":"library","license":"Runtime theo máy"}'::jsonb, 'unverified',
+ 'Thư viện mạnh và đầy đủ nhất, đổi lại giá cao và phải lập trình.',
+ 'The most complete library, but expensive and requires programming.',
+ 810),
+('SW-VISIONPRO', 'software', 'Cognex', 'VisionPro',
+ '{"software_type":"platform","license":"Theo máy, kèm khoá cứng"}'::jsonb, 'unverified',
+ 'Có giao diện dựng luồng, kỹ sư không chuyên lập trình vẫn làm được.',
+ 'Has a visual pipeline builder, usable by engineers who do not program.',
+ 820),
+('SW-OPENCV', 'software', 'Open source', 'OpenCV',
+ '{"software_type":"free","license":"Apache 2.0"}'::jsonb, 'unverified',
+ 'Miễn phí nhưng phải tự viết toàn bộ, và không có hỗ trợ khi ra hiện trường.',
+ 'Free, but everything must be written in-house and there is no field support.',
+ 830),
+
+-- --------------------------------------------------- HÀNG ĐI KÈM MÁY TÍNH --
+('PCOPT-WIN11-PRO', 'pc_option', 'Microsoft', 'Windows 11 Pro OEM',
+ '{"option_type":"os"}'::jsonb, 'unverified',
+ 'Bản quyền hệ điều hành — hay bị quên khi lên báo giá.',
+ 'The OS licence, one of the most frequently forgotten line items.',
+ 910),
+('PCOPT-OFFICE', 'pc_option', 'Microsoft', 'Office LTSC Standard',
+ '{"option_type":"office"}'::jsonb, 'unverified',
+ 'Chỉ cần khi máy phải xuất báo cáo Excel ngay tại chỗ.',
+ 'Only needed when the station must produce Excel reports locally.',
+ 920),
+('PCOPT-MONITOR-24', 'pc_option', 'Generic', 'Màn hình 24 inch FHD',
+ '{"option_type":"monitor"}'::jsonb, 'unverified', null, null, 930),
+('PCOPT-KEYBOARD', 'pc_option', 'Generic', 'Bàn phím + chuột công nghiệp',
+ '{"option_type":"keyboard"}'::jsonb, 'unverified', null, null, 940)
+
+on conflict (code) do update set
+  kind       = excluded.kind,
+  brand      = excluded.brand,
+  model      = excluded.model,
+  spec       = excluded.spec,
+  source     = excluded.source,
+  notes_vi   = excluded.notes_vi,
+  notes_en   = excluded.notes_en,
+  sort_order = excluded.sort_order,
+  is_active  = true;

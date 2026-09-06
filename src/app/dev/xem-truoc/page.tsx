@@ -126,6 +126,38 @@ const COMPONENTS: Component[] = [
   part('PC-STD-GIGE', 'controller', 'Generic', 'IPC-i5-16G', {
     cpu: 'Intel i5', ram_gb: 16, interfaces: ['GigE', 'USB3'],
   }, 310),
+
+  // Các cụm còn lại của danh mục vật tư — thiếu chúng thì trang xem trước
+  // hiện "không có thiết bị nào" và không kiểm được bố cục chín cụm.
+  part('TUBE-C-5', 'tube', 'Generic', 'C-Mount 5mm', { length_mm: 5, mount: 'C' }, 410),
+  part('TUBE-C-10', 'tube', 'Generic', 'C-Mount 10mm', { length_mm: 10, mount: 'C' }, 420),
+  part('CABLE-CAM-GIGE-5', 'cable', 'Generic', 'Cat6 RJ45 5m', {
+    cable_for: 'camera', connector: 'RJ45 Cat6', length_m: 5,
+  }, 510),
+  part('CABLE-CAM-GIGE-10', 'cable', 'Generic', 'Cat6 RJ45 10m', {
+    cable_for: 'camera', connector: 'RJ45 Cat6', length_m: 10,
+  }, 520),
+  part('CABLE-LIGHT-2', 'cable', 'Generic', 'Cáp đèn 2m', {
+    cable_for: 'light', connector: 'Hirose 4 chân', length_m: 2,
+  }, 610),
+  part('LCTRL-HZ-1CH', 'light_controller', 'HZ', 'HZ-PS1CH-24V', {
+    channels: 1, strobe: 'no', max_current_a: 2,
+  }, 710),
+  part('LCTRL-HZ-2CH-STROBE', 'light_controller', 'HZ', 'HZ-ST2CH-24V', {
+    channels: 2, strobe: 'yes', max_current_a: 4,
+  }, 720),
+  part('SW-HALCON', 'software', 'MVTec', 'HALCON Runtime', {
+    software_type: 'library', license: 'Runtime theo máy',
+  }, 810),
+  part('SW-OPENCV', 'software', 'Open source', 'OpenCV', {
+    software_type: 'free', license: 'Apache 2.0',
+  }, 830),
+  part('PCOPT-WIN11-PRO', 'pc_option', 'Microsoft', 'Windows 11 Pro OEM', { option_type: 'os' }, 910),
+  part('PCOPT-OFFICE', 'pc_option', 'Microsoft', 'Office LTSC', { option_type: 'office' }, 920),
+  part('PCOPT-MONITOR-24', 'pc_option', 'Generic', 'Màn hình 24 inch', { option_type: 'monitor' }, 930),
+  part('PCOPT-KEYBOARD', 'pc_option', 'Generic', 'Bàn phím + chuột', { option_type: 'keyboard' }, 940),
+  part('ACC-MOUNT', 'accessory', 'Generic', 'Gá camera 3 trục', {}, 990),
+  part('ACC-FILTER-POL', 'accessory', 'Generic', 'Kính lọc phân cực', {}, 995),
 ];
 
 export default function DevPreviewPage() {

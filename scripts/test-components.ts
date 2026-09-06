@@ -14,6 +14,11 @@ import {
   pickController,
   pickLens,
   pickLight,
+  pickTube,
+  pickCameraCable,
+  pickLightController,
+  pickSoftware,
+  listPcOptions,
 } from '../src/lib/components/match';
 import type { Component, ComponentKind } from '../src/lib/components/specs';
 
@@ -257,4 +262,118 @@ test('lọc camera theo CẢ HAI trục, không chỉ theo megapixel', () => {
 
   assert.equal(result.chosen?.model, 'BIG', '2592 px ngang khong du 3000 du thua megapixel');
   assert.equal(result.alternatives.length, 0, 'camera thieu pixel truc ngang phai bi loai han');
+});
+
+// ------------------------------------------- CÁC CỤM CÒN LẠI CỦA DANH MỤC --
+
+const TUBE_5 = part('tube', 'Generic', 'T5', { length_mm: 5, mount: 'C' });
+const TUBE_10 = part('tube', 'Generic', 'T10', { length_mm: 10, mount: 'C' });
+const TUBE_20 = part('tube', 'Generic', 'T20', { length_mm: 20, mount: 'C' });
+
+test('không cần tube khi khoảng cách làm việc nằm trong tầm của ống kính', () => {
+  const lens = part('lens', 'Coolens', 'FF2520', {
+    lens_type: 'fixed', focal_length_mm: 25, image_circle: '2/3', mount: 'C', wd_min_mm: 150,
+  });
+
+  const result = pickTube([TUBE_5, TUBE_10, TUBE_20], {
+    lens,
+    workingDistanceMm: 300, // xa hon 150 -> khong can
+    magnification: 0.088,
+  });
+
+  assert.equal(result.fit.needed, false);
+  assert.equal(result.chosen, null, 'khong can thi khong duoc ban kem');
+});
+
+test('cần tube khi cơ khí ép camera vào gần hơn ống kính cho phép', () => {
+  const lens = part('lens', 'Coolens', 'FF2520', {
+    lens_type: 'fixed', focal_length_mm: 25, image_circle: '2/3', mount: 'C', wd_min_mm: 150,
+  });
+
+  const result = pickTube([TUBE_5, TUBE_10, TUBE_20], {
+    lens,
+    workingDistanceMm: 100, // gan hon 150 -> phai co tube
+    magnification: 0.4, // 0,4 x 25 mm = 10 mm
+  });
+
+  assert.equal(result.fit.needed, true);
+  assert.equal(result.fit.requiredLengthMm, 10);
+  assert.equal(result.chosen?.model, 'T10', 'chon tube gan 10 mm nhat');
+});
+
+test('cáp camera phải khớp chuẩn giao tiếp, không gán bừa', () => {
+  const cables = [
+    part('cable', 'Generic', 'CAT6-5M', { cable_for: 'camera', connector: 'RJ45 Cat6', length_m: 5 }),
+    part('cable', 'Generic', 'USB3-3M', { cable_for: 'camera', connector: 'USB3 Micro-B', length_m: 3 }),
+    part('cable', 'Generic', 'LIGHT-2M', { cable_for: 'light', connector: 'Hirose 4 chân', length_m: 2 }),
+  ];
+
+  assert.equal(pickCameraCable(cables, { interfaceName: 'GigE' }).chosen?.model, 'CAT6-5M');
+  assert.equal(pickCameraCable(cables, { interfaceName: 'USB3' }).chosen?.model, 'USB3-3M');
+
+  // Cap den khong duoc lot vao danh sach cap camera.
+  const gige = pickCameraCable(cables, { interfaceName: 'GigE' });
+  assert.ok(
+    ![gige.chosen, ...gige.alternatives].some((c) => c?.model === 'LIGHT-2M'),
+    'cap den khong phai cap camera'
+  );
+
+  // Chuan la khong suy duoc thi liet ke chu khong gan bua.
+  const unknown = pickCameraCable(cables, { interfaceName: 'CXP-6' });
+  assert.equal(unknown.chosen, null, 'khong co cap coax thi khong duoc gan cap RJ45');
+});
+
+test('bộ điều khiển đèn phải có đánh xung khi phơi sáng dưới 1 ms', () => {
+  const ctrls = [
+    part('light_controller', 'HZ', '1CH', { channels: 1, strobe: 'no', max_current_a: 2 }),
+    part('light_controller', 'HZ', '2CH-ST', { channels: 2, strobe: 'yes', max_current_a: 4 }),
+    part('light_controller', 'HZ', '4CH-ST', { channels: 4, strobe: 'yes', max_current_a: 8 }),
+  ];
+
+  // Bang tai cham: khong can danh xung -> bo re nhat du kenh thang.
+  const slow = pickLightController(ctrls, { lightCount: 1, needsStrobe: false });
+  assert.equal(slow.chosen?.model, '1CH');
+
+  // Nhoe chuyen dong ep phoi sang xuong duoi 1 ms -> bat buoc strobe.
+  const fast = pickLightController(ctrls, { lightCount: 1, needsStrobe: true });
+  assert.equal(fast.chosen?.model, '2CH-ST');
+  assert.ok(
+    ![fast.chosen, ...fast.alternatives].some((c) => c?.spec.strobe === 'no'),
+    'bo khong danh xung phai bi loai han'
+  );
+
+  // Photometric stereo bon huong -> can bon kenh.
+  const four = pickLightController(ctrls, { lightCount: 4, needsStrobe: false });
+  assert.equal(four.chosen?.model, '4CH-ST', 'chi bo 4 kenh moi du');
+});
+
+test('bài cần deep learning thì không mặc định vào thư viện miễn phí', () => {
+  const sw = [
+    part('software', 'Open source', 'OpenCV', { software_type: 'free' }),
+    part('software', 'MVTec', 'HALCON', { software_type: 'library' }),
+  ];
+
+  assert.equal(pickSoftware(sw, { needsDeepLearning: false }).chosen?.model, 'OpenCV');
+  assert.equal(
+    pickSoftware(sw, { needsDeepLearning: true }).chosen?.model,
+    'HALCON',
+    'ra hien truong khong ai ho tro thu vien mien phi'
+  );
+});
+
+test('hàng đi kèm máy tính liệt kê đủ để người dùng tự tích', () => {
+  const opts = [
+    part('pc_option', 'Microsoft', 'Win11', { option_type: 'os' }),
+    part('pc_option', 'Microsoft', 'Office', { option_type: 'office' }),
+    part('pc_option', 'Generic', 'Man hinh', { option_type: 'monitor' }),
+    part('pc_option', 'Generic', 'Ban phim', { option_type: 'keyboard' }),
+    part('camera', 'X', 'khong-phai-pc-option', { resolution_mp: 5 }),
+  ];
+
+  const listed = listPcOptions(opts);
+  assert.equal(listed.length, 4, 'chi lay dung pc_option');
+  assert.deepEqual(
+    listed.map((c) => c.spec.option_type),
+    ['os', 'office', 'monitor', 'keyboard']
+  );
 });

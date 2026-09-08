@@ -19,9 +19,11 @@ import {
   pickCameraPowerCable,
   pickInterfaceCard,
   pickLightController,
+  lightControllerUnits,
   pickSoftware,
   listPcOptions,
 } from '../src/lib/components/match';
+import { cardUnits } from '../src/lib/components/pc';
 import type { Component, ComponentKind } from '../src/lib/components/specs';
 
 let counter = 0;
@@ -352,13 +354,14 @@ test('card giao tiếp phải đủ cổng cho số camera, không bán dư', ()
     '1CH'
   );
 
-  // Hai camera -> cong onboard khong du, phai len card 4 cong.
+  /* Hai camera -> cong onboard khong du mot minh, phai len card 4 cong.
+     Card 1 cong VAN nam trong danh sach thay the, nhung khi do so luong phai
+     thanh 2. Truoc day ham nay loc bo han card thieu cong, va do chinh la loi:
+     du an 10 camera thi khong con lua chon nao thay vi la "dat 3 card". */
   const two = pickInterfaceCard(cards, { interfaceName: 'GigE', cameraCount: 2 });
-  assert.equal(two.chosen?.model, '4CH');
-  assert.ok(
-    ![two.chosen, ...two.alternatives].some((c) => c?.model === '1CH'),
-    'card thieu cong phai bi loai han'
-  );
+  assert.equal(two.chosen?.model, '4CH', 'it card nhat thang');
+  assert.equal(cardUnits(two.chosen, 2), 1);
+  assert.equal(cardUnits(cards[0], 2), 2, 'doi tay sang card 1 cong thi phai dat 2 cai');
 
   // Chuan giao tiep phai khop: camera 5GigE khong cam vao card GigE duoc.
   assert.equal(
@@ -389,6 +392,27 @@ test('bộ điều khiển đèn phải có đánh xung khi phơi sáng dưới 
   // Photometric stereo bon huong -> can bon kenh.
   const four = pickLightController(ctrls, { lightCount: 4, needsStrobe: false });
   assert.equal(four.chosen?.model, '4CH-ST', 'chi bo 4 kenh moi du');
+});
+
+test('nhieu den hon so kenh cua bo lon nhat thi dat NHIEU BO, khong phai het lua chon', () => {
+  const ctrls = [
+    part('light_controller', 'HZ', '1CH', { channels: 1, strobe: 'no', max_current_a: 2 }),
+    part('light_controller', 'HZ', '2CH-ST', { channels: 2, strobe: 'yes', max_current_a: 4 }),
+    part('light_controller', 'HZ', '4CH-ST', { channels: 4, strobe: 'yes', max_current_a: 8 }),
+  ];
+
+  // Ba tram, moi tram ba den = 9 kenh. Catalog chi co toi 4 kenh.
+  const many = pickLightController(ctrls, { lightCount: 9, needsStrobe: true });
+  assert.equal(many.chosen?.model, '4CH-ST', 'phai chon bo nhieu kenh nhat de it bo nhat');
+  assert.equal(many.fit.unitsNeeded, 3, 'ceil(9 / 4) = 3 bo');
+
+  // Loi cu: loc bo moi bo thieu kenh -> khong con lua chon nao.
+  assert.ok(many.chosen !== null, 'khong duoc de trong khi so den vuot mot bo');
+
+  // Doi tay sang bo it kenh hon thi so luong phai tang theo.
+  assert.equal(lightControllerUnits(ctrls[1], 9), 5, 'ceil(9 / 2) = 5 bo');
+  assert.equal(lightControllerUnits(ctrls[2], 8), 2, 'chia het thi khong lam tron len');
+  assert.equal(lightControllerUnits(null, 9), 0, 'chua chon bo nao thi so luong la 0');
 });
 
 test('bài cần deep learning thì không mặc định vào thư viện miễn phí', () => {

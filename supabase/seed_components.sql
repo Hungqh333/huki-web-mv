@@ -150,21 +150,21 @@ values
 
 -- ------------------------------------------------------------- CONTROLLER --
 ('PC-STD-GIGE', 'controller', 'Generic', 'IPC-i5-16G',
- '{"cpu":"Intel i5","ram_gb":16,"interfaces":["GigE","USB3"]}'::jsonb,
+ '{"cpu":"Intel i5","ram_gb":16,"interfaces":["GigE","USB3"],"max_cameras":2,"pcie_slots":1}'::jsonb,
  'unverified',
  'Cấu hình nền cho một camera GigE, xử lý theo ngưỡng và blob.',
  'Baseline configuration for a single GigE camera with thresholding and blob analysis.',
  310),
 
 ('PC-HIGH-BANDWIDTH', 'controller', 'Generic', 'IPC-i7-32G-5GigE',
- '{"cpu":"Intel i7","ram_gb":32,"interfaces":["GigE","USB3","5GigE","10GigE"]}'::jsonb,
+ '{"cpu":"Intel i7","ram_gb":32,"interfaces":["GigE","USB3","5GigE","10GigE"],"max_cameras":4,"pcie_slots":2}'::jsonb,
  'unverified',
  'Cho camera băng thông cao; card mạng phải bật jumbo frame.',
  'For high-bandwidth cameras; the NIC must have jumbo frames enabled.',
  320),
 
 ('PC-GPU-DL', 'controller', 'Generic', 'IPC-i7-32G-RTX',
- '{"cpu":"Intel i7","ram_gb":32,"gpu":"NVIDIA RTX 8GB","interfaces":["GigE","USB3","5GigE"]}'::jsonb,
+ '{"cpu":"Intel i7","ram_gb":32,"gpu":"NVIDIA RTX 8GB","interfaces":["GigE","USB3","5GigE"],"max_cameras":4,"pcie_slots":1}'::jsonb,
  'unverified',
  'Có GPU rời — chỉ cần khi bài toán thật sự phải dùng deep learning.',
  'Has a discrete GPU, needed only when the task genuinely requires deep learning.',
@@ -379,6 +379,141 @@ values
 ('ACC-CABLE-HDMI-10', 'accessory', 'Ugreen', 'Cáp HDMI 10m', '{}'::jsonb, 'unverified', null, null, 960),
 ('ACC-CABLE-USB-EXT-10', 'accessory', 'Ugreen', 'Cáp USB nối dài 10m', '{}'::jsonb, 'unverified', null, null, 965),
 ('ACC-USB-COM', 'accessory', 'Ugreen', 'USB to COM 1.5m', '{}'::jsonb, 'unverified', null, null, 970)
+
+on conflict (code) do update set
+  kind       = excluded.kind,
+  brand      = excluded.brand,
+  model      = excluded.model,
+  spec       = excluded.spec,
+  source     = excluded.source,
+  notes_vi   = excluded.notes_vi,
+  notes_en   = excluded.notes_en,
+  sort_order = excluded.sort_order,
+  is_active  = true;
+
+
+-- =============================================================================
+-- Phụ kiện quang học và cơ khí
+--
+-- Vì sao thêm: form đã hỏi bề mặt có phản chiếu không, có yêu cầu IP không, có
+-- rung không, chụp tĩnh hay quét dòng — rồi không dùng câu trả lời vào đâu cả.
+-- Danh mục vật tư sinh ra thiếu đúng những món mà thiếu là hệ chạy không ổn
+-- định: kính phân cực cho bề mặt kim loại, kính lọc dải hẹp khi có ánh sáng
+-- môi trường, encoder cho line scan.
+--
+-- pick_mode = 'rule'   -> máy tự thêm vào bảng vật tư khi điều kiện khớp.
+-- pick_mode = 'manual' -> chỉ liệt kê cho tích tay (gá, khung, tủ).
+--
+-- Mã và hãng ở đây là CHỖ ĐIỀN, chưa đối chiếu datasheet (source =
+-- 'unverified', chưa có giá). Thay bằng mã thật ở trang Quản trị -> Linh kiện.
+-- =============================================================================
+
+insert into public.components
+  (code, kind, brand, model, spec, source, notes_vi, notes_en, sort_order)
+values
+
+-- --------------------------------------------------------------- PHÂN CỰC --
+-- Hai dòng dưới đây LUÔN đi cùng nhau. Chỉ mua kính trên ống kính thì không
+-- cắt được loá, vì ánh sáng chiếu tới vẫn chưa bị phân cực.
+('ACC-POL-LENS-C', 'accessory', 'Generic', 'Kính lọc phân cực ống kính C-mount',
+ '{"pick_mode":"rule","accessory_type":"polarizer_lens","accessory_for":"lens","qty_basis":"per_camera"}'::jsonb,
+ 'unverified',
+ 'Bắt buộc đi CẶP với tấm phân cực trước đèn. Mua một mình thì không cắt được loá.',
+ 'Must be bought as a PAIR with the light-side polarizing film. On its own it removes no glare.',
+ 1010),
+('ACC-POL-LIGHT', 'accessory', 'Generic', 'Tấm phân cực che trước đèn',
+ '{"pick_mode":"rule","accessory_type":"polarizer_light","accessory_for":"light","qty_basis":"per_light"}'::jsonb,
+ 'unverified',
+ 'Cắt theo cỡ mặt đèn. Xoay lệch 90 độ so với kính trên ống kính để triệt loá.',
+ 'Cut to the light face. Rotate 90 degrees against the lens filter to kill the specular glare.',
+ 1020),
+
+-- --------------------------------------------------------- LỌC DẢI HẸP --
+-- Cách rẻ nhất để hệ khỏi trôi theo đèn trần và nắng qua cửa sổ.
+('ACC-BP-630', 'accessory', 'Generic', 'Kính lọc dải hẹp 630nm (đỏ)',
+ '{"pick_mode":"rule","accessory_type":"bandpass_filter","accessory_for":"lens","qty_basis":"per_camera","wavelength_nm":630}'::jsonb,
+ 'unverified',
+ 'Chỉ cho qua ánh sáng đèn đỏ, cắt gần hết ánh sáng môi trường.',
+ 'Passes only the red light, blocking most of the ambient light.',
+ 1030),
+('ACC-BP-470', 'accessory', 'Generic', 'Kính lọc dải hẹp 470nm (xanh dương)',
+ '{"pick_mode":"rule","accessory_type":"bandpass_filter","accessory_for":"lens","qty_basis":"per_camera","wavelength_nm":470}'::jsonb,
+ 'unverified', null, null, 1040),
+('ACC-BP-525', 'accessory', 'Generic', 'Kính lọc dải hẹp 525nm (xanh lá)',
+ '{"pick_mode":"rule","accessory_type":"bandpass_filter","accessory_for":"lens","qty_basis":"per_camera","wavelength_nm":525}'::jsonb,
+ 'unverified', null, null, 1050),
+('ACC-BP-850', 'accessory', 'Generic', 'Kính lọc dải hẹp 850nm (hồng ngoại)',
+ '{"pick_mode":"rule","accessory_type":"bandpass_filter","accessory_for":"lens","qty_basis":"per_camera","wavelength_nm":850}'::jsonb,
+ 'unverified',
+ 'Hồng ngoại gần như miễn nhiễm với ánh sáng nhà xưởng, nhưng mất hết thông tin màu.',
+ 'Near-IR is almost immune to factory lighting, at the cost of all colour information.',
+ 1060),
+
+-- ------------------------------------------------------------ VỎ BẢO VỆ IP --
+('ACC-HOUSING-IP65', 'accessory', 'Generic', 'Vỏ bảo vệ camera IP65',
+ '{"pick_mode":"rule","accessory_type":"ip_housing","accessory_for":"camera","qty_basis":"per_camera"}'::jsonb,
+ 'unverified',
+ 'Nhớ tính thêm nhiệt: camera trong vỏ kín nóng hơn, nhiễu ảnh tăng theo.',
+ 'Budget for heat as well: a camera inside a sealed housing runs hotter and gets noisier.',
+ 1070),
+
+-- ------------------------------------------------------- ENCODER & TRIGGER --
+('ACC-ENCODER-1000PPR', 'accessory', 'Generic', 'Encoder quay 1000 xung/vòng',
+ '{"pick_mode":"rule","accessory_type":"encoder","accessory_for":"system","qty_basis":"per_system"}'::jsonb,
+ 'unverified',
+ 'Line scan không có encoder thì độ phân giải dọc trôi theo tốc độ băng tải.',
+ 'Without an encoder, line-scan vertical resolution drifts with conveyor speed.',
+ 1080),
+('ACC-CABLE-ENCODER', 'accessory', 'Generic', 'Cáp encoder 5m',
+ '{"pick_mode":"rule","accessory_type":"encoder_cable","accessory_for":"system","qty_basis":"per_system"}'::jsonb,
+ 'unverified', null, null, 1090),
+('ACC-TRIGGER-SENSOR', 'accessory', 'Generic', 'Cảm biến quang điện báo vật tới',
+ '{"pick_mode":"rule","accessory_type":"trigger_sensor","accessory_for":"system","qty_basis":"per_system"}'::jsonb,
+ 'unverified',
+ 'Chụp lúc vật đang chạy thì phải có tín hiệu báo vật đã tới.',
+ 'Capturing a moving part needs something to say the part has arrived.',
+ 1100),
+
+-- --------------------------------------------------------- CHỐNG RUNG, NGÀM --
+('ACC-LOCK-RING', 'accessory', 'Generic', 'Vòng khoá nét và khẩu ống kính',
+ '{"pick_mode":"rule","accessory_type":"lock_ring","accessory_for":"lens","qty_basis":"per_camera"}'::jsonb,
+ 'unverified',
+ 'Rẻ nhất trong danh mục, nhưng thiếu nó là mất nét sau vài tuần rung.',
+ 'The cheapest line item here, and the one whose absence loses focus after a few weeks of vibration.',
+ 1110),
+('ACC-MOUNT-C-F', 'accessory', 'Generic', 'Adapter ngàm C sang F',
+ '{"pick_mode":"rule","accessory_type":"mount_adapter","accessory_for":"camera","qty_basis":"per_camera"}'::jsonb,
+ 'unverified',
+ 'Cần khi camera ngàm F (cảm biến lớn, line scan) mà ống kính ngàm C.',
+ 'Needed when the camera has an F mount (large sensor, line scan) but the lens is C mount.',
+ 1120),
+
+-- ------------------------------------------------------------------ TÍCH TAY --
+-- Không có công thức nào quyết định thay được, chỉ liệt kê.
+('ACC-BRACKET-CAM', 'accessory', 'Generic', 'Gá camera + tay đỡ',
+ '{"pick_mode":"manual","accessory_type":"bracket","accessory_for":"camera"}'::jsonb,
+ 'unverified', null, null, 1200),
+('ACC-BRACKET-LIGHT', 'accessory', 'Generic', 'Gá đèn + tay đỡ',
+ '{"pick_mode":"manual","accessory_type":"bracket","accessory_for":"light"}'::jsonb,
+ 'unverified', null, null, 1210),
+('ACC-DIFFUSER', 'accessory', 'Generic', 'Tấm khuếch tán cho đèn thanh/vòng',
+ '{"pick_mode":"manual","accessory_type":"diffuser","accessory_for":"light"}'::jsonb,
+ 'unverified',
+ 'Làm mềm ánh sáng, đổi lại mất khoảng một nửa cường độ.',
+ 'Softens the light, at the cost of roughly half the intensity.',
+ 1220),
+('ACC-PSU-24V', 'accessory', 'Generic', 'Nguồn 24V DC 5A',
+ '{"pick_mode":"manual","accessory_type":"power_supply","accessory_for":"light"}'::jsonb,
+ 'unverified',
+ 'Dùng khi đèn bật thường xuyên, không qua bộ điều khiển.',
+ 'For lights that stay on continuously, without a controller.',
+ 1230),
+('ACC-XYZ-STAGE', 'accessory', 'Generic', 'Bàn trượt XYZ chỉnh vị trí camera',
+ '{"pick_mode":"manual","accessory_type":"other","accessory_for":"camera"}'::jsonb,
+ 'unverified', null, null, 1240),
+('ACC-FRAME-ALU', 'accessory', 'Generic', 'Khung nhôm định hình',
+ '{"pick_mode":"manual","accessory_type":"other","accessory_for":"system"}'::jsonb,
+ 'unverified', null, null, 1250)
 
 on conflict (code) do update set
   kind       = excluded.kind,

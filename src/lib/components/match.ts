@@ -1,3 +1,4 @@
+import { pickCard, pickPc } from './pc';
 import {
   coversSensor,
   interfaceCarries,
@@ -278,36 +279,17 @@ export function pickLight(
   };
 }
 
-/** Chọn máy tính: phải có đủ giao tiếp, và có GPU khi bài toán cần deep learning. */
+/**
+ * Chọn máy tính — nay chỉ là lối vào của module máy tính (pc.ts).
+ *
+ * Luật thật nằm ở đó vì máy tính dùng chung cho MỌI bài toán, không riêng gì
+ * kiểm tra ngoại quan; để ở đây thì thêm bài toán mới là chép lại.
+ */
 export function pickController(
   components: Component[],
   req: { interfaceName: string | null; dataRateMbytesS: number | null; needsGpu: boolean }
 ): ComponentChoice<{ interfaceName: string | null; needsGpu: boolean }> {
-  const candidates = active(components, 'controller').filter((pc) => {
-    const interfaces = pc.spec.interfaces;
-    if (req.interfaceName && Array.isArray(interfaces) && !interfaces.includes(req.interfaceName)) {
-      return false;
-    }
-    const gpu = specString(pc.spec, 'gpu');
-    if (req.needsGpu && !gpu) return false;
-    return true;
-  });
-
-  const ranked = [...candidates].sort((a, b) => {
-    // Không cần GPU thì đừng bán máy có GPU — đắt mà không dùng tới.
-    if (!req.needsGpu) {
-      const gpuA = specString(a.spec, 'gpu') ? 1 : 0;
-      const gpuB = specString(b.spec, 'gpu') ? 1 : 0;
-      if (gpuA !== gpuB) return gpuA - gpuB;
-    }
-    return a.sort_order - b.sort_order;
-  });
-
-  return {
-    chosen: ranked[0] ?? null,
-    alternatives: ranked.slice(1),
-    fit: { interfaceName: req.interfaceName, needsGpu: req.needsGpu },
-  };
+  return pickPc(components, req);
 }
 
 // =============================================================================
@@ -423,31 +405,60 @@ export function pickLightCable(components: Component[]): ComponentChoice<null> {
 /**
  * Bộ điều khiển đèn: đủ kênh cho số đèn, và PHẢI có đánh xung khi thời gian
  * phơi sáng bị nhoè chuyển động ép xuống dưới 1 ms.
+ *
+ * Không lọc bỏ bộ thiếu kênh mà tính xem cần MẤY BỘ. Trước đây hàm này loại
+ * mọi bộ có ít kênh hơn số đèn — dự án 8 đèn mà catalog chỉ có tới loại 4 kênh
+ * thì không còn lựa chọn nào, trong khi ngoài đời chỉ là đặt hai bộ.
  */
 export function pickLightController(
   components: Component[],
   req: { lightCount: number; needsStrobe: boolean }
-): ComponentChoice<{ lightCount: number; needsStrobe: boolean }> {
+): ComponentChoice<{ lightCount: number; needsStrobe: boolean; unitsNeeded: number }> {
+  const need = Math.max(1, req.lightCount);
+
   const candidates = active(components, 'light_controller').filter((ctrl) => {
-    const channels = specNumber(ctrl.spec, 'channels');
-    if (channels === null || channels < Math.max(1, req.lightCount)) return false;
+    if (specNumber(ctrl.spec, 'channels') === null) return false;
+    // Đánh xung thì không thay thế được: bộ chỉ cấp nguồn liên tục là loại thẳng.
     if (req.needsStrobe && specString(ctrl.spec, 'strobe') !== 'yes') return false;
     return true;
   });
 
+  const unitsFor = (ctrl: Component) =>
+    Math.ceil(need / Math.max(1, specNumber(ctrl.spec, 'channels') ?? 1));
+
   const ranked = [...candidates].sort((a, b) => {
-    // Đừng bán dư kênh: ít kênh nhất mà vẫn đủ thì thắng.
-    const chA = specNumber(a.spec, 'channels') ?? Infinity;
-    const chB = specNumber(b.spec, 'channels') ?? Infinity;
-    if (chA !== chB) return chA - chB;
+    // Ít bộ nhất trước — hai bộ 2 kênh tốn dây và chỗ hơn một bộ 4 kênh.
+    const unitsA = unitsFor(a);
+    const unitsB = unitsFor(b);
+    if (unitsA !== unitsB) return unitsA - unitsB;
+
+    // Cùng số bộ thì đừng bán dư kênh.
+    const wasteA = unitsA * (specNumber(a.spec, 'channels') ?? 0) - need;
+    const wasteB = unitsB * (specNumber(b.spec, 'channels') ?? 0) - need;
+    if (wasteA !== wasteB) return wasteA - wasteB;
+
     return a.sort_order - b.sort_order;
   });
 
+  const chosen = ranked[0] ?? null;
+
   return {
-    chosen: ranked[0] ?? null,
+    chosen,
     alternatives: ranked.slice(1),
-    fit: { lightCount: req.lightCount, needsStrobe: req.needsStrobe },
+    fit: {
+      lightCount: need,
+      needsStrobe: req.needsStrobe,
+      unitsNeeded: chosen ? unitsFor(chosen) : 0,
+    },
   };
+}
+
+/** Số bộ điều khiển cần cho một bộ cụ thể — dùng lại khi người dùng đổi tay. */
+export function lightControllerUnits(controller: Component | null, lightCount: number): number {
+  if (!controller) return 0;
+  const channels = specNumber(controller.spec, 'channels');
+  if (channels === null || channels <= 0) return 1;
+  return Math.ceil(Math.max(1, lightCount) / channels);
 }
 
 /**
@@ -482,9 +493,17 @@ export function listPcOptions(components: Component[]): Component[] {
   return active(components, 'pc_option').sort((a, b) => a.sort_order - b.sort_order);
 }
 
-/** Phụ kiện thêm — danh sách mở, người dùng tự thêm vào báo giá. */
+/**
+ * Phụ kiện TÍCH TAY — gá, khung, tủ, cáp phụ.
+ *
+ * Loại trừ phụ kiện có luật (pick_mode = 'rule'): những món đó đã nằm sẵn
+ * trong bảng vật tư do máy tự thêm, liệt kê lại ở đây là mời người dùng đặt
+ * hai lần cùng một thứ.
+ */
 export function listAccessories(components: Component[]): Component[] {
-  return active(components, 'accessory').sort((a, b) => a.sort_order - b.sort_order);
+  return active(components, 'accessory')
+    .filter((item) => specString(item.spec, 'pick_mode') !== 'rule')
+    .sort((a, b) => a.sort_order - b.sort_order);
 }
 
 /** Cáp nguồn camera: không suy được gì từ thông số, chỉ liệt kê. */
@@ -495,33 +514,10 @@ export function pickCameraPowerCable(components: Component[]): ComponentChoice<n
   return { chosen: ranked[0] ?? null, alternatives: ranked.slice(1), fit: null };
 }
 
-/**
- * Card giao tiếp: phải đúng chuẩn của camera và đủ cổng cho số camera.
- *
- * Dùng chung một cổng qua switch thì các camera chia nhau băng thông — chạy
- * được lúc chạy thử một camera, rồi nghẽn khi lắp đủ.
- */
+/** Card giao tiếp — lối vào của module máy tính, xem pc.ts. */
 export function pickInterfaceCard(
   components: Component[],
   req: { interfaceName: string | null; cameraCount: number }
 ): ComponentChoice<{ interfaceName: string | null; cameraCount: number }> {
-  const candidates = active(components, 'interface_card').filter((card) => {
-    if (req.interfaceName && specString(card.spec, 'interface') !== req.interfaceName) return false;
-    const channels = specNumber(card.spec, 'channels');
-    return channels !== null && channels >= Math.max(1, req.cameraCount);
-  });
-
-  const ranked = [...candidates].sort((a, b) => {
-    // Đủ cổng là được, đừng bán dư.
-    const chA = specNumber(a.spec, 'channels') ?? Infinity;
-    const chB = specNumber(b.spec, 'channels') ?? Infinity;
-    if (chA !== chB) return chA - chB;
-    return a.sort_order - b.sort_order;
-  });
-
-  return {
-    chosen: ranked[0] ?? null,
-    alternatives: ranked.slice(1),
-    fit: { interfaceName: req.interfaceName, cameraCount: req.cameraCount },
-  };
+  return pickCard(components, req);
 }

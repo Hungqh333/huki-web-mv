@@ -35,7 +35,7 @@ const INPUT: SelectorInput = {
   defect_type: 'scratch',
   defect_variability: 'medium',
   color_critical: false,
-  surface: 'matte',
+  surface: 'metal',
   height_tolerance_mm: 2,
   working_distance_mm: 300,
   throughput_ppm: 60,
@@ -43,7 +43,7 @@ const INPUT: SelectorInput = {
   n_view: 1,
   duty_percent: 50,
   total_length_mm: null,
-  environment: ['vibration'],
+  environment: ['vibration', 'ambient_light'],
   ip_rating: 'none',
   pixel_format: 'Mono8',
   f_number: 5.6,
@@ -123,10 +123,10 @@ const COMPONENTS: Component[] = [
     lens_type: 'fixed', focal_length_mm: 25, image_circle: '2/3', mount: 'C',
   }, 140),
   part('LIGHT-HZ-DARKFIELD-W', 'light', 'HZ', 'HZ-DF12010-W', {
-    light_type: 'darkfield', color: 'white', size_mm: 120,
+    light_type: 'darkfield', color: 'red', size_mm: 120,
   }, 260),
   part('PC-STD-GIGE', 'controller', 'Generic', 'IPC-i5-16G', {
-    cpu: 'Intel i5', ram_gb: 16, interfaces: ['GigE', 'USB3'],
+    cpu: 'Intel i5', ram_gb: 16, interfaces: ['GigE', 'USB3'], max_cameras: 2, pcie_slots: 1,
   }, 310),
 
   // Các cụm còn lại của danh mục vật tư — thiếu chúng thì trang xem trước
@@ -167,8 +167,38 @@ const COMPONENTS: Component[] = [
   part('PCOPT-OFFICE', 'pc_option', 'Microsoft', 'Office LTSC', { option_type: 'office' }, 920),
   part('PCOPT-MONITOR-24', 'pc_option', 'Generic', 'Màn hình 24 inch', { option_type: 'monitor' }, 930),
   part('PCOPT-KEYBOARD', 'pc_option', 'Generic', 'Bàn phím + chuột', { option_type: 'keyboard' }, 940),
-  part('ACC-MOUNT', 'accessory', 'Generic', 'Gá camera 3 trục', {}, 990),
-  part('ACC-FILTER-POL', 'accessory', 'Generic', 'Kính lọc phân cực', {}, 995),
+
+  // Phụ kiện MÁY TỰ THÊM theo luật. Dữ liệu giả ở trên đặt surface = 'metal',
+  // environment có 'vibration' và 'ambient_light', capture_mode =
+  // 'moving_area' — đủ để bốn luật cùng nổ, xem được bố cục cụm phụ kiện.
+  part('ACC-POL-LENS-C', 'accessory', 'Generic', 'Kính lọc phân cực ống kính C-mount', {
+    pick_mode: 'rule', accessory_type: 'polarizer_lens', accessory_for: 'lens',
+    qty_basis: 'per_camera',
+  }, 1010),
+  part('ACC-POL-LIGHT', 'accessory', 'Generic', 'Tấm phân cực che trước đèn', {
+    pick_mode: 'rule', accessory_type: 'polarizer_light', accessory_for: 'light',
+    qty_basis: 'per_light',
+  }, 1020),
+  part('ACC-BP-630', 'accessory', 'Generic', 'Kính lọc dải hẹp 630nm (đỏ)', {
+    pick_mode: 'rule', accessory_type: 'bandpass_filter', accessory_for: 'lens',
+    qty_basis: 'per_camera', wavelength_nm: 630,
+  }, 1030),
+  part('ACC-TRIGGER-SENSOR', 'accessory', 'Generic', 'Cảm biến quang điện báo vật tới', {
+    pick_mode: 'rule', accessory_type: 'trigger_sensor', accessory_for: 'system',
+    qty_basis: 'per_system',
+  }, 1100),
+  part('ACC-LOCK-RING', 'accessory', 'Generic', 'Vòng khoá nét và khẩu ống kính', {
+    pick_mode: 'rule', accessory_type: 'lock_ring', accessory_for: 'lens',
+    qty_basis: 'per_camera',
+  }, 1110),
+
+  // Phụ kiện tích tay — không có luật nào quyết định thay được.
+  part('ACC-BRACKET-CAM', 'accessory', 'Generic', 'Gá camera + tay đỡ', {
+    pick_mode: 'manual', accessory_type: 'bracket', accessory_for: 'camera',
+  }, 1200),
+  part('ACC-FRAME-ALU', 'accessory', 'Generic', 'Khung nhôm định hình', {
+    pick_mode: 'manual', accessory_type: 'other', accessory_for: 'system',
+  }, 1250),
 ];
 
 export default function DevPreviewPage() {

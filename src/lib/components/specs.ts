@@ -222,6 +222,43 @@ export type SpecFieldDef = {
 const MOUNTS = ['C', 'CS', 'F'];
 const INTERFACES = Object.keys(INTERFACE_BANDWIDTH);
 
+/** Máy tự thêm theo luật, hay để người dùng tích tay. */
+export const ACCESSORY_PICK_MODES = ['rule', 'manual'];
+
+/**
+ * Các loại phụ kiện máy BIẾT khi nào cần.
+ *
+ * Danh sách này cố tình ngắn: chỉ những thứ suy được từ câu hỏi form đã hỏi.
+ * Phụ kiện không nằm trong đây thì để pick_mode = manual.
+ */
+export const ACCESSORY_TYPES = [
+  /** Kính lọc phân cực lắp trên ống kính — luôn đi CẶP với polarizer_light. */
+  'polarizer_lens',
+  /** Tấm phân cực che trước đèn. Mua thiếu một nửa thì nửa kia vô dụng. */
+  'polarizer_light',
+  /** Kính lọc dải hẹp theo màu đèn, để cắt ánh sáng môi trường. */
+  'bandpass_filter',
+  /** Vỏ bảo vệ camera theo cấp IP. */
+  'ip_housing',
+  'encoder',
+  'encoder_cable',
+  /** Cảm biến quang điện/tiệm cận sinh xung trigger. */
+  'trigger_sensor',
+  /** Vòng khoá nét và khẩu, chống trôi khi có rung. */
+  'lock_ring',
+  /** Adapter ngàm C→F, C→M42 cho cảm biến lớn và line scan. */
+  'mount_adapter',
+  'bracket',
+  'diffuser',
+  'power_supply',
+  'other',
+];
+
+export const ACCESSORY_TARGETS = ['camera', 'lens', 'light', 'system'];
+
+/** Số lượng nhân theo cái gì. */
+export const ACCESSORY_QTY_BASES = ['per_camera', 'per_light', 'per_system'];
+
 export const SPEC_FIELDS: Record<ComponentKind, SpecFieldDef[]> = {
   camera: [
     { key: 'camera_type', type: 'select', options: ['area', 'line'], required: true },
@@ -269,6 +306,11 @@ export const SPEC_FIELDS: Record<ComponentKind, SpecFieldDef[]> = {
     { key: 'ram_gb', type: 'number', unit: 'GB', step: 1 },
     { key: 'gpu', type: 'text' },
     { key: 'interfaces', type: 'multiselect', options: INTERFACES },
+    /* Hai thông số quyết định CẦN MẤY MÁY. Khai ở đây thay vì đóng cứng trong
+       code, đúng yêu cầu "bảng luật sửa được qua admin UI" của CLAUDE.md.
+       Không khai max_cameras thì suy từ số khe PCIe nhân số cổng mỗi card. */
+    { key: 'max_cameras', type: 'number', unit: 'camera', step: 1 },
+    { key: 'pcie_slots', type: 'number', unit: 'khe', step: 1 },
   ],
   /** Vòng nối dài, dùng khi cần khoảng cách làm việc ngắn hơn lens cho phép. */
   tube: [
@@ -310,8 +352,26 @@ export const SPEC_FIELDS: Record<ComponentKind, SpecFieldDef[]> = {
       required: true,
     },
   ],
-  // Phụ kiện quá đa dạng để ép vào khuôn — mô tả bằng ghi chú là đủ.
-  accessory: [],
+  /**
+   * Phụ kiện chia làm hai loại, và ranh giới nằm ở `pick_mode`.
+   *
+   * "rule" = có điều kiện bật rõ ràng nên máy tự thêm vào danh mục: bề mặt
+   * phản chiếu thì phải có kính phân cực, có yêu cầu IP thì phải có vỏ, line
+   * scan thì phải có encoder. Đây đều là thứ form ĐÃ HỎI mà trước đây danh
+   * mục không đáp lại gì — để người dùng tự nhớ là sẽ quên.
+   *
+   * "manual" = gá, khung, tủ. Không có công thức nào quyết định thay được,
+   * chỉ liệt kê cho tích tay. Không ghi pick_mode thì coi là manual.
+   */
+  accessory: [
+    { key: 'pick_mode', type: 'select', options: ACCESSORY_PICK_MODES },
+    { key: 'accessory_type', type: 'select', options: ACCESSORY_TYPES },
+    { key: 'accessory_for', type: 'select', options: ACCESSORY_TARGETS },
+    /* Nhân theo cái gì. Kính phân cực trên lens đi theo từng camera, tấm phân
+       cực đi theo từng đèn, còn encoder thì cả hệ chỉ một cái. */
+    { key: 'qty_basis', type: 'select', options: ACCESSORY_QTY_BASES },
+    { key: 'wavelength_nm', type: 'number', unit: 'nm', step: 1 },
+  ],
 };
 
 /**
@@ -329,10 +389,10 @@ export const SUMMARY_KEYS: Record<ComponentKind, string[]> = {
   cable: ['cable_for', 'connector', 'length_m'],
   light_controller: ['channels', 'strobe', 'max_current_a'],
   interface_card: ['interface', 'channels'],
-  controller: ['cpu', 'ram_gb', 'gpu'],
+  controller: ['cpu', 'ram_gb', 'gpu', 'max_cameras'],
   software: ['software_type', 'license'],
   pc_option: ['option_type'],
-  accessory: [],
+  accessory: ['accessory_type', 'accessory_for', 'wavelength_nm'],
 };
 
 export const COMPONENT_KINDS: ComponentKind[] = [

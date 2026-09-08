@@ -422,7 +422,7 @@
       "tubeNotNeeded": "Not needed — the working distance is within the lens range.",
       "fitTube": "Lens needs at least {min} mm, mechanics allow only {actual} mm -> add about {length} mm",
       "fitCableCamera": "Connector follows the {connector} standard",
-      "fitLightController": "{channels} channels · {strobe}",
+      "fitLightController": "{lights} lights → {channels} channels needed · {strobe}",
       "strobeRequired": "strobing required (exposure < 1 ms)",
       "strobeNotRequired": "no strobing needed",
       "fitSoftwareDl": "The task needs deep learning — avoid free libraries, there is no field support.",
@@ -435,7 +435,8 @@
       "groups": {
         "vision": "VISION",
         "pc": "COMPUTER",
-        "other": "OTHER"
+        "other": "OTHER",
+        "accessory": "ACCESSORIES"
       },
       "stations": "x {count} sets",
       "colName": "Item",
@@ -448,7 +449,42 @@
       "suggestedShort": "suggested",
       "legend": "\"computed\" = derived from the task parameters · \"suggested\" = your call",
       "detailsToggle": "Why this one?",
-      "stationsHint": "Number of vision sets — the VISION group scales with this."
+      "stationsHint": "Number of capture stations. Camera, lens and camera cables scale with this.",
+      "stationsLabel": "Vision stations",
+      "lightsLabel": "Lights per station",
+      "lightsHint": "One station often needs several lights: one lighting style per defect type, or one light cannot cover the whole FOV.",
+      "alternateLabel": "Lights fire in sequence",
+      "alternateHint": "Several images per cycle, a different light for each — this makes a strobing controller mandatory.",
+      "lightChannelNote": "One channel per light. Lights that fire together can share a channel if the controller has the current for it.",
+      "removeRow": "— remove from quote —",
+      "accTypes": {
+        "polarizer_lens": "Polarizing filter (lens)",
+        "polarizer_light": "Polarizing film (light)",
+        "bandpass_filter": "Bandpass filter",
+        "ip_housing": "Camera housing",
+        "encoder": "Encoder",
+        "encoder_cable": "Encoder cable",
+        "trigger_sensor": "Trigger sensor",
+        "lock_ring": "Focus/aperture lock ring",
+        "mount_adapter": "Mount adapter",
+        "bracket": "Bracket",
+        "diffuser": "Diffuser",
+        "power_supply": "Power supply",
+        "other": "Other accessory"
+      },
+      "accReason": {
+        "reflective_surface": "Reflective or metal surface: polarisation only works as a PAIR, lens filter plus light film.",
+        "ambient_light": "Ambient light reaches the scene, so filter down to the light colour.",
+        "ip_rating": "An IP rating was requested, so the camera needs a housing.",
+        "line_scan_encoder": "Line scan: without an encoder the vertical resolution drifts with conveyor speed.",
+        "triggered_capture": "The part is moving during capture, so something must signal its arrival.",
+        "vibration": "Vibration present: without locking, focus and aperture rings drift.",
+        "mount_mismatch": "The camera mount differs from the lens mount, so an adapter is required."
+      },
+      "fitPcSplit": {
+        "slots": "One PC handles only {max} cameras, so the system must be split.",
+        "bandwidth": "Total bandwidth exceeds what one PC can take ({max} cameras per PC), so it must be split."
+      }
     },
     "vision": {
       "title": "Feasibility checks",

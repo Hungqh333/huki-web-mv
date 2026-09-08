@@ -422,7 +422,7 @@
       "tubeNotNeeded": "Không cần — khoảng cách làm việc nằm trong tầm của ống kính.",
       "fitTube": "Ống kính cần tối thiểu {min} mm, cơ khí chỉ cho {actual} mm → nối thêm ≈ {length} mm",
       "fitCableCamera": "Đầu nối theo chuẩn {connector}",
-      "fitLightController": "{channels} kênh · {strobe}",
+      "fitLightController": "{lights} đèn → cần {channels} kênh · {strobe}",
       "strobeRequired": "bắt buộc đánh xung (phơi sáng < 1 ms)",
       "strobeNotRequired": "không cần đánh xung",
       "fitSoftwareDl": "Bài cần deep learning — tránh thư viện miễn phí vì không có hỗ trợ hiện trường.",
@@ -435,7 +435,8 @@
       "groups": {
         "vision": "VISION",
         "pc": "MÁY TÍNH",
-        "other": "KHÁC"
+        "other": "KHÁC",
+        "accessory": "PHỤ KIỆN"
       },
       "stations": "× {count} bộ",
       "colName": "Tên vật tư",
@@ -448,7 +449,42 @@
       "suggestedShort": "gợi ý",
       "legend": "\"tính\" = máy suy ra từ thông số bài toán · \"gợi ý\" = bạn tự quyết",
       "detailsToggle": "Vì sao chọn thế này?",
-      "stationsHint": "Số bộ vision — cụm VISION nhân theo số này."
+      "stationsHint": "Số trạm chụp. Camera, ống kính, cáp camera nhân theo số này.",
+      "stationsLabel": "Số bộ vision",
+      "lightsLabel": "Đèn mỗi bộ",
+      "lightsHint": "Một trạm hay cần nhiều đèn: mỗi kiểu lỗi một kiểu chiếu sáng, hoặc một đèn không phủ hết FOV.",
+      "alternateLabel": "Đèn bật luân phiên",
+      "alternateHint": "Chụp nhiều ảnh, mỗi ảnh bật một đèn khác nhau — bắt buộc bộ điều khiển có đánh xung.",
+      "lightChannelNote": "Tính một kênh cho mỗi đèn. Đèn bật cùng lúc có thể đấu chung một kênh nếu bộ điều khiển đủ dòng.",
+      "removeRow": "— bỏ khỏi báo giá —",
+      "accTypes": {
+        "polarizer_lens": "Kính phân cực (ống kính)",
+        "polarizer_light": "Tấm phân cực (đèn)",
+        "bandpass_filter": "Kính lọc dải hẹp",
+        "ip_housing": "Vỏ bảo vệ camera",
+        "encoder": "Encoder",
+        "encoder_cable": "Cáp encoder",
+        "trigger_sensor": "Cảm biến trigger",
+        "lock_ring": "Vòng khoá nét/khẩu",
+        "mount_adapter": "Adapter ngàm",
+        "bracket": "Gá đỡ",
+        "diffuser": "Tấm khuếch tán",
+        "power_supply": "Nguồn",
+        "other": "Phụ kiện khác"
+      },
+      "accReason": {
+        "reflective_surface": "Bề mặt phản chiếu/kim loại — phân cực phải đủ CẶP: kính trên ống kính và tấm trước đèn.",
+        "ambient_light": "Có ánh sáng môi trường lọt vào — lọc dải hẹp đúng màu đèn để cắt bớt.",
+        "ip_rating": "Có yêu cầu cấp IP nên camera phải có vỏ bảo vệ.",
+        "line_scan_encoder": "Quét dòng: thiếu encoder thì độ phân giải dọc trôi theo tốc độ băng tải.",
+        "triggered_capture": "Chụp lúc vật đang chạy nên cần tín hiệu báo vật tới.",
+        "vibration": "Môi trường có rung — không khoá thì vòng nét và vòng khẩu sẽ trôi.",
+        "mount_mismatch": "Ngàm camera khác ngàm ống kính nên phải có adapter."
+      },
+      "fitPcSplit": {
+        "slots": "Một máy chỉ gánh được {max} camera nên phải tách máy.",
+        "bandwidth": "Băng thông tổng vượt sức một máy ({max} camera/máy) nên phải tách máy."
+      }
     },
     "vision": {
       "title": "Kiểm tra tính khả thi",

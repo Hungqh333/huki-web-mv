@@ -8,16 +8,17 @@ import {
   pickCamera,
   pickCameraCable,
   pickCameraPowerCable,
-  pickController,
-  pickInterfaceCard,
   pickLens,
   pickLight,
+  lightControllerUnits,
   pickLightCable,
   pickLightController,
   pickSoftware,
   pickTube,
   type ComponentChoice,
 } from '@/lib/components/match';
+import { accessoryQty, pickRuleAccessories } from '@/lib/components/accessories';
+import { planPc } from '@/lib/components/pc';
 import { SPEC_FIELDS, SUMMARY_KEYS, specString, type Component } from '@/lib/components/specs';
 import type { SelectorInput, SelectorResult } from '@/lib/selector/types';
 import { analyseAppearance, maxExposureForBlur, requiredPixels, verifyResolution } from '@/lib/vision';
@@ -33,8 +34,11 @@ import { VisionChecks } from './VisionChecks';
  * thích — đọc thì đẹp nhưng chọn cấu hình thì chậm. Bảng đọc nhanh hơn hẳn, và
  * quan trọng hơn: nó khớp với thứ người dùng vẫn phải gõ lại vào Excel.
  *
- * Cụm VISION nhân theo SỐ BỘ vision (dự án thật hay có 2 camera cho 2 trạm),
- * còn máy tính và phần mềm dùng chung nên luôn là 1.
+ * Số lượng tính theo TỪNG DÒNG, không theo cụm: camera nhân theo số trạm, đèn
+ * nhân theo số đèn mỗi trạm, bộ điều khiển đèn nhân theo số kênh chia cho số
+ * kênh mỗi bộ, còn máy tính do module pc.ts quyết (một máy chỉ gánh được ngần
+ * ấy camera). Gán một số lượng cho cả cụm là sai ngay khi dự án có nhiều hơn
+ * một đèn mỗi trạm.
  */
 
 const selectClass =
@@ -56,14 +60,27 @@ function summarise(component: Component): string {
 
 const round = (value: number) => Math.round(value * 10) / 10;
 
-type Group = 'vision' | 'pc' | 'other';
+type Group = 'vision' | 'pc' | 'other' | 'accessory';
 
 type Row = {
   key: string;
   group: Group;
   choice: ComponentChoice<unknown>;
+  /** Tên vật tư, khi không tra được từ i18n theo `key`. */
+  label?: string;
+  /** Cho phép bỏ hẳn dòng khỏi báo giá — dùng cho phụ kiện máy tự thêm. */
+  removable?: boolean;
   /** true = máy suy ra từ thông số bài toán; false = người dùng tự quyết. */
   computed: boolean;
+  /**
+   * Số lượng của RIÊNG dòng này.
+   *
+   * Không suy được từ cụm: cụm VISION có camera nhân theo số trạm nhưng đèn
+   * nhân theo số đèn mỗi trạm, còn bộ điều khiển đèn thì nhân theo số kênh
+   * chia cho số kênh mỗi bộ. Gán một số lượng cho cả cụm là sai ngay khi dự
+   * án có nhiều hơn một đèn mỗi trạm.
+   */
+  qty: number;
   /** Một dòng ngắn giải thích, chỉ hiện khi mở phần chi tiết. */
   why: string | null;
   /** Cụm không cần trong cấu hình hiện tại (ví dụ tube). */
@@ -86,6 +103,10 @@ export function ComponentPicker({
   const [extras, setExtras] = useState<string[]>([]);
   const [showWhy, setShowWhy] = useState(false);
   const [stationsOverride, setStationsOverride] = useState<number | null>(null);
+  const [lightsPerStation, setLightsPerStation] = useState(1);
+  const [alternateOverride, setAlternateOverride] = useState<boolean | null>(null);
+  /** Dòng phụ kiện người dùng đã bỏ khỏi báo giá. */
+  const [removed, setRemoved] = useState<string[]>([]);
 
   const metric = (key: string) => result.derived.find((d) => d.key === key)?.value ?? null;
   const requiredMp = metric('required_sensor_mp');
@@ -143,6 +164,7 @@ export function ComponentPicker({
   });
 
   const lightChoice = pickLight(components, { lightingText: result.lighting });
+  const light = resolve('light', lightChoice);
 
   const cameraLike = camera
     ? {
@@ -165,12 +187,52 @@ export function ComponentPicker({
       : null;
   const needsStrobe = appearance?.captureMode === 'line_scan' || (blur?.needsStrobe ?? false);
 
+  /* Số đèn KHÔNG bằng số trạm.
+     Một trạm hay có nhiều đèn vì ba lý do khác nhau: mỗi kiểu lỗi cần một kiểu
+     chiếu sáng (xước → darkfield, in ấn → dome), một đèn không phủ hết FOV nên
+     phải hai thanh hai bên, hoặc vừa chiếu trước vừa chiếu sau. Trước đây code
+     lấy thẳng số trạm làm số đèn — hai trạm mỗi trạm hai đèn thì cần 4 kênh mà
+     báo giá vẫn ra bộ điều khiển 2 kênh. */
+  const lightsPer = Math.max(1, lightsPerStation);
+  const totalLights = lightsPer * stations;
+  /* Nhiều ảnh mỗi chu kỳ thì gần như chắc chắn là bật đèn luân phiên — nhưng
+     cho sửa tay, vì cũng có bài chụp nhiều góc bằng cùng một kiểu đèn. */
+  const alternating =
+    alternateOverride ?? (lightsPer > 1 && (appearance?.nView ?? 1) > 1);
+  /* Một kênh cho mỗi đèn. Đèn bật CÙNG LÚC thì đấu chung một kênh được nếu
+     controller đủ dòng, nhưng đó là quyết định lúc đấu tủ — báo giá thiếu kênh
+     thì hệ không chạy được, còn dư kênh thì chỉ hơi tốn. */
+  const lightChannels = totalLights;
+  const strobeRequired = alternating || needsStrobe;
+
+  /* Máy tính: bản yêu cầu thuần số, module pc.ts lo phần còn lại. Bài toán nào
+     cũng dựng được bản này nên không phải chép logic sang bài toán mới. */
+  const pcRequirement = {
+    cameraCount: stations,
+    interfaceName: cameraInterface,
+    dataRateMbytesS: dataRate,
+    needsGpu,
+  };
+  const pcPreview = planPc(components, pcRequirement);
+  const pc = planPc(components, pcRequirement, {
+    pc: resolve('pc', pcPreview.pc),
+    card: resolve('interfaceCard', pcPreview.card),
+  });
+
+  const lightControllerChoice = pickLightController(components, {
+    lightCount: lightChannels,
+    needsStrobe: strobeRequired,
+  });
+  const lightController = resolve('lightController', lightControllerChoice);
+  const controllerUnits = lightControllerUnits(lightController, lightChannels);
+
   const rows: Row[] = [
     {
       key: 'camera',
       group: 'vision',
       choice: cameraChoice,
       computed: true,
+      qty: stations,
       why:
         [
           requiredMp !== null ? t('fitCamera', { required: round(requiredMp) }) : null,
@@ -184,6 +246,7 @@ export function ComponentPicker({
       group: 'vision',
       choice: lensChoice,
       computed: true,
+      qty: stations,
       why:
         needTelecentric && lensChoice.fit.targetMagnification !== null
           ? t('fitLensMag', { target: round(lensChoice.fit.targetMagnification) })
@@ -196,6 +259,7 @@ export function ComponentPicker({
       group: 'vision',
       choice: tubeChoice,
       computed: true,
+      qty: stations,
       skipped: !tubeChoice.fit.needed,
       why:
         tubeChoice.fit.needed && workingDistance !== null && tubeChoice.fit.lensMinWdMm !== null
@@ -211,6 +275,7 @@ export function ComponentPicker({
       group: 'vision',
       choice: lightChoice,
       computed: false,
+      qty: totalLights,
       why: lightChoice.fit.lightType
         ? t('fitLightType', { type: lightChoice.fit.lightType })
         : t('fitLightUnknown'),
@@ -220,6 +285,7 @@ export function ComponentPicker({
       group: 'vision',
       choice: pickCameraCable(components, { interfaceName: cameraInterface }),
       computed: true,
+      qty: stations,
       why: cameraInterface ? t('fitCableCamera', { connector: cameraInterface }) : null,
     },
     {
@@ -227,34 +293,37 @@ export function ComponentPicker({
       group: 'vision',
       choice: pickCameraPowerCable(components),
       computed: false,
+      qty: stations,
       why: null,
     },
     {
       key: 'cableLight',
       group: 'vision',
+      // Cáp đèn đi theo TỪNG ĐÈN, không theo trạm.
       choice: pickLightCable(components),
       computed: false,
+      qty: totalLights,
       why: null,
     },
     {
       key: 'pc',
       group: 'pc',
-      choice: pickController(components, {
-        interfaceName: cameraInterface,
-        dataRateMbytesS: dataRate,
-        needsGpu,
-      }),
+      choice: pc.pc,
       computed: true,
-      why: needsGpu ? t('fitGpu') : null,
+      qty: pc.pcCount,
+      why: [
+        needsGpu ? t('fitGpu') : null,
+        pc.splitReason ? t(`fitPcSplit.${pc.splitReason}`, { max: pc.camerasPerPc }) : null,
+      ]
+        .filter(Boolean)
+        .join(' · ') || null,
     },
     {
       key: 'interfaceCard',
       group: 'pc',
-      choice: pickInterfaceCard(components, {
-        interfaceName: cameraInterface,
-        cameraCount: stations,
-      }),
+      choice: pc.card,
       computed: true,
+      qty: pc.cardCount,
       why: cameraInterface ? t('fitCableCamera', { connector: cameraInterface }) : null,
     },
     {
@@ -262,23 +331,76 @@ export function ComponentPicker({
       group: 'pc',
       choice: pickSoftware(components, { needsDeepLearning: needsGpu }),
       computed: false,
+      // Bản quyền phần mềm tính theo MÁY, nên đi theo số máy chứ không phải số trạm.
+      qty: pc.pcCount,
       why: needsGpu ? t('fitSoftwareDl') : null,
     },
     {
       key: 'lightController',
       group: 'other',
-      choice: pickLightController(components, { lightCount: stations, needsStrobe }),
+      choice: lightControllerChoice,
       computed: true,
+      qty: controllerUnits,
       why: t('fitLightController', {
-        channels: stations,
-        strobe: needsStrobe ? t('strobeRequired') : t('strobeNotRequired'),
+        lights: totalLights,
+        channels: lightChannels,
+        strobe: strobeRequired ? t('strobeRequired') : t('strobeNotRequired'),
       }),
     },
   ];
 
+  /* Phụ kiện máy tự thêm theo luật.
+     Đây là những món form ĐÃ HỎI mà trước đây danh mục không đáp lại gì: bề
+     mặt kim loại thì phải có kính phân cực, có yêu cầu IP thì phải có vỏ, line
+     scan thì phải có encoder. Vẫn bỏ được từng dòng — luật chỉ nhắc, không ép. */
+  const ruleAccessories = pickRuleAccessories(components, {
+    surface: typeof input.surface === 'string' ? input.surface : null,
+    environment: Array.isArray(input.environment)
+      ? input.environment.filter((value): value is string => typeof value === 'string')
+      : [],
+    ipRating: typeof input.ip_rating === 'string' ? input.ip_rating : null,
+    captureMode: appearance?.captureMode ?? null,
+    cameraMount: camera ? specString(camera.spec, 'mount') : null,
+    lensMount: lens ? specString(lens.spec, 'mount') : null,
+    lightColor: light ? specString(light.spec, 'color') : null,
+  });
+
+  for (const item of ruleAccessories) {
+    const type = specString(item.component.spec, 'accessory_type');
+    /* Đổi được sang món cùng loại — kính lọc 630nm sang 850nm chẳng hạn. */
+    const siblings = components
+      .filter(
+        (component) =>
+          component.kind === 'accessory' &&
+          component.is_active &&
+          specString(component.spec, 'pick_mode') === 'rule' &&
+          specString(component.spec, 'accessory_type') === type &&
+          component.code !== item.component.code
+      )
+      .sort((a, b) => a.sort_order - b.sort_order);
+
+    rows.push({
+      key: `acc:${type}`,
+      group: 'accessory',
+      label: t(`accTypes.${type}`),
+      removable: true,
+      choice: { chosen: item.component, alternatives: siblings, fit: null },
+      computed: true,
+      qty: accessoryQty(item, { cameras: stations, lights: totalLights }),
+      why: t(`accReason.${item.reason}`),
+    });
+  }
+
   /* Đổi camera là đổi cảm biến và giao tiếp — mọi thứ suy ra từ nó phải được
      gợi ý lại, nếu không người dùng giữ nguyên một cấu hình đã hết hợp lệ. */
+  const REMOVE = '__none__';
+
   const change = (key: string, code: string) => {
+    if (code === REMOVE) {
+      setRemoved((current) => (current.includes(key) ? current : [...current, key]));
+      return;
+    }
+    setRemoved((current) => current.filter((item) => item !== key));
     setPicked((current) => {
       const next = { ...current, [key]: code || null };
       if (key === 'camera') {
@@ -304,26 +426,56 @@ export function ComponentPicker({
       )
     : null;
 
-  const GROUPS: Group[] = ['vision', 'pc', 'other'];
+  const GROUPS: Group[] = ['vision', 'pc', 'other', 'accessory'];
   let index = 0;
 
   return (
     <div>
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
         <h3 className="font-semibold">{t('title')}</h3>
-        <label className="flex items-center gap-2 text-sm">
-          <span className="text-slate-600 dark:text-slate-400">{t('groups.vision')}</span>
-          <input
-            type="number"
-            min={1}
-            step={1}
-            value={stations}
-            onChange={(event) => setStationsOverride(Number(event.target.value) || 1)}
-            title={t('stationsHint')}
-            className="w-16 rounded border border-slate-300 px-2 py-1 text-sm dark:border-slate-700 dark:bg-slate-900"
-          />
-          <span className="text-slate-600 dark:text-slate-400">bộ</span>
-        </label>
+
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+          <label className="flex items-center gap-2">
+            <span className="text-slate-600 dark:text-slate-400">{t('stationsLabel')}</span>
+            <input
+              type="number"
+              min={1}
+              step={1}
+              value={stations}
+              onChange={(event) => setStationsOverride(Number(event.target.value) || 1)}
+              title={t('stationsHint')}
+              className="w-16 rounded border border-slate-300 px-2 py-1 text-sm dark:border-slate-700 dark:bg-slate-900"
+            />
+          </label>
+
+          <label className="flex items-center gap-2">
+            <span className="text-slate-600 dark:text-slate-400">{t('lightsLabel')}</span>
+            <input
+              type="number"
+              min={1}
+              step={1}
+              value={lightsPer}
+              onChange={(event) => setLightsPerStation(Number(event.target.value) || 1)}
+              title={t('lightsHint')}
+              className="w-16 rounded border border-slate-300 px-2 py-1 text-sm dark:border-slate-700 dark:bg-slate-900"
+            />
+          </label>
+
+          {/* Chỉ hỏi khi có từ hai đèn — một đèn thì "luân phiên" vô nghĩa. */}
+          {lightsPer > 1 ? (
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={alternating}
+                onChange={(event) => setAlternateOverride(event.target.checked)}
+                className="size-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500 dark:border-slate-600"
+              />
+              <span className="text-slate-600 dark:text-slate-400" title={t('alternateHint')}>
+                {t('alternateLabel')}
+              </span>
+            </label>
+          ) : null}
+        </div>
       </div>
 
       <div className="mt-3 overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
@@ -352,7 +504,6 @@ export function ComponentPicker({
             {GROUPS.map((group) => {
               const groupRows = rows.filter((row) => row.group === group);
               if (groupRows.length === 0) return null;
-              const qty = group === 'vision' ? stations : 1;
 
               return (
                 <Fragment key={group}>
@@ -373,13 +524,16 @@ export function ComponentPicker({
                       ? [row.choice.chosen, ...row.choice.alternatives]
                       : row.choice.alternatives;
                     const chosen = resolve(row.key, row.choice);
+                    const dropped = removed.includes(row.key);
+                    const skipped = row.skipped || dropped;
+                    const name = row.label ?? t(`rows.${row.key}`);
 
                     return (
-                      <tr key={row.key} className={row.skipped ? 'opacity-50' : undefined}>
+                      <tr key={row.key} className={skipped ? 'opacity-50' : undefined}>
                         <td className="py-2 pl-3 align-top text-xs text-slate-400">{index}</td>
 
                         <td className="py-2 pr-3 align-top">
-                          <span>{t(`rows.${row.key}`)}</span>
+                          <span>{name}</span>
                           <span
                             className={`ml-1.5 text-[10px] ${
                               row.computed
@@ -407,9 +561,9 @@ export function ComponentPicker({
                             </span>
                           ) : (
                             <select
-                              value={chosen?.code ?? ''}
+                              value={dropped ? REMOVE : (chosen?.code ?? '')}
                               onChange={(event) => change(row.key, event.target.value)}
-                              aria-label={t(`rows.${row.key}`)}
+                              aria-label={name}
                               className={selectClass}
                             >
                               {chosen ? null : <option value="">—</option>}
@@ -418,16 +572,20 @@ export function ComponentPicker({
                                   {option.model} — {option.brand}
                                 </option>
                               ))}
+                              {/* Luật chỉ nhắc, không ép: bỏ được khỏi báo giá. */}
+                              {row.removable ? (
+                                <option value={REMOVE}>{t('removeRow')}</option>
+                              ) : null}
                             </select>
                           )}
                         </td>
 
                         <td className="py-2 pr-3 align-top text-xs text-slate-600 dark:text-slate-400">
-                          {row.skipped || !chosen ? '—' : summarise(chosen) || '—'}
+                          {skipped || !chosen ? '—' : summarise(chosen) || '—'}
                         </td>
 
                         <td className="py-2 pr-3 text-right align-top tabular-nums">
-                          {row.skipped ? '—' : qty}
+                          {skipped ? '—' : row.qty}
                         </td>
                       </tr>
                     );

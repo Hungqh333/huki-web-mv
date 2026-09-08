@@ -13,7 +13,8 @@
     "signIn": "Đăng nhập",
     "signUp": "Đăng ký",
     "signOut": "Đăng xuất",
-    "kpi": "Bộ tính chỉ tiêu"
+    "kpi": "Bộ tính chỉ tiêu",
+    "pc": "Máy tính"
   },
   "language": {
     "label": "Ngôn ngữ",
@@ -397,7 +398,6 @@
       "fitLensMag": "Độ phóng đại cần ≈ {target}x",
       "fitLightType": "Kiểu đèn suy từ luật: {type}",
       "fitLightUnknown": "Không suy được kiểu đèn từ luật — chọn tay.",
-      "fitGpu": "Bài toán cần deep learning nên máy phải có GPU.",
       "sources": {
         "unverified": "Chưa kiểm chứng",
         "datasheet": "Theo datasheet",
@@ -412,10 +412,7 @@
         "cableCameraData": "Cáp data camera",
         "cableCameraPower": "Cáp nguồn camera",
         "cableLight": "Cáp đèn",
-        "lightController": "Bộ điều khiển đèn",
-        "pc": "Máy tính",
-        "interfaceCard": "Card giao tiếp",
-        "software": "Phần mềm xử lý ảnh"
+        "lightController": "Bộ điều khiển đèn"
       },
       "computed": "Tính ra",
       "suggested": "Gợi ý",
@@ -425,16 +422,12 @@
       "fitLightController": "{lights} đèn → cần {channels} kênh · {strobe}",
       "strobeRequired": "bắt buộc đánh xung (phơi sáng < 1 ms)",
       "strobeNotRequired": "không cần đánh xung",
-      "fitSoftwareDl": "Bài cần deep learning — tránh thư viện miễn phí vì không có hỗ trợ hiện trường.",
-      "pcOptionsTitle": "Hàng đi kèm máy tính",
-      "pcOptionsHint": "Tích thứ cần đưa vào báo giá. Bản quyền Windows hay bị quên nhất.",
       "extrasTitle": "Phụ kiện thêm",
       "extrasHint": "Tích thêm những gì dự án cần. Danh sách này mở, thêm được ở trang Quản trị → Linh kiện.",
       "extrasEmpty": "Chưa có phụ kiện nào trong catalog.",
       "selectedCount": "Đã chọn {count}",
       "groups": {
         "vision": "VISION",
-        "pc": "MÁY TÍNH",
         "other": "KHÁC",
         "accessory": "PHỤ KIỆN"
       },
@@ -481,10 +474,15 @@
         "vibration": "Môi trường có rung — không khoá thì vòng nét và vòng khẩu sẽ trôi.",
         "mount_mismatch": "Ngàm camera khác ngàm ống kính nên phải có adapter."
       },
-      "fitPcSplit": {
-        "slots": "Một máy chỉ gánh được {max} camera nên phải tách máy.",
-        "bandwidth": "Băng thông tổng vượt sức một máy ({max} camera/máy) nên phải tách máy."
-      }
+      "pcMovedTitle": "Máy tính tính ở trang riêng",
+      "pcMovedBody": "Một dự án thường có nhiều bài toán chạy chung một máy. Để máy tính ở đây thì mỗi bài toán ra một máy. Bấm sang trang cấu hình máy tính — số liệu của bài này được mang theo sẵn.",
+      "pcMovedCta": "Cấu hình máy tính",
+      "pcNeedCameras": "Camera:",
+      "pcNeedInterface": "Giao tiếp:",
+      "pcNeedRate": "Băng thông:",
+      "pcNeedGpu": "GPU:",
+      "yes": "Có",
+      "no": "Không"
     },
     "vision": {
       "title": "Kiểm tra tính khả thi",
@@ -1167,5 +1165,52 @@
     "light": "Sáng",
     "dark": "Tối",
     "system": "Hệ thống"
+  },
+  "pcPlanner": {
+    "title": "Cấu hình máy tính",
+    "subtitle": "Gộp mọi bài toán của một dự án lại rồi mới chọn máy — vì các bài toán thường chạy chung một máy.",
+    "why": "Bộ chọn thiết bị làm việc theo từng bài toán, nên nếu máy tính nằm trong bảng vật tư của mỗi bài thì ba bài toán sẽ ra ba máy. Trang này đi ngược lại: nhập mỗi bài một dòng, cộng số camera và băng thông, rồi mới quyết cần một máy hay hai.",
+    "emptyCatalog": "Chưa có linh kiện nào trong catalog. Thêm máy tính, card giao tiếp và phần mềm ở trang Quản trị → Linh kiện.",
+    "linesTitle": "Các bài toán dùng chung máy",
+    "linesHint": "Mỗi bài toán một dòng. Số camera là tổng của bài đó, đã nhân theo số trạm. Băng thông là của MỘT camera.",
+    "addLine": "+ Thêm bài toán",
+    "removeLine": "Bỏ dòng này",
+    "labelPlaceholder": "Bài toán {n}",
+    "colLabel": "Bài toán",
+    "colCameras": "Số camera",
+    "colInterface": "Chuẩn giao tiếp",
+    "colRate": "MB/s mỗi cam",
+    "colGpu": "Cần GPU",
+    "totalCameras": "Tổng camera",
+    "totalRate": "Tổng băng thông",
+    "interfacesUsed": "Chuẩn giao tiếp",
+    "gpuNeeded": "Cần GPU",
+    "yes": "Có",
+    "no": "Không",
+    "mixedInterfaces": "Dự án dùng nhiều chuẩn giao tiếp ({list}). Máy phải đỡ được cả hai, và mỗi chuẩn cần card riêng của nó.",
+    "splitReason": {
+      "slots": "Một máy chỉ gánh được {max} camera nên phải tách thành {count} máy.",
+      "bandwidth": "Tổng băng thông vượt sức một máy ({max} camera/máy) nên phải tách thành {count} máy."
+    },
+    "bomTitle": "Danh mục vật tư máy tính",
+    "bomNote": "Bản quyền Windows, Office và màn hình tính theo MÁY, nên số lượng đi theo số máy chứ không theo số bài toán.",
+    "optionsTitle": "Hàng đi kèm máy tính",
+    "colName": "Tên vật tư",
+    "colDevice": "Mã thiết bị / Hãng",
+    "colSpec": "Thông số",
+    "colQty": "SL",
+    "noOption": "Chưa có trong catalog",
+    "rows": {
+      "pc": "Máy tính công nghiệp",
+      "card": "Card giao tiếp {interface}",
+      "software": "Phần mềm xử lý ảnh"
+    },
+    "locked": {
+      "title": "Cần quyền Member trở lên",
+      "bodyRegistered": "Tài khoản của bạn đang ở mức Registered. Liên hệ quản trị để được cấp quyền Member.",
+      "bodyGuest": "Đăng nhập bằng tài khoản Member trở lên để dùng công cụ này.",
+      "signIn": "Đăng nhập",
+      "contact": "Liên hệ tư vấn"
+    }
   }
 }

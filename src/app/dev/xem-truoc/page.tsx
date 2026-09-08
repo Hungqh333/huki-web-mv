@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import { PcPlanner } from '@/components/pc/PcPlanner';
 import { SelectorForm } from '@/components/selector/SelectorForm';
 import { SelectorResultPanel } from '@/components/selector/SelectorResultPanel';
 import type { Component } from '@/lib/components/specs';
@@ -217,6 +218,21 @@ export default function DevPreviewPage() {
 
       <div className="mt-8">
         <SelectorForm taskSlug="appearance-inspection" fields={fields} canExport={false} />
+      </div>
+
+      <div className="mt-12 border-t border-slate-200 pt-8 dark:border-slate-800">
+        <h2 className="mb-2 text-lg font-semibold">Cấu hình máy tính dùng chung</h2>
+        <p className="mb-6 text-sm text-slate-600 dark:text-slate-400">
+          Trang thật ở /cong-cu-may-tinh. Đặt sẵn ba bài toán để thấy phần gộp nhiều bài.
+        </p>
+        <PcPlanner
+          components={COMPONENTS}
+          initialLines={[
+            { label: 'Căn chỉnh', cameraCount: 1, interfaceName: 'GigE', dataRateMbytesS: 20 },
+            { label: 'Đo lường', cameraCount: 1, interfaceName: 'GigE', dataRateMbytesS: 20 },
+            { label: 'Kiểm tra ngoại quan', cameraCount: 2, interfaceName: 'GigE', dataRateMbytesS: 45 },
+          ]}
+        />
       </div>
 
       <div className="mt-12 border-t border-slate-200 pt-8 dark:border-slate-800">

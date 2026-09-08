@@ -13,7 +13,8 @@
     "signIn": "Sign in",
     "signUp": "Sign up",
     "signOut": "Sign out",
-    "kpi": "KPI calculator"
+    "kpi": "KPI calculator",
+    "pc": "PC config"
   },
   "language": {
     "label": "Language",
@@ -397,7 +398,6 @@
       "fitLensMag": "Magnification needed ~ {target}x",
       "fitLightType": "Light type inferred from the rule: {type}",
       "fitLightUnknown": "Could not infer the light type from the rule — pick manually.",
-      "fitGpu": "The task needs deep learning, so the computer must have a GPU.",
       "sources": {
         "unverified": "Unverified",
         "datasheet": "From datasheet",
@@ -412,10 +412,7 @@
         "cableCameraData": "Camera data cable",
         "cableCameraPower": "Camera power cable",
         "cableLight": "Light cable",
-        "lightController": "Light controller",
-        "pc": "Computer",
-        "interfaceCard": "Interface card",
-        "software": "Vision software"
+        "lightController": "Light controller"
       },
       "computed": "Computed",
       "suggested": "Suggested",
@@ -425,16 +422,12 @@
       "fitLightController": "{lights} lights → {channels} channels needed · {strobe}",
       "strobeRequired": "strobing required (exposure < 1 ms)",
       "strobeNotRequired": "no strobing needed",
-      "fitSoftwareDl": "The task needs deep learning — avoid free libraries, there is no field support.",
-      "pcOptionsTitle": "Computer add-ons",
-      "pcOptionsHint": "Tick what belongs in the quote. The Windows licence is the most forgotten item.",
       "extrasTitle": "Extra accessories",
       "extrasHint": "Tick whatever the project needs. This list is open — add items under Admin > Components.",
       "extrasEmpty": "No accessories in the catalog yet.",
       "selectedCount": "{count} selected",
       "groups": {
         "vision": "VISION",
-        "pc": "COMPUTER",
         "other": "OTHER",
         "accessory": "ACCESSORIES"
       },
@@ -481,10 +474,15 @@
         "vibration": "Vibration present: without locking, focus and aperture rings drift.",
         "mount_mismatch": "The camera mount differs from the lens mount, so an adapter is required."
       },
-      "fitPcSplit": {
-        "slots": "One PC handles only {max} cameras, so the system must be split.",
-        "bandwidth": "Total bandwidth exceeds what one PC can take ({max} cameras per PC), so it must be split."
-      }
+      "pcMovedTitle": "The PC is configured on its own page",
+      "pcMovedBody": "A project usually has several tasks running on one machine. Keeping the PC here would quote one machine per task. Open the PC configuration page — these numbers travel with you.",
+      "pcMovedCta": "Configure the PC",
+      "pcNeedCameras": "Cameras:",
+      "pcNeedInterface": "Interface:",
+      "pcNeedRate": "Bandwidth:",
+      "pcNeedGpu": "GPU:",
+      "yes": "Yes",
+      "no": "No"
     },
     "vision": {
       "title": "Feasibility checks",
@@ -1167,5 +1165,52 @@
     "light": "Light",
     "dark": "Dark",
     "system": "System"
+  },
+  "pcPlanner": {
+    "title": "PC configuration",
+    "subtitle": "Add up every task in a project before choosing the PC, because tasks usually share one machine.",
+    "why": "The equipment selector works one task at a time, so putting the PC inside each task BOM would quote three PCs for a three-task project. This page works the other way round: one row per task, sum the cameras and the bandwidth, then decide whether one PC is enough.",
+    "emptyCatalog": "The catalog is empty. Add PCs, interface cards and software under Admin → Components.",
+    "linesTitle": "Tasks sharing this PC",
+    "linesHint": "One row per task. Camera count is the total for that task, already multiplied by its stations. The rate is for ONE camera.",
+    "addLine": "+ Add task",
+    "removeLine": "Remove this row",
+    "labelPlaceholder": "Task {n}",
+    "colLabel": "Task",
+    "colCameras": "Cameras",
+    "colInterface": "Interface",
+    "colRate": "MB/s per cam",
+    "colGpu": "Needs GPU",
+    "totalCameras": "Total cameras",
+    "totalRate": "Total bandwidth",
+    "interfacesUsed": "Interfaces",
+    "gpuNeeded": "Needs GPU",
+    "yes": "Yes",
+    "no": "No",
+    "mixedInterfaces": "This project mixes interfaces ({list}). The PC must support all of them, and each one needs its own card.",
+    "splitReason": {
+      "slots": "One PC handles only {max} cameras, so it must be split into {count} machines.",
+      "bandwidth": "Total bandwidth exceeds one PC ({max} cameras per PC), so it must be split into {count} machines."
+    },
+    "bomTitle": "PC bill of materials",
+    "bomNote": "Windows, Office and monitor licences are per MACHINE, so their quantity follows the PC count, not the task count.",
+    "optionsTitle": "Bundled with the PC",
+    "colName": "Item",
+    "colDevice": "Model / Brand",
+    "colSpec": "Spec",
+    "colQty": "Qty",
+    "noOption": "Not in the catalog yet",
+    "rows": {
+      "pc": "Industrial PC",
+      "card": "{interface} interface card",
+      "software": "Vision software"
+    },
+    "locked": {
+      "title": "Member access required",
+      "bodyRegistered": "Your account is Registered. Contact an administrator to be granted Member access.",
+      "bodyGuest": "Sign in with a Member account or above to use this tool.",
+      "signIn": "Sign in",
+      "contact": "Contact us"
+    }
   }
 }

@@ -311,6 +311,9 @@ export const SPEC_FIELDS: Record<ComponentKind, SpecFieldDef[]> = {
        Không khai max_cameras thì suy từ số khe PCIe nhân số cổng mỗi card. */
     { key: 'max_cameras', type: 'number', unit: 'camera', step: 1 },
     { key: 'pcie_slots', type: 'number', unit: 'khe', step: 1 },
+    /* Trần băng thông cả máy gánh được. Không khai thì suy ra bằng 4 lần băng
+       thông một cổng của chuẩn nhanh nhất đang dùng. */
+    { key: 'max_bandwidth_mbytes_s', type: 'number', unit: 'MB/s', step: 10 },
   ],
   /** Vòng nối dài, dùng khi cần khoảng cách làm việc ngắn hơn lens cho phép. */
   tube: [

@@ -1,10 +1,10 @@
 'use client';
 
 import { Fragment, useState } from 'react';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import {
   listAccessories,
-  listPcOptions,
   pickCamera,
   pickCameraCable,
   pickCameraPowerCable,
@@ -13,12 +13,10 @@ import {
   lightControllerUnits,
   pickLightCable,
   pickLightController,
-  pickSoftware,
   pickTube,
   type ComponentChoice,
 } from '@/lib/components/match';
 import { accessoryQty, pickRuleAccessories } from '@/lib/components/accessories';
-import { planPc } from '@/lib/components/pc';
 import { SPEC_FIELDS, SUMMARY_KEYS, specString, type Component } from '@/lib/components/specs';
 import type { SelectorInput, SelectorResult } from '@/lib/selector/types';
 import { analyseAppearance, maxExposureForBlur, requiredPixels, verifyResolution } from '@/lib/vision';
@@ -26,18 +24,19 @@ import { appearanceInputFromForm } from '@/lib/vision/fromInput';
 import { VisionChecks } from './VisionChecks';
 
 /**
- * Danh mục vật tư, trình bày theo đúng định dạng đội kỹ thuật đang dùng khi lên
- * báo giá (xem "Bom list vision.xlsx"): một BẢNG phẳng, gom thành ba cụm
- * VISION / MÁY TÍNH / KHÁC, mỗi dòng một vật tư kèm số lượng.
+ * Danh mục vật tư của MỘT bài toán, trình bày theo đúng định dạng đội kỹ thuật
+ * đang dùng khi lên báo giá (xem "Bom list vision.xlsx"): một BẢNG phẳng, mỗi
+ * dòng một vật tư kèm số lượng.
  *
- * Trước đây phần này là chín thẻ lớn, mỗi thẻ có huy hiệu icon, nhiều dòng chú
- * thích — đọc thì đẹp nhưng chọn cấu hình thì chậm. Bảng đọc nhanh hơn hẳn, và
- * quan trọng hơn: nó khớp với thứ người dùng vẫn phải gõ lại vào Excel.
+ * MÁY TÍNH KHÔNG Ở ĐÂY. Một dự án thật hay có nhiều bài toán chạy chung một
+ * máy — căn chỉnh, đo lường, kiểm tra ngoại quan. Để máy tính trong bảng của
+ * từng bài toán thì ba bài toán ra ba dòng máy tính và người lên báo giá phải
+ * tự nhớ gộp. Máy tính, card giao tiếp, phần mềm, Windows/Office/màn hình đã
+ * chuyển sang /cong-cu-may-tinh; ở đây chỉ còn một thẻ mang số liệu sang.
  *
  * Số lượng tính theo TỪNG DÒNG, không theo cụm: camera nhân theo số trạm, đèn
  * nhân theo số đèn mỗi trạm, bộ điều khiển đèn nhân theo số kênh chia cho số
- * kênh mỗi bộ, còn máy tính do module pc.ts quyết (một máy chỉ gánh được ngần
- * ấy camera). Gán một số lượng cho cả cụm là sai ngay khi dự án có nhiều hơn
+ * kênh mỗi bộ. Gán một số lượng cho cả cụm là sai ngay khi dự án có nhiều hơn
  * một đèn mỗi trạm.
  */
 
@@ -60,7 +59,7 @@ function summarise(component: Component): string {
 
 const round = (value: number) => Math.round(value * 10) / 10;
 
-type Group = 'vision' | 'pc' | 'other' | 'accessory';
+type Group = 'vision' | 'other' | 'accessory';
 
 type Row = {
   key: string;
@@ -99,7 +98,6 @@ export function ComponentPicker({
   const t = useTranslations('selector.picker');
 
   const [picked, setPicked] = useState<Record<string, string | null>>({});
-  const [pcOptions, setPcOptions] = useState<string[]>([]);
   const [extras, setExtras] = useState<string[]>([]);
   const [showWhy, setShowWhy] = useState(false);
   const [stationsOverride, setStationsOverride] = useState<number | null>(null);
@@ -205,19 +203,17 @@ export function ComponentPicker({
   const lightChannels = totalLights;
   const strobeRequired = alternating || needsStrobe;
 
-  /* Máy tính: bản yêu cầu thuần số, module pc.ts lo phần còn lại. Bài toán nào
-     cũng dựng được bản này nên không phải chép logic sang bài toán mới. */
-  const pcRequirement = {
-    cameraCount: stations,
-    interfaceName: cameraInterface,
-    dataRateMbytesS: dataRate,
-    needsGpu,
-  };
-  const pcPreview = planPc(components, pcRequirement);
-  const pc = planPc(components, pcRequirement, {
-    pc: resolve('pc', pcPreview.pc),
-    card: resolve('interfaceCard', pcPreview.card),
-  });
+  /* Máy tính KHÔNG nằm trong bảng này.
+     Một dự án thật hay có nhiều bài toán chạy chung một máy — căn chỉnh, đo
+     lường, kiểm tra ngoại quan. Nếu mỗi bài toán tự sinh dòng máy tính của nó
+     thì ba bài toán ra ba máy, và người lên báo giá phải tự nhớ gộp lại.
+     Ở đây chỉ dựng BẢN YÊU CẦU rồi chuyển sang trang cấu hình máy tính. */
+  const pcHandoff = new URLSearchParams({
+    cameras: String(stations),
+    gpu: needsGpu ? '1' : '0',
+    ...(cameraInterface ? { interface: cameraInterface } : {}),
+    ...(dataRate ? { rate: String(Math.round(dataRate)) } : {}),
+  }).toString();
 
   const lightControllerChoice = pickLightController(components, {
     lightCount: lightChannels,
@@ -304,36 +300,6 @@ export function ComponentPicker({
       computed: false,
       qty: totalLights,
       why: null,
-    },
-    {
-      key: 'pc',
-      group: 'pc',
-      choice: pc.pc,
-      computed: true,
-      qty: pc.pcCount,
-      why: [
-        needsGpu ? t('fitGpu') : null,
-        pc.splitReason ? t(`fitPcSplit.${pc.splitReason}`, { max: pc.camerasPerPc }) : null,
-      ]
-        .filter(Boolean)
-        .join(' · ') || null,
-    },
-    {
-      key: 'interfaceCard',
-      group: 'pc',
-      choice: pc.card,
-      computed: true,
-      qty: pc.cardCount,
-      why: cameraInterface ? t('fitCableCamera', { connector: cameraInterface }) : null,
-    },
-    {
-      key: 'software',
-      group: 'pc',
-      choice: pickSoftware(components, { needsDeepLearning: needsGpu }),
-      computed: false,
-      // Bản quyền phần mềm tính theo MÁY, nên đi theo số máy chứ không phải số trạm.
-      qty: pc.pcCount,
-      why: needsGpu ? t('fitSoftwareDl') : null,
     },
     {
       key: 'lightController',
@@ -426,7 +392,7 @@ export function ComponentPicker({
       )
     : null;
 
-  const GROUPS: Group[] = ['vision', 'pc', 'other', 'accessory'];
+  const GROUPS: Group[] = ['vision', 'other', 'accessory'];
   let index = 0;
 
   return (
@@ -595,19 +561,14 @@ export function ComponentPicker({
             })}
 
             {/* Hàng đi kèm máy tính và phụ kiện: tích chọn, không phải chọn một trong nhiều. */}
-            <OptionRows
-              title={t('pcOptionsTitle')}
-              items={listPcOptions(components)}
-              selected={pcOptions}
-              onToggle={(code) => toggle(pcOptions, setPcOptions, code)}
-              startIndex={index}
-            />
+            {/* Windows, Office, màn hình đã chuyển sang trang cấu hình máy tính:
+                chúng tính theo MÁY, mà máy thì dùng chung nhiều bài toán. */}
             <OptionRows
               title={t('extrasTitle')}
               items={listAccessories(components)}
               selected={extras}
               onToggle={(code) => toggle(extras, setExtras, code)}
-              startIndex={index + listPcOptions(components).length}
+              startIndex={index}
             />
           </tbody>
         </table>
@@ -625,6 +586,42 @@ export function ComponentPicker({
         </button>
       </div>
 
+      {/* Máy tính tính riêng, vì nó dùng chung cho nhiều bài toán. Mang sẵn số
+          liệu của bài toán này sang để không phải gõ lại. */}
+      <div className="mt-4 rounded-xl border border-sky-200 bg-sky-50 p-4 dark:border-sky-900 dark:bg-sky-950/30">
+        <p className="text-sm font-semibold text-sky-900 dark:text-sky-200">{t('pcMovedTitle')}</p>
+        <p className="mt-1 text-sm leading-relaxed text-sky-900/80 dark:text-sky-300/90">
+          {t('pcMovedBody')}
+        </p>
+        <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm text-sky-900/90 dark:text-sky-200/90">
+          <div className="flex gap-1.5">
+            <dt className="text-sky-900/70 dark:text-sky-300/70">{t('pcNeedCameras')}</dt>
+            <dd className="font-semibold tabular-nums">{stations}</dd>
+          </div>
+          <div className="flex gap-1.5">
+            <dt className="text-sky-900/70 dark:text-sky-300/70">{t('pcNeedInterface')}</dt>
+            <dd className="font-semibold">{cameraInterface ?? '—'}</dd>
+          </div>
+          <div className="flex gap-1.5">
+            <dt className="text-sky-900/70 dark:text-sky-300/70">{t('pcNeedRate')}</dt>
+            <dd className="font-semibold tabular-nums">
+              {dataRate ? `${round(dataRate)} MB/s` : '—'}
+            </dd>
+          </div>
+          <div className="flex gap-1.5">
+            <dt className="text-sky-900/70 dark:text-sky-300/70">{t('pcNeedGpu')}</dt>
+            <dd className="font-semibold">{needsGpu ? t('yes') : t('no')}</dd>
+          </div>
+        </dl>
+        <Link
+          href={`/cong-cu-may-tinh?${pcHandoff}`}
+          className="mt-3 inline-flex items-center gap-1 rounded-md bg-sky-600 px-3 py-2 text-sm font-medium text-white hover:bg-sky-700"
+        >
+          {t('pcMovedCta')}
+          <span aria-hidden="true">→</span>
+        </Link>
+      </div>
+
       {analysis ? (
         <div className="mt-6 border-t border-slate-200 pt-6 dark:border-slate-800">
           <VisionChecks analysis={analysis} hasCamera={camera !== null} />
@@ -634,7 +631,7 @@ export function ComponentPicker({
   );
 }
 
-/** Nhóm vật tư chọn bằng cách tích — Windows, Office, màn hình, phụ kiện thêm. */
+/** Nhóm vật tư chọn bằng cách tích — phụ kiện thêm không có luật nào quyết định. */
 function OptionRows({
   title,
   items,

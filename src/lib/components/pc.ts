@@ -233,3 +233,196 @@ export function planPc(
       pcCount <= 1 ? null : byBandwidth !== null && byBandwidth < bySlots ? 'bandwidth' : 'slots',
   };
 }
+
+// =============================================================================
+// NHIỀU BÀI TOÁN, MỘT MÁY TÍNH
+//
+// Đây là lý do module này phải tách hẳn thành trang riêng. Một dự án thật hay
+// có ba bài toán — căn chỉnh, đo lường, kiểm tra ngoại quan — chạy trên CÙNG
+// một máy. Nếu mỗi bài toán tự sinh dòng máy tính của nó thì báo giá ra ba
+// máy, trong khi thực tế chỉ mua một.
+//
+// Gộp lại còn đổi cả cách chọn: máy phải đỡ được MỌI chuẩn giao tiếp có mặt
+// (GigE cho bài này, USB3 cho bài kia), và mỗi chuẩn cần card riêng của nó.
+// =============================================================================
+
+/** Một bài toán / cụm trạm dùng chung máy tính với các bài khác. */
+export type VisionLine = {
+  id: string;
+  /** Tên do người dùng đặt, ví dụ "Soi mặt trên" — chỉ để đọc cho dễ. */
+  label: string;
+  cameraCount: number;
+  interfaceName: string | null;
+  /** Băng thông MỘT camera của bài này sinh ra, MB/s. */
+  dataRateMbytesS: number | null;
+  needsGpu: boolean;
+};
+
+export type CardLine = {
+  interfaceName: string;
+  cameraCount: number;
+  choice: PcPlan['card'];
+  count: number;
+};
+
+export type MultiPcPlan = {
+  pc: PcPlan['pc'];
+  /** Mỗi chuẩn giao tiếp một dòng card riêng. */
+  cards: CardLine[];
+  pcCount: number;
+  cardTotal: number;
+  totalCameras: number;
+  /** Tổng băng thông cả dự án, MB/s. */
+  totalRateMbytesS: number;
+  /** Các chuẩn giao tiếp máy phải đỡ được, đã bỏ trùng. */
+  interfaces: string[];
+  needsGpu: boolean;
+  camerasPerPc: number;
+  splitReason: 'slots' | 'bandwidth' | null;
+};
+
+/**
+ * Trần băng thông một máy gánh được, MB/s.
+ *
+ * Ưu tiên `max_bandwidth_mbytes_s` khai trong catalog. Không khai thì suy ra
+ * bằng đúng quy ước của phần một máy: bốn lần băng thông một cổng của chuẩn
+ * nhanh nhất đang dùng. Giữ một quy ước duy nhất để hai đường tính không cho
+ * ra hai con số khác nhau trên cùng một dự án.
+ */
+export function pcBandwidthBudget(pc: Component | null, interfaces: string[]): number | null {
+  const declared = pc ? specNumber(pc.spec, 'max_bandwidth_mbytes_s') : null;
+  if (declared !== null && declared > 0) return declared;
+
+  const perPort = interfaces
+    .map((name) => INTERFACE_BANDWIDTH[name])
+    .filter((value): value is number => typeof value === 'number');
+  if (perPort.length === 0) return null;
+
+  return Math.max(...perPort) * PC_BANDWIDTH_HEADROOM;
+}
+
+/**
+ * Lên phương án máy tính cho NHIỀU bài toán dùng chung.
+ *
+ * `chosen` là thứ người dùng tự đổi: máy, và card của từng chuẩn giao tiếp
+ * (khoá theo tên chuẩn). Số lượng luôn tính lại theo thứ họ chọn.
+ */
+export function planPcForLines(
+  components: Component[],
+  lines: VisionLine[],
+  chosen?: { pc?: Component | null; cards?: Record<string, Component | null> }
+): MultiPcPlan {
+  const used = lines.filter((line) => line.cameraCount > 0);
+
+  const totalCameras = used.reduce((sum, line) => sum + line.cameraCount, 0);
+  const totalRateMbytesS = used.reduce(
+    (sum, line) => sum + line.cameraCount * (line.dataRateMbytesS ?? 0),
+    0
+  );
+  const needsGpu = used.some((line) => line.needsGpu);
+  const interfaces = [
+    ...new Set(
+      used
+        .map((line) => line.interfaceName)
+        .filter((name): name is string => typeof name === 'string' && name.length > 0)
+    ),
+  ];
+
+  /* Máy phải đỡ được MỌI chuẩn có mặt, không phải chỉ một. Bài GigE và bài
+     USB3 chạy chung một máy thì máy đó phải có cả hai. */
+  const pcCandidates = components.filter((pc) => {
+    if (pc.kind !== 'controller' || !pc.is_active) return false;
+    const declared = pc.spec.interfaces;
+    if (interfaces.length > 0 && Array.isArray(declared)) {
+      if (!interfaces.every((name) => declared.includes(name))) return false;
+    }
+    if (needsGpu && !specString(pc.spec, 'gpu')) return false;
+    return true;
+  });
+
+  const rankedPc = [...pcCandidates].sort((a, b) => {
+    if (!needsGpu) {
+      const gpuA = specString(a.spec, 'gpu') ? 1 : 0;
+      const gpuB = specString(b.spec, 'gpu') ? 1 : 0;
+      if (gpuA !== gpuB) return gpuA - gpuB;
+    }
+    const unitsA = Math.ceil(Math.max(1, totalCameras) / Math.max(1, camerasPerPc(a, 1)));
+    const unitsB = Math.ceil(Math.max(1, totalCameras) / Math.max(1, camerasPerPc(b, 1)));
+    if (unitsA !== unitsB) return unitsA - unitsB;
+    return a.sort_order - b.sort_order;
+  });
+
+  const pc: PcPlan['pc'] = {
+    chosen: rankedPc[0] ?? null,
+    alternatives: rankedPc.slice(1),
+    fit: { interfaceName: interfaces[0] ?? null, needsGpu },
+  };
+  const activePc = chosen?.pc ?? pc.chosen;
+
+  /* Camera cộng dồn theo từng chuẩn giao tiếp — hai bài toán cùng dùng GigE
+     thì chung một card, không phải mỗi bài một card. */
+  const perInterface = new Map<string, number>();
+  for (const line of used) {
+    if (!line.interfaceName) continue;
+    perInterface.set(
+      line.interfaceName,
+      (perInterface.get(line.interfaceName) ?? 0) + line.cameraCount
+    );
+  }
+
+  const bestChannels = Math.max(
+    1,
+    ...[...perInterface.keys()].map((name) => {
+      const card = chosen?.cards?.[name] ?? pickCard(components, {
+        interfaceName: name,
+        cameraCount: perInterface.get(name) ?? 1,
+      }).chosen;
+      return card ? (specNumber(card.spec, 'channels') ?? 1) : 1;
+    })
+  );
+
+  const bySlots = camerasPerPc(activePc, bestChannels);
+  const budget = pcBandwidthBudget(activePc, interfaces);
+  const byBandwidth =
+    budget === null || totalRateMbytesS <= 0
+      ? null
+      : Math.max(1, Math.floor((budget * Math.max(1, totalCameras)) / totalRateMbytesS));
+
+  const limit = byBandwidth === null ? bySlots : Math.min(bySlots, byBandwidth);
+  const pcCount = Math.max(1, Math.ceil(Math.max(1, totalCameras) / Math.max(1, limit)));
+
+  /* Chuẩn nào nhiều camera nhất thì coi như nó trải ra khắp các máy, nên số
+     card của nó phải ít nhất bằng số máy — card cắm vào MỘT máy, không chia
+     được cho hai. Các chuẩn còn lại gom gọn về một máy nên chỉ cần đủ cổng. */
+  const dominant = [...perInterface.entries()].sort(([, a], [, b]) => b - a)[0]?.[0] ?? null;
+
+  const cards: CardLine[] = [...perInterface.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([interfaceName, cameraCount]) => {
+      const choice = pickCard(components, { interfaceName, cameraCount });
+      const active = chosen?.cards?.[interfaceName] ?? choice.chosen;
+      const spread = interfaceName === dominant ? pcCount : 1;
+      return {
+        interfaceName,
+        cameraCount,
+        choice,
+        count: cardUnits(active, cameraCount, spread),
+      };
+    });
+
+  const cardTotal = cards.reduce((sum, line) => sum + line.count, 0);
+
+  return {
+    pc,
+    cards,
+    pcCount,
+    cardTotal,
+    totalCameras,
+    totalRateMbytesS,
+    interfaces,
+    needsGpu,
+    camerasPerPc: limit,
+    splitReason:
+      pcCount <= 1 ? null : byBandwidth !== null && byBandwidth < bySlots ? 'bandwidth' : 'slots',
+  };
+}

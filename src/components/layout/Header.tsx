@@ -8,6 +8,7 @@ import { getSessionContext, isAdmin } from '@/lib/auth';
 const navItems = [
   { href: '/cam-nang', key: 'handbook' },
   { href: '/cong-cu-chon-thiet-bi', key: 'selector' },
+  { href: '/cong-cu-may-tinh', key: 'pc' },
   { href: '/cong-cu-chi-tieu', key: 'kpi' },
 ] as const;
 

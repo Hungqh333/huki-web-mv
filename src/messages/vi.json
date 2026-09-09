@@ -14,7 +14,10 @@
     "signUp": "Đăng ký",
     "signOut": "Đăng xuất",
     "kpi": "Bộ tính chỉ tiêu",
-    "pc": "Máy tính"
+    "pc": "Máy tính (PC)",
+    "selectorVision": "Thiết bị vision",
+    "selectorVisionDesc": "Camera, ống kính, đèn, cáp — chọn theo từng bài toán.",
+    "pcDesc": "Máy, card giao tiếp, phần mềm — dùng chung cho nhiều bài toán."
   },
   "language": {
     "label": "Ngôn ngữ",
@@ -133,7 +136,10 @@
       ],
       "guideRuleFirst": "Luôn ưu tiên xử lý truyền thống / rule-based. Chỉ gợi ý deep learning khi ngưỡng cố định không mô tả được bài toán.",
       "recentTitle": "Bài toán vừa dùng",
-      "recentEmpty": "Chưa có lịch sử. Mở một bài toán để bắt đầu."
+      "recentEmpty": "Chưa có lịch sử. Mở một bài toán để bắt đầu.",
+      "sharedTitle": "Dùng chung cho cả dự án",
+      "pcCardTitle": "Cấu hình máy tính",
+      "pcCardDesc": "Gộp mọi bài toán của dự án rồi mới chọn máy — vì các bài toán thường chạy chung một máy."
     },
     "task": {
       "backToTasks": "Tất cả bài toán",

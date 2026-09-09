@@ -14,7 +14,10 @@
     "signUp": "Sign up",
     "signOut": "Sign out",
     "kpi": "KPI calculator",
-    "pc": "PC config"
+    "pc": "PC",
+    "selectorVision": "Vision equipment",
+    "selectorVisionDesc": "Camera, lens, lighting, cables — chosen per task.",
+    "pcDesc": "Machine, interface card, software — shared across tasks."
   },
   "language": {
     "label": "Language",
@@ -133,7 +136,10 @@
       ],
       "guideRuleFirst": "Traditional / rule-based first. Deep learning is suggested only when fixed thresholds cannot describe the task.",
       "recentTitle": "Recently used",
-      "recentEmpty": "No history yet. Open a task to begin."
+      "recentEmpty": "No history yet. Open a task to begin.",
+      "sharedTitle": "Shared across the project",
+      "pcCardTitle": "PC configuration",
+      "pcCardDesc": "Add up every task in the project before choosing the machine, because tasks usually share one PC."
     },
     "task": {
       "backToTasks": "All tasks",

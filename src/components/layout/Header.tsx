@@ -1,16 +1,31 @@
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { LanguageSwitcher } from './LanguageSwitcher';
+import { NavDropdown } from './NavDropdown';
 import { RoleBadge } from '@/components/auth/RoleBadge';
 import { SignOutButton } from '@/components/auth/SignOutButton';
 import { getSessionContext, isAdmin } from '@/lib/auth';
 
+/* Mục phẳng. "Bộ chọn thiết bị" tách riêng bên dưới vì nó xổ xuống. */
 const navItems = [
   { href: '/cam-nang', key: 'handbook' },
-  { href: '/cong-cu-chon-thiet-bi', key: 'selector' },
-  { href: '/cong-cu-may-tinh', key: 'pc' },
   { href: '/cong-cu-chi-tieu', key: 'kpi' },
 ] as const;
+
+/*
+ * Hai công cụ nằm dưới "Bộ chọn thiết bị".
+ *
+ * Chọn thiết bị vision làm theo TỪNG bài toán, còn máy tính thì dùng chung
+ * cho cả dự án — nhiều bài toán chạy trên một máy. Gộp vào một mục xổ xuống
+ * để thấy được quan hệ đó; để ngang hàng trên menu thì đọc như hai phần rời.
+ */
+const selectorItems = [
+  { href: '/cong-cu-chon-thiet-bi', key: 'selectorVision' },
+  { href: '/cong-cu-may-tinh', key: 'pc' },
+] as const;
+
+const navLinkClass =
+  'inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-md px-2 text-slate-600 hover:bg-slate-100 hover:text-sky-700 sm:min-h-0 sm:px-0 sm:hover:bg-transparent dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-sky-400 dark:sm:hover:bg-transparent';
 
 export async function Header() {
   const t = await getTranslations('nav');
@@ -34,19 +49,32 @@ export async function Header() {
 
         <nav className="order-3 -mx-4 flex w-full items-center gap-1 overflow-x-auto px-2 text-sm sm:order-none sm:mx-0 sm:w-auto sm:gap-4 sm:overflow-visible sm:px-0">
           {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-md px-2 text-slate-600 hover:bg-slate-100 hover:text-sky-700 sm:min-h-0 sm:px-0 sm:hover:bg-transparent dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-sky-400 dark:sm:hover:bg-transparent"
-            >
+            <Link key={item.href} href={item.href} className={navLinkClass}>
               {t(item.key)}
             </Link>
           ))}
+
+          {/* Điện thoại: hai mục phẳng. Thanh này cuộn ngang nên panel xổ
+              xuống sẽ bị cắt cụt — flat vừa đúng vừa dễ bấm hơn trên mobile. */}
+          <div className="contents sm:hidden">
+            {selectorItems.map((item) => (
+              <Link key={item.href} href={item.href} className={navLinkClass}>
+                {t(item.key)}
+              </Link>
+            ))}
+          </div>
+
+          <NavDropdown
+            className="hidden sm:block"
+            label={t('selector')}
+            items={selectorItems.map((item) => ({
+              href: item.href,
+              label: t(item.key),
+              description: t(`${item.key}Desc`),
+            }))}
+          />
           {isAdmin(role) ? (
-            <Link
-              href="/admin"
-              className="inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-md px-2 text-slate-600 hover:bg-slate-100 hover:text-sky-700 sm:min-h-0 sm:px-0 sm:hover:bg-transparent dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-sky-400 dark:sm:hover:bg-transparent"
-            >
+            <Link href="/admin" className={navLinkClass}>
               {t('admin')}
             </Link>
           ) : null}

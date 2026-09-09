@@ -115,6 +115,29 @@ export default async function SelectorHomePage() {
                 </li>
               ))}
             </ul>
+
+            {/* Máy tính không phải một "bài toán" mà là thứ dùng chung cho cả
+                dự án, nên tách thành nhóm riêng chứ không xếp lẫn vào lưới
+                trên — xếp lẫn thì đọc như bài toán thứ tư. */}
+            <p className="mt-8 text-sm font-medium text-slate-700 dark:text-slate-300">
+              {t('sharedTitle')}
+            </p>
+            <Link
+              href="/cong-cu-may-tinh"
+              className="group mt-4 flex flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700"
+            >
+              <IconBadge name="selector" tone="emerald" />
+              <span className="mt-4 font-semibold">{t('pcCardTitle')}</span>
+              <span className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+                {t('pcCardDesc')}
+              </span>
+              <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-sky-700 dark:text-sky-400">
+                {t('openTask')}
+                <span aria-hidden="true" className="transition group-hover:translate-x-0.5">
+                  →
+                </span>
+              </span>
+            </Link>
           </div>
 
           <aside className="space-y-4 xl:sticky xl:top-6 xl:self-start">

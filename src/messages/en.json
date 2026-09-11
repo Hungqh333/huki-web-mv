@@ -149,7 +149,7 @@
     "form": {
       "submit": "Calculate recommendation",
       "submitting": "Calculating...",
-      "emptyState": "Fill in the parameters on the left and press \"Calculate recommendation\". Results appear here, including the formulas with your numbers substituted so you can check them.",
+      "emptyState": "Fill in the parameters and press \"Calculate\". The result appears below, with every formula shown with real numbers so you can check it yourself.",
       "stepLabel": "Step {current}/{total}",
       "next": "Next",
       "back": "Back",
@@ -175,7 +175,12 @@
           "hint": "All have sensible defaults — change only if you know.",
           "short": "System"
         }
-      }
+      },
+      "submittedTitle": "Parameters entered",
+      "editInputs": "Edit parameters",
+      "closeEdit": "Close",
+      "moreInputs": "+{count} more",
+      "fewerInputs": "Show less"
     },
     "fields": {
       "fov_width_mm": "FOV width",
@@ -567,7 +572,7 @@
         "surfaceTransparent": "A transparent surface overrides the defect type: it must be lit through first.",
         "surfaceReflective": "A mirror-like surface overrides the defect type: plain dark field only shows glare."
       },
-      "checkCount": "{count} steps"
+      "checkCount": "Show {count} verification steps"
     }
   },
   "handbook": {

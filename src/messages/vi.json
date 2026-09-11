@@ -149,7 +149,7 @@
     "form": {
       "submit": "Tính toán gợi ý",
       "submitting": "Đang tính...",
-      "emptyState": "Điền tham số bên trái rồi bấm \"Tính toán gợi ý\". Kết quả sẽ hiện ở đây kèm công thức đã thay số để bạn tự kiểm chứng.",
+      "emptyState": "Điền tham số rồi bấm \"Tính toán gợi ý\". Kết quả hiện ngay bên dưới, kèm công thức đã thay số để bạn tự kiểm chứng.",
       "stepLabel": "Bước {current}/{total}",
       "next": "Tiếp",
       "back": "Quay lại",
@@ -175,7 +175,12 @@
           "hint": "Đều có mặc định hợp lý — chỉ sửa khi bạn biết rõ.",
           "short": "Hệ thống"
         }
-      }
+      },
+      "submittedTitle": "Thông số đã nhập",
+      "editInputs": "Sửa thông số",
+      "closeEdit": "Đóng",
+      "moreInputs": "+{count} thông số khác",
+      "fewerInputs": "Thu gọn"
     },
     "fields": {
       "fov_width_mm": "Chiều rộng FOV",
@@ -567,7 +572,7 @@
         "surfaceTransparent": "Bề mặt trong suốt lấn át loại lỗi: phải soi xuyên trước đã.",
         "surfaceReflective": "Bề mặt bóng như gương lấn át loại lỗi: dark field thông thường chỉ thấy loá."
       },
-      "checkCount": "{count} bước"
+      "checkCount": "Xem {count} bước kiểm chứng"
     }
   },
   "handbook": {

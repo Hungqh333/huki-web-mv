@@ -69,15 +69,53 @@ export function SelectorResultPanel({
 
   return (
     <section aria-live="polite" className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold">{t('title')}</h2>
-        <span
-          className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${
-            APPROACH_STYLES[result.approach] ?? APPROACH_STYLES.rule_based
-          }`}
-        >
-          {tApproach(result.approach)}
-        </span>
+      {/*
+        Nút xuất báo cáo trước đây nằm ở CUỐI panel — tức là sau ~2700px cuộn,
+        dưới cả bảng vật tư lẫn hai mươi phép kiểm khả thi. Nó là hành động
+        chính của cả trang, phải thấy được ngay mà không phải đi tìm.
+      */}
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 border-b border-slate-200 pb-4 dark:border-slate-800">
+        <div className="flex flex-wrap items-center gap-3">
+          <h2 className="text-lg font-semibold">{t('title')}</h2>
+          <span
+            className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${
+              APPROACH_STYLES[result.approach] ?? APPROACH_STYLES.rule_based
+            }`}
+          >
+            {tApproach(result.approach)}
+          </span>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            {/* Chỉ khẳng định đã lưu khi thật sự biết là đã lưu. Trước đây
+                undefined cũng báo "đã lưu". */}
+            {historySaved === true ? t('historySaved') : t('historyNotSaved')}
+          </p>
+
+          {canExport && historyId ? (
+            <a
+              href={`/api/bao-cao/${historyId}`}
+              // Route trả Content-Disposition: attachment nên trình duyệt tải về
+              // thay vì mở tab mới rồi bỏ trống.
+              className="rounded-md bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:bg-slate-900 dark:bg-slate-200 dark:text-slate-900 dark:hover:bg-white"
+            >
+              {t('exportPdf')}
+            </a>
+          ) : (
+            <button
+              type="button"
+              disabled
+              title={canExport ? t('exportNeedsHistory') : t('exportVipOnly')}
+              className="rounded-md border border-slate-300 px-4 py-2 text-sm text-slate-500 disabled:cursor-not-allowed dark:border-slate-700 dark:text-slate-400"
+            >
+              {t('exportPdf')}
+              <span className="ml-2 rounded bg-slate-100 px-1.5 py-0.5 text-xs dark:bg-slate-800">
+                VIP
+              </span>
+            </button>
+          )}
+        </div>
       </div>
 
       {result.noRuleMatched ? (
@@ -169,36 +207,6 @@ export function SelectorResultPanel({
         </div>
       ) : null}
 
-      <div className="flex flex-wrap items-center gap-3">
-        {canExport && historyId ? (
-          <a
-            href={`/api/bao-cao/${historyId}`}
-            // Route trả Content-Disposition: attachment nên trình duyệt tải về
-            // thay vì mở tab mới rồi bỏ trống.
-            className="rounded-md bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:bg-slate-900 dark:bg-slate-200 dark:text-slate-900 dark:hover:bg-white"
-          >
-            {t('exportPdf')}
-          </a>
-        ) : (
-          <button
-            type="button"
-            disabled
-            title={canExport ? t('exportNeedsHistory') : t('exportVipOnly')}
-            className="rounded-md border border-slate-300 px-4 py-2 text-sm text-slate-500 disabled:cursor-not-allowed dark:border-slate-700 dark:text-slate-400"
-          >
-            {t('exportPdf')}
-            <span className="ml-2 rounded bg-slate-100 px-1.5 py-0.5 text-xs dark:bg-slate-800">
-              VIP
-            </span>
-          </button>
-        )}
-
-        <p className="text-xs text-slate-500 dark:text-slate-400">
-          {/* Chỉ khẳng định đã lưu khi thật sự biết là đã lưu. Trước đây
-              undefined cũng báo "đã lưu". */}
-          {historySaved === true ? t('historySaved') : t('historyNotSaved')}
-        </p>
-      </div>
     </section>
   );
 }

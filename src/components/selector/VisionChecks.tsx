@@ -43,6 +43,12 @@ export function VisionChecks({
 }) {
   const t = useTranslations('selector.vision');
 
+  const totalChecks = analysis.sections.reduce((sum, section) => sum + section.checks.length, 0);
+  /* Mọi phép kiểm đều đạt thì gập cả khối lại. Đo được khối này cao 1228px —
+     cao hơn cả bảng danh mục vật tư (824px), tức là phần KIỂM CHỨNG đang lấn
+     át phần TRẢ LỜI. Có cảnh báo thì vẫn mở sẵn, không được giấu. */
+  const needsAttention = analysis.overall === 'warn' || analysis.overall === 'fail';
+
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -53,7 +59,8 @@ export function VisionChecks({
       {/*
         Cảnh báo cố định: hiện dù mọi phép kiểm đều đạt. Đủ độ phân giải chỉ nói
         lỗi đủ lớn trong ảnh, không nói nó có nổi khỏi nền hay không — ranh giới
-        mà không công thức nào vượt qua được.
+        mà không công thức nào vượt qua được. Nằm NGOÀI khối gập, nếu không nó
+        biến mất đúng lúc mọi thứ đều đạt — tức là đúng lúc dễ chủ quan nhất.
       */}
       <p className="mt-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm leading-relaxed text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
         {t('contrastDisclaimer')}
@@ -64,6 +71,11 @@ export function VisionChecks({
           {t('needCamera')}
         </p>
       )}
+
+      <details open={needsAttention} className="mt-3">
+        <summary className="cursor-pointer text-sm text-sky-700 underline-offset-2 hover:underline dark:text-sky-400">
+          {t('checkCount', { count: totalChecks })}
+        </summary>
 
       <div className="mt-3 space-y-2">
         {analysis.sections
@@ -96,6 +108,7 @@ export function VisionChecks({
             );
           })}
       </div>
+      </details>
     </div>
   );
 }

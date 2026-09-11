@@ -1,7 +1,6 @@
 import { notFound } from 'next/navigation';
 import { PcPlanner } from '@/components/pc/PcPlanner';
 import { SelectorForm } from '@/components/selector/SelectorForm';
-import { SelectorResultPanel } from '@/components/selector/SelectorResultPanel';
 import type { Component } from '@/lib/components/specs';
 import { getFieldDefs } from '@/lib/selector/fields';
 import type { SelectorInput, SelectorResult } from '@/lib/selector/types';
@@ -217,6 +216,10 @@ export default function DevPreviewPage() {
       <h1 className="text-2xl font-bold tracking-tight">Kiểm tra ngoại quan — xem trước bố cục</h1>
 
       <div className="mt-8">
+        <h2 className="mb-2 text-lg font-semibold">Giai đoạn 1 — chưa có kết quả</h2>
+        <p className="mb-6 text-sm text-slate-600 dark:text-slate-400">
+          Form nằm giữa màn hình, rộng 768px. Trước đây nó bị ép vào cột trái 532px.
+        </p>
         <SelectorForm taskSlug="appearance-inspection" fields={fields} canExport={false} />
       </div>
 
@@ -236,13 +239,16 @@ export default function DevPreviewPage() {
       </div>
 
       <div className="mt-12 border-t border-slate-200 pt-8 dark:border-slate-800">
-        <h2 className="mb-6 text-lg font-semibold">Khung kết quả (dữ liệu giả)</h2>
-        <SelectorResultPanel
-          result={RESULT}
-          input={INPUT}
-          components={COMPONENTS}
-          historySaved={false}
+        <h2 className="mb-2 text-lg font-semibold">Giai đoạn 2 — đã có kết quả (dữ liệu giả)</h2>
+        <p className="mb-6 text-sm text-slate-600 dark:text-slate-400">
+          Form thu lại thành thanh tóm tắt, kết quả chiếm trọn bề ngang. Bấm &quot;Sửa thông
+          số&quot; để mở lại form.
+        </p>
+        <SelectorForm
+          taskSlug="appearance-inspection"
+          fields={fields}
           canExport={false}
+          initialState={{ result: RESULT, input: INPUT, components: COMPONENTS, historySaved: false }}
         />
       </div>
     </section>

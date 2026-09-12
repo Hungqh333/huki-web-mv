@@ -17,10 +17,12 @@ import {
   type ComponentChoice,
 } from '@/lib/components/match';
 import { accessoryQty, pickRuleAccessories } from '@/lib/components/accessories';
+import { buildVariants } from '@/lib/components/variants';
 import { SPEC_FIELDS, SUMMARY_KEYS, specString, type Component } from '@/lib/components/specs';
 import type { SelectorInput, SelectorResult } from '@/lib/selector/types';
 import { analyseAppearance, maxExposureForBlur, requiredPixels, verifyResolution } from '@/lib/vision';
 import { appearanceInputFromForm } from '@/lib/vision/fromInput';
+import { VariantCompare } from './VariantCompare';
 import { VisionChecks } from './VisionChecks';
 
 /**
@@ -146,6 +148,20 @@ export function ComponentPicker({
   });
   const camera = resolve('camera', cameraChoice);
   const cameraInterface = camera ? specString(camera.spec, 'interface') : null;
+
+  /* Ba phương án so sánh. Dựng từ CHÍNH danh sách camera tương thích mà
+     pickCamera đã lọc — không lọc lại, không mở rộng ra ngoài danh sách đó. */
+  const variants = buildVariants(
+    components,
+    cameraChoice.chosen ? [cameraChoice.chosen, ...cameraChoice.alternatives] : cameraChoice.alternatives,
+    {
+      need: need ? { nx: need.nx, ny: wantsLineScan ? null : need.ny } : null,
+      fovWidthMm: fovWidth,
+      fovHeightMm: appearance?.fovHeightMm ?? null,
+      workingDistanceMm: workingDistance,
+      needTelecentric,
+    }
+  );
 
   const lensChoice = pickLens(components, {
     camera,
@@ -397,6 +413,18 @@ export function ComponentPicker({
 
   return (
     <div>
+      {variants.length > 1 ? (
+        <div className="mb-8">
+          <VariantCompare
+            variants={variants}
+            selectedCode={camera?.code ?? null}
+            /* Đổi camera là đổi cả chuỗi suy ra từ nó — change() đã lo việc
+               xoá ống kính, tube, cáp và card giao tiếp. */
+            onSelect={(code) => change('camera', code)}
+          />
+        </div>
+      ) : null}
+
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
         <h3 className="font-semibold">{t('title')}</h3>
 

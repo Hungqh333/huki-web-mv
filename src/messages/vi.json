@@ -580,6 +580,36 @@
       "workingDistance": "Khoảng cách làm việc {value} mm",
       "share": "Lỗi chiếm {percent}% bề rộng khung hình.",
       "heightUnknown": "Chưa nhập chiều cao — hình chỉ minh hoạ tỷ lệ."
+    },
+    "variants": {
+      "title": "So sánh phương án",
+      "hint": "Ba cột đều là thiết bị có thật trong catalog và đều đủ ngưỡng. Khác nhau ở BIÊN DƯ — còn bao nhiêu chỗ trước khi rơi xuống dưới ngưỡng.",
+      "recommended": "ĐỀ XUẤT",
+      "keys": {
+        "economy": "Tiết kiệm",
+        "balanced": "Đề xuất",
+        "headroom": "Nhiều dư địa"
+      },
+      "subs": {
+        "economy": "Vừa đủ ngưỡng",
+        "balanced": "Biên dư thoải mái",
+        "headroom": "Còn chỗ nâng cấp"
+      },
+      "rows": {
+        "camera": "Camera",
+        "lens": "Ống kính",
+        "tube": "Vòng nối dài",
+        "margin": "Biên dư",
+        "mmPerPx": "Kích thước 1 pixel"
+      },
+      "marginOk": "Đủ chỗ cho sai lệch gá đặt và hao mòn đèn.",
+      "marginTight": "Dưới {threshold}% — lỗi mờ hơn dự kiến là rơi xuống dưới ngưỡng.",
+      "noLens": "Chưa có ống kính hợp trong catalog",
+      "noTube": "Chưa có trong catalog",
+      "notNeeded": "Không cần",
+      "choose": "Chọn phương án này",
+      "current": "Đang dùng",
+      "foot": "Chỉ liệt kê thứ thay đổi theo camera. Đèn, cáp và bộ điều khiển đèn không phụ thuộc camera nên nằm ở bảng vật tư bên dưới. Không có cột chi phí vì catalog chưa có giá thật."
     }
   },
   "handbook": {

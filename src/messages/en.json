@@ -580,6 +580,36 @@
       "workingDistance": "Working distance {value} mm",
       "share": "The defect covers {percent}% of the frame width.",
       "heightUnknown": "No height entered — the shape is illustrative only."
+    },
+    "variants": {
+      "title": "Compare options",
+      "hint": "All columns are real catalog parts that meet the threshold. They differ in MARGIN — how much room is left before falling below it.",
+      "recommended": "RECOMMENDED",
+      "keys": {
+        "economy": "Economy",
+        "balanced": "Recommended",
+        "headroom": "Headroom"
+      },
+      "subs": {
+        "economy": "Just above threshold",
+        "balanced": "Comfortable margin",
+        "headroom": "Room to grow"
+      },
+      "rows": {
+        "camera": "Camera",
+        "lens": "Lens",
+        "tube": "Extension tube",
+        "margin": "Margin",
+        "mmPerPx": "Pixel size on part"
+      },
+      "marginOk": "Enough room for mounting drift and lamp ageing.",
+      "marginTight": "Below {threshold}% — a fainter defect than expected drops below threshold.",
+      "noLens": "No matching lens in the catalog",
+      "noTube": "Not in the catalog yet",
+      "notNeeded": "Not needed",
+      "choose": "Choose this option",
+      "current": "In use",
+      "foot": "Only what changes with the camera is listed. Lighting, cables and the light controller do not depend on the camera, so they stay in the BOM below. No cost column, because the catalog has no real prices yet."
     }
   },
   "handbook": {

@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { runSelectorAction, type SelectorState } from '@/app/actions/selector';
 import { FIELD_GROUPS, visibleFieldDefs, type FieldDef } from '@/lib/selector/fields';
 import type { InputValue } from '@/lib/selector/types';
+import { FovPreview } from './FovPreview';
 import { SelectorField } from './SelectorField';
 import { SelectorResultPanel } from './SelectorResultPanel';
 
@@ -148,6 +149,21 @@ export function SelectorForm({
 
     return def.unit ? `${value} ${def.unit}` : String(value);
   };
+
+  /* Số đang gõ, chưa bấm tính. onChange ở cấp form đã ghi mọi ô có name vào
+     conditionValues, nên sơ đồ vẽ được ngay trong lúc nhập. */
+  const liveNumber = (key: string): number | null => {
+    const typed = conditionValues[key];
+    if (typed !== undefined && typed !== '') {
+      const value = Number(typed);
+      return Number.isFinite(value) ? value : null;
+    }
+    const saved = state.input?.[key];
+    return typeof saved === 'number' ? saved : null;
+  };
+
+  /** Bước nào có ô kích thước thì bước đó được vẽ sơ đồ. */
+  const dimensionKeys = ['fov_width_mm', 'fov_height_mm', 'defect_min_size_mm'];
 
   const submitted = state.input ?? {};
   const summary = shownFields
@@ -331,7 +347,20 @@ export function SelectorForm({
                     />
                   </div>
                 ))}
-            </div>
+
+                {/* Sơ đồ nằm TRONG lưới, chiếm trọn hàng — không dựng thêm một
+                    cột bên phải, vì cột bên phải chính là thứ vừa phải bỏ đi. */}
+                {entry.fields.some((def) => dimensionKeys.includes(def.key)) ? (
+                  <div className="sm:col-span-2">
+                    <FovPreview
+                      widthMm={liveNumber('fov_width_mm')}
+                      heightMm={liveNumber('fov_height_mm')}
+                      defectMm={liveNumber('defect_min_size_mm')}
+                      workingDistanceMm={liveNumber('working_distance_mm')}
+                    />
+                  </div>
+                ) : null}
+              </div>
             </div>
           ))}
 

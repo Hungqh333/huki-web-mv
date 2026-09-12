@@ -573,6 +573,13 @@
         "surfaceReflective": "Bề mặt bóng như gương lấn át loại lỗi: dark field thông thường chỉ thấy loá."
       },
       "checkCount": "Xem {count} bước kiểm chứng"
+    },
+    "fovPreview": {
+      "title": "Khung hình theo số bạn vừa nhập",
+      "alt": "Khung hình {width} × {height} mm, lỗi nhỏ nhất {defect} mm",
+      "workingDistance": "Khoảng cách làm việc {value} mm",
+      "share": "Lỗi chiếm {percent}% bề rộng khung hình.",
+      "heightUnknown": "Chưa nhập chiều cao — hình chỉ minh hoạ tỷ lệ."
     }
   },
   "handbook": {

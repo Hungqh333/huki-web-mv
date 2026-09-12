@@ -573,6 +573,13 @@
         "surfaceReflective": "A mirror-like surface overrides the defect type: plain dark field only shows glare."
       },
       "checkCount": "Show {count} verification steps"
+    },
+    "fovPreview": {
+      "title": "Field of view, drawn from your numbers",
+      "alt": "Field of view {width} × {height} mm, smallest defect {defect} mm",
+      "workingDistance": "Working distance {value} mm",
+      "share": "The defect covers {percent}% of the frame width.",
+      "heightUnknown": "No height entered — the shape is illustrative only."
     }
   },
   "handbook": {

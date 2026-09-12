@@ -41,13 +41,22 @@ export function FovPreview({ widthMm, heightMm, defectMm, workingDistanceMm }: P
   /* Giữ đúng tỷ lệ thật của khung hình. Không có chiều cao (line scan chẳng
      hạn) thì dùng 3:4 cho dễ nhìn, và nói rõ là chỉ minh hoạ. */
   const ratio = heightMm && heightMm > 0 ? heightMm / widthMm : 0.7;
-  const drawH = Math.min(BOX.h, Math.max(60, BOX.w * ratio));
+  /* Khung gần vuông thì phải THU CẢ BỀ RỘNG lại chứ không được cắt chiều cao.
+     Bản đầu kẹp chiều cao ở 210 nên khung 300 × 280 mm vẽ ra thành 300 × 210 —
+     một sơ đồ kích thước nói sai tỷ lệ thì hỏng cả mục đích của nó. */
+  let drawW = BOX.w;
+  let drawH = drawW * ratio;
+  if (drawH > BOX.h) {
+    drawH = BOX.h;
+    drawW = drawH / ratio;
+  }
+  const drawX = BOX.x + (BOX.w - drawW) / 2;
   const drawY = BOX.y + (BOX.h - drawH) / 2;
 
   // Lỗi vẽ đúng tỷ lệ so với bề rộng khung.
   const defectRatio = defectMm && defectMm > 0 ? defectMm / widthMm : null;
-  const defectPx = defectRatio ? defectRatio * BOX.w : null;
-  const cx = BOX.x + BOX.w / 2;
+  const defectPx = defectRatio ? defectRatio * drawW : null;
+  const cx = drawX + drawW / 2;
   const cy = drawY + drawH / 2;
 
   /* Độ phóng của vòng chi tiết: đưa lỗi lên khoảng 40% đường kính vòng. Chặn
@@ -77,9 +86,9 @@ export function FovPreview({ widthMm, heightMm, defectMm, workingDistanceMm }: P
       >
         {/* --------------------------------------------------- KHUNG HÌNH -- */}
         <rect
-          x={BOX.x}
+          x={drawX}
           y={drawY}
-          width={BOX.w}
+          width={drawW}
           height={drawH}
           rx="3"
           className="fill-white stroke-slate-400 dark:fill-slate-950 dark:stroke-slate-600"
@@ -89,10 +98,10 @@ export function FovPreview({ widthMm, heightMm, defectMm, workingDistanceMm }: P
         {/* Bốn góc ngắm, để nó đọc ra là "khung hình camera" chứ không phải
             một cái hộp bất kỳ. */}
         {[
-          [BOX.x, drawY, 1, 1],
-          [BOX.x + BOX.w, drawY, -1, 1],
-          [BOX.x, drawY + drawH, 1, -1],
-          [BOX.x + BOX.w, drawY + drawH, -1, -1],
+          [drawX, drawY, 1, 1],
+          [drawX + drawW, drawY, -1, 1],
+          [drawX, drawY + drawH, 1, -1],
+          [drawX + drawW, drawY + drawH, -1, -1],
         ].map(([x, y, sx, sy]) => (
           <path
             key={`${x}-${y}`}
@@ -105,9 +114,9 @@ export function FovPreview({ widthMm, heightMm, defectMm, workingDistanceMm }: P
 
         {/* ------------------------------------------------ ĐƯỜNG KÍCH THƯỚC -- */}
         <g className="stroke-slate-400 dark:stroke-slate-500" strokeWidth="1">
-          <line x1={BOX.x} y1={drawY - 14} x2={BOX.x + BOX.w} y2={drawY - 14} />
-          <line x1={BOX.x} y1={drawY - 19} x2={BOX.x} y2={drawY - 9} />
-          <line x1={BOX.x + BOX.w} y1={drawY - 19} x2={BOX.x + BOX.w} y2={drawY - 9} />
+          <line x1={drawX} y1={drawY - 14} x2={drawX + drawW} y2={drawY - 14} />
+          <line x1={drawX} y1={drawY - 19} x2={drawX} y2={drawY - 9} />
+          <line x1={drawX + drawW} y1={drawY - 19} x2={drawX + drawW} y2={drawY - 9} />
         </g>
         <text
           x={cx}
@@ -121,15 +130,15 @@ export function FovPreview({ widthMm, heightMm, defectMm, workingDistanceMm }: P
         {heightMm && heightMm > 0 ? (
           <>
             <g className="stroke-slate-400 dark:stroke-slate-500" strokeWidth="1">
-              <line x1={BOX.x - 14} y1={drawY} x2={BOX.x - 14} y2={drawY + drawH} />
-              <line x1={BOX.x - 19} y1={drawY} x2={BOX.x - 9} y2={drawY} />
-              <line x1={BOX.x - 19} y1={drawY + drawH} x2={BOX.x - 9} y2={drawY + drawH} />
+              <line x1={drawX - 14} y1={drawY} x2={drawX - 14} y2={drawY + drawH} />
+              <line x1={drawX - 19} y1={drawY} x2={drawX - 9} y2={drawY} />
+              <line x1={drawX - 19} y1={drawY + drawH} x2={drawX - 9} y2={drawY + drawH} />
             </g>
             <text
-              x={BOX.x - 20}
+              x={drawX - 20}
               y={cy}
               textAnchor="middle"
-              transform={`rotate(-90 ${BOX.x - 20} ${cy})`}
+              transform={`rotate(-90 ${drawX - 20} ${cy})`}
               className="fill-slate-600 text-[13px] font-medium dark:fill-slate-300"
             >
               {fmt(heightMm)} mm
@@ -184,7 +193,7 @@ export function FovPreview({ widthMm, heightMm, defectMm, workingDistanceMm }: P
         {/* --------------------------------------- KHOẢNG CÁCH LÀM VIỆC -- */}
         {workingDistanceMm && workingDistanceMm > 0 ? (
           <text
-            x={BOX.x}
+            x={drawX}
             y={drawY + drawH + 26}
             className="fill-slate-500 text-[12px] dark:fill-slate-400"
           >

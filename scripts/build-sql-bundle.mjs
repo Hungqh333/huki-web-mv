@@ -7,33 +7,11 @@
  *
  *   node scripts/build-sql-bundle.mjs kpi     → CHAY-BUOC-NAY.sql
  *
+ * Danh sách bundle nằm ở sql-bundles.mjs; test:db chạy thử đúng nội dung đó.
  * File kết quả nằm ngoài git (.gitignore) vì nó chỉ là bản ghép tạm.
  */
 import { readFileSync, writeFileSync } from 'node:fs';
-
-const BUNDLES = {
-  kpi: {
-    out: 'CHAY-BUOC-NAY.sql',
-    parts: [
-      ['PHAN 1/2: MIGRATION — tao 4 bang cho Bo tinh chi tieu', 'supabase/migrations/20260828000001_kpi_calculator.sql'],
-      ['PHAN 2/2: SEED — nap 27 loai bai toan, 16 he so, 8 tham so, 4 muc siet', 'supabase/seed_kpi.sql'],
-    ],
-  },
-  'selector-bom': {
-    out: 'CHAY-BUOC-NAY-BOM.sql',
-    parts: [
-      ['PHAN 1/2: MIGRATION — them cot may tinh + phu kien cho bang luat', 'supabase/migrations/20260904000001_selector_bom.sql'],
-      ['PHAN 2/2: SEED — nap lai bang luat kem hai cum moi', 'supabase/seed.sql'],
-    ],
-  },
-  components: {
-    out: 'CHAY-BUOC-NAY-LINHKIEN.sql',
-    parts: [
-      ['PHAN 1/2: MIGRATION — bang catalog linh kien', 'supabase/migrations/20260904000002_components.sql'],
-      ['PHAN 2/2: SEED — nap thiet bi mau cua Basler, Hikrobot, iRayple, HZ, Coolens', 'supabase/seed_components.sql'],
-    ],
-  },
-};
+import { BUNDLES, renderBundle } from './sql-bundles.mjs';
 
 const name = process.argv[2];
 const bundle = BUNDLES[name];
@@ -42,15 +20,7 @@ if (!bundle) {
   process.exit(1);
 }
 
-const body = bundle.parts
-  .map(([label, path]) => `-- ===== ${label} =====\n${readFileSync(path, 'utf8').trimEnd()}\n`)
-  .join('\n');
+const sql = renderBundle(bundle, (path) => readFileSync(path, 'utf8'));
 
-const header = `-- File nay duoc sinh tu dong boi scripts/build-sql-bundle.mjs — dung sua tay.
--- Nguon: ${bundle.parts.map(([, p]) => p).join(', ')}
--- Chay lai duoc nhieu lan: migration dung "if not exists", seed dung "on conflict do update".
-
-`;
-
-writeFileSync(bundle.out, header + body, 'utf8');
-console.log(`Da ghi ${bundle.out} (${(header + body).split('\n').length} dong)`);
+writeFileSync(bundle.out, sql, 'utf8');
+console.log(`Da ghi ${bundle.out} (${sql.split('\n').length} dong)`);

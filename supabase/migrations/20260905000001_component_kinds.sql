@@ -18,24 +18,33 @@ alter table public.components
 
 drop type if exists public.component_kind;
 
-alter table public.components
-  drop constraint if exists components_kind_valid;
-
-alter table public.components
-  add constraint components_kind_valid check (
-    kind in (
-      'camera',
-      'lens',
-      'tube',
-      'light',
-      'cable',
-      'light_controller',
-      'controller',
-      'software',
-      'pc_option',
-      'accessory'
-    )
-  );
+-- Chỉ thêm khi CHƯA có. Không drop rồi add lại: dán lần hai, lúc bảng đã có
+-- dòng 'interface_card' (loại do 20260905000002 thêm), danh sách hẹp dưới đây sẽ
+-- vỡ với "check constraint ... is violated by some row". Migration sau đặt lại
+-- danh sách đầy đủ, nên trạng thái cuối vẫn như cũ.
+do $$ begin
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'components_kind_valid'
+      and conrelid = 'public.components'::regclass
+  ) then
+    alter table public.components
+      add constraint components_kind_valid check (
+        kind in (
+          'camera',
+          'lens',
+          'tube',
+          'light',
+          'cable',
+          'light_controller',
+          'controller',
+          'software',
+          'pc_option',
+          'accessory'
+        )
+      );
+  end if;
+end $$;
 
 comment on column public.components.kind is
   'Loại linh kiện. Danh sách hợp lệ nằm ở ràng buộc components_kind_valid và ở COMPONENT_KINDS trong src/lib/components/specs.ts — hai chỗ phải khớp nhau.';

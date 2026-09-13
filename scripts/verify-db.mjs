@@ -12,6 +12,7 @@ import { PGlite } from '@electric-sql/pglite';
 import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { BUNDLES, renderBundle } from './sql-bundles.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const SUPABASE_DIR = join(ROOT, 'supabase');
@@ -81,7 +82,34 @@ for (const seed of ['seed.sql', 'seed_kpi.sql', 'seed_components.sql']) {
 console.log('\nKiểm chứng phân quyền');
 ok = (await step(db, 'rls_smoke_test.sql', read('tests', 'rls_smoke_test.sql'))) && ok;
 
+await db.close();
+
+/*
+ * Chạy thử CHÍNH file CHAY-BUOC-NAY*.sql người dùng dán.
+ *
+ * Phần trên áp mọi migration rồi mới nạp seed, nên bundle ghép thiếu migration
+ * vẫn qua — seed_components.sql cần 'tube' mà bundle cũ không có migration đổi
+ * enum sang text, và vỡ trên Supabase. Ở đây mỗi bundle chạy trên database mới
+ * chỉ có các migration CŨ HƠN migration đầu tiên của nó, đúng như database thật
+ * lúc người dùng dán, rồi dán lần hai để chắc chạy lại được.
+ */
+console.log('\nChạy thử từng file CHAY-BUOC-NAY (database chỉ có migration cũ hơn)');
+for (const bundle of Object.values(BUNDLES)) {
+  const first = bundle.parts.map(([, path]) => path).find((path) => path.includes('/migrations/'));
+  const older = migrations.filter((file) => `supabase/migrations/${file}` < first);
+  const sql = stripPgcrypto(renderBundle(bundle, (path) => readFileSync(join(ROOT, path), 'utf8')));
+
+  const fresh = await PGlite.create();
+  let ready = await step(fresh, `${bundle.out}: auth_stub + ${older.length} migration cũ hơn`, [
+    read('tests', 'auth_stub.sql'),
+    ...older.map((file) => stripPgcrypto(read('migrations', file))),
+  ].join('\n'));
+  ready = ready && (await step(fresh, bundle.out, sql));
+  ready = ready && (await step(fresh, `${bundle.out} (lần 2)`, sql));
+  ok = ready && ok;
+  await fresh.close();
+}
+
 console.log(ok ? '\nTất cả đều qua.' : '\nCÓ LỖI — xem ở trên.');
 
-await db.close();
 process.exitCode = ok ? 0 : 1;

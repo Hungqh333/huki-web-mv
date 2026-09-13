@@ -160,7 +160,9 @@ Bảng hiện có: 1/3, 1/2.5, 1/2, 1/1.8, 2/3, 1, 4/3.
 
 ### GAP 7 — `INTERFACE_BANDWIDTH` thiếu 2 chuẩn ⚠ THẤP, sửa nhanh
 
-Thiếu `CXP-12` (~1200 MB/s) và `CameraLink Full` (~800 MB/s).
+Thiếu `CXP-12` (~1200 MB/s mỗi lane) và Camera Link.
+
+**Đã sửa:** thêm `CXP-12` = 1200 MB/s/lane (12,5 Gbps; BitFlow, KAYA, Euresys). Camera Link tách theo cấu hình: `CameraLink-Base` 255, `-Medium` 510, `-Full` 680, `-Deca` 850 MB/s (Gidel, Agmanic). Con số ~800 MB/s ghi ở bản trước không khớp cấu hình nào nên đã bỏ.
 
 ### GAP 8 — Ba công cụ còn rời rạc 🔵 ĐÂY MỚI LÀ VIỆC CHÍNH
 

@@ -56,9 +56,11 @@ Chênh **1.67×**. Mockup gốc ghi "Required resolution ≥ 12.4 MP" — con s�
 
 | Cấu hình | FOV/camera | px/camera | MP/camera |
 |---|---|---|---|
-| 1 camera | 380 × 280 | 6333 × 4667 | **29.6 MP** |
-| 2 camera (1×2) | 200 × 280 | 3333 × 4667 | **15.6 MP** |
-| 4 camera (2×2) | 200 × 150 | 3333 × 2500 | **8.3 MP** |
+| 1 camera | 380 × 280 | 6334 × 4667 | **29.6 MP** |
+| 2 camera (1×2) | 200 × 280 | 3334 × 4667 | **15.6 MP** |
+| 4 camera (2×2) | 200 × 150 | 3334 × 2500 | **8.3 MP** |
+
+> Số pixel làm tròn LÊN vì cần ĐỦ pixel: 380 ÷ 0,06 = 6333,3 → 6334; 200 ÷ 0,06 = 3333,3 → 3334.
 
 Đây là lý do phải hỏi số camera trước khi gợi ý thiết bị. Không hỏi thì sai một bậc.
 
@@ -234,7 +236,7 @@ Chưa thể kết luận vì thiếu thông tin:
 **Danh sách Key Requirements của mockup thiếu 3 dòng quan trọng nhất.** Mockup có: Resolution, FOV, Defect size, Speed, AI performance, Working distance. Bổ sung:
 
 ```
-✓ Độ phân giải      ĐẠT      margin 1.23×
+✓ Độ phân giải      ĐẠT      margin 1.2×
 ✓ Vùng quan sát     ĐẠT
 ✓ Kích thước lỗi    ĐẠT
 ⛔ Chiếu sáng        CHƯA RÕ   ← BỔ SUNG (nguyên nhân hỏng số 1 thực tế)
@@ -264,7 +266,7 @@ Và ±0.05 mm ở High Performance thì **không mua được bằng camera tố
 └─────────────────────────────────────────────────────────────┘
 
                  Tiết kiệm      ĐỀ XUẤT        Hiệu năng cao
-                 (bị chặn)      margin 1.3×    margin 1.8×
+                 (bị chặn)      margin 1.2×    margin 1.8×
 ─────────────────────────────────────────────────────────────
 Camera           —              4 × 12 MP      4 × 20 MP
 Lens             —              Entocentric    Telecentric
@@ -273,8 +275,8 @@ Chiếu sáng       —              (chờ bề mặt)   (chờ bề mặt)
 IPC              —              i7 + 5GigE     i9 + 10GigE
 Software         —              HALCON         HALCON
 ─────────────────────────────────────────────────────────────
-Dư độ phân giải  —              1.23×          1.85×
-  mm/px          —              0.0488         0.0325
+Dư độ phân giải  —              1.2×           1.85×
+  mm/px          —              0.050          0.0325
 Dư thời gian     —              chưa rõ nhịp   chưa rõ nhịp
 Chi phí ước tính —              (từ BOM)       (từ BOM)
 ─────────────────────────────────────────────────────────────
@@ -340,8 +342,9 @@ Yêu cầu tính được
   • Quyết định: đo lường (chặt hơn 1.67×)          RES-003
 
 Thiết bị đã chọn
-  • 12 MP (4096 × 3000) → 0.0488 mm/px
-  • Dư 1.23× so với yêu cầu 0.060 mm/px
+  • 12 MP (4096 × 3000) → 0.0488 × 0.050 mm/px (ngang × dọc)
+  • Dư 1.2× so với yêu cầu 0.060 mm/px — tính theo trục THÔ hơn (dọc 150 ÷ 3000 = 0.050),
+    vì kích thước cần đo có thể nằm theo trục bất kỳ. Chỉ lấy trục ngang sẽ ra 1.23×, lạc quan.
 
 Ràng buộc cứng đã kiểm
   ✓ Pixel pitch 3.45 µm → F# tối đa 4.1            OPT-004

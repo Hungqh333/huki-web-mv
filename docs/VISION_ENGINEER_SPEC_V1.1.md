@@ -396,7 +396,14 @@ Bandwidth khả dụng thực tế (không phải lý thuyết):
 | 10GigE | 1150 | 30–100 m (Cat6A/fiber) |
 | CoaXPress 6 (per lane) | 600 | 40 m+ |
 | CoaXPress 12 (per lane) | 1200 | 40 m+ |
-| Camera Link Full | 800 | 10 m |
+| Camera Link Base | 255 | 10 m |
+| Camera Link Medium | 510 | 10 m |
+| Camera Link Full | 680 | 10 m |
+| Camera Link Deca (80-bit) | 850 | 10 m |
+
+> Camera Link tách theo cấu hình vì băng thông khác nhau tới 3 lần: Base 2,04 Gbit/s ≈ 255 MB/s,
+> Medium gấp đôi, Full 680, Deca 850 (nguồn: Gidel, Agmanic). Bản trước ghi `Camera Link Full | 800`,
+> không khớp cấu hình nào. Camera phải khai đúng cấu hình nó chạy (`CameraLink-Base` … `CameraLink-Deca`).
 
 Engine phải trả: interface, **số port NIC / số lane grabber**, và cảnh báo nếu `BW_total` > 70% băng thông chọn.
 

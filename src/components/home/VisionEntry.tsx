@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { IconBadge, type BadgeTone, type IconName } from '@/components/ui/Icon';
+import { selectorHrefFor } from '@/lib/application-type-map';
 import {
   APPLICATION_SHORTCUT_ORDER,
   applicationCardEntry,
@@ -77,32 +79,70 @@ const APP_ICON: Record<ApplicationType, { icon: IconName; tone: BadgeTone }> = {
   Other: { icon: 'more', tone: 'slate' },
 };
 
+const CARD_CLASS =
+  'flex h-full w-full items-center gap-3 rounded-2xl border p-4 text-left shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/40';
+const CARD_READY_CLASS =
+  'border-slate-200 bg-white hover:border-slate-300 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700';
+const CARD_SOON_CLASS =
+  'cursor-default border-dashed border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900/50';
+
 export function ApplicationCards() {
   const t = useTranslations('home.entry.apps');
+  const tEntry = useTranslations('home.entry');
 
   return (
     <ul className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
       {APPLICATION_SHORTCUT_ORDER.map((type) => {
         const title = t(`${type}.title`);
         const term = t(`${type}.term`);
+        const href = selectorHrefFor(type);
+        const payload = applicationCardEntry(type);
+
+        const body = (
+          <>
+            <IconBadge
+              name={APP_ICON[type].icon}
+              tone={href ? APP_ICON[type].tone : 'slate'}
+              className="size-10"
+            />
+            <span className="min-w-0">
+              <span className="block text-sm font-semibold text-slate-900 dark:text-slate-100">
+                {title}
+              </span>
+              {/* Tiếng Việt chính, thuật ngữ English dòng nhỏ (spec §0.2). Bản en trùng thì ẩn. */}
+              {term !== title ? (
+                <span className="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">{term}</span>
+              ) : null}
+              {href ? null : (
+                <span className="mt-1.5 inline-block rounded-full bg-slate-200 px-2 py-0.5 text-[11px] font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                  {tEntry('comingSoon')}
+                </span>
+              )}
+            </span>
+          </>
+        );
+
         return (
           <li key={type}>
-            <button
-              type="button"
-              onClick={() => submitEntry(applicationCardEntry(type))}
-              className="flex h-full w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:border-slate-300 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/40 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700"
-            >
-              <IconBadge name={APP_ICON[type].icon} tone={APP_ICON[type].tone} className="size-10" />
-              <span className="min-w-0">
-                <span className="block text-sm font-semibold text-slate-900 dark:text-slate-100">
-                  {title}
-                </span>
-                {/* Tiếng Việt chính, thuật ngữ English dòng nhỏ (spec §0.2). Bản en trùng thì ẩn. */}
-                {term !== title ? (
-                  <span className="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">{term}</span>
-                ) : null}
-              </span>
-            </button>
+            {href ? (
+              // Vào thẳng bài toán có sẵn. Vẫn ghi payload để bước parser sau này nhận đúng shape.
+              <Link
+                href={href}
+                onClick={() => submitEntry(payload)}
+                className={`${CARD_CLASS} ${CARD_READY_CLASS}`}
+              >
+                {body}
+              </Link>
+            ) : (
+              <button
+                type="button"
+                aria-disabled="true"
+                onClick={() => submitEntry(payload)}
+                className={`${CARD_CLASS} ${CARD_SOON_CLASS}`}
+              >
+                {body}
+              </button>
+            )}
           </li>
         );
       })}

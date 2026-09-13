@@ -66,6 +66,7 @@
       "problemPlaceholder": "I need appearance inspection of a 380 × 280 mm part, smallest defect 0.5 mm, accuracy ±0.1 mm, 4 cameras.",
       "analyze": "Analyze problem",
       "appsHeading": "Or pick an application",
+      "comingSoon": "Coming soon",
       "apps": {
         "Measurement": {
           "title": "Measurement",

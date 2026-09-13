@@ -7,6 +7,7 @@ import {
   applicationCardEntry,
   freeTextEntry,
 } from '../src/lib/visionEntry';
+import { APPLICATION_TASK_SLUG, selectorHrefFor } from '../src/lib/application-type-map';
 
 const PAYLOAD_KEYS = ['applicationType', 'rawText', 'source'];
 
@@ -62,5 +63,46 @@ test('vi và en có nhãn cho mọi thẻ; key home.* cũ vẫn còn cho /home-o
     for (const mod of ['handbook', 'selector', 'kpi']) {
       assert.ok(home.modules[mod]?.title, `${locale}: key cu home.modules.${mod} bi xoa`);
     }
+  }
+});
+
+// ------------------------------------------------ THẺ → BÀI TOÁN (hạng mục 2) --
+
+test('mapping thẻ → task slug đúng bảng đã duyệt', () => {
+  assert.deepEqual(APPLICATION_TASK_SLUG, {
+    Measurement: '2d-measurement',
+    AppearanceInspection: 'appearance-inspection',
+    '3D': '3d-measurement',
+    RobotGuidance: 'robot-guidance',
+    OCR: 'ocr-ocv',
+    AIInspection: null,
+    AssemblyInspection: null,
+    Other: null,
+  });
+  assert.deepEqual(Object.keys(APPLICATION_TASK_SLUG).sort(), [...APPLICATION_TYPES].sort(), 'du 8 loai');
+});
+
+test('thẻ map được thì trỏ route bộ chọn có sẵn, thẻ null thì không điều hướng', () => {
+  assert.equal(selectorHrefFor('Measurement'), '/cong-cu-chon-thiet-bi/2d-measurement');
+  assert.equal(selectorHrefFor('OCR'), '/cong-cu-chon-thiet-bi/ocr-ocv');
+  for (const type of ['AIInspection', 'AssemblyInspection', 'Other'] as const) {
+    assert.equal(selectorHrefFor(type), null, type);
+  }
+});
+
+test('mọi slug trong mapping đều có trong task_types của seed', () => {
+  // Chặn gõ nhầm slug: link sai sẽ ra 404 mà không test nào khác bắt được.
+  const seed = readFileSync(new URL('../supabase/seed.sql', import.meta.url), 'utf8');
+  const inserts = seed.split(/insert into public\.task_types/i).slice(1).map((part) => part.split(/on conflict/i)[0]);
+  const slugs = new Set(inserts.flatMap((block) => [...block.matchAll(/^\s*\('([a-z0-9-]+)',/gm)].map((m) => m[1])));
+  assert.ok(slugs.has('alignment') && slugs.has('barcode-reading'), 'doc duoc seed');
+  for (const slug of Object.values(APPLICATION_TASK_SLUG)) {
+    if (slug) assert.ok(slugs.has(slug), `slug ${slug} khong co trong task_types`);
+  }
+});
+
+test('nhãn "Sắp có" có ở cả hai ngôn ngữ', () => {
+  for (const locale of ['vi', 'en'] as const) {
+    assert.ok(loadMessages(locale).home.entry.comingSoon, `${locale}: thieu home.entry.comingSoon`);
   }
 });

@@ -17,7 +17,12 @@
     "pc": "Máy tính (PC)",
     "selectorVision": "Thiết bị vision",
     "selectorVisionDesc": "Camera, ống kính, đèn, cáp — chọn theo từng bài toán.",
-    "pcDesc": "Máy, card giao tiếp, phần mềm — dùng chung cho nhiều bài toán."
+    "pcDesc": "Máy, card giao tiếp, phần mềm — dùng chung cho nhiều bài toán.",
+    "visionEngineer": "Vision Engineer",
+    "knowledge": "Cẩm nang",
+    "tools": "Công cụ",
+    "equipment": "Thiết bị",
+    "projects": "Dự án"
   },
   "language": {
     "label": "Ngôn ngữ",

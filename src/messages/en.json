@@ -17,7 +17,12 @@
     "pc": "PC",
     "selectorVision": "Vision equipment",
     "selectorVisionDesc": "Camera, lens, lighting, cables — chosen per task.",
-    "pcDesc": "Machine, interface card, software — shared across tasks."
+    "pcDesc": "Machine, interface card, software — shared across tasks.",
+    "visionEngineer": "Vision Engineer",
+    "knowledge": "Knowledge",
+    "tools": "Tools",
+    "equipment": "Equipment",
+    "projects": "Projects"
   },
   "language": {
     "label": "Language",

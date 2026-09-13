@@ -6,20 +6,32 @@ import { RoleBadge } from '@/components/auth/RoleBadge';
 import { SignOutButton } from '@/components/auth/SignOutButton';
 import { getSessionContext, isAdmin } from '@/lib/auth';
 
-/* Mục phẳng. "Bộ chọn thiết bị" tách riêng bên dưới vì nó xổ xuống. */
+/*
+ * Menu theo spec §0.2: Vision Engineer | Knowledge | Tools | Equipment | Projects.
+ *
+ * Ranh giới Công cụ / Thiết bị — dùng khi thêm trang mới:
+ *   Công cụ  = tính ra CON SỐ (chỉ tiêu, chi phí...)
+ *   Thiết bị = chọn ra MÓN HÀNG đi vào BOM
+ * Máy tính (PC) là món hàng nên nằm dưới Thiết bị, dù route là /cong-cu-may-tinh.
+ *
+ * Mục phẳng. "Thiết bị" tách riêng bên dưới vì nó xổ xuống.
+ * nav.projects: unused until V1a item 7 (Save Project + Revision) — key đã có
+ * sẵn trong messages, thêm { href, key: 'projects' } khi có trang dự án.
+ */
 const navItems = [
-  { href: '/cam-nang', key: 'handbook' },
-  { href: '/cong-cu-chi-tieu', key: 'kpi' },
+  { href: '/', key: 'visionEngineer' },
+  { href: '/cam-nang', key: 'knowledge' },
+  { href: '/cong-cu-chi-tieu', key: 'tools' },
 ] as const;
 
 /*
- * Hai công cụ nằm dưới "Bộ chọn thiết bị".
+ * Hai trang nằm dưới "Thiết bị".
  *
  * Chọn thiết bị vision làm theo TỪNG bài toán, còn máy tính thì dùng chung
  * cho cả dự án — nhiều bài toán chạy trên một máy. Gộp vào một mục xổ xuống
  * để thấy được quan hệ đó; để ngang hàng trên menu thì đọc như hai phần rời.
  */
-const selectorItems = [
+const equipmentItems = [
   { href: '/cong-cu-chon-thiet-bi', key: 'selectorVision' },
   { href: '/cong-cu-may-tinh', key: 'pc' },
 ] as const;
@@ -57,7 +69,7 @@ export async function Header() {
           {/* Điện thoại: hai mục phẳng. Thanh này cuộn ngang nên panel xổ
               xuống sẽ bị cắt cụt — flat vừa đúng vừa dễ bấm hơn trên mobile. */}
           <div className="contents sm:hidden">
-            {selectorItems.map((item) => (
+            {equipmentItems.map((item) => (
               <Link key={item.href} href={item.href} className={navLinkClass}>
                 {t(item.key)}
               </Link>
@@ -66,8 +78,8 @@ export async function Header() {
 
           <NavDropdown
             className="hidden sm:block"
-            label={t('selector')}
-            items={selectorItems.map((item) => ({
+            label={t('equipment')}
+            items={equipmentItems.map((item) => ({
               href: item.href,
               label: t(item.key),
               description: t(`${item.key}Desc`),

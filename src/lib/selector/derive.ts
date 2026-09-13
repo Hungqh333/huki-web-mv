@@ -3,6 +3,12 @@ import {
   DEFAULT_PIXEL_FORMAT,
   pixelFormatBytes,
 } from '@/lib/components/specs';
+import {
+  GRR_DIVISOR,
+  K_SUBPIXEL,
+  measurementBudget,
+  type MeasurementBudget,
+} from '@/lib/vision/resolution';
 import type { DerivedMetric, EvalContext, SelectorInput } from './types';
 
 /**
@@ -56,6 +62,120 @@ function round(value: number): number {
   return Math.round(value * 1000) / 1000;
 }
 
+function round4(value: number): number {
+  return Math.round(value * 10_000) / 10_000;
+}
+
+/** Làm tròn LÊN số pixel, bỏ qua sai số dấu phẩy động: 100 ÷ (0,1 ÷ 3) ra
+    3000,0000000000005 và `Math.ceil` thẳng sẽ đòi thành 3001 px. */
+function ceilPx(value: number): number {
+  return Math.ceil(value - 1e-9);
+}
+
+/**
+ * Bài toán mà `tolerance_mm` là dung sai ĐO dạng ± chứ không phải kích thước
+ * đặc trưng cần phân biệt.
+ *
+ * Với bài đo, công thức "3 px phủ lên dung sai" của CLAUDE.md mục 4 sai bản
+ * chất: ±t là dải tổng T = 2t, hệ đo chỉ được chiếm 1/10 dải đó (GR&R), và nội
+ * suy dưới pixel lặp lại được cỡ 1/3 pixel. Ra mm/px = (2t ÷ 10) × 3, tức ±0,1
+ * mm cần 0,06 mm/px chứ không phải 0,033. Công thức nằm ở `measurementBudget()`
+ * trong vision/resolution.ts — một chỗ duy nhất, bài ngoại quan dùng chung.
+ *
+ * Alignment cũng có `tolerance_mm` nhưng CỐ Ý chưa đổi: sai số căn chỉnh không
+ * phải phép đo theo dung sai, cần quyết định riêng.
+ */
+export const GAGE_TOLERANCE_TASKS: ReadonlySet<string> = new Set(['2d-measurement']);
+
+type ResolutionTarget = {
+  /** mm/px cần đạt trên trục dài. */
+  mmPerPx: number;
+  /** Số pixel thực tế phủ lên đặc trưng ở độ phân giải trên. */
+  pxPerFeature: number;
+  label: string;
+  /** Vế chia trong công thức hiển thị, đã kèm giải thích. */
+  explain: string;
+};
+
+function gageExplain(budget: MeasurementBudget, prefix = ''): string {
+  return (
+    `${round4(budget.mmPerPx)} mm/px [${prefix}±${budget.toleranceMm} mm → ` +
+    `(${round4(budget.totalToleranceMm)} mm ÷ ${GRR_DIVISOR}) × ${K_SUBPIXEL} px`
+  );
+}
+
+/**
+ * Độ phân giải cần đạt, tính theo mm/px.
+ *
+ * Hai nhánh độc lập rồi lấy cái CHẶT hơn (min mm/px) — giống hệt
+ * `requiredPixels()` bên vision để công cụ chọn thiết bị và bảng luật ra cùng
+ * một con số:
+ *   - Phát hiện: đặc trưng ÷ số pixel phủ lên nó. Với lỗi nhỏ nhất, số pixel là
+ *     N người dùng khai (`px_per_defect`), không phải hệ số 3 cố định.
+ *   - Đo lường: `measurement_tolerance_mm` (bài ngoại quan có đo kích thước),
+ *     hoặc chính `tolerance_mm` với bài trong GAGE_TOLERANCE_TASKS.
+ */
+function resolutionTarget(
+  input: SelectorInput,
+  safetyFactor: number,
+  taskSlug: string | null
+): ResolutionTarget | null {
+  // Đặc trưng nhỏ nhất cần phân biệt, và số pixel cần phủ lên nó — xem
+  // FEATURE_SOURCES ở trên để biết vì sao con số khác nhau giữa các bài toán.
+  const source = FEATURE_SOURCES.find((candidate) => {
+    const value = num(input[candidate.key]);
+    return value !== null && value > 0;
+  });
+
+  let primary: (ResolutionTarget & { feature: number }) | null = null;
+  if (source) {
+    const feature = num(input[source.key])!;
+    const gage =
+      source.key === 'tolerance_mm' && taskSlug !== null && GAGE_TOLERANCE_TASKS.has(taskSlug)
+        ? measurementBudget(feature)
+        : null;
+
+    if (gage) {
+      primary = {
+        feature,
+        mmPerPx: gage.mmPerPx,
+        pxPerFeature: round(feature / gage.mmPerPx),
+        label: 'dung sai đo',
+        explain: `${gageExplain(gage)}]`,
+      };
+    } else {
+      const declaredN = source.key === 'defect_min_size_mm' ? num(input.px_per_defect) : null;
+      const px = declaredN !== null && declaredN > 0 ? declaredN : (source.pxPerFeature ?? safetyFactor);
+      primary = {
+        feature,
+        mmPerPx: feature / px,
+        pxPerFeature: px,
+        label: source.labelVi,
+        explain: `(${feature} mm ÷ ${px} px)`,
+      };
+    }
+  }
+
+  const measurement = measurementBudget(num(input.measurement_tolerance_mm));
+  if (!measurement) return primary;
+
+  if (primary && primary.mmPerPx <= measurement.mmPerPx) {
+    return {
+      ...primary,
+      explain: `${primary.explain} [chặt hơn ngân sách đo ±${measurement.toleranceMm} mm = ${round4(measurement.mmPerPx)} mm/px]`,
+    };
+  }
+
+  return {
+    mmPerPx: measurement.mmPerPx,
+    pxPerFeature: round((primary?.feature ?? measurement.toleranceMm) / measurement.mmPerPx),
+    label: 'sai số đo',
+    explain: primary
+      ? `${gageExplain(measurement, 'đo ')}; chặt hơn ${primary.explain} = ${round4(primary.mmPerPx)} mm/px của ${primary.label}]`
+      : `${gageExplain(measurement)}]`,
+  };
+}
+
 /**
  * Tính các đại lượng suy ra từ đầu vào.
  *
@@ -64,13 +184,19 @@ function round(value: number): number {
  * viết được điều kiện kiểu "required_resolution_px > 5000 thì dùng line scan",
  * và admin vẫn sửa được ngưỡng đó qua bảng luật mà không cần đụng vào code.
  *
- * Công thức (CLAUDE.md mục 4):
- *   Resolution_can_thiet (px) = FOV_mm / (Dung_sai_mm / He_so_an_toan)
- * áp trên trục dài hơn của FOV.
+ * Công thức, áp trên trục dài hơn của FOV:
+ *   Resolution_can_thiet (px) = FOV_mm ÷ mm/px cần đạt
+ *   mm/px cần đạt = min(đặc trưng ÷ số px phủ lên nó, ngân sách đo)
+ * Với bài không có yêu cầu đo, vế đầu chính là công thức CLAUDE.md mục 4.
+ * Xem `resolutionTarget()` cho hai nhánh.
+ *
+ * `taskSlug` cho biết `tolerance_mm` là dung sai đo hay không — xem
+ * GAGE_TOLERANCE_TASKS. Bỏ trống thì tính như bài không đo.
  */
 export function deriveMetrics(
   input: SelectorInput,
-  safetyFactor: number = DEFAULT_SAFETY_FACTOR
+  safetyFactor: number = DEFAULT_SAFETY_FACTOR,
+  taskSlug: string | null = null
 ): { context: EvalContext; metrics: DerivedMetric[] } {
   const metrics: DerivedMetric[] = [];
   const derived: EvalContext = {};
@@ -90,27 +216,18 @@ export function deriveMetrics(
     });
   }
 
-  // Đặc trưng nhỏ nhất cần phân biệt, và số pixel cần phủ lên nó — xem
-  // FEATURE_SOURCES ở trên để biết vì sao con số khác nhau giữa các bài toán.
-  const source = FEATURE_SOURCES.find((candidate) => {
-    const value = num(input[candidate.key]);
-    return value !== null && value > 0;
-  });
-
-  const feature = source ? num(input[source.key]) : null;
-  const featureLabel = source?.labelVi ?? '';
-  const pxPerFeature = source?.pxPerFeature ?? safetyFactor;
-
   const longFov = num(derived.fov_long_mm);
+  const target = longFov !== null && longFov > 0 ? resolutionTarget(input, safetyFactor, taskSlug) : null;
 
-  if (feature !== null && feature > 0 && longFov !== null && longFov > 0) {
-    derived.px_per_feature = pxPerFeature;
-    const requiredPx = (longFov * pxPerFeature) / feature;
-    derived.required_resolution_px = Math.ceil(requiredPx);
+  if (target && longFov !== null) {
+    derived.px_per_feature = target.pxPerFeature;
+    const requiredPx = longFov / target.mmPerPx;
+    const requiredPxCeil = ceilPx(requiredPx);
+    derived.required_resolution_px = requiredPxCeil;
     metrics.push({
       key: 'required_resolution_px',
-      value: Math.ceil(requiredPx),
-      formula: `${longFov} mm ÷ (${feature} mm ÷ ${pxPerFeature} px) = ${Math.ceil(requiredPx)} px trên trục dài (${featureLabel})`,
+      value: requiredPxCeil,
+      formula: `${longFov} mm ÷ ${target.explain} = ${requiredPxCeil} px trên trục dài (${target.label})`,
     });
 
     const pxPerMm = requiredPx / longFov;
@@ -118,7 +235,7 @@ export function deriveMetrics(
     metrics.push({
       key: 'px_per_mm',
       value: round(pxPerMm),
-      formula: `${Math.ceil(requiredPx)} px ÷ ${longFov} mm = ${round(pxPerMm)} px/mm`,
+      formula: `${requiredPxCeil} px ÷ ${longFov} mm = ${round(pxPerMm)} px/mm`,
     });
 
     // Số điểm ảnh tối thiểu của cảm biến, giả định giữ nguyên tỉ lệ khung hình.
@@ -129,7 +246,7 @@ export function deriveMetrics(
     metrics.push({
       key: 'required_sensor_mp',
       value: round(megapixels),
-      formula: `${Math.ceil(requiredPx)} px × ${Math.ceil(shortPx)} px ≈ ${round(megapixels)} MP`,
+      formula: `${requiredPxCeil} px × ${ceilPx(shortPx)} px ≈ ${round(megapixels)} MP`,
     });
   }
 

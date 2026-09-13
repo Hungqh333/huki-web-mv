@@ -15,6 +15,7 @@ import { deriveMetrics, DEFAULT_SAFETY_FACTOR } from '../src/lib/selector/derive
 import { runSelector } from '../src/lib/selector/engine';
 import type { SelectorRule } from '../src/lib/selector/types';
 import { PIXEL_FORMAT_BYTES } from '../src/lib/components/specs';
+import { requiredPixels } from '../src/lib/vision/resolution';
 
 function rule(partial: Partial<SelectorRule> & { code: string }): SelectorRule {
   return {
@@ -363,4 +364,110 @@ test('hai cụm mới gộp độc lập với các cụm cũ', () => {
   assert.equal(result.accessories, 'Vo bao ve IP65', 'luat cu the hon thang o phu kien');
   assert.equal(result.camera, 'Area scan 5 MP', 'o camera van do luat nen quyet dinh');
   assert.equal(result.processing, 'GigE, PC i5');
+});
+
+// ------------------------------------------- SỐ N & CÔNG THỨC ĐO 2D (GAP 1) --
+
+test('lỗi nhỏ nhất dùng số N người dùng khai, không cố định 3 px', () => {
+  // 60 mm ÷ (0,2 mm ÷ 5 px) = 1500 px — hệ số 3 cũ ra 900 px, thiếu gần một nửa.
+  const { context, metrics } = deriveMetrics({
+    fov_width_mm: 60,
+    fov_height_mm: 60,
+    defect_min_size_mm: 0.2,
+    px_per_defect: 5,
+  });
+  assert.equal(context.px_per_feature, 5);
+  assert.equal(context.required_resolution_px, 1500);
+  const formula = metrics.find((m) => m.key === 'required_resolution_px')!.formula;
+  assert.ok(formula.includes('5 px'), `cong thuc phai hien N: ${formula}`);
+
+  // N rỗng hoặc vô nghĩa thì lùi về hệ số an toàn.
+  for (const bad of [null, 0, -2]) {
+    const { context: fallback } = deriveMetrics(
+      { fov_width_mm: 60, fov_height_mm: 60, defect_min_size_mm: 0.2, px_per_defect: bad },
+      3
+    );
+    assert.equal(fallback.required_resolution_px, 900, `N = ${bad}`);
+  }
+});
+
+test('đo 2D: ±0,1 mm → (0,2 ÷ 10) × 3 = 0,06 mm/px, không phải 0,1 ÷ 3', () => {
+  const input = { fov_width_mm: 100, fov_height_mm: 50, tolerance_mm: 0.1 };
+
+  const measure = deriveMetrics(input, 3, '2d-measurement');
+  // 100 ÷ 0,06 = 1666,7 → 1667 px.
+  assert.equal(measure.context.required_resolution_px, 1667);
+  assert.equal(measure.context.px_per_mm, 16.667);
+  assert.equal(measure.context.required_sensor_mp, 1.389, '1666,7 × 833,3 px');
+  const formula = measure.metrics.find((m) => m.key === 'required_resolution_px')!.formula;
+  assert.ok(formula.includes('0.06 mm/px'), formula);
+  assert.ok(formula.includes('÷ 10) × 3 px'), formula);
+
+  // Alignment cùng trường tolerance_mm nhưng chưa đổi công thức.
+  assert.equal(deriveMetrics(input, 3, 'alignment').context.required_resolution_px, 3000);
+  assert.equal(deriveMetrics(input, 3).context.required_resolution_px, 3000, 'khong co slug');
+
+  // Dung sai chặt thì vẫn vượt ngưỡng 5000 px của luật MEAS-HIGH-RES.
+  const tight = deriveMetrics({ ...input, tolerance_mm: 0.02 }, 3, '2d-measurement').context;
+  assert.equal(tight.required_resolution_px, 8334, '100 / 0,012');
+});
+
+test('ngoại quan có dung sai đo: derive ra đúng số pixel như bộ chọn thiết bị', () => {
+  const base = {
+    fov_width_mm: 380,
+    fov_height_mm: 280,
+    defect_min_size_mm: 0.5,
+    px_per_defect: 5,
+    throughput_ppm: 60,
+  };
+  const need = requiredPixels({
+    fovWidthMm: 380,
+    fovHeightMm: 280,
+    defectMinSizeMm: 0.5,
+    pxPerDefect: 5,
+    measurementToleranceMm: 0.1,
+  })!;
+
+  const withMeasurement = deriveMetrics({ ...base, measurement_tolerance_mm: 0.1 }, 3, 'appearance-inspection');
+  assert.equal(withMeasurement.context.required_resolution_px, need.nx, 'cung 6334 px');
+  assert.ok(
+    Math.abs((withMeasurement.context.required_sensor_mp as number) - (need.nx * need.ny) / 1e6) < 0.01,
+    'cung ~29,6 MP'
+  );
+  const formula = withMeasurement.metrics.find((m) => m.key === 'required_resolution_px')!.formula;
+  assert.ok(formula.includes('sai số đo'), formula);
+
+  // Không có nhánh đo: 380 ÷ 0,1 = 3800 px, 10,64 MP.
+  const detectionOnly = deriveMetrics(base, 3, 'appearance-inspection').context;
+  assert.equal(detectionOnly.required_resolution_px, 3800);
+  assert.equal(detectionOnly.required_sensor_mp, 10.64);
+
+  // Băng thông đi theo số pixel đúng — trước đây bị tính thiếu gần ba lần.
+  assert.ok(
+    (withMeasurement.context.data_rate_mbytes_s as number) > 2.7 * (detectionOnly.data_rate_mbytes_s as number)
+  );
+
+  // Dung sai lỏng (±1 mm → 0,6 mm/px) thì nhánh phát hiện lỗi vẫn quyết định.
+  const loose = deriveMetrics({ ...base, measurement_tolerance_mm: 1 }, 3, 'appearance-inspection').context;
+  assert.equal(loose.required_resolution_px, 3800);
+});
+
+test('runSelector truyền slug xuống derive, luật thấy đúng con số', () => {
+  const rules = [
+    rule({ code: 'BASE', priority: 100, recommended_camera: 'area scan' }),
+    rule({
+      code: 'HIGH-RES',
+      priority: 50,
+      recommended_camera: 'area scan lớn',
+      condition_json: { all: [{ field: 'required_resolution_px', op: 'gt', value: 2000 }] },
+    }),
+  ];
+  const input = { fov_width_mm: 100, fov_height_mm: 50, tolerance_mm: 0.1 };
+
+  const measure = runSelector(rules, input, '2d-measurement');
+  assert.ok(!measure.matchedRuleCodes.includes('HIGH-RES'), '1667 px khong vuot 2000');
+  assert.equal(measure.camera, 'area scan');
+
+  const alignment = runSelector(rules, input, 'alignment');
+  assert.ok(alignment.matchedRuleCodes.includes('HIGH-RES'), '3000 px vuot 2000');
 });

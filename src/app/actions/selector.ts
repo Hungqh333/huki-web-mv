@@ -82,7 +82,7 @@ export async function runSelectorAction(
   if (rulesError) return { error: rulesError.message, input };
   if (!rules || rules.length === 0) return { error: t('noRules'), input };
 
-  const result = runSelector(rules as unknown as SelectorRule[], input);
+  const result = runSelector(rules as unknown as SelectorRule[], input, slug);
 
   // RLS lo phần quyền: không phải Member+ thì truy vấn này trả rỗng.
   const { data: componentRows } = await supabase

@@ -1,5 +1,5 @@
 import { matchesCondition } from './conditions';
-import { deriveMetrics } from './derive';
+import { DEFAULT_SAFETY_FACTOR, deriveMetrics } from './derive';
 import type {
   SelectorInput,
   SelectorResult,
@@ -35,8 +35,13 @@ function noteFrom(rule: SelectorRule): SourcedNote | null {
  * sáng, lens, máy tính, phụ kiện). Ghi chú thì gom từ TẤT CẢ luật khớp, vì mỗi
  * luật cảnh báo một rủi ro khác nhau và bỏ đi cái nào cũng tiếc.
  */
-export function runSelector(rules: SelectorRule[], input: SelectorInput): SelectorResult {
-  const { context, metrics } = deriveMetrics(input);
+export function runSelector(
+  rules: SelectorRule[],
+  input: SelectorInput,
+  /** Slug bài toán — derive cần để biết `tolerance_mm` có phải dung sai đo. */
+  taskSlug: string | null = null
+): SelectorResult {
+  const { context, metrics } = deriveMetrics(input, DEFAULT_SAFETY_FACTOR, taskSlug);
 
   const matched = rules
     .filter((rule) => rule.is_active)

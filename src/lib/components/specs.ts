@@ -113,6 +113,49 @@ export const INTERFACE_BANDWIDTH: Record<string, number> = {
   CameraLink: 800,
 };
 
+/**
+ * Số byte cho một pixel theo định dạng ảnh.
+ *
+ * Trước đây code lấy 3 byte/px khi cần phân biệt màu — sai với đa số hệ vision
+ * công nghiệp: camera màu truyền ảnh Bayer THÔ 1 byte/px, việc nội suy ra RGB
+ * làm ở máy tính. Lấy 3 byte/px là thổi phồng băng thông lên ba lần.
+ *
+ * Bảng này TỪNG nằm trong `vision/timing.ts`, trong khi `selector/derive.ts`
+ * tự khai riêng `color_critical ? 3 : 1`. Cùng một bài toán, hai công cụ ra hai
+ * con số lệch nhau ba lần, và con số của derive còn chảy tiếp vào
+ * `maxCamerasByBandwidth()` nên sai luôn cả số máy tính lẫn số card giao tiếp.
+ *
+ * Chuyển về đây vì đây là tầng thấp nhất mà cả hai bên đều đã phụ thuộc: để
+ * bảng ở `timing.ts` rồi cho `specs.ts` import ngược lên sẽ thành vòng tròn
+ * (`timing.ts` vốn đã import `INTERFACE_BANDWIDTH` từ file này). `timing.ts`
+ * re-export lại để mọi chỗ đang `import ... from '@/lib/vision'` không phải sửa.
+ */
+export const PIXEL_FORMAT_BYTES: Record<string, number> = {
+  Mono8: 1,
+  BayerRG8: 1,
+  Mono12packed: 1.5,
+  Mono16: 2,
+  RGB8: 3,
+};
+
+/** Định dạng mặc định khi không khai gì: ảnh đơn sắc 8 bit. */
+export const DEFAULT_PIXEL_FORMAT = 'Mono8';
+
+/**
+ * Định dạng mặc định khi bài toán CẦN PHÂN BIỆT MÀU.
+ *
+ * Vẫn là 1 byte/px. Cần màu không có nghĩa là camera truyền 3 byte/px — nó
+ * truyền Bayer thô rồi máy tính nội suy. Chỉ chọn RGB8 khi datasheet nói rõ
+ * camera truyền RGB đã nội suy sẵn, và khi đó băng thông mới thật sự gấp ba.
+ */
+export const COLOR_DEFAULT_PIXEL_FORMAT = 'BayerRG8';
+
+/** Byte/px của một định dạng. Định dạng lạ hoặc thiếu thì trả null, không đoán. */
+export function pixelFormatBytes(format: string | null): number | null {
+  if (!format) return null;
+  return PIXEL_FORMAT_BYTES[format] ?? null;
+}
+
 // ---------------------------------------------------------------- CAMERA --
 export type CameraSpec = {
   /** Độ phân giải, megapixel. */
@@ -132,6 +175,17 @@ export type CameraSpec = {
   max_fps?: number;
   /** 'mono' hoặc 'color'. */
   color: 'mono' | 'color';
+  /**
+   * Định dạng ảnh camera TRUYỀN ĐI, khớp khoá của PIXEL_FORMAT_BYTES.
+   *
+   * Khác với `color`: `color` nói cảm biến có lọc màu hay không, khoá này nói
+   * mỗi pixel chiếm mấy byte trên đường truyền. Đa số camera màu công nghiệp
+   * truyền Bayer 1 byte/px, nhưng có model truyền RGB8 3 byte/px — cùng độ
+   * phân giải mà gấp ba băng thông, đủ để đổi từ GigE sang 5GigE.
+   *
+   * Không khai thì suy từ `color`: có màu → BayerRG8, đơn sắc → Mono8.
+   */
+  pixel_format?: string;
 };
 
 // ------------------------------------------------------------------ LENS --
@@ -316,6 +370,9 @@ export const SPEC_FIELDS: Record<ComponentKind, SpecFieldDef[]> = {
     { key: 'interface', type: 'select', options: INTERFACES, required: true },
     { key: 'max_fps', type: 'number', unit: 'fps', step: 0.1 },
     { key: 'color', type: 'select', options: ['mono', 'color'], required: true },
+    /* Để trống thì suy từ `color`. Chỉ khai khi datasheet nói rõ camera truyền
+       RGB đã nội suy — đó là lúc băng thông thật sự gấp ba. */
+    { key: 'pixel_format', type: 'select', options: Object.keys(PIXEL_FORMAT_BYTES) },
   ],
   lens: [
     { key: 'lens_type', type: 'select', options: ['fixed', 'telecentric', 'macro'], required: true },

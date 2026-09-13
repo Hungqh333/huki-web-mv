@@ -14,6 +14,7 @@ import { matchesCondition, validateCondition } from '../src/lib/selector/conditi
 import { deriveMetrics, DEFAULT_SAFETY_FACTOR } from '../src/lib/selector/derive';
 import { runSelector } from '../src/lib/selector/engine';
 import type { SelectorRule } from '../src/lib/selector/types';
+import { PIXEL_FORMAT_BYTES } from '../src/lib/components/specs';
 
 function rule(partial: Partial<SelectorRule> & { code: string }): SelectorRule {
   return {
@@ -232,25 +233,74 @@ test('băng thông dữ liệu tính đúng từ độ phân giải và nhịp s
   assert.equal(context.data_rate_mbytes_s, 9);
 });
 
-test('ảnh màu nhân băng thông lên ba lần', () => {
-  const mono = deriveMetrics({
-    fov_width_mm: 100,
-    fov_height_mm: 100,
-    defect_min_size_mm: 0.1,
-    throughput_ppm: 60,
-    color_critical: false,
-  }).context;
+test('ảnh màu Bayer KHÔNG nhân băng thông lên ba lần — chỉ RGB8 mới nhân ba', () => {
+  /* Test này trước đây khẳng định ảnh màu = 27 MB/s (3 byte/px) và vẫn xanh,
+     nhưng nó đang BẢO VỆ MỘT HÀNH VI SAI: derive.ts tự khai
+     `color_critical ? 3 : 1`, trong khi vision/timing.ts đã có bảng đúng nói
+     BayerRG8 = 1 byte/px. Camera màu công nghiệp truyền Bayer thô, máy tính
+     mới nội suy ra RGB. Con số phồng ba lần đó chảy vào
+     maxCamerasByBandwidth() nên kéo sai cả số máy tính lẫn số card.
 
-  const color = deriveMetrics({
+     Nay cả hai module tra chung PIXEL_FORMAT_BYTES, nên: cần màu KHÔNG làm
+     đổi băng thông, và chỉ camera thật sự truyền RGB8 mới gấp ba. */
+  const base = {
     fov_width_mm: 100,
     fov_height_mm: 100,
     defect_min_size_mm: 0.1,
     throughput_ppm: 60,
-    color_critical: true,
-  }).context;
+  };
+
+  const mono = deriveMetrics({ ...base, color_critical: false }).context;
+  const bayer = deriveMetrics({ ...base, color_critical: true }).context;
 
   assert.equal(mono.data_rate_mbytes_s, 9);
-  assert.equal(color.data_rate_mbytes_s, 27, '3 byte/px thay vi 1');
+  assert.equal(bayer.data_rate_mbytes_s, 9, 'can mau van la Bayer 1 byte/px, khong phai 3');
+
+  // Chỉ khi camera thật sự truyền RGB đã nội suy thì mới gấp ba.
+  const rgb = deriveMetrics({ ...base, pixel_format: 'RGB8' }).context;
+  assert.equal(rgb.data_rate_mbytes_s, 27, 'RGB8 = 3 byte/px');
+
+  // Định dạng khai ở form thắng suy đoán từ color_critical.
+  const mono16 = deriveMetrics({ ...base, color_critical: true, pixel_format: 'Mono16' }).context;
+  assert.equal(mono16.data_rate_mbytes_s, 18, 'Mono16 = 2 byte/px');
+
+  // Định dạng lạ thì lùi về mặc định, không đoán và không văng.
+  const unknownRun = deriveMetrics({ ...base, pixel_format: 'Mono10packed' });
+  assert.equal(unknownRun.context.data_rate_mbytes_s, 9, 'dinh dang la -> Mono8 mac dinh');
+  // Công thức phải ghi định dạng THỰC SỰ đã dùng, không ghi tên định dạng lạ
+  // bên cạnh số byte của Mono8.
+  const unknownFormula = unknownRun.metrics.find((m) => m.key === 'data_rate_mbytes_s')!.formula;
+  assert.ok(unknownFormula.includes('(Mono8)'), `phai ghi Mono8: ${unknownFormula}`);
+  assert.ok(!unknownFormula.includes('Mono10packed'), `khong duoc ghi ten dinh dang la: ${unknownFormula}`);
+
+  // Công thức phải nói rõ đang tính theo định dạng nào, nếu không 1 byte/px
+  // cho ảnh màu trông như lỗi.
+  const { metrics } = deriveMetrics({ ...base, color_critical: true });
+  const formula = metrics.find((m) => m.key === 'data_rate_mbytes_s')!.formula;
+  assert.ok(formula.includes('BayerRG8'), `cong thuc phai hien dinh dang: ${formula}`);
+});
+
+test('derive và vision dùng CHUNG một bảng byte/px', () => {
+  /* Chốt chặn cho lỗi vừa sửa: hai module từng khai riêng và lệch nhau ba lần.
+     Nếu ai đó khai lại một bảng thứ hai ở đâu đó, test này không bắt được —
+     nhưng nó bắt được việc hai đường tính cho ra hai con số khác nhau. */
+  const megapixels = 9;
+  const fps = 1;
+
+  for (const [format, bytes] of Object.entries(PIXEL_FORMAT_BYTES)) {
+    const { context } = deriveMetrics({
+      fov_width_mm: 100,
+      fov_height_mm: 100,
+      defect_min_size_mm: 0.1,
+      throughput_ppm: 60,
+      pixel_format: format,
+    });
+    assert.equal(
+      context.data_rate_mbytes_s,
+      megapixels * bytes * fps,
+      `${format}: derive phai dung dung ${bytes} byte/px nhu bang chung`
+    );
+  }
 });
 
 test('không nhập nhịp sản xuất thì không bịa ra băng thông', () => {

@@ -1,3 +1,8 @@
+import {
+  COLOR_DEFAULT_PIXEL_FORMAT,
+  DEFAULT_PIXEL_FORMAT,
+  pixelFormatBytes,
+} from '@/lib/components/specs';
 import type { DerivedMetric, EvalContext, SelectorInput } from './types';
 
 /**
@@ -136,8 +141,19 @@ export function deriveMetrics(
    * (CLAUDE.md mục 9). Luật viết điều kiện theo data_rate_mbytes_s.
    *
    *   fps      = sản phẩm mỗi phút ÷ 60   (giả định một ảnh cho một sản phẩm)
-   *   byte/px  = 3 nếu cần phân biệt màu, 1 nếu ảnh đơn sắc
+   *   byte/px  = tra PIXEL_FORMAT_BYTES theo định dạng ảnh
    *   MB/s     = MP × byte/px × fps
+   *
+   * Byte/px TỪNG được khai ngay tại đây là `color_critical ? 3 : 1`. Sai, và
+   * sai lệch hẳn ba lần: camera màu công nghiệp truyền Bayer THÔ 1 byte/px,
+   * việc nội suy ra RGB làm ở máy tính. Chỉ vài model truyền RGB8 đã nội suy
+   * sẵn mới thật sự tốn 3 byte/px.
+   *
+   * Tệ hơn cả con số sai là việc nó SAI KHÁC với `vision/timing.ts` — nơi đã
+   * có bảng PIXEL_FORMAT_BYTES đúng kèm comment giải thích chính lỗi này. Cùng
+   * một bài toán, hai công cụ ra hai băng thông lệch ba lần, rồi con số của
+   * derive chảy tiếp vào `maxCamerasByBandwidth()` nên kéo sai luôn số máy
+   * tính và số card giao tiếp trong báo giá. Nay cả hai tra chung một bảng.
    */
   const throughput = num(input.throughput_ppm);
   const sensorMp = num(derived.required_sensor_mp);
@@ -151,13 +167,30 @@ export function deriveMetrics(
       formula: `${throughput} sp/phút ÷ 60 = ${round(fps)} ảnh/giây`,
     });
 
-    const bytesPerPixel = input.color_critical === true ? 3 : 1;
+    /* Ưu tiên định dạng người dùng đã khai ở form (trường `pixel_format` vốn
+       đã có trong catalog trường, chỉ chỗ này là chưa đọc tới). Không khai thì
+       suy từ `color_critical` — và suy ra BayerRG8, tức vẫn 1 byte/px, chứ
+       không phải 3. Định dạng lạ cũng lùi về mặc định thay vì đoán. */
+    const declaredFormat = typeof input.pixel_format === 'string' ? input.pixel_format : null;
+    const requestedFormat =
+      declaredFormat ??
+      (input.color_critical === true ? COLOR_DEFAULT_PIXEL_FORMAT : DEFAULT_PIXEL_FORMAT);
+    /* Định dạng lạ thì lùi về mặc định cho CẢ tên lẫn số byte. Lùi mỗi số byte
+       mà giữ tên cũ thì công thức ghi "1 byte/px (Mono10packed)" — sai, vì
+       Mono10packed thật là 1,25 byte/px, và người đọc không có cách nào biết
+       phép tính đã âm thầm đổi sang Mono8. */
+    const pixelFormat =
+      pixelFormatBytes(requestedFormat) === null ? DEFAULT_PIXEL_FORMAT : requestedFormat;
+    const bytesPerPixel = pixelFormatBytes(pixelFormat)!;
+
     const dataRate = sensorMp * bytesPerPixel * fps;
     derived.data_rate_mbytes_s = round(dataRate);
     metrics.push({
       key: 'data_rate_mbytes_s',
       value: round(dataRate),
-      formula: `${sensorMp} MP × ${bytesPerPixel} byte/px × ${round(fps)} fps ≈ ${round(dataRate)} MB/s`,
+      // Hiện cả tên định dạng: 1 byte/px cho ảnh màu trông như lỗi nếu không
+      // nói rõ đang tính theo Bayer.
+      formula: `${sensorMp} MP × ${bytesPerPixel} byte/px (${pixelFormat}) × ${round(fps)} fps ≈ ${round(dataRate)} MB/s`,
     });
   }
 

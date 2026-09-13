@@ -1,4 +1,4 @@
-import { INTERFACE_BANDWIDTH } from '@/lib/components/specs';
+import { INTERFACE_BANDWIDTH, PIXEL_FORMAT_BYTES } from '@/lib/components/specs';
 import { fmt, round, type Check } from './types';
 
 /**
@@ -10,21 +10,23 @@ import { fmt, round, type Check } from './types';
  */
 
 /**
- * Số byte cho một pixel theo định dạng ảnh.
+ * Bảng byte/px đã chuyển sang `@/lib/components/specs`.
  *
- * Trước đây code lấy 3 byte/px khi cần phân biệt màu — sai với đa số hệ vision
- * công nghiệp: camera màu truyền ảnh Bayer THÔ 1 byte/px, việc nội suy ra RGB
- * làm ở máy tính. Lấy 3 byte/px là thổi phồng băng thông lên ba lần.
+ * Chuyển vì `selector/derive.ts` cũng cần đúng bảng này mà trước đó tự khai
+ * riêng `color_critical ? 3 : 1` — cùng một bài toán, hai công cụ ra hai con
+ * số lệch ba lần. Không để lại đây được: `specs.ts` cần danh sách định dạng
+ * cho khoá `pixel_format` của camera, mà file này vốn đã import
+ * `INTERFACE_BANDWIDTH` từ `specs.ts`, nên để nguyên sẽ thành import vòng
+ * tròn.
+ *
+ * Re-export nguyên tên để mọi chỗ đang lấy từ `@/lib/vision` không phải sửa.
  */
-export const PIXEL_FORMAT_BYTES: Record<string, number> = {
-  Mono8: 1,
-  BayerRG8: 1,
-  Mono12packed: 1.5,
-  Mono16: 2,
-  RGB8: 3,
-};
-
-export const DEFAULT_PIXEL_FORMAT = 'Mono8';
+export {
+  PIXEL_FORMAT_BYTES,
+  DEFAULT_PIXEL_FORMAT,
+  COLOR_DEFAULT_PIXEL_FORMAT,
+  pixelFormatBytes,
+} from '@/lib/components/specs';
 
 /** Hệ số an toàn cho ngân sách thời gian: chỉ dùng 70% cửa sổ khả dụng. */
 export const TIME_BUDGET_SAFETY = 0.7;

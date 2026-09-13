@@ -116,12 +116,27 @@ export const INTERFACE_BANDWIDTH: Record<string, number> = {
   '10GigE': 1100,
   'CXP-6': 600,
   /* CoaXPress 12,5 Gbps trên MỘT làn. Hệ 2 hay 4 làn thì nhân lên — khai sẵn
-     số của cấu hình nhiều làn ở đây là mời người sau nhân thêm lần nữa. */
+     số của cấu hình nhiều làn ở đây là mời người sau nhân thêm lần nữa.
+     Nguồn: BitFlow, KAYA Vision, Euresys đều ghi 12,5 Gbps/làn; Euresys ghi
+     4 làn CXP-12 = 5.000 MB/s, tức ~1.250 MB/s/làn. Lấy 1.200 là làm tròn
+     xuống cho thận trọng — KHÔNG có nguồn cho mức giảm cụ thể này. */
   'CXP-12': 1200,
-  /* Con số của cấu hình Full. Base và Medium thấp hơn nhiều, nên chọn chuẩn
-     này là phải xác nhận grabber lẫn cáp đúng là Full, không suy từ chữ
-     "Camera Link" trên datasheet. */
-  CameraLink: 800,
+  /* Camera Link tách theo CẤU HÌNH, không để một khoá chung.
+
+     Trước đây có một khoá `CameraLink: 800`. Con số đó không khớp cấu hình nào
+     (Full là 680, Deca là 850), và khoá chung mời người nhập gán nhầm cho
+     camera Base — hệ được tính 800 MB/s trong khi thật chỉ có 255, dư ba lần
+     theo đúng hướng nguy hiểm.
+
+     Nguồn: Gidel "Camera Link Cameras" và Agmanic "Computer vision basics:
+     Camera Link" — hai nguồn cho cùng bộ số: Base 2,04 Gbit/s (255 MB/s),
+     Medium 4,08 (510), Full 5,44 (680), Deca 6,8 (850). Gidel ghi rõ đây là
+     mức TỐI ĐA ở tần số clock cao nhất của chuẩn, nên KHÔNG giảm trừ như GigE
+     — chưa có nguồn cho mức chạy thực tế. */
+  'CameraLink-Base': 255,
+  'CameraLink-Medium': 510,
+  'CameraLink-Full': 680,
+  'CameraLink-Deca': 850,
 };
 
 /**

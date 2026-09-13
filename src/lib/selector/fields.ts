@@ -448,6 +448,25 @@ export const FIELD_CATALOG: Record<string, FieldDef> = {
     step: 0.1,
   },
 
+  /**
+   * Nhánh đo lường của bài ngoại quan — TUỲ CHỌN.
+   *
+   * Không tái dùng `tolerance_mm`: trường đó BẮT BUỘC ở bài căn chỉnh và đo
+   * 2D, mà `required` khai một lần cho mọi bài toán. Dùng chung thì bài ngoại
+   * quan nào cũng bị bắt nhập dung sai. Tên và nhãn ghi rõ dạng ± vì ngân sách
+   * đo nhân đôi con số này — nhập nhầm dải tổng là lệch hai lần.
+   */
+  measurement_tolerance_mm: {
+    key: 'measurement_tolerance_mm',
+    group: 'subject',
+    kind: 'number',
+    labelKey: 'measurement_tolerance_mm',
+    hintKey: 'measurement_tolerance_mmHint',
+    unit: 'mm',
+    min: 0.001,
+    step: 0.001,
+  },
+
   n_view: {
     key: 'n_view',
     showWhen: { field: 'capture_mode', in: ['static', 'moving_area'] },

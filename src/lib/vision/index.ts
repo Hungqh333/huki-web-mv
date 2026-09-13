@@ -38,6 +38,11 @@ export type AppearanceInput = {
   defectType: string | null;
   surface: string | null;
   heightToleranceMm: number | null;
+  /**
+   * Dung sai ĐO yêu cầu, dạng ± (mm). null = bài không đo kích thước, chỉ chạy
+   * nhánh phát hiện lỗi. Có giá trị thì độ phân giải cần là min của hai nhánh.
+   */
+  measurementToleranceMm: number | null;
 
   // Dây chuyền
   workingDistanceMm: number | null;
@@ -108,11 +113,14 @@ export const DEFAULT_APPEARANCE_INPUT: Pick<
   | 'settleTimeMs'
   | 'triggerJitterMs'
   | 'encoderResolutionUm'
+  | 'measurementToleranceMm'
 > = {
   captureMode: 'static',
   settleTimeMs: 100,
   triggerJitterMs: 1,
   encoderResolutionUm: null,
+  // Mặc định KHÔNG có yêu cầu đo: mọi bài cũ chạy y hệt trước.
+  measurementToleranceMm: null,
   pxPerDefect: DEFAULT_PX_PER_DEFECT,
   nView: 1,
   dutyRatio: 0.5,

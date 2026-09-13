@@ -109,7 +109,22 @@ export function ComponentPicker({
   const [removed, setRemoved] = useState<string[]>([]);
 
   const metric = (key: string) => result.derived.find((d) => d.key === key)?.value ?? null;
-  const requiredMp = metric('required_sensor_mp');
+
+  const appearance = appearanceInputFromForm(input);
+  const need = appearance ? requiredPixels(appearance) : null;
+
+  /* Số MP cần của bài ngoại quan lấy từ bộ tính vision — nơi đã so nhánh phát
+     hiện lỗi với nhánh đo lường và lấy nhánh chặt hơn. `derive` chỉ biết nhánh
+     phát hiện lỗi (và luôn dùng 3 px/lỗi), nên lọc camera theo con số của nó
+     là lọc theo một yêu cầu thấp hơn yêu cầu đo thật.
+
+     Line scan giữ nguyên số của derive: pickCamera áp ngưỡng MP lên cả camera
+     quét dòng, mà nx × ny không có nghĩa với cảm biến một hàng — dùng nó sẽ
+     loại sạch mọi camera line scan. */
+  const requiredMp =
+    need && appearance?.captureMode !== 'line_scan'
+      ? Math.round((need.nx * need.ny) / 10_000) / 100
+      : metric('required_sensor_mp');
   const dataRate = metric('data_rate_mbytes_s');
   const fovWidth = typeof input.fov_width_mm === 'number' ? input.fov_width_mm : null;
   const workingDistance =
@@ -117,9 +132,6 @@ export function ComponentPicker({
   const needsColor = input.color_critical === true;
   const needTelecentric = /telecentric/i.test(result.lens ?? '');
   const needsGpu = result.approach === 'deep_learning';
-
-  const appearance = appearanceInputFromForm(input);
-  const need = appearance ? requiredPixels(appearance) : null;
 
   /* Số bộ vision: suy từ chiều dài cần phủ, nhưng cho sửa tay — dự án thật hay
      có hai trạm soi hai mặt, việc đó không suy ra được từ thông số. */

@@ -23,6 +23,10 @@ import {
   requiredLpPerMm,
   lineScanNeed,
   requiredPixels,
+  measurementBudget,
+  resolutionChecks,
+  GRR_DIVISOR,
+  K_SUBPIXEL,
   suggestLighting,
   verifyResolution,
   worstStatus,
@@ -38,6 +42,7 @@ import {
   SENSOR_FORMAT_KEYS,
   SPEC_FIELDS,
 } from '../src/lib/components/specs';
+import { appearanceInputFromForm } from '../src/lib/vision/fromInput';
 
 // ------------------------------------------------------------ ĐỘ PHÂN GIẢI --
 
@@ -576,9 +581,9 @@ test('đường chéo tính từ bề rộng và chiều cao, không có số kh
   }
 });
 
-test('CXP-12 và CameraLink tính được thời gian truyền ảnh', () => {
+test('CXP-12 và Camera Link Full tính được thời gian truyền ảnh', () => {
   assert.equal(INTERFACE_BANDWIDTH['CXP-12'], 1200);
-  assert.equal(INTERFACE_BANDWIDTH.CameraLink, 800);
+  assert.equal(INTERFACE_BANDWIDTH['CameraLink-Full'], 680);
 
   const shot = { widthPx: 4096, heightPx: 3000, pixelFormat: 'Mono8' as const };
 
@@ -587,8 +592,9 @@ test('CXP-12 và CameraLink tính được thời gian truyền ảnh', () => {
   assert.equal(cxp.usableMbytesS, 1200);
   assert.equal(cxp.transferMs, 10.24);
 
-  const cameraLink = frameTransfer({ ...shot, interfaceName: 'CameraLink' })!;
-  assert.equal(cameraLink.transferMs, 15.36);
+  // 12.288.000 byte / 680 MB/s ≈ 18,07 ms
+  const cameraLink = frameTransfer({ ...shot, interfaceName: 'CameraLink-Full' })!;
+  assert.ok(Math.abs(cameraLink.transferMs - 18.07) < 0.01, `${cameraLink.transferMs}`);
 
   /* Chuẩn thiếu trong bảng thì frameTransfer trả null và khối băng thông biến
      mất khỏi kết quả — cấu hình 12 MP chạy GigE trông "không có vấn đề" chỉ vì
@@ -634,4 +640,149 @@ test('dropdown cỡ cảm biến sắp theo đường chéo tăng dần, không 
   const imageCircleField = SPEC_FIELDS.lens.find((f) => f.key === 'image_circle')!;
   assert.deepEqual(sensorField.options, SENSOR_FORMAT_KEYS, 'o chon sensor_format');
   assert.deepEqual(imageCircleField.options, SENSOR_FORMAT_KEYS, 'o chon image_circle');
+});
+
+test('Camera Link tách theo cấu hình, không còn khoá chung dễ gán nhầm', () => {
+  /* Khoá chung `CameraLink: 800` cũ không khớp cấu hình nào, và gán cho camera
+     Base thì hệ được tính dư ba lần. Số dưới đây theo Gidel và Agmanic. */
+  assert.equal(INTERFACE_BANDWIDTH.CameraLink, undefined, 'khong con khoa chung');
+  assert.equal(INTERFACE_BANDWIDTH['CameraLink-Base'], 255);
+  assert.equal(INTERFACE_BANDWIDTH['CameraLink-Medium'], 510);
+  assert.equal(INTERFACE_BANDWIDTH['CameraLink-Full'], 680);
+  assert.equal(INTERFACE_BANDWIDTH['CameraLink-Deca'], 850);
+});
+
+// ---------------------------------------------- NHÁNH ĐO LƯỜNG (GAP 1) --
+// Số tham chiếu lấy từ docs/UI_CONTENT_V1.md phần A.2 (bài GT-002) — KHÔNG lấy
+// từ mockup.
+
+test('ngân sách đo: ±0,1 mm → T = 0,2 → U = 0,02 → 0,06 mm/px', () => {
+  assert.equal(GRR_DIVISOR, 10);
+  assert.equal(K_SUBPIXEL, 3);
+
+  const budget = measurementBudget(0.1)!;
+  assert.ok(Math.abs(budget.totalToleranceMm - 0.2) < 1e-12, 'dung sai ± phai nhan doi');
+  assert.ok(Math.abs(budget.uncertaintyBudgetMm - 0.02) < 1e-12);
+  assert.ok(Math.abs(budget.mmPerPx - 0.06) < 1e-12);
+
+  assert.equal(measurementBudget(null), null, 'khong co dung sai thi khong co nhanh do');
+  assert.equal(measurementBudget(0), null);
+  assert.equal(measurementBudget(-0.1), null);
+});
+
+test('hai nhánh độc lập, lấy min — ở GT-002 nhánh đo lường quyết định', () => {
+  const need = requiredPixels({
+    fovWidthMm: 380,
+    fovHeightMm: 280,
+    defectMinSizeMm: 0.5,
+    pxPerDefect: 5,
+    measurementToleranceMm: 0.1,
+  })!;
+
+  assert.ok(Math.abs(need.mmPerPxDetection - 0.1) < 1e-12, '0,5 / 5');
+  assert.ok(Math.abs(need.mmPerPxMeasurement! - 0.06) < 1e-12, '(0,2 / 10) x 3');
+  assert.equal(need.governing, 'measurement');
+  assert.ok(Math.abs(need.mmPerPxTarget - 0.06) < 1e-12, 'min, khong phai trung binh');
+
+  // Tài liệu ghi 6333 × 4667 vì làm tròn thường. Cần ĐỦ pixel thì phải làm
+  // tròn LÊN: 380 / 0,06 = 6333,3 → 6334.
+  assert.equal(need.nx, 6334);
+  assert.equal(need.ny, 4667);
+  assert.ok(Math.abs((need.nx * need.ny) / 1e6 - 29.6) < 1.0, 'tai lieu: 29,6 MP, sai so 1,0');
+
+  // Chênh 1,67× giữa hai nhánh.
+  assert.ok(Math.abs(need.mmPerPxDetection / need.mmPerPxMeasurement! - 1.67) < 0.01);
+});
+
+test('lưới 4 camera 200 × 150 mm: mỗi camera cần ~8,3 MP chứ không phải 3,0 MP', () => {
+  const base = { fovWidthMm: 200, fovHeightMm: 150, defectMinSizeMm: 0.5, pxPerDefect: 5 };
+  const detectionOnly = requiredPixels(base)!;
+  const withMeasurement = requiredPixels({ ...base, measurementToleranceMm: 0.1 })!;
+
+  assert.ok(Math.abs((detectionOnly.nx * detectionOnly.ny) / 1e6 - 3.0) < 0.1);
+  assert.ok(
+    Math.abs((withMeasurement.nx * withMeasurement.ny) / 1e6 - 8.3) < 0.5,
+    'bo qua dung sai la chon camera thieu gan ba lan'
+  );
+});
+
+test('không nhập dung sai đo thì kết quả y hệt trước khi có nhánh đo lường', () => {
+  const base = { fovWidthMm: 100, fovHeightMm: 40, defectMinSizeMm: 0.2, pxPerDefect: 3 };
+  const omitted = requiredPixels(base)!;
+  const explicitNull = requiredPixels({ ...base, measurementToleranceMm: null })!;
+
+  assert.equal(omitted.mmPerPxMeasurement, null);
+  assert.equal(omitted.governing, 'detection');
+  assert.equal(omitted.mmPerPxTarget, 0.2 / 3);
+  assert.equal(omitted.nx, 1500);
+  assert.equal(omitted.ny, 600);
+  assert.deepEqual(explicitNull, omitted);
+
+  const checks = resolutionChecks({ ...base, totalLengthMm: null, overlapRatio: 0.1 }, null);
+  assert.ok(checks.some((c) => c.key === 'mmPerPxTarget'), 'giu nguyen cach trinh bay cu');
+  assert.ok(!checks.some((c) => c.key === 'governingResolution'));
+  assert.ok(!checks.some((c) => c.key === 'measurementBudget'));
+});
+
+test('dung sai lỏng thì nhánh phát hiện lỗi vẫn quyết định', () => {
+  // ±1 mm → 0,6 mm/px, thô hơn nhiều so với 0,2 / 3 = 0,0667 mm/px.
+  const input = {
+    fovWidthMm: 100,
+    fovHeightMm: 40,
+    defectMinSizeMm: 0.2,
+    pxPerDefect: 3,
+    measurementToleranceMm: 1,
+  };
+  const need = requiredPixels(input)!;
+  assert.equal(need.governing, 'detection');
+  assert.ok(Math.abs(need.mmPerPxMeasurement! - 0.6) < 1e-12);
+  assert.equal(need.nx, 1500, 'khong doi so pixel can');
+
+  const checks = resolutionChecks({ ...input, totalLengthMm: null, overlapRatio: 0.1 }, null);
+  const governing = checks.find((c) => c.key === 'governingResolution')!;
+  assert.equal(governing.noteKey, 'governedByDetection');
+});
+
+test('camera thật được kiểm theo ngân sách đo, trên trục THÔ hơn', () => {
+  const input = {
+    fovWidthMm: 200,
+    fovHeightMm: 150,
+    defectMinSizeMm: 0.5,
+    pxPerDefect: 5,
+    measurementToleranceMm: 0.1,
+    totalLengthMm: null,
+    overlapRatio: 0.1,
+  };
+
+  /* 12 MP 4096 × 3000: ngang 200/4096 = 0,0488, dọc 150/3000 = 0,050 mm/px.
+     docs/UI_CONTENT_V1.md ghi "0,0488 mm/px, dư 1,23×" — chỉ tính trục ngang.
+     Kích thước cần đo có thể nằm theo trục dọc, nên trục thô hơn (0,050)
+     quyết định: biên đúng là 0,06 / 0,05 = 1,2×. */
+  const good = resolutionChecks(input, { widthPx: 4096, heightPx: 3000 });
+  const pass = good.find((c) => c.key === 'measurementResolution')!;
+  assert.equal(pass.status, 'pass');
+  assert.ok(pass.formula.includes('biên 1.2×'), pass.formula);
+  assert.ok(good.some((c) => c.key === 'detectionBudget'));
+  assert.ok(good.some((c) => c.key === 'measurementBudget'));
+  assert.equal(good.find((c) => c.key === 'governingResolution')!.noteKey, 'governedByMeasurement');
+  assert.ok(!good.some((c) => c.key === 'mmPerPxTarget'), 'hai nhanh thay cho mot dong cu');
+
+  // 5 MP 2592 × 1944: 0,0772 mm/px > 0,06 — thấy được lỗi 0,5 mm nhưng không đo nổi ±0,1.
+  const coarse = resolutionChecks(input, { widthPx: 2592, heightPx: 1944 });
+  const fail = coarse.find((c) => c.key === 'measurementResolution')!;
+  assert.equal(fail.status, 'fail');
+  assert.equal(fail.noteKey, 'measurementTooCoarse');
+});
+
+test('form đọc measurement_tolerance_mm, để trống thì null', () => {
+  const withTolerance = appearanceInputFromForm({
+    fov_width_mm: 380,
+    defect_min_size_mm: 0.5,
+    measurement_tolerance_mm: 0.1,
+  })!;
+  assert.equal(withTolerance.measurementToleranceMm, 0.1);
+
+  const without = appearanceInputFromForm({ fov_width_mm: 380, defect_min_size_mm: 0.5 })!;
+  assert.equal(without.measurementToleranceMm, null);
+  assert.equal(DEFAULT_APPEARANCE_INPUT.measurementToleranceMm, null, 'mac dinh khong co yeu cau do');
 });

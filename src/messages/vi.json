@@ -257,7 +257,9 @@
       "trigger_jitter_ms": "Sai lệch thời điểm trigger",
       "trigger_jitter_msHint": "Sai lệch này nhân với tốc độ ra sai lệch vị trí — quyết định FOV phải dư bao nhiêu.",
       "encoder_resolution_um": "Độ phân giải encoder",
-      "encoder_resolution_umHint": "Không có encoder thì độ phân giải dọc đường chạy trôi theo tốc độ băng tải."
+      "encoder_resolution_umHint": "Không có encoder thì độ phân giải dọc đường chạy trôi theo tốc độ băng tải.",
+      "measurement_tolerance_mm": "Sai số đo yêu cầu (±)",
+      "measurement_tolerance_mmHint": "Chỉ điền khi bài có đo kích thước. Ghi dạng ±: ±0,1 mm là dải tổng 0,2 mm. Để trống thì chỉ tính nhánh phát hiện lỗi."
     },
     "options": {
       "surface": {
@@ -538,7 +540,11 @@
         "lineRateFits": "Camera đáp ứng được tần số dòng",
         "lineExposure": "Phơi sáng mỗi dòng",
         "lineDataRate": "Băng thông liên tục",
-        "encoder": "Encoder"
+        "encoder": "Encoder",
+        "detectionBudget": "Ngân sách phát hiện lỗi",
+        "measurementBudget": "Ngân sách đo lường (gage)",
+        "governingResolution": "Nhánh quyết định độ phân giải",
+        "measurementResolution": "Camera đạt ngân sách đo"
       },
       "notes": {
         "sensorTooSmall": "Cảm biến thiếu pixel trên ít nhất một trục — đổi camera hoặc thu hẹp FOV.",
@@ -560,7 +566,10 @@
         "lineNeedsBrightLight": "Mỗi dòng chỉ được phơi sáng bằng chừng này. Bắt buộc đèn dòng cường độ cao, đèn thường sẽ tối om.",
         "lineBandwidthTooHigh": "Line scan truyền liên tục, không có lúc nghỉ — giao tiếp phải gánh mức này suốt ca.",
         "encoderTooCoarse": "Encoder thô hơn một pixel — độ phân giải dọc sẽ trôi. Cần encoder mịn hơn.",
-        "encoderMissing": "Chưa khai encoder. Không có encoder thì tốc độ băng tải trôi bao nhiêu, ảnh dãn/nén bấy nhiêu."
+        "encoderMissing": "Chưa khai encoder. Không có encoder thì tốc độ băng tải trôi bao nhiêu, ảnh dãn/nén bấy nhiêu.",
+        "governedByMeasurement": "Nhánh đo lường chặt hơn {ratio}× — dung sai quyết định độ phân giải, không phải kích thước lỗi.",
+        "governedByDetection": "Nhánh phát hiện lỗi chặt hơn {ratio}× — dung sai đo không đòi thêm pixel.",
+        "measurementTooCoarse": "Mỗi pixel {actual} mm, thô hơn ngân sách đo {target} mm/px: có thể vẫn thấy lỗi nhưng không đo được tới dung sai yêu cầu."
       },
       "lightingReason": {
         "scratch": "Xước và nứt nông chỉ nổi lên khi chiếu góc rất thấp, nền tối hẳn.",

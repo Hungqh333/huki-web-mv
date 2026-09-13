@@ -53,6 +53,7 @@ export function appearanceInputFromForm(input: SelectorInput): AppearanceInput |
     defectType: str(input, 'defect_type'),
     surface: str(input, 'surface'),
     heightToleranceMm: num(input, 'height_tolerance_mm'),
+    measurementToleranceMm: num(input, 'measurement_tolerance_mm'),
 
     workingDistanceMm: num(input, 'working_distance_mm'),
     throughputPpm: num(input, 'throughput_ppm'),

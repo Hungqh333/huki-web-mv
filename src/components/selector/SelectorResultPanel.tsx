@@ -191,6 +191,21 @@ export function SelectorResultPanel({
         </div>
       ) : null}
 
+      {/* Giả định engine đã tự điền (vd. chiều cao FOV thiếu). Bản ghi lịch sử
+          lưu trước khi có trường này thì không có mảng — `?? []`. */}
+      {(result.assumptions ?? []).length > 0 ? (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950/30">
+          <h3 className="text-sm font-semibold text-amber-900 dark:text-amber-200">{t('assumptions')}</h3>
+          <ul className="mt-3 space-y-2">
+            {(result.assumptions ?? []).map((assumption) => (
+              <li key={assumption.key} className="text-sm text-amber-900 dark:text-amber-200">
+                {pickNote(assumption)}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
       {result.notes.length > 0 ? (
         <div className="rounded-lg border border-slate-200 p-4 dark:border-slate-800">
           <h3 className="text-sm font-semibold">{t('notes')}</h3>

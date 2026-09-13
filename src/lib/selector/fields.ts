@@ -589,13 +589,20 @@ export type ParseResult = {
  * Dùng chung cho cả giao diện lẫn server: form ẩn ô nào thì server cũng phải
  * bỏ qua đúng ô đó, nếu không ô bắt buộc đang ẩn sẽ báo "thiếu dữ liệu" mà
  * người dùng không thấy nó ở đâu để điền.
+ *
+ * `showWhen` chỉ có hiệu lực khi bài toán CÓ khai trường điều kiện. Bài không
+ * hỏi `capture_mode` (căn chỉnh, đo 2D, 3D, OCR, mã vạch, robot) thì không bao
+ * giờ có giá trị để so — trước đây ô `fov_height_mm` vì thế bị ẩn vĩnh viễn ở
+ * sáu bài đó, và derive tính FOV thành hình vuông.
  */
 export function visibleFieldDefs(
   defs: FieldDef[],
   read: (key: string) => string | null
 ): FieldDef[] {
+  const declared = new Set(defs.map((def) => def.key));
   return defs.filter((def) => {
     if (!def.showWhen) return true;
+    if (!declared.has(def.showWhen.field)) return true;
     const value = read(def.showWhen.field);
     return value !== null && def.showWhen.in.includes(value);
   });

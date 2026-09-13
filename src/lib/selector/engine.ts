@@ -41,7 +41,7 @@ export function runSelector(
   /** Slug bài toán — derive cần để biết `tolerance_mm` có phải dung sai đo. */
   taskSlug: string | null = null
 ): SelectorResult {
-  const { context, metrics } = deriveMetrics(input, DEFAULT_SAFETY_FACTOR, taskSlug);
+  const { context, metrics, assumptions } = deriveMetrics(input, DEFAULT_SAFETY_FACTOR, taskSlug);
 
   const matched = rules
     .filter((rule) => rule.is_active)
@@ -86,6 +86,7 @@ export function runSelector(
     approachReason,
     notes,
     derived: metrics,
+    assumptions,
     matchedRuleCodes: matched.map((rule) => rule.code ?? rule.id),
     noRuleMatched: matched.length === 0,
   };

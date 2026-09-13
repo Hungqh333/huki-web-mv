@@ -9,7 +9,17 @@ import {
   measurementBudget,
   type MeasurementBudget,
 } from '@/lib/vision/resolution';
-import type { DerivedMetric, EvalContext, SelectorInput } from './types';
+import type { DerivedAssumption, DerivedMetric, EvalContext, SelectorInput } from './types';
+
+/**
+ * Tỉ lệ cao/rộng giả định khi thiếu một cạnh FOV: 4:3.
+ *
+ * CHỈ là lưới an toàn cho dữ liệu cũ (lưu trước khi form hỏi chiều cao ở mọi
+ * bài area scan) hoặc gọi API trực tiếp. Không dùng 1:1: vật thể công nghiệp
+ * hiếm khi vuông, và giả định vuông sai theo hướng CHỌN DƯ — FOV 100 × 50 mm
+ * thành 9 MP thay vì 4,5 MP.
+ */
+export const FALLBACK_FOV_ASPECT = 0.75;
 
 /**
  * Hệ số an toàn: số pixel tối thiểu phủ lên một feature nhỏ nhất cần phân biệt.
@@ -197,22 +207,61 @@ export function deriveMetrics(
   input: SelectorInput,
   safetyFactor: number = DEFAULT_SAFETY_FACTOR,
   taskSlug: string | null = null
-): { context: EvalContext; metrics: DerivedMetric[] } {
+): { context: EvalContext; metrics: DerivedMetric[]; assumptions: DerivedAssumption[] } {
   const metrics: DerivedMetric[] = [];
   const derived: EvalContext = {};
+  const assumptions: DerivedAssumption[] = [];
 
   const width = num(input.fov_width_mm);
   const height = num(input.fov_height_mm);
 
   if (width !== null || height !== null) {
-    const long = Math.max(width ?? 0, height ?? 0);
-    const short = Math.min(width ?? long, height ?? long);
+    let usedWidth = width;
+    let usedHeight = height;
+
+    if (width === null || height === null) {
+      const known = (width ?? height) as number;
+
+      if (input.capture_mode === 'line_scan') {
+        /* Line scan không có chiều cao FOV theo thiết kế — ảnh dựng theo chiều
+           quét. Giữ cách tính cũ và KHÔNG cảnh báo: thiếu ở đây là đúng. */
+        usedWidth = known;
+        usedHeight = known;
+      } else if (height === null) {
+        // TODO(V1b): chuyển thành assumptionId theo Field<T> (spec §2, confidence 'assumed').
+        usedHeight = round(known * FALLBACK_FOV_ASPECT);
+        assumptions.push({
+          key: 'fov_height_mm',
+          value: usedHeight,
+          unit: 'mm',
+          ratio: '4:3',
+          vi: `Chiều cao FOV chưa xác định — đã giả định ${usedHeight} mm (= chiều rộng ${known} mm × ${FALLBACK_FOV_ASPECT}, tỉ lệ 4:3). Nhập chiều cao thật để kết quả chính xác.`,
+          en: `FOV height not specified — assumed ${usedHeight} mm (= width ${known} mm × ${FALLBACK_FOV_ASPECT}, 4:3 ratio). Enter the real height for an accurate result.`,
+        });
+      } else {
+        // TODO(V1b): chuyển thành assumptionId theo Field<T> (spec §2, confidence 'assumed').
+        usedWidth = round(known / FALLBACK_FOV_ASPECT);
+        assumptions.push({
+          key: 'fov_width_mm',
+          value: usedWidth,
+          unit: 'mm',
+          ratio: '4:3',
+          vi: `Chiều rộng FOV chưa xác định — đã giả định ${usedWidth} mm (= chiều cao ${known} mm ÷ ${FALLBACK_FOV_ASPECT}, tỉ lệ 4:3). Nhập chiều rộng thật để kết quả chính xác.`,
+          en: `FOV width not specified — assumed ${usedWidth} mm (= height ${known} mm ÷ ${FALLBACK_FOV_ASPECT}, 4:3 ratio). Enter the real width for an accurate result.`,
+        });
+      }
+    }
+
+    const long = Math.max(usedWidth as number, usedHeight as number);
+    const short = Math.min(usedWidth as number, usedHeight as number);
+    const side = (given: number | null, used: number | null) =>
+      given !== null ? `${given} mm` : input.capture_mode === 'line_scan' ? '—' : `${used} mm (giả định)`;
     derived.fov_long_mm = round(long);
     derived.fov_short_mm = round(short);
     metrics.push({
       key: 'fov_long_mm',
       value: round(long),
-      formula: `max(${width ?? '—'} mm, ${height ?? '—'} mm) = ${round(long)} mm`,
+      formula: `max(${side(width, usedWidth)}, ${side(height, usedHeight)}) = ${round(long)} mm`,
     });
   }
 
@@ -313,5 +362,5 @@ export function deriveMetrics(
 
   derived.safety_factor = safetyFactor;
 
-  return { context: { ...input, ...derived }, metrics };
+  return { context: { ...input, ...derived }, metrics, assumptions };
 }

@@ -165,3 +165,33 @@ test('chuỗi thật: bài cần deep learning thì chọn máy có GPU', () => 
   assert.equal(withoutDl.chosen!.spec.gpu, undefined, 'khong can DL thi khong ban may co GPU');
   assert.ok(withDl.chosen?.spec.gpu, 'can DL thi phai co GPU');
 });
+
+test('chuỗi thật: sửa chiều cao FOV thì camera gợi ý cho bài căn chỉnh đổi theo', () => {
+  /* Trước khi sửa, bài căn chỉnh không hỏi chiều cao nên FOV 100 × 50 mm bị
+     tính như 100 × 100 mm. Hai lời gọi dưới đây là hành vi CŨ và MỚI trên cùng
+     catalog thật: chọn theo 9 MP là chọn dư. */
+  const base = { fov_width_mm: 100, tolerance_mm: 0.1, working_distance_mm: 300, throughput_ppm: 60 };
+  const before = deriveMetrics({ ...base, fov_height_mm: 100 }, 3, 'alignment').context;
+  const after = deriveMetrics({ ...base, fov_height_mm: 50 }, 3, 'alignment').context;
+
+  assert.equal(before.required_sensor_mp, 9);
+  assert.equal(after.required_sensor_mp, 4.5);
+
+  const pick = (ctx: typeof after) =>
+    pickCamera(components, {
+      requiredMp: ctx.required_sensor_mp as number,
+      dataRateMbytesS: ctx.data_rate_mbytes_s as number,
+      needsColor: false,
+    }).chosen;
+
+  const oldCamera = pick(before);
+  const newCamera = pick(after);
+  assert.ok(oldCamera && newCamera, 'ca hai lan deu phai chon duoc camera');
+
+  const oldMp = oldCamera.spec.resolution_mp as number;
+  const newMp = newCamera.spec.resolution_mp as number;
+  assert.ok(newMp >= 4.5, `du do phan giai: ${newCamera.code} ${newMp} MP`);
+  assert.notEqual(newCamera.code, oldCamera.code, `camera phai doi: ${oldCamera.code} -> ${newCamera.code}`);
+  assert.ok(newMp < oldMp, `phai nho hon: ${oldCamera.code} ${oldMp} MP -> ${newCamera.code} ${newMp} MP`);
+  console.log(`  camera: ${oldCamera.code} (${oldMp} MP) -> ${newCamera.code} (${newMp} MP)`);
+});

@@ -16,6 +16,8 @@ import { runSelector } from '../src/lib/selector/engine';
 import type { SelectorRule } from '../src/lib/selector/types';
 import { PIXEL_FORMAT_BYTES } from '../src/lib/components/specs';
 import { requiredPixels } from '../src/lib/vision/resolution';
+import { getFieldDefs, visibleFieldDefs } from '../src/lib/selector/fields';
+import { FALLBACK_FOV_ASPECT } from '../src/lib/selector/derive';
 
 function rule(partial: Partial<SelectorRule> & { code: string }): SelectorRule {
   return {
@@ -470,4 +472,83 @@ test('runSelector truyền slug xuống derive, luật thấy đúng con số', 
 
   const alignment = runSelector(rules, input, 'alignment');
   assert.ok(alignment.matchedRuleCodes.includes('HIGH-RES'), '3000 px vuot 2000');
+});
+
+// ------------------------------------------- CHIỀU CAO FOV (sửa lỗi MP dư) --
+// Trước khi sửa: sáu bài không hỏi `capture_mode` không bao giờ hiện ô
+// fov_height_mm, và derive lấy chiều cao = chiều rộng. FOV 100 × 50 mm ra 9 MP.
+
+const ALIGNMENT_FIELDS = [
+  'fov_width_mm', 'fov_height_mm', 'tolerance_mm', 'rotation_range_deg',
+  'working_distance_mm', 'throughput_ppm', 'surface', 'environment', 'ip_rating',
+];
+
+test('bài không khai capture_mode vẫn hỏi chiều cao FOV', () => {
+  const shown = visibleFieldDefs(getFieldDefs(ALIGNMENT_FIELDS), () => null).map((d) => d.key);
+  assert.ok(shown.includes('fov_height_mm'));
+});
+
+test('bài ngoại quan vẫn ẩn/hiện chiều cao theo capture_mode như cũ', () => {
+  const defs = getFieldDefs(['capture_mode', 'fov_width_mm', 'fov_height_mm', 'blur_px']);
+  const keys = (mode: string | null) =>
+    visibleFieldDefs(defs, (k) => (k === 'capture_mode' ? mode : null)).map((d) => d.key);
+
+  assert.ok(!keys(null).includes('fov_height_mm'), 'chua chon kieu chup thi chua hoi');
+  assert.ok(!keys('line_scan').includes('fov_height_mm'), 'line scan khong co chieu cao');
+  assert.ok(keys('static').includes('fov_height_mm'));
+  assert.ok(!keys('static').includes('blur_px'), 'blur chi hoi khi chup dong');
+});
+
+test('FOV 100×50 ra 4,5 MP, KHÔNG phải 9 MP', () => {
+  const { context, assumptions } = deriveMetrics(
+    { fov_width_mm: 100, fov_height_mm: 50, tolerance_mm: 0.1 },
+    DEFAULT_SAFETY_FACTOR,
+    'alignment'
+  );
+  assert.equal(context.required_resolution_px, 3000);
+  assert.equal(context.fov_short_mm, 50);
+  assert.equal(context.required_sensor_mp, 4.5);
+  assert.deepEqual(assumptions, [], 'du hai canh thi khong gia dinh gi');
+});
+
+test('FOV 100×100 không đổi so với trước', () => {
+  const { context, assumptions } = deriveMetrics(
+    { fov_width_mm: 100, fov_height_mm: 100, tolerance_mm: 0.1 },
+    DEFAULT_SAFETY_FACTOR,
+    'alignment'
+  );
+  assert.equal(context.required_resolution_px, 3000);
+  assert.equal(context.required_sensor_mp, 9);
+  assert.deepEqual(assumptions, []);
+});
+
+test('thiếu chiều cao: giả định 4:3 (không phải vuông) và báo rõ trong kết quả', () => {
+  assert.equal(FALLBACK_FOV_ASPECT, 0.75);
+  const input = { fov_width_mm: 100, tolerance_mm: 0.1 };
+  const { context, metrics, assumptions } = deriveMetrics(input, DEFAULT_SAFETY_FACTOR, 'alignment');
+
+  assert.equal(context.fov_short_mm, 75);
+  assert.equal(context.required_sensor_mp, 6.75, '3000 x 2250, khong phai 3000 x 3000');
+  assert.equal(assumptions.length, 1);
+  assert.equal(assumptions[0].key, 'fov_height_mm');
+  assert.equal(assumptions[0].value, 75);
+  assert.equal(assumptions[0].ratio, '4:3');
+  assert.ok(assumptions[0].vi.includes('75 mm') && assumptions[0].vi.includes('4:3'), assumptions[0].vi);
+  assert.ok(assumptions[0].en.includes('75 mm'), assumptions[0].en);
+
+  const fovFormula = metrics.find((m) => m.key === 'fov_long_mm')!.formula;
+  assert.ok(fovFormula.includes('(giả định)'), fovFormula);
+
+  const result = runSelector([rule({ code: 'BASE', priority: 100 })], input, 'alignment');
+  assert.deepEqual(result.assumptions, assumptions, 'engine phai mang gia dinh ra ket qua');
+});
+
+test('line scan thiếu chiều cao là đúng thiết kế: không giả định, số không đổi', () => {
+  const { context, assumptions } = deriveMetrics(
+    { capture_mode: 'line_scan', fov_width_mm: 100, defect_min_size_mm: 0.2 },
+    DEFAULT_SAFETY_FACTOR,
+    'appearance-inspection'
+  );
+  assert.deepEqual(assumptions, []);
+  assert.equal(context.fov_short_mm, 100);
 });

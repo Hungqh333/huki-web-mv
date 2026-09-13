@@ -414,6 +414,7 @@
       "calculations": "Tính toán",
       "calculationsHint": "Công thức đã thay số, theo CLAUDE.md mục 4 — kiểm chứng lại trước khi chốt phương án.",
       "notes": "Ghi chú và rủi ro triển khai",
+      "assumptions": "Giả định đã dùng khi tính",
       "noRuleMatched": "Không có luật nào khớp với tham số này. Kết quả đang trống — cần bổ sung luật cho bài toán trong trang quản trị.",
       "exportPdf": "Xuất báo cáo PDF",
       "exportVipOnly": "Xuất báo cáo PDF dành cho tài khoản VIP trở lên.",

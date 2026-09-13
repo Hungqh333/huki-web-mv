@@ -56,3 +56,6 @@ docs/*.xlsx
 
 # Mockup minh hoa do AI sinh, cac con so trong do khong phai ket qua tinh
 docs/mockup.png
+
+# Cau hinh cuc bo cua Claude Code (launch.json...), khong commit
+.claude/

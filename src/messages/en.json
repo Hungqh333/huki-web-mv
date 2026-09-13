@@ -1335,5 +1335,129 @@
       "signIn": "Sign in",
       "contact": "Contact us"
     }
+  },
+  "designer": {
+    "requirement": {
+      "step": "Step 1 — Requirements",
+      "title": "Here is what I understood",
+      "subtitle": "Check and edit each parameter. The tag on the right shows where it came from.",
+      "rawTextTitle": "Your description",
+      "rawTextNote": "The automatic parser is not available yet — fill in the parameters below.",
+      "applicationType": "Application type",
+      "pickApplication": "Pick an application type",
+      "pickApplicationHint": "Pick an application type to show the parameter table.",
+      "partialSupport": "This version only has full parameters for Appearance Inspection and Measurement. This type shows the common parameters for now.",
+      "progress": "{filled}/{total} parameters filled",
+      "reset": "Start over",
+      "notSet": "Not set",
+      "yes": "Yes",
+      "no": "No",
+      "confidence": {
+        "stated": "Stated",
+        "inferred": "Inferred",
+        "assumed": "Assumed",
+        "unknown": "Missing"
+      },
+      "sections": {
+        "object": "Object",
+        "detection": "Defect detection",
+        "measurement": "Measurement",
+        "production": "Production",
+        "system": "System",
+        "environment": "Environment"
+      },
+      "fields": {
+        "object": {
+          "sizeX": "Object width",
+          "sizeY": "Object height",
+          "surface": "Surface",
+          "colorInspection": "Colour inspection",
+          "heightVariation": "Height variation",
+          "material": "Material"
+        },
+        "detection": {
+          "minSize": "Smallest defect",
+          "defectType": "Defect type",
+          "contrast": "Defect contrast",
+          "variability": "Defect appearance variability"
+        },
+        "measurement": {
+          "tolerance": "Measurement tolerance",
+          "feature": "Measured feature",
+          "spanLength": "Measured span length",
+          "crossesCameraSeam": "Crosses a camera seam",
+          "perspectiveFree": "Perspective-free measurement"
+        },
+        "production": {
+          "partsPerMinute": "Throughput",
+          "motion": "Motion during capture",
+          "conveyorSpeed": "Conveyor speed"
+        },
+        "system": {
+          "cameraCount": "Planned camera count",
+          "workingDistance": "Working distance"
+        },
+        "environment": {
+          "conditions": "Environment conditions",
+          "ambientTempRange": "Temperature swing (ΔT)",
+          "ipRequirement": "IP requirement"
+        }
+      },
+      "options": {
+        "surface": {
+          "matte": "Matte",
+          "glossy": "Glossy",
+          "metallic": "Metallic",
+          "black": "Black",
+          "transparent": "Transparent",
+          "mixed": "Mixed"
+        },
+        "contrast": {
+          "high": "High",
+          "medium": "Medium",
+          "low": "Low",
+          "unknown": "Unknown"
+        },
+        "motion": {
+          "static": "Static",
+          "indexed": "Indexed",
+          "continuous": "Continuous"
+        },
+        "conditions": {
+          "clean": "Clean",
+          "dust": "Dust",
+          "oil": "Oil",
+          "vibration": "Vibration",
+          "variableLight": "Variable ambient light",
+          "highTemp": "High temperature"
+        },
+        "defectType": {
+          "scratch": "Scratch / shallow crack",
+          "glossy_curved": "Glossy or curved surface",
+          "print_color": "Print defect / colour deviation",
+          "profile_hole_burr": "Profile, hole, burr",
+          "shallow_dent": "Very shallow dent or bump",
+          "transparent": "Transparent part"
+        },
+        "feature": {
+          "dimension": "Dimension / distance",
+          "diameter": "Diameter",
+          "angle": "Angle",
+          "position": "Relative position"
+        },
+        "ipRequirement": {
+          "none": "Not required",
+          "ip54": "IP54",
+          "ip65": "IP65",
+          "ip67": "IP67"
+        },
+        "variability": {
+          "low": "Low — stable defect shape and location",
+          "medium": "Medium — variable but still describable",
+          "high": "High — shape, location and colour vary widely",
+          "unknown": "Unknown"
+        }
+      }
+    }
   }
 }

@@ -1335,5 +1335,129 @@
       "signIn": "Đăng nhập",
       "contact": "Liên hệ tư vấn"
     }
+  },
+  "designer": {
+    "requirement": {
+      "step": "Bước 1 — Yêu cầu",
+      "title": "Tôi hiểu bài toán của bạn",
+      "subtitle": "Kiểm tra và sửa từng thông số. Nhãn bên phải cho biết thông số đến từ đâu.",
+      "rawTextTitle": "Mô tả bạn đã nhập",
+      "rawTextNote": "Bộ đọc tự động chưa có — hãy điền các thông số bên dưới.",
+      "applicationType": "Loại ứng dụng",
+      "pickApplication": "Chọn loại ứng dụng",
+      "pickApplicationHint": "Chọn loại ứng dụng để hiện bảng thông số.",
+      "partialSupport": "Bản hiện tại mới có đủ thông số cho Kiểm tra ngoại quan và Đo lường. Loại này tạm chỉ có phần thông số chung.",
+      "progress": "{filled}/{total} thông số đã có",
+      "reset": "Làm lại từ đầu",
+      "notSet": "Chưa có",
+      "yes": "Có",
+      "no": "Không",
+      "confidence": {
+        "stated": "Đã nêu",
+        "inferred": "Suy ra",
+        "assumed": "Giả định",
+        "unknown": "Chưa có"
+      },
+      "sections": {
+        "object": "Vật thể",
+        "detection": "Phát hiện lỗi",
+        "measurement": "Đo lường",
+        "production": "Sản xuất",
+        "system": "Hệ thống",
+        "environment": "Môi trường"
+      },
+      "fields": {
+        "object": {
+          "sizeX": "Chiều rộng vật",
+          "sizeY": "Chiều cao vật",
+          "surface": "Bề mặt",
+          "colorInspection": "Cần kiểm màu",
+          "heightVariation": "Biến động chiều cao",
+          "material": "Vật liệu"
+        },
+        "detection": {
+          "minSize": "Lỗi nhỏ nhất",
+          "defectType": "Loại lỗi",
+          "contrast": "Độ tương phản lỗi",
+          "variability": "Biến động ngoại hình lỗi"
+        },
+        "measurement": {
+          "tolerance": "Dung sai đo",
+          "feature": "Kích thước cần đo",
+          "spanLength": "Chiều dài kích thước đo",
+          "crossesCameraSeam": "Vắt qua ranh giới camera",
+          "perspectiveFree": "Cần đo không phối cảnh"
+        },
+        "production": {
+          "partsPerMinute": "Sản lượng",
+          "motion": "Chuyển động khi chụp",
+          "conveyorSpeed": "Tốc độ băng tải"
+        },
+        "system": {
+          "cameraCount": "Số camera dự kiến",
+          "workingDistance": "Khoảng cách làm việc"
+        },
+        "environment": {
+          "conditions": "Điều kiện môi trường",
+          "ambientTempRange": "Dao động nhiệt độ (ΔT)",
+          "ipRequirement": "Yêu cầu IP"
+        }
+      },
+      "options": {
+        "surface": {
+          "matte": "Mờ",
+          "glossy": "Bóng",
+          "metallic": "Kim loại",
+          "black": "Đen",
+          "transparent": "Trong suốt",
+          "mixed": "Nhiều loại"
+        },
+        "contrast": {
+          "high": "Cao",
+          "medium": "Trung bình",
+          "low": "Thấp",
+          "unknown": "Chưa rõ"
+        },
+        "motion": {
+          "static": "Đứng yên",
+          "indexed": "Dừng từng bước",
+          "continuous": "Chạy liên tục"
+        },
+        "conditions": {
+          "clean": "Sạch",
+          "dust": "Bụi",
+          "oil": "Dầu",
+          "vibration": "Rung",
+          "variableLight": "Ánh sáng thay đổi",
+          "highTemp": "Nhiệt độ cao"
+        },
+        "defectType": {
+          "scratch": "Trầy xước / nứt nông",
+          "glossy_curved": "Bề mặt bóng hoặc cong",
+          "print_color": "Lỗi in / sai màu",
+          "profile_hole_burr": "Biên dạng, lỗ, bavia",
+          "shallow_dent": "Lõm lồi rất nông",
+          "transparent": "Vật trong suốt"
+        },
+        "feature": {
+          "dimension": "Kích thước / khoảng cách",
+          "diameter": "Đường kính",
+          "angle": "Góc",
+          "position": "Vị trí tương đối"
+        },
+        "ipRequirement": {
+          "none": "Không yêu cầu",
+          "ip54": "IP54",
+          "ip65": "IP65",
+          "ip67": "IP67"
+        },
+        "variability": {
+          "low": "Thấp — lỗi có hình dạng và vị trí ổn định",
+          "medium": "Trung bình — có biến thiên nhưng vẫn mô tả được",
+          "high": "Cao — hình dạng, vị trí, màu sắc thay đổi nhiều",
+          "unknown": "Chưa rõ"
+        }
+      }
+    }
   }
 }

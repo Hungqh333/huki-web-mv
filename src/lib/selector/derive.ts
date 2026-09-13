@@ -228,7 +228,7 @@ export function deriveMetrics(
         usedWidth = known;
         usedHeight = known;
       } else if (height === null) {
-        // TODO(V1b): chuyển thành assumptionId theo Field<T> (spec §2, confidence 'assumed').
+        // TODO(V1b): chuyển thành assumptionId theo Field<T> (spec §3.2, confidence 'assumed').
         usedHeight = round(known * FALLBACK_FOV_ASPECT);
         assumptions.push({
           key: 'fov_height_mm',
@@ -239,7 +239,7 @@ export function deriveMetrics(
           en: `FOV height not specified — assumed ${usedHeight} mm (= width ${known} mm × ${FALLBACK_FOV_ASPECT}, 4:3 ratio). Enter the real height for an accurate result.`,
         });
       } else {
-        // TODO(V1b): chuyển thành assumptionId theo Field<T> (spec §2, confidence 'assumed').
+        // TODO(V1b): chuyển thành assumptionId theo Field<T> (spec §3.2, confidence 'assumed').
         usedWidth = round(known / FALLBACK_FOV_ASPECT);
         assumptions.push({
           key: 'fov_width_mm',

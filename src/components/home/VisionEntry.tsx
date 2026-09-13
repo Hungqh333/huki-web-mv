@@ -2,9 +2,12 @@
 
 import { useState, type FormEvent } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { IconBadge, type BadgeTone, type IconName } from '@/components/ui/Icon';
 import { selectorHrefFor } from '@/lib/application-type-map';
+import { REQUIREMENT_ROUTE, startDraftFromText } from '@/lib/requirement/draft';
+import { writeDraft } from '@/lib/requirement/draftStore';
 import {
   APPLICATION_SHORTCUT_ORDER,
   applicationCardEntry,
@@ -16,8 +19,10 @@ import {
 /**
  * Hai cửa vào Vision Engineer ở trang chủ: ô mô tả bài toán và 8 thẻ ứng dụng.
  *
- * Chưa nối backend (parser là V1a hạng mục 3). Tạm thời cả hai chỉ ghi
- * VisionEntryPayload ra console — đúng shape bước sau sẽ nhận.
+ * Chưa có parser (V1a hạng mục 3). Ô nhập lưu văn bản vào bản nháp
+ * (sessionStorage, không qua URL) rồi mở bảng tóm tắt yêu cầu. Thẻ ứng dụng tạm
+ * vẫn vào thẳng bộ chọn — chuyển sang bảng tóm tắt sau hạng mục 4, 6, 5.
+ * Cả hai vẫn ghi VisionEntryPayload ra console — đúng shape bước sau sẽ nhận.
  */
 function submitEntry(payload: VisionEntryPayload) {
   console.log('[VisionEntry]', payload);
@@ -31,12 +36,16 @@ const PRIMARY_BUTTON_CLASS =
 
 export function ProblemInput() {
   const t = useTranslations('home.entry');
+  const router = useRouter();
   const [text, setText] = useState('');
   const payload = freeTextEntry(text);
 
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (payload) submitEntry(payload);
+    if (!payload?.rawText) return;
+    submitEntry(payload);
+    writeDraft(startDraftFromText(payload.rawText));
+    router.push(REQUIREMENT_ROUTE);
   };
 
   return (

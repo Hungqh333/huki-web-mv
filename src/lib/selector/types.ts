@@ -67,7 +67,7 @@ export type DerivedMetric = {
 
 /**
  * Giá trị engine TỰ ĐIỀN khi đầu vào thiếu, luôn phải hiện cho người dùng.
- * TODO(V1b): thay bằng assumptionId trong Field<T> (spec §2).
+ * TODO(V1b): thay bằng assumptionId trong Field<T> (spec §3.2).
  */
 export type DerivedAssumption = {
   /** Trường đầu vào bị thiếu, vd. 'fov_height_mm'. */

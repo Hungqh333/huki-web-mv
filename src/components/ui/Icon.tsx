@@ -21,7 +21,15 @@ export type IconName =
   | 'sun'
   | 'moon'
   | 'camera'
-  | 'monitor';
+  | 'monitor'
+  | 'ruler'
+  | 'search'
+  | 'sparkles'
+  | 'cube'
+  | 'robotArm'
+  | 'barcode'
+  | 'blocks'
+  | 'more';
 
 const PATHS: Record<IconName, React.ReactNode> = {
   handbook: (
@@ -96,6 +104,60 @@ const PATHS: Record<IconName, React.ReactNode> = {
     <>
       <rect x="3" y="4" width="18" height="12" rx="2" />
       <path d="M8 20h8M12 16v4" />
+    </>
+  ),
+  // Tám icon dưới đây cho thẻ ứng dụng ở trang chủ.
+  ruler: (
+    <>
+      <path d="M3 17.5 17.5 3 21 6.5 6.5 21 3 17.5Z" />
+      <path d="M7 13.5l2 2M10 10.5l2 2M13 7.5l2 2" />
+    </>
+  ),
+  search: (
+    <>
+      <circle cx="11" cy="11" r="6.5" />
+      <path d="m16 16 4.5 4.5" />
+    </>
+  ),
+  sparkles: (
+    <>
+      <path d="M11 3.5l1.8 4.7 4.7 1.8-4.7 1.8L11 16.5l-1.8-4.7L4.5 10l4.7-1.8L11 3.5Z" />
+      <path d="M18 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8.8-2Z" />
+    </>
+  ),
+  cube: (
+    <>
+      <path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3Z" />
+      <path d="M4 7.5l8 4.5 8-4.5M12 12v9" />
+    </>
+  ),
+  robotArm: (
+    <>
+      <path d="M5 21h8M9 21v-4" />
+      <circle cx="9" cy="15" r="2" />
+      <path d="M10.5 13.5l4-4" />
+      <circle cx="16" cy="8" r="2" />
+      <path d="M17.5 6.5 20 4M18 9.5h3" />
+    </>
+  ),
+  barcode: (
+    <>
+      <path d="M4 7V5a1 1 0 0 1 1-1h2M17 4h2a1 1 0 0 1 1 1v2M20 17v2a1 1 0 0 1-1 1h-2M7 20H5a1 1 0 0 1-1-1v-2" />
+      <path d="M8 8v8M11 8v8M14 8v8M16.5 8v8" />
+    </>
+  ),
+  blocks: (
+    <>
+      <rect x="3.5" y="13" width="7.5" height="7.5" rx="1" />
+      <rect x="13" y="13" width="7.5" height="7.5" rx="1" />
+      <rect x="8.25" y="3.5" width="7.5" height="7.5" rx="1" />
+    </>
+  ),
+  more: (
+    <>
+      <circle cx="6" cy="12" r="1.5" />
+      <circle cx="12" cy="12" r="1.5" />
+      <circle cx="18" cy="12" r="1.5" />
     </>
   ),
 };

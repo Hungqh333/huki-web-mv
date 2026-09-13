@@ -31,6 +31,7 @@
     "admin": "Admin"
   },
   "home": {
+    "_deprecated": "DEPRECATED — các key title, subtitle, cta, ctaSecondary, modulesHeading, modulesSub, open, modules.* chỉ còn dùng cho trang chủ cũ ở /home-old. Trang chủ mới dùng home.entry.*. Xoá cùng lúc với /home-old.",
     "title": "Machine Vision Hub",
     "subtitle": "Bộ chọn thiết bị theo bài toán và cẩm nang kỹ thuật cho đội ngũ Vision.",
     "cta": "Khám phá cẩm nang",
@@ -50,6 +51,64 @@
       "kpi": {
         "title": "Bộ tính chỉ tiêu",
         "desc": "Xác định chỉ tiêu chất lượng cam kết được, quy ra chi phí vận hành và sinh bản nháp điều khoản."
+      }
+    },
+    "entry": {
+      "eyebrow": "MACHINE VISION ENGINEERING",
+      "title": "Your Virtual Vision Engineer",
+      "subtitle": "Thiết kế hệ thống vision tốt hơn, từng bước một.",
+      "problemLabel": "Mô tả bài toán vision của bạn",
+      "problemPlaceholder": "Tôi cần kiểm tra ngoại quan sản phẩm 380 × 280 mm, phát hiện lỗi nhỏ nhất 0.5 mm, độ chính xác ±0.1 mm, 4 camera.",
+      "analyze": "Phân tích bài toán",
+      "appsHeading": "Hoặc chọn một ứng dụng",
+      "apps": {
+        "Measurement": {
+          "title": "Đo lường",
+          "term": "Measurement"
+        },
+        "AppearanceInspection": {
+          "title": "Kiểm tra ngoại quan",
+          "term": "Appearance Inspection"
+        },
+        "AIInspection": {
+          "title": "AI Vision",
+          "term": "AI Inspection"
+        },
+        "3D": {
+          "title": "3D Vision",
+          "term": "3D"
+        },
+        "RobotGuidance": {
+          "title": "Dẫn hướng robot",
+          "term": "Robot Guidance"
+        },
+        "OCR": {
+          "title": "Đọc ký tự & mã",
+          "term": "OCR / Code"
+        },
+        "AssemblyInspection": {
+          "title": "Kiểm tra lắp ráp",
+          "term": "Assembly Inspection"
+        },
+        "Other": {
+          "title": "Khác",
+          "term": "Other"
+        }
+      },
+      "toolsHeading": "Công cụ hỗ trợ",
+      "tools": {
+        "visionDesigner": {
+          "title": "Vision Designer",
+          "desc": "Bộ chọn thiết bị — camera, ống kính, đèn theo bảng luật."
+        },
+        "engineeringTools": {
+          "title": "Engineering Tools",
+          "desc": "Bộ tính chỉ tiêu — chỉ tiêu cam kết được và chi phí vận hành."
+        },
+        "knowledgeBase": {
+          "title": "Knowledge Base",
+          "desc": "Cẩm nang kỹ thuật — optics, chiếu sáng, bài học dự án."
+        }
       }
     }
   },

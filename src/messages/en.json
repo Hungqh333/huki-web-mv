@@ -31,6 +31,7 @@
     "admin": "Admin"
   },
   "home": {
+    "_deprecated": "DEPRECATED — keys title, subtitle, cta, ctaSecondary, modulesHeading, modulesSub, open, modules.* are only used by the old home page at /home-old. The new home page uses home.entry.*. Remove together with /home-old.",
     "title": "Machine Vision Hub",
     "subtitle": "Task-driven equipment selection and a technical handbook for the Vision team.",
     "cta": "Explore the handbook",
@@ -50,6 +51,64 @@
       "kpi": {
         "title": "KPI calculator",
         "desc": "Define commitable quality targets, translate them into operating cost, and draft a contract clause."
+      }
+    },
+    "entry": {
+      "eyebrow": "MACHINE VISION ENGINEERING",
+      "title": "Your Virtual Vision Engineer",
+      "subtitle": "Design better vision systems, step by step.",
+      "problemLabel": "Describe your vision problem",
+      "problemPlaceholder": "I need appearance inspection of a 380 × 280 mm part, smallest defect 0.5 mm, accuracy ±0.1 mm, 4 cameras.",
+      "analyze": "Analyze problem",
+      "appsHeading": "Or pick an application",
+      "apps": {
+        "Measurement": {
+          "title": "Measurement",
+          "term": "Measurement"
+        },
+        "AppearanceInspection": {
+          "title": "Appearance Inspection",
+          "term": "Appearance Inspection"
+        },
+        "AIInspection": {
+          "title": "AI Vision",
+          "term": "AI Inspection"
+        },
+        "3D": {
+          "title": "3D Vision",
+          "term": "3D"
+        },
+        "RobotGuidance": {
+          "title": "Robot Guidance",
+          "term": "Robot Guidance"
+        },
+        "OCR": {
+          "title": "OCR / Code",
+          "term": "OCR / Code"
+        },
+        "AssemblyInspection": {
+          "title": "Assembly Inspection",
+          "term": "Assembly Inspection"
+        },
+        "Other": {
+          "title": "Other",
+          "term": "Other"
+        }
+      },
+      "toolsHeading": "Supporting tools",
+      "tools": {
+        "visionDesigner": {
+          "title": "Vision Designer",
+          "desc": "Equipment selector — camera, lens and lighting from the rule table."
+        },
+        "engineeringTools": {
+          "title": "Engineering Tools",
+          "desc": "KPI calculator — commitable targets and operating cost."
+        },
+        "knowledgeBase": {
+          "title": "Knowledge Base",
+          "desc": "Technical handbook — optics, lighting, project lessons."
+        }
       }
     }
   },

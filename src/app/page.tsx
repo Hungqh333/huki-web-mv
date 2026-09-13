@@ -1,71 +1,67 @@
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
+import { ApplicationCards, ProblemInput } from '@/components/home/VisionEntry';
 import { IconBadge, type BadgeTone, type IconName } from '@/components/ui/Icon';
 
 /**
- * Ba module, mỗi cái một tông màu riêng — kiểu huy hiệu icon tròn nhiều màu
- * trong trang cài đặt Google mà đội dùng làm mẫu tham chiếu. Icon và bảng màu
- * dùng chung ở @/components/ui/Icon để cả app nhất quán.
+ * Trang chủ Vision Engineer (spec V1.1 §10.1).
+ *
+ * Trang chủ cũ (ba module) giữ nguyên ở /home-old. Ba công cụ cũ không mất
+ * đường vào — chúng thành dải "Công cụ hỗ trợ" ở cuối trang, secondary so với
+ * Vision Engineer theo §0.2.
  */
-const MODULES: { key: string; href: string; icon: IconName; tone: BadgeTone }[] = [
-  { key: 'selector', href: '/cong-cu-chon-thiet-bi', icon: 'selector', tone: 'violet' },
-  { key: 'kpi', href: '/cong-cu-chi-tieu', icon: 'kpi', tone: 'emerald' },
-  { key: 'handbook', href: '/cam-nang', icon: 'handbook', tone: 'sky' },
+const TOOLS: { key: string; href: string; icon: IconName; tone: BadgeTone }[] = [
+  { key: 'visionDesigner', href: '/cong-cu-chon-thiet-bi', icon: 'selector', tone: 'violet' },
+  { key: 'engineeringTools', href: '/cong-cu-chi-tieu', icon: 'kpi', tone: 'emerald' },
+  { key: 'knowledgeBase', href: '/cam-nang', icon: 'handbook', tone: 'sky' },
 ];
 
 export default async function HomePage() {
-  const t = await getTranslations('home');
+  const t = await getTranslations('home.entry');
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
-      {/* Hero */}
-      <section className="max-w-3xl">
-        <span className="inline-flex items-center gap-2 rounded-full bg-sky-50 px-3 py-1 text-xs font-medium text-sky-700 ring-1 ring-inset ring-sky-200 dark:bg-sky-500/10 dark:text-sky-300 dark:ring-sky-500/25">
-          Machine Vision · Internal
-        </span>
-        <h1 className="mt-5 text-4xl font-bold tracking-tight sm:text-5xl">{t('title')}</h1>
+    <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-20">
+      <section className="mx-auto max-w-3xl text-center">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-700 dark:text-sky-400">
+          {t('eyebrow')}
+        </p>
+        <h1 className="mt-4 text-4xl font-bold tracking-tight sm:text-5xl">{t('title')}</h1>
         <p className="mt-4 text-lg leading-relaxed text-slate-600 dark:text-slate-400">
           {t('subtitle')}
         </p>
-        <div className="mt-8 flex flex-wrap gap-3">
-          <Link
-            href="/cam-nang"
-            className="inline-flex min-h-11 items-center rounded-lg bg-sky-600 px-5 text-sm font-medium text-white shadow-sm transition hover:bg-sky-700"
-          >
-            {t('cta')}
-          </Link>
-          <Link
-            href="/cong-cu-chon-thiet-bi"
-            className="inline-flex min-h-11 items-center rounded-lg border border-slate-300 px-5 text-sm font-medium text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
-          >
-            {t('ctaSecondary')}
-          </Link>
+      </section>
+
+      <section className="mx-auto mt-10 max-w-3xl">
+        <ProblemInput />
+      </section>
+
+      <section className="mx-auto mt-14 max-w-5xl">
+        <h2 className="text-center text-sm font-medium text-slate-600 dark:text-slate-400">
+          {t('appsHeading')}
+        </h2>
+        <div className="mt-4">
+          <ApplicationCards />
         </div>
       </section>
 
-      {/* Ba công cụ */}
-      <section className="mt-16 sm:mt-20">
-        <h2 className="text-xl font-semibold tracking-tight">{t('modulesHeading')}</h2>
-        <p className="mt-1 max-w-2xl text-sm text-slate-600 dark:text-slate-400">
-          {t('modulesSub')}
-        </p>
-
-        <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {MODULES.map((mod) => (
-            <li key={mod.key}>
+      <section className="mx-auto mt-16 max-w-5xl border-t border-slate-200 pt-8 dark:border-slate-800">
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+          {t('toolsHeading')}
+        </h2>
+        <ul className="mt-4 grid gap-3 md:grid-cols-3">
+          {TOOLS.map((tool) => (
+            <li key={tool.key}>
               <Link
-                href={mod.href}
-                className="group flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700"
+                href={tool.href}
+                className="group flex h-full items-start gap-3 rounded-xl p-3 transition hover:bg-slate-50 dark:hover:bg-slate-900"
               >
-                <IconBadge name={mod.icon} tone={mod.tone} className="size-12" />
-                <h3 className="mt-4 font-semibold">{t(`modules.${mod.key}.title`)}</h3>
-                <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
-                  {t(`modules.${mod.key}.desc`)}
-                </p>
-                <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-sky-700 dark:text-sky-400">
-                  {t('open')}
-                  <span aria-hidden="true" className="transition group-hover:translate-x-0.5">
-                    →
+                <IconBadge name={tool.icon} tone={tool.tone} className="size-9" />
+                <span className="min-w-0">
+                  <span className="block text-sm font-semibold text-slate-900 group-hover:text-sky-700 dark:text-slate-100 dark:group-hover:text-sky-400">
+                    {t(`tools.${tool.key}.title`)}
+                  </span>
+                  <span className="mt-0.5 block text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+                    {t(`tools.${tool.key}.desc`)}
                   </span>
                 </span>
               </Link>

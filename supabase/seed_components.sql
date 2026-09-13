@@ -525,3 +525,69 @@ on conflict (code) do update set
   notes_en   = excluded.notes_en,
   sort_order = excluded.sort_order,
   is_active  = true;
+
+-- =============================================================================
+-- Ví dụ CoaXPress-12 và Camera Link, lấy từ trang hãng / nhà phân phối
+--
+-- Thêm để bộ chọn có thiết bị thật cho hai chuẩn vừa có trong
+-- INTERFACE_BANDWIDTH. Thông số chép từ trang ghi ở datasheet_url (tháng
+-- 9/2026) nhưng CHƯA đối chiếu datasheet PDF, nên vẫn là 'unverified' — đội kỹ
+-- thuật cập nhật sau.
+--
+-- Hai giới hạn của engine hiện tại, ghi rõ để không ai hiểu nhầm:
+--   * INTERFACE_BANDWIDTH['CXP-12'] là băng thông MỖI LANE. Camera chạy 4 lane
+--     (boA5120-150cm) bị tính như 1 lane, tức băng thông bị đánh giá thấp 4 lần.
+--     `cxp_links` chỉ để tham khảo, engine chưa đọc.
+--   * Camera Link phải khai đúng cấu hình đang chạy; xem ghi chú dòng Vision Datum.
+-- =============================================================================
+
+insert into public.components
+  (code, kind, brand, model, spec, source, datasheet_url, notes_vi, notes_en, sort_order)
+values
+
+('CAM-BASLER-BOA4112-68CC', 'camera', 'Basler', 'boA4112-68cc',
+ '{"camera_type":"area","resolution_mp":12.3,"resolution_w_px":4096,"resolution_h_px":3000,"sensor_format":"1.1","pixel_size_um":3.45,"mount":"C","interface":"CXP-12","cxp_links":1,"max_fps":69,"color":"color"}'::jsonb,
+ 'unverified', 'https://docs.baslerweb.com/boa4112-68cc',
+ 'Sony IMX253, màn trập toàn cục. Cảm biến đủ 4112 × 3008, mặc định xuất 4096 × 3000. 69 fps là ở 8 bit. Mặt trước đa năng (C / F / M42) — mặc định ghi C, kiểm lại bản đặt hàng. Giao nhận không kèm kính lọc hồng ngoại.',
+ 'Sony IMX253 global shutter. Full sensor 4112 x 3008, default output 4096 x 3000. 69 fps at 8 bit. Universal front (C / F / M42) — entered as C, check the ordered variant. Shipped without IR-cut filter.',
+ 95),
+
+('CAM-BASLER-BOA5120-150CM', 'camera', 'Basler', 'boA5120-150cm',
+ '{"camera_type":"area","resolution_mp":26.2,"resolution_w_px":5120,"resolution_h_px":5120,"sensor_format":"1.1","pixel_size_um":2.5,"mount":"C","interface":"CXP-12","cxp_links":4,"max_fps":150,"color":"mono"}'::jsonb,
+ 'unverified', 'https://docs.baslerweb.com/boa5120-150cm',
+ 'Gpixel GMAX0505, 25 MP vuông. 150 fps CHỈ đạt ở 4 × CXP-12, Mono8 — cần grabber 4 cổng dành riêng cho một camera. Engine đang tính 1 lane nên sẽ báo thiếu băng thông sớm hơn thực tế. Pixel 2,5 µm: ống kính phải đủ độ phân giải quang học.',
+ 'Gpixel GMAX0505, 25 MP square. 150 fps ONLY at 4 x CXP-12, Mono8 — needs a 4-port grabber for this one camera. The engine counts one lane, so it flags bandwidth earlier than reality. 2.5 um pixels need a lens that resolves them.',
+ 96),
+
+('CAM-HIK-MVCH120-90Y1M', 'camera', 'Hikrobot', 'MV-CH120-90Y1M-NN',
+ '{"camera_type":"area","resolution_mp":12.6,"resolution_w_px":4096,"resolution_h_px":3072,"sensor_format":"1.1","pixel_size_um":3.4,"mount":"C","interface":"CXP-12","cxp_links":1,"max_fps":93.9,"color":"mono"}'::jsonb,
+ 'unverified', 'https://www.annolution.com/en/shop/hikrobotarea-scan-camera-12mp-area-scan-camera-gmax3412-1-link-cxp-12-c-mount-without-fan-without-heat-sink-mono-8179',
+ 'Gpixel GMAX3412, 1 link CXP-12 (micro-BNC), 93,9 fps ở Mono8. Bản -NN không quạt, không tản nhiệt — phải tự lo tản nhiệt khi lắp. Nguồn là trang nhà phân phối, chưa phải trang Hikrobot.',
+ 'Gpixel GMAX3412, 1-link CXP-12 (micro-BNC), 93.9 fps at Mono8. The -NN variant has no fan and no heat sink — plan cooling at mounting. Source is a distributor page, not Hikrobot itself.',
+ 97),
+
+('CAM-VD-MARS4096-L120CM', 'camera', 'Vision Datum', 'Mars4096G-L120cm',
+ '{"camera_type":"line","line_width_px":4096,"max_line_rate_khz":120,"pixel_size_um":7,"mount":"M42","interface":"CameraLink-Full","color":"mono"}'::jsonb,
+ 'unverified', 'https://shop.visiondatum.com/products/j-4k-cameralink-cmos-line-scan-camera',
+ 'Line scan 4K Camera Link, pixel 7 µm, 120 kHz, ngàm M42 × 1 (FBL 12 mm). CẤU HÌNH CAMERA LINK CHƯA XÁC NHẬN: trang hãng không ghi Base/Medium/Full. Ở 120 kHz × 4096 px × 8 bit ≈ 491 MB/s nên ít nhất phải Medium (510); tạm ghi Full — kiểm lại datasheet trước khi dùng.',
+ '4K Camera Link line scan, 7 um pixel, 120 kHz, M42 x 1 mount (12 mm FBL). CAMERA LINK CONFIGURATION NOT CONFIRMED: the vendor page does not state Base/Medium/Full. At 120 kHz x 4096 px x 8 bit ~ 491 MB/s it needs at least Medium (510); entered as Full — check the datasheet before use.',
+ 98),
+
+('IFCARD-EURESYS-CXP12-4CH', 'interface_card', 'Euresys', 'Coaxlink Quad CXP-12',
+ '{"interface":"CXP-12","channels":4}'::jsonb,
+ 'unverified', 'https://www.euresys.com/en/products/frame-grabber/coaxlink-quad-cxp-12/',
+ 'Grabber 4 kết nối CXP-12 (micro-BNC / HD-BNC), tổng 5000 MB/s, PCIe 3.0 x8 — cần khe x8. 4 cổng dùng được cho 4 camera 1 link, 2 camera 2 link, hoặc 1 camera 4 link.',
+ 'Frame grabber with four CXP-12 connections (micro-BNC / HD-BNC), 5000 MB/s total, PCIe 3.0 x8 — needs an x8 slot. Ports serve four 1-link cameras, two 2-link cameras, or one 4-link camera.',
+ 630)
+
+on conflict (code) do update set
+  kind          = excluded.kind,
+  brand         = excluded.brand,
+  model         = excluded.model,
+  spec          = excluded.spec,
+  source        = excluded.source,
+  datasheet_url = excluded.datasheet_url,
+  notes_vi      = excluded.notes_vi,
+  notes_en      = excluded.notes_en,
+  sort_order    = excluded.sort_order,
+  is_active     = true;

@@ -342,7 +342,8 @@ export type SpecFieldDef = {
   step?: number;
 };
 
-const MOUNTS = ['C', 'CS', 'F'];
+// M42: phổ biến ở line scan pixel lớn, ống kính C-mount không lắp thẳng được.
+const MOUNTS = ['C', 'CS', 'F', 'M42'];
 const INTERFACES = Object.keys(INTERFACE_BANDWIDTH);
 
 /** Máy tự thêm theo luật, hay để người dùng tích tay. */

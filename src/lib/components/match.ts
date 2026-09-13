@@ -368,6 +368,7 @@ const CONNECTOR_FOR_INTERFACE: Record<string, string> = {
   '10GigE': 'RJ45',
   USB3: 'USB3',
   'CXP-6': 'Coax',
+  'CXP-12': 'Coax',
 };
 
 /** Cáp camera: đầu nối phải khớp chuẩn giao tiếp của camera đã chọn. */

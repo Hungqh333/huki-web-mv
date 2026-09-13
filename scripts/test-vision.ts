@@ -530,7 +530,9 @@ test('thêm format mới không làm hỏng phép kiểm vòng ảnh', () => {
      coversSensor trả false cho MỌI ống kính: bộ chọn loại sạch lens khỏi kết
      quả, không FAIL, không cảnh báo. Nay thứ tự suy từ đường chéo nên chỉ khai
      kích thước là đủ. */
-  assert.equal(sensorDiagonalMm('1.1'), 17.52);
+  // 14,13² + 10,35² → 17,5151 mm. Không so bằng số làm tròn: đường chéo nay
+  // tính từ hai cạnh, không còn số khai sẵn nào để so.
+  assert.ok(Math.abs(sensorDiagonalMm('1.1')! - 17.5151) < 0.0001);
 
   // 1.1" (17,52 mm) nằm GIỮA 1" (16 mm) và 4/3" (22 mm) — thêm vào cuối một
   // mảng viết tay là sai thứ tự, sort theo đường chéo thì tự đúng chỗ.
@@ -559,16 +561,17 @@ test('thêm format mới không làm hỏng phép kiểm vòng ảnh', () => {
   assert.equal(check.status, 'fail');
 });
 
-test('đường chéo khai trong bảng khớp với bề rộng và chiều cao', () => {
-  /* diagonalMm được khai sẵn thay vì tính mỗi lần, nên nó có thể trôi khỏi
-     widthMm/heightMm nếu người sau sửa một chỗ mà quên chỗ kia. Test này là
-     cái chốt duy nhất chặn việc đó — bỏ nó đi là mở lại đúng loại lỗi hai
-     nguồn mà lần sửa này vừa dẹp. */
+test('đường chéo tính từ bề rộng và chiều cao, không có số khai sẵn', () => {
+  /* Trước đây bảng khai sẵn diagonalMm làm tròn 2 chữ số, kèm một test chốt
+     "số khai phải khớp hai cạnh trong 0,01 mm". Đó là chốt cho một nguồn thứ
+     hai không nên tồn tại. Nay đường chéo tính lúc chạy, nên chốt đúng điều đó:
+     không có trường khai sẵn, và giá trị trả ra đúng bằng √(w² + h²). */
   for (const [format, size] of Object.entries(SENSOR_FORMATS)) {
-    const fromSides = Math.sqrt(size.widthMm ** 2 + size.heightMm ** 2);
-    assert.ok(
-      Math.abs(size.diagonalMm - fromSides) < 0.01,
-      `${format}: khai ${size.diagonalMm} mm nhung canh cho ${fromSides.toFixed(4)} mm`
+    assert.ok(!('diagonalMm' in size), `${format}: khong duoc khai san duong cheo`);
+    assert.equal(
+      sensorDiagonalMm(format),
+      Math.sqrt(size.widthMm ** 2 + size.heightMm ** 2),
+      `${format}: duong cheo phai tinh tu hai canh`
     );
   }
 });
@@ -598,7 +601,7 @@ test('CXP-12 và CameraLink tính được thời gian truyền ảnh', () => {
 test('dropdown cỡ cảm biến sắp theo đường chéo tăng dần, không theo thứ tự khai báo', () => {
   /* Hai ô chọn của form admin (sensor_format của camera, image_circle của lens)
      trước đây lấy từ mảng SENSOR_FORMAT_ORDER viết tay. Nay lấy từ
-     SENSOR_FORMAT_KEYS suy ra bằng sort theo diagonalMm. Test này chốt ba
+     SENSOR_FORMAT_KEYS suy ra bằng sort theo đường chéo. Test này chốt ba
      điều: thứ tự đúng, nó thật sự đơn điệu theo đường chéo, và hai ô chọn
      dùng đúng danh sách đó chứ không phải một bản sao nào khác. */
   assert.deepEqual(SENSOR_FORMAT_KEYS, [
@@ -615,7 +618,7 @@ test('dropdown cỡ cảm biến sắp theo đường chéo tăng dần, không 
 
   // Đường chéo phải TĂNG ĐƠN ĐIỆU. Đây là bất biến thật: ai khai thêm format
   // vào giữa object cũng không làm lệch được, vì thứ tự do sort quyết định.
-  const diagonals = SENSOR_FORMAT_KEYS.map((key) => SENSOR_FORMATS[key].diagonalMm);
+  const diagonals = SENSOR_FORMAT_KEYS.map((key) => sensorDiagonalMm(key)!);
   for (let i = 1; i < diagonals.length; i += 1) {
     assert.ok(
       diagonals[i] > diagonals[i - 1],

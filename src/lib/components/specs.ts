@@ -51,35 +51,46 @@ export type Component = {
  * Cần bảng này vì tiêu cự phụ thuộc BỀ RỘNG CẢM BIẾN tính bằng mm, mà datasheet
  * thường chỉ ghi 1/1.8", 2/3"... Con số ở đây theo quy ước quang học thông dụng.
  *
- * `diagonalMm` nằm ngay trong bảng này là có chủ đích. Trước đây thứ tự cỡ cảm
- * biến nằm ở một mảng RIÊNG (`SENSOR_FORMAT_ORDER`) và phép kiểm vòng ảnh so
- * theo vị trí trong mảng đó. Hai nguồn tách rời nên thêm format vào bảng mà
- * quên mảng thì `coversSensor` trả false cho MỌI ống kính: bộ chọn loại sạch
- * lens khỏi kết quả, không FAIL, không cảnh báo, không để lại dấu vết. Gộp về
- * một nguồn thì lỗi đó không còn chỗ để xảy ra.
+ * Thứ tự cỡ cảm biến suy từ ĐƯỜNG CHÉO, và đường chéo TÍNH từ bề rộng và
+ * chiều cao chứ không khai sẵn. Hai lựa chọn này cùng dẹp một loại lỗi: hai
+ * nguồn cho cùng một thông tin rồi lệch nhau.
+ *
+ *  - Trước đây thứ tự nằm ở một mảng viết tay riêng (`SENSOR_FORMAT_ORDER`) và
+ *    phép kiểm vòng ảnh so theo vị trí trong mảng đó. Thêm format vào bảng mà
+ *    quên mảng thì `coversSensor` trả false cho MỌI ống kính: bộ chọn loại sạch
+ *    lens khỏi kết quả, không FAIL, không cảnh báo.
+ *  - Sau đó có một bản khai sẵn `diagonalMm` ngay trong bảng, làm tròn 2 chữ
+ *    số. Đó vẫn là nguồn thứ hai: sửa bề rộng mà quên đường chéo là lệch, và
+ *    bản làm tròn đã lệch sẵn tới 0,005 mm so với số tính (1.1": 17,52 so với
+ *    17,5151). Tính lúc chạy thì không còn gì để lệch.
  *
  * Xếp theo đường chéo tăng dần cho dễ đọc, nhưng thứ tự trong file KHÔNG phải
- * là thứ tự có hiệu lực — mọi chỗ cần thứ tự đều sắp theo `diagonalMm`. Đây
- * cũng chính là lý do phải bỏ mảng cũ: 1.1" có đường chéo 17,5 mm nên nằm GIỮA
- * 1" (16 mm) và 4/3" (22 mm); thêm vào cuối một mảng viết tay là sai thứ tự.
+ * là thứ tự có hiệu lực — 1.1" (17,5 mm) nằm GIỮA 1" (16 mm) và 4/3" (22 mm),
+ * nên mọi chỗ cần thứ tự đều sắp theo đường chéo.
+ *
+ * Nguồn con số: bảy format đầu có từ lúc dựng catalog, theo quy ước quang học
+ * thông dụng, CHƯA đối chiếu datasheet. 1.1" và APS-C lấy theo
+ * docs/HIEN_TRANG_VA_KHOANG_TRONG.md (GAP 6), cũng CHƯA đối chiếu datasheet.
  */
-export const SENSOR_FORMATS: Record<
-  string,
-  { widthMm: number; heightMm: number; diagonalMm: number }
-> = {
-  '1/3': { widthMm: 4.8, heightMm: 3.6, diagonalMm: 6.0 },
-  '1/2.5': { widthMm: 5.76, heightMm: 4.29, diagonalMm: 7.18 },
-  '1/2': { widthMm: 6.4, heightMm: 4.8, diagonalMm: 8.0 },
-  '1/1.8': { widthMm: 7.18, heightMm: 5.32, diagonalMm: 8.94 },
-  '2/3': { widthMm: 8.8, heightMm: 6.6, diagonalMm: 11.0 },
-  '1': { widthMm: 12.8, heightMm: 9.6, diagonalMm: 16.0 },
+export const SENSOR_FORMATS: Record<string, { widthMm: number; heightMm: number }> = {
+  '1/3': { widthMm: 4.8, heightMm: 3.6 },
+  '1/2.5': { widthMm: 5.76, heightMm: 4.29 },
+  '1/2': { widthMm: 6.4, heightMm: 4.8 },
+  '1/1.8': { widthMm: 7.18, heightMm: 5.32 },
+  '2/3': { widthMm: 8.8, heightMm: 6.6 },
+  '1': { widthMm: 12.8, heightMm: 9.6 },
   /* Format phổ biến nhất của camera công nghiệp 12–24 MP hiện nay (IMX253,
      IMX255, IMX531). Thiếu nó thì đúng nhóm camera đang dùng nhiều nhất không
      tính nổi tiêu cự. */
-  '1.1': { widthMm: 14.13, heightMm: 10.35, diagonalMm: 17.52 },
-  '4/3': { widthMm: 17.6, heightMm: 13.2, diagonalMm: 22.0 },
-  'APS-C': { widthMm: 23.6, heightMm: 15.6, diagonalMm: 28.29 },
+  '1.1': { widthMm: 14.13, heightMm: 10.35 },
+  '4/3': { widthMm: 17.6, heightMm: 13.2 },
+  'APS-C': { widthMm: 23.6, heightMm: 15.6 },
 };
+
+/** Đường chéo của một kích thước cảm biến, tính từ hai cạnh. */
+function diagonalOf(size: { widthMm: number; heightMm: number }): number {
+  return Math.sqrt(size.widthMm ** 2 + size.heightMm ** 2);
+}
 
 /**
  * Khoá của SENSOR_FORMATS, sắp từ cảm biến nhỏ tới lớn.
@@ -88,7 +99,7 @@ export const SENSOR_FORMATS: Record<
  * đúng chỗ ở mọi ô chọn. Thay cho `SENSOR_FORMAT_ORDER` cũ.
  */
 export const SENSOR_FORMAT_KEYS: string[] = Object.keys(SENSOR_FORMATS).sort(
-  (a, b) => SENSOR_FORMATS[a].diagonalMm - SENSOR_FORMATS[b].diagonalMm
+  (a, b) => diagonalOf(SENSOR_FORMATS[a]) - diagonalOf(SENSOR_FORMATS[b])
 );
 
 /**
@@ -267,7 +278,8 @@ export function sensorWidthMm(spec: Record<string, unknown>): number | null {
 /** Đường chéo cảm biến (mm) — so với vòng ảnh ống kính. */
 export function sensorDiagonalMm(format: string | null): number | null {
   if (!format) return null;
-  return SENSOR_FORMATS[format]?.diagonalMm ?? null;
+  const size = SENSOR_FORMATS[format];
+  return size ? diagonalOf(size) : null;
 }
 
 /**

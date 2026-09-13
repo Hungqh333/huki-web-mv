@@ -53,3 +53,6 @@ scripts/_*.mjs
 # File du lieu lam viec (Excel), nhi phan va co the chua thong tin du an noi bo
 NHAP_DU_LIEU_VISION.xlsx
 docs/*.xlsx
+
+# Mockup minh hoa do AI sinh, cac con so trong do khong phai ket qua tinh
+docs/mockup.png

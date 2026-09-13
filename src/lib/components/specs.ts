@@ -50,19 +50,46 @@ export type Component = {
  *
  * Cần bảng này vì tiêu cự phụ thuộc BỀ RỘNG CẢM BIẾN tính bằng mm, mà datasheet
  * thường chỉ ghi 1/1.8", 2/3"... Con số ở đây theo quy ước quang học thông dụng.
+ *
+ * `diagonalMm` nằm ngay trong bảng này là có chủ đích. Trước đây thứ tự cỡ cảm
+ * biến nằm ở một mảng RIÊNG (`SENSOR_FORMAT_ORDER`) và phép kiểm vòng ảnh so
+ * theo vị trí trong mảng đó. Hai nguồn tách rời nên thêm format vào bảng mà
+ * quên mảng thì `coversSensor` trả false cho MỌI ống kính: bộ chọn loại sạch
+ * lens khỏi kết quả, không FAIL, không cảnh báo, không để lại dấu vết. Gộp về
+ * một nguồn thì lỗi đó không còn chỗ để xảy ra.
+ *
+ * Xếp theo đường chéo tăng dần cho dễ đọc, nhưng thứ tự trong file KHÔNG phải
+ * là thứ tự có hiệu lực — mọi chỗ cần thứ tự đều sắp theo `diagonalMm`. Đây
+ * cũng chính là lý do phải bỏ mảng cũ: 1.1" có đường chéo 17,5 mm nên nằm GIỮA
+ * 1" (16 mm) và 4/3" (22 mm); thêm vào cuối một mảng viết tay là sai thứ tự.
  */
-export const SENSOR_FORMATS: Record<string, { widthMm: number; heightMm: number }> = {
-  '1/3': { widthMm: 4.8, heightMm: 3.6 },
-  '1/2.5': { widthMm: 5.76, heightMm: 4.29 },
-  '1/2': { widthMm: 6.4, heightMm: 4.8 },
-  '1/1.8': { widthMm: 7.18, heightMm: 5.32 },
-  '2/3': { widthMm: 8.8, heightMm: 6.6 },
-  '1': { widthMm: 12.8, heightMm: 9.6 },
-  '4/3': { widthMm: 17.6, heightMm: 13.2 },
+export const SENSOR_FORMATS: Record<
+  string,
+  { widthMm: number; heightMm: number; diagonalMm: number }
+> = {
+  '1/3': { widthMm: 4.8, heightMm: 3.6, diagonalMm: 6.0 },
+  '1/2.5': { widthMm: 5.76, heightMm: 4.29, diagonalMm: 7.18 },
+  '1/2': { widthMm: 6.4, heightMm: 4.8, diagonalMm: 8.0 },
+  '1/1.8': { widthMm: 7.18, heightMm: 5.32, diagonalMm: 8.94 },
+  '2/3': { widthMm: 8.8, heightMm: 6.6, diagonalMm: 11.0 },
+  '1': { widthMm: 12.8, heightMm: 9.6, diagonalMm: 16.0 },
+  /* Format phổ biến nhất của camera công nghiệp 12–24 MP hiện nay (IMX253,
+     IMX255, IMX531). Thiếu nó thì đúng nhóm camera đang dùng nhiều nhất không
+     tính nổi tiêu cự. */
+  '1.1': { widthMm: 14.13, heightMm: 10.35, diagonalMm: 17.52 },
+  '4/3': { widthMm: 17.6, heightMm: 13.2, diagonalMm: 22.0 },
+  'APS-C': { widthMm: 23.6, heightMm: 15.6, diagonalMm: 28.29 },
 };
 
-/** Thứ tự từ nhỏ tới lớn — dùng để kiểm tra vòng ảnh ống kính có phủ nổi cảm biến không. */
-export const SENSOR_FORMAT_ORDER = ['1/3', '1/2.5', '1/2', '1/1.8', '2/3', '1', '4/3'];
+/**
+ * Khoá của SENSOR_FORMATS, sắp từ cảm biến nhỏ tới lớn.
+ *
+ * SUY RA từ bảng trên chứ không viết tay, nên thêm một format là nó tự vào
+ * đúng chỗ ở mọi ô chọn. Thay cho `SENSOR_FORMAT_ORDER` cũ.
+ */
+export const SENSOR_FORMAT_KEYS: string[] = Object.keys(SENSOR_FORMATS).sort(
+  (a, b) => SENSOR_FORMATS[a].diagonalMm - SENSOR_FORMATS[b].diagonalMm
+);
 
 /**
  * Băng thông thực dụng của từng chuẩn giao tiếp (MB/s).
@@ -77,6 +104,13 @@ export const INTERFACE_BANDWIDTH: Record<string, number> = {
   '5GigE': 550,
   '10GigE': 1100,
   'CXP-6': 600,
+  /* CoaXPress 12,5 Gbps trên MỘT làn. Hệ 2 hay 4 làn thì nhân lên — khai sẵn
+     số của cấu hình nhiều làn ở đây là mời người sau nhân thêm lần nữa. */
+  'CXP-12': 1200,
+  /* Con số của cấu hình Full. Base và Medium thấp hơn nhiều, nên chọn chuẩn
+     này là phải xác nhận grabber lẫn cáp đúng là Full, không suy từ chữ
+     "Camera Link" trên datasheet. */
+  CameraLink: 800,
 };
 
 // ---------------------------------------------------------------- CAMERA --
@@ -179,18 +213,26 @@ export function sensorWidthMm(spec: Record<string, unknown>): number | null {
 /** Đường chéo cảm biến (mm) — so với vòng ảnh ống kính. */
 export function sensorDiagonalMm(format: string | null): number | null {
   if (!format) return null;
-  const size = SENSOR_FORMATS[format];
-  if (!size) return null;
-  return Math.sqrt(size.widthMm ** 2 + size.heightMm ** 2);
+  return SENSOR_FORMATS[format]?.diagonalMm ?? null;
 }
 
-/** Vòng ảnh của ống kính có phủ nổi cảm biến này không. */
+/**
+ * Vòng ảnh của ống kính có phủ nổi cảm biến này không.
+ *
+ * So ĐƯỜNG CHÉO chứ không so vị trí trong một danh sách xếp sẵn như trước. Hai
+ * cái cho cùng kết quả với bảy format cũ, nhưng so đường chéo là so đúng đại
+ * lượng vật lý: thêm format mới chỉ cần khai kích thước, không phải nhớ chèn
+ * nó vào đúng chỗ ở một mảng thứ hai. Cũng là phép so mà `opticsChecks` đang
+ * dùng, nên hai nơi không thể lệch nhau nữa.
+ *
+ * Format lạ vẫn trả false: thà loại một ống kính chưa khai đủ thông số còn hơn
+ * cho qua rồi lắp vào máy mới biết tối bốn góc.
+ */
 export function coversSensor(imageCircle: string | null, sensorFormat: string | null): boolean {
-  if (!imageCircle || !sensorFormat) return false;
-  const lensIndex = SENSOR_FORMAT_ORDER.indexOf(imageCircle);
-  const sensorIndex = SENSOR_FORMAT_ORDER.indexOf(sensorFormat);
-  if (lensIndex < 0 || sensorIndex < 0) return false;
-  return lensIndex >= sensorIndex;
+  const lensDiagonalMm = sensorDiagonalMm(imageCircle);
+  const sensorDiag = sensorDiagonalMm(sensorFormat);
+  if (lensDiagonalMm === null || sensorDiag === null) return false;
+  return lensDiagonalMm >= sensorDiag;
 }
 
 /** Băng thông chuẩn giao tiếp có tải nổi mức dữ liệu này không. */
@@ -268,7 +310,7 @@ export const SPEC_FIELDS: Record<ComponentKind, SpecFieldDef[]> = {
     /* Line scan chỉ có một hàng pixel; ảnh dựng dần theo chiều vật chạy. */
     { key: 'line_width_px', type: 'number', unit: 'px', step: 1 },
     { key: 'max_line_rate_khz', type: 'number', unit: 'kHz', step: 0.1 },
-    { key: 'sensor_format', type: 'select', options: SENSOR_FORMAT_ORDER },
+    { key: 'sensor_format', type: 'select', options: SENSOR_FORMAT_KEYS },
     { key: 'pixel_size_um', type: 'number', unit: 'µm', step: 0.01 },
     { key: 'mount', type: 'select', options: MOUNTS, required: true },
     { key: 'interface', type: 'select', options: INTERFACES, required: true },
@@ -279,7 +321,7 @@ export const SPEC_FIELDS: Record<ComponentKind, SpecFieldDef[]> = {
     { key: 'lens_type', type: 'select', options: ['fixed', 'telecentric', 'macro'], required: true },
     { key: 'focal_length_mm', type: 'number', unit: 'mm', step: 0.1 },
     { key: 'magnification', type: 'number', unit: 'x', step: 0.01 },
-    { key: 'image_circle', type: 'select', options: SENSOR_FORMAT_ORDER, required: true },
+    { key: 'image_circle', type: 'select', options: SENSOR_FORMAT_KEYS, required: true },
     { key: 'mount', type: 'select', options: MOUNTS, required: true },
     { key: 'wd_min_mm', type: 'number', unit: 'mm', step: 1 },
     { key: 'wd_max_mm', type: 'number', unit: 'mm', step: 1 },

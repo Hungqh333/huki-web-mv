@@ -30,6 +30,14 @@ import {
   type AppearanceInput,
   type CameraLike,
 } from '../src/lib/vision';
+import {
+  coversSensor,
+  sensorDiagonalMm,
+  INTERFACE_BANDWIDTH,
+  SENSOR_FORMATS,
+  SENSOR_FORMAT_KEYS,
+  SPEC_FIELDS,
+} from '../src/lib/components/specs';
 
 // ------------------------------------------------------------ ĐỘ PHÂN GIẢI --
 
@@ -486,4 +494,141 @@ test('thiếu encoder thì cảnh báo, encoder thô hơn một pixel cũng cả
     null
   );
   assert.equal(check(fine).status, 'pass');
+});
+
+// ------------------------------------------------- CỠ CẢM BIẾN & GIAO TIẾP --
+
+test('cảm biến 1.1" tính được tiêu cự, không còn rơi khỏi bảng cỡ cảm biến', () => {
+  const sensor = SENSOR_FORMATS['1.1'];
+  assert.equal(sensor.widthMm, 14.13);
+  assert.equal(sensor.heightMm, 10.35);
+
+  // FOV 380 mm, WD 300 mm -> beta = 14,13/380 = 0,0372; f = 300*beta/(1+beta)
+  const lens = estimateLens({ sensorSizeMm: sensor.widthMm, fovMm: 380, workingDistanceMm: 300 })!;
+  assert.equal(lens.beta, 0.0372);
+  assert.equal(lens.focalLengthMm, 10.76);
+
+  /* Quan trọng hơn con số: camera 1.1" đi qua bộ phân tích phải SINH RA phép
+     kiểm tiêu cự. Trước đây tra bảng không thấy format thì khối quang học lặng
+     lẽ thiếu hai phép kiểm — không FAIL, không cảnh báo, người dùng chỉ thấy
+     một bảng kết quả ngắn hơn bình thường và không có cách nào biết vì sao.
+     Đây là nhóm camera 12–24 MP đang dùng nhiều nhất, nên chỗ hổng này rơi
+     trúng đúng phần lớn dự án. */
+  const analysis = analyseAppearance(makeInput(), { ...CAMERA, sensorFormat: '1.1' }, {
+    imageCircleFormat: '4/3',
+  });
+  const optics = analysis.sections.find((s) => s.key === 'optics')!;
+  assert.ok(
+    optics.checks.some((c) => c.key === 'focalLength'),
+    'format co trong bang thi phai tinh duoc tieu cu'
+  );
+});
+
+test('thêm format mới không làm hỏng phép kiểm vòng ảnh', () => {
+  /* Đây là phép canh cho việc gộp SENSOR_FORMAT_ORDER vào SENSOR_FORMATS. Khi
+     thứ tự còn nằm ở mảng riêng, thêm format vào bảng mà quên mảng thì
+     coversSensor trả false cho MỌI ống kính: bộ chọn loại sạch lens khỏi kết
+     quả, không FAIL, không cảnh báo. Nay thứ tự suy từ đường chéo nên chỉ khai
+     kích thước là đủ. */
+  assert.equal(sensorDiagonalMm('1.1'), 17.52);
+
+  // 1.1" (17,52 mm) nằm GIỮA 1" (16 mm) và 4/3" (22 mm) — thêm vào cuối một
+  // mảng viết tay là sai thứ tự, sort theo đường chéo thì tự đúng chỗ.
+  const at = SENSOR_FORMAT_KEYS.indexOf('1.1');
+  assert.equal(SENSOR_FORMAT_KEYS[at - 1], '1');
+  assert.equal(SENSOR_FORMAT_KEYS[at + 1], '4/3');
+
+  assert.equal(coversSensor('4/3', '1.1'), true, 'vong anh 22 mm phu duoc duong cheo 17,52 mm');
+  assert.equal(coversSensor('1', '1.1'), false, 'vong anh 16 mm KHONG phu noi 17,52 mm');
+  assert.equal(coversSensor('1.1', '2/3'), true);
+  assert.equal(coversSensor('1.1', 'APS-C'), false);
+
+  // Bảy format cũ phải cho đúng kết quả như thời còn so theo vị trí trong mảng.
+  assert.equal(coversSensor('2/3', '1/1.8'), true);
+  assert.equal(coversSensor('1/1.8', '2/3'), false);
+  assert.equal(coversSensor('2/3', '2/3'), true, 'bang nhau thi van phu');
+  assert.equal(coversSensor('4/3', null), false, 'thieu thong so thi loai, khong doan');
+
+  // Và phải chạy thật tới đầu ra: lens 1" gắn cảm biến 1.1" bị đánh FAIL.
+  const analysis = analyseAppearance(makeInput(), { ...CAMERA, sensorFormat: '1.1' }, {
+    imageCircleFormat: '1',
+  });
+  const check = analysis.sections
+    .find((s) => s.key === 'optics')!
+    .checks.find((c) => c.key === 'imageCircle')!;
+  assert.equal(check.status, 'fail');
+});
+
+test('đường chéo khai trong bảng khớp với bề rộng và chiều cao', () => {
+  /* diagonalMm được khai sẵn thay vì tính mỗi lần, nên nó có thể trôi khỏi
+     widthMm/heightMm nếu người sau sửa một chỗ mà quên chỗ kia. Test này là
+     cái chốt duy nhất chặn việc đó — bỏ nó đi là mở lại đúng loại lỗi hai
+     nguồn mà lần sửa này vừa dẹp. */
+  for (const [format, size] of Object.entries(SENSOR_FORMATS)) {
+    const fromSides = Math.sqrt(size.widthMm ** 2 + size.heightMm ** 2);
+    assert.ok(
+      Math.abs(size.diagonalMm - fromSides) < 0.01,
+      `${format}: khai ${size.diagonalMm} mm nhung canh cho ${fromSides.toFixed(4)} mm`
+    );
+  }
+});
+
+test('CXP-12 và CameraLink tính được thời gian truyền ảnh', () => {
+  assert.equal(INTERFACE_BANDWIDTH['CXP-12'], 1200);
+  assert.equal(INTERFACE_BANDWIDTH.CameraLink, 800);
+
+  const shot = { widthPx: 4096, heightPx: 3000, pixelFormat: 'Mono8' as const };
+
+  // 12.288.000 byte / 1200 MB/s = 10,24 ms
+  const cxp = frameTransfer({ ...shot, interfaceName: 'CXP-12' })!;
+  assert.equal(cxp.usableMbytesS, 1200);
+  assert.equal(cxp.transferMs, 10.24);
+
+  const cameraLink = frameTransfer({ ...shot, interfaceName: 'CameraLink' })!;
+  assert.equal(cameraLink.transferMs, 15.36);
+
+  /* Chuẩn thiếu trong bảng thì frameTransfer trả null và khối băng thông biến
+     mất khỏi kết quả — cấu hình 12 MP chạy GigE trông "không có vấn đề" chỉ vì
+     phép kiểm không chạy. So với GigE mới thấy vì sao phải có hai chuẩn này. */
+  const gige = frameTransfer({ ...shot, interfaceName: 'GigE' })!;
+  assert.ok(gige.transferMs > cxp.transferMs * 10, 'cung anh do, GigE cham hon 10 lan');
+  assert.equal(frameTransfer({ ...shot, interfaceName: 'CXP-25' }), null, 'chuan la thi tra null');
+});
+
+test('dropdown cỡ cảm biến sắp theo đường chéo tăng dần, không theo thứ tự khai báo', () => {
+  /* Hai ô chọn của form admin (sensor_format của camera, image_circle của lens)
+     trước đây lấy từ mảng SENSOR_FORMAT_ORDER viết tay. Nay lấy từ
+     SENSOR_FORMAT_KEYS suy ra bằng sort theo diagonalMm. Test này chốt ba
+     điều: thứ tự đúng, nó thật sự đơn điệu theo đường chéo, và hai ô chọn
+     dùng đúng danh sách đó chứ không phải một bản sao nào khác. */
+  assert.deepEqual(SENSOR_FORMAT_KEYS, [
+    '1/3',
+    '1/2.5',
+    '1/2',
+    '1/1.8',
+    '2/3',
+    '1',
+    '1.1',
+    '4/3',
+    'APS-C',
+  ]);
+
+  // Đường chéo phải TĂNG ĐƠN ĐIỆU. Đây là bất biến thật: ai khai thêm format
+  // vào giữa object cũng không làm lệch được, vì thứ tự do sort quyết định.
+  const diagonals = SENSOR_FORMAT_KEYS.map((key) => SENSOR_FORMATS[key].diagonalMm);
+  for (let i = 1; i < diagonals.length; i += 1) {
+    assert.ok(
+      diagonals[i] > diagonals[i - 1],
+      `${SENSOR_FORMAT_KEYS[i]} (${diagonals[i]} mm) phai lon hon ${SENSOR_FORMAT_KEYS[i - 1]} (${diagonals[i - 1]} mm)`
+    );
+  }
+
+  // Không rơi và không thừa khoá so với bảng gốc.
+  assert.deepEqual([...SENSOR_FORMAT_KEYS].sort(), Object.keys(SENSOR_FORMATS).sort());
+
+  // Và hai ô chọn của form admin phải trỏ đúng vào danh sách này.
+  const sensorField = SPEC_FIELDS.camera.find((f) => f.key === 'sensor_format')!;
+  const imageCircleField = SPEC_FIELDS.lens.find((f) => f.key === 'image_circle')!;
+  assert.deepEqual(sensorField.options, SENSOR_FORMAT_KEYS, 'o chon sensor_format');
+  assert.deepEqual(imageCircleField.options, SENSOR_FORMAT_KEYS, 'o chon image_circle');
 });

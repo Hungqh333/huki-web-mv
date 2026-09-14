@@ -72,6 +72,8 @@ export const V1A_FIELDS: readonly RequirementFieldDef[] = [
   { path: 'object.colorInspection', section: 'object', key: 'colorInspection', kind: 'boolean' },
   { path: 'object.heightVariation', section: 'object', key: 'heightVariation', kind: 'number', unit: 'mm', min: 0 },
   { path: 'object.material', section: 'object', key: 'material', kind: 'text' },
+  // Có ô riêng vì giả định α = 23 (nhôm) phải sửa được ngay trong bảng — MEC-001.
+  { path: 'object.thermalExpansionCoeff', section: 'object', key: 'thermalExpansionCoeff', kind: 'number', unit: 'µm/(m·K)', min: 0 },
 
   { path: 'detection.0.minSize', section: 'detection', key: 'minSize', kind: 'number', unit: 'mm', min: 0.001 },
   { path: 'detection.0.defectType', section: 'detection', key: 'defectType', kind: 'select', options: DEFECT_TYPES, optionsKey: 'defectType' },

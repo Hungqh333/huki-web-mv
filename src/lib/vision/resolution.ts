@@ -18,6 +18,13 @@ export const PX_PER_DEFECT_GUIDE: { min: number; max: number | null; goalKey: st
   { min: 10, max: null, goalKey: 'measure' },
 ];
 
+/*
+ * Cố định 3 = nhánh contrast CAO của RES-001. Contrast chưa rõ phải dùng 5, nên
+ * số MP yêu cầu hiện có thể bị tính THIẾU — panel Assumptions đang ghi rõ điều
+ * này (src/lib/requirement/assumptions.ts).
+ * TODO(V1b): đổi 3 → N theo contrast (N_DET_BY_CONTRAST trong
+ * src/lib/requirement/defaults.ts); cần test hồi quy toàn bộ bài ngoại quan.
+ */
 export const DEFAULT_PX_PER_DEFECT = 3;
 
 // ------------------------------------------------------- NHÁNH ĐO LƯỜNG --

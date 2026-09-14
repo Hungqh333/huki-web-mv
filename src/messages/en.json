@@ -1373,7 +1373,8 @@
           "surface": "Surface",
           "colorInspection": "Colour inspection",
           "heightVariation": "Height variation",
-          "material": "Material"
+          "material": "Material",
+          "thermalExpansionCoeff": "Thermal expansion coefficient α"
         },
         "detection": {
           "minSize": "Smallest defect",
@@ -1457,6 +1458,18 @@
           "high": "High — shape, location and colour vary widely",
           "unknown": "Unknown"
         }
+      },
+      "assumedOption": "Assumed: {value}",
+      "assumptions": {
+        "title": "Assumptions in use",
+        "subtitle": "Applied on display, not saved to the draft. Enter real values in the table to replace them.",
+        "defaultsTitle": "Empty fields — using defaults",
+        "methodTitle": "Current calculation method",
+        "noDefaults": "No field is using a default any more.",
+        "editInTable": "Edit in table",
+        "fixedInCode": "Engineering parameter, fixed in code",
+        "rules": "Affects",
+        "warningLabel": "Needs attention"
       }
     }
   }

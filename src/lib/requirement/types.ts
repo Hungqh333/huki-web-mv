@@ -30,6 +30,36 @@ export interface Field<T> {
   unit?: string;
 }
 
+/**
+ * Giả định đến từ đâu (xem assumptions.ts):
+ * 'default' ô trống lấy mặc định · 'adapter' xấp xỉ khi chuyển sang bộ chọn cũ ·
+ * 'parameter' tham số tính cố định trong code.
+ */
+export type AssumptionSource = 'default' | 'adapter' | 'parameter';
+/** 'warning': giả định sai có thể làm kết quả lệch về phía nguy hiểm. */
+export type AssumptionLevel = 'info' | 'warning';
+
+/**
+ * ASSUMPTION (spec §3.1) — MỘT kiểu cho mọi nguồn giả định.
+ * V1a chưa lưu database: sinh lại mỗi lần hiển thị từ bản nháp.
+ */
+export interface Assumption {
+  /** Ổn định giữa các lần hiển thị; Field.assumptionId trỏ tới đây. */
+  key: string;
+  source: AssumptionSource;
+  level: AssumptionLevel;
+  /** Rule nào đọc giả định này. */
+  ruleIds: readonly string[];
+  /** Có khi source = 'default': ô nào trên bảng đang được điền. */
+  path?: string;
+  value?: number | string;
+  unit?: string;
+  /** Tên hiển thị khi không có `path` (với 'default', nhãn lấy từ ô trên bảng). */
+  title?: { vi: string; en: string };
+  vi: string;
+  en: string;
+}
+
 export type Surface = 'matte' | 'glossy' | 'metallic' | 'black' | 'transparent' | 'mixed';
 export type DefectContrast = 'high' | 'medium' | 'low' | 'unknown';
 export type DefectVariability = 'low' | 'medium' | 'high' | 'unknown';

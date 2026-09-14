@@ -10,15 +10,15 @@
  */
 import { APPLICATION_TASK_SLUG } from '../application-type-map';
 import type { InputValue, SelectorInput } from '../selector/types';
-import type { EnvironmentCondition, Field, Motion, Requirement, Surface } from './types';
+import type { Assumption, EnvironmentCondition, Field, Motion, Requirement, Surface } from './types';
 
 export type AdapterNote = { key: string; vi: string; en: string };
 
 export type AdaptedSelectorInput = {
   taskSlug: string | null;
   input: SelectorInput;
-  /** Giả định adapter phải dùng — luôn hiện cho người dùng. */
-  assumptions: AdapterNote[];
+  /** Giả định adapter phải dùng — luôn hiện trên panel Assumptions. */
+  assumptions: Assumption[];
   /** Thông tin bị rút gọn hoặc bỏ khi chuyển. */
   warnings: AdapterNote[];
 };
@@ -61,7 +61,7 @@ function strictest<T extends { id: string }>(items: T[], pick: (item: T) => numb
 export function requirementToSelectorInput(requirement: Requirement): AdaptedSelectorInput {
   const type = requirement.applicationType;
   const input: SelectorInput = {};
-  const assumptions: AdapterNote[] = [];
+  const assumptions: Assumption[] = [];
   const warnings: AdapterNote[] = [];
   const set = (key: string, value: InputValue) => {
     if (value !== null) input[key] = value;
@@ -77,6 +77,11 @@ export function requirementToSelectorInput(requirement: Requirement): AdaptedSel
     // FOV = kích thước vật + 2 × sai lệch vị trí + lề.
     assumptions.push({
       key: 'fovEqualsObject',
+      source: 'adapter',
+      // FOV nhỏ hơn thật → mm/px lạc quan và vật lệch vị trí có thể ra khỏi khung.
+      level: 'warning',
+      ruleIds: ['RES-004'],
+      title: { vi: 'Vùng quan sát (FOV)', en: 'Field of view (FOV)' },
       vi: 'FOV = kích thước vật, chưa tính dung sai định vị và lề an toàn.',
       en: 'FOV = object size; positioning tolerance and safety margin not yet included.',
     });

@@ -1373,7 +1373,8 @@
           "surface": "Bề mặt",
           "colorInspection": "Cần kiểm màu",
           "heightVariation": "Biến động chiều cao",
-          "material": "Vật liệu"
+          "material": "Vật liệu",
+          "thermalExpansionCoeff": "Hệ số giãn nở nhiệt α"
         },
         "detection": {
           "minSize": "Lỗi nhỏ nhất",
@@ -1457,6 +1458,18 @@
           "high": "Cao — hình dạng, vị trí, màu sắc thay đổi nhiều",
           "unknown": "Chưa rõ"
         }
+      },
+      "assumedOption": "Giả định: {value}",
+      "assumptions": {
+        "title": "Giả định đang dùng",
+        "subtitle": "Áp lúc hiển thị, không lưu vào bản nháp. Nhập số thật trong bảng để thay giả định.",
+        "defaultsTitle": "Ô còn trống — đang lấy mặc định",
+        "methodTitle": "Cách tính hiện tại",
+        "noDefaults": "Không còn ô nào dùng mặc định.",
+        "editInTable": "Sửa trong bảng",
+        "fixedInCode": "Tham số kỹ thuật, cố định trong code",
+        "rules": "Ảnh hưởng",
+        "warningLabel": "Cần lưu ý"
       }
     }
   }

@@ -17,7 +17,7 @@ export default async function DevRequirementPreviewPage({ searchParams }: PagePr
   const appParam = Array.isArray(app) ? app[0] : app;
 
   return (
-    <section className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6">
+    <section className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
       <p className="mb-6 rounded-md bg-amber-100 px-3 py-2 text-sm text-amber-900 dark:bg-amber-950/50 dark:text-amber-200">
         Trang xem trước chỉ có ở máy local. Không cần đăng nhập, không đọc database.
       </p>

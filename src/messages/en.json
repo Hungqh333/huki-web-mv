@@ -1356,7 +1356,8 @@
         "stated": "Stated",
         "inferred": "Inferred",
         "assumed": "Assumed",
-        "unknown": "Missing"
+        "unknown": "Unknown",
+        "notAsked": "Missing"
       },
       "sections": {
         "object": "Object",
@@ -1457,19 +1458,110 @@
           "medium": "Medium — variable but still describable",
           "high": "High — shape, location and colour vary widely",
           "unknown": "Unknown"
+        },
+        "material": {
+          "aluminium": "Aluminium",
+          "steel": "Steel",
+          "stainless": "Stainless steel",
+          "plastic": "Plastic",
+          "other": "Other — enter α"
         }
       },
       "assumedOption": "Assumed: {value}",
       "assumptions": {
         "title": "Assumptions in use",
         "subtitle": "Applied on display, not saved to the draft. Enter real values in the table to replace them.",
-        "defaultsTitle": "Empty fields — using defaults",
+        "defaultsTitle": "Empty fields — filled by the system",
         "methodTitle": "Current calculation method",
         "noDefaults": "No field is using a default any more.",
         "editInTable": "Edit in table",
         "fixedInCode": "Engineering parameter, fixed in code",
-        "rules": "Affects",
         "warningLabel": "Needs attention"
+      },
+      "inferredOption": "Inferred: {value}",
+      "purposes": {
+        "detectionResolution": "to size the detection resolution",
+        "measurementResolution": "to size the measurement resolution",
+        "pixelCount": "to work out the camera pixel count",
+        "multiCamera": "to split the field of view across cameras",
+        "lighting": "to choose the lighting",
+        "lens": "to choose the lens focal length",
+        "depthOfField": "to check depth of field",
+        "perspective": "to check perspective error",
+        "thermal": "to check thermal expansion",
+        "stitching": "to check stitching error between cameras",
+        "algorithm": "to decide between rule-based vision and deep learning",
+        "motionBlur": "to check motion blur"
+      },
+      "questions": {
+        "title": "Missing information",
+        "subtitle": "Only what is needed to reach a conclusion. Answer here or edit the table directly.",
+        "done": "Nothing more to ask at this step.",
+        "more": "{count} more — they appear as you answer the ones above.",
+        "markedUnknown": "Marked as unknown:",
+        "askAgain": "Ask again",
+        "unknown": "Not sure",
+        "confirm": "Save",
+        "suggestions": "Quick fill:",
+        "invalidNumber": "Enter a valid number.",
+        "items": {
+          "objectSize": {
+            "question": "How large is the object to cover (width × height)?",
+            "short": "Object size"
+          },
+          "defectMinSize": {
+            "question": "What is the smallest defect to detect?",
+            "short": "Smallest defect"
+          },
+          "tolerance": {
+            "question": "What tolerance must the measured dimension hold (±)?",
+            "short": "Tolerance"
+          },
+          "contrast": {
+            "question": "How clearly does the defect stand out from the background?",
+            "short": "Defect contrast"
+          },
+          "heightVariation": {
+            "question": "How much does the measured surface height vary between parts?",
+            "short": "Height variation"
+          },
+          "workingDistance": {
+            "question": "How far from the object can the camera be mounted?",
+            "short": "Working distance"
+          },
+          "spanLength": {
+            "question": "How long is the measured dimension?",
+            "short": "Measured span"
+          },
+          "ambientTempRange": {
+            "question": "How much does the temperature at the measuring station swing (ΔT)?",
+            "short": "Temperature swing"
+          },
+          "material": {
+            "question": "What material is the part made of?",
+            "short": "Material"
+          },
+          "crossesCameraSeam": {
+            "question": "Does the measured dimension cross the boundary between cameras?",
+            "short": "Crosses a camera seam"
+          },
+          "cameraCount": {
+            "question": "How many cameras are planned?",
+            "short": "Camera count"
+          },
+          "surface": {
+            "question": "What is the part surface like?",
+            "short": "Surface"
+          },
+          "motion": {
+            "question": "Is the part stationary or moving during capture?",
+            "short": "Motion during capture"
+          },
+          "variability": {
+            "question": "Do the defects vary a lot in shape, position or colour?",
+            "short": "Defect variability"
+          }
+        }
       }
     }
   }

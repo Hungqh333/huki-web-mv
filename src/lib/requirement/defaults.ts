@@ -17,6 +17,7 @@
  * lên DB + admin (là giả định về khách, phòng muốn chỉnh theo thị trường);
  * GRR_DIVISOR, K_SUBPIXEL, N_DET_BY_CONTRAST thì KHÔNG nên cho sửa qua admin.
  */
+import type { MATERIALS } from './fields';
 import type { AssumptionLevel, DefectContrast } from './types';
 
 export type FieldDefault = {
@@ -105,6 +106,67 @@ export const FIELD_DEFAULTS: readonly FieldDefault[] = [
     },
   },
 ];
+
+export type KnownMaterial = Exclude<(typeof MATERIALS)[number], 'other'>;
+
+export type MaterialAlpha = {
+  /** µm/(m·K) */
+  alpha: number;
+  /** 'warning' khi mác vật liệu trong nhóm lệch α nhiều. */
+  level: AssumptionLevel;
+  basis: { vi: string; en: string };
+};
+
+/**
+ * MEC-001 — hệ số giãn nở nhiệt α suy từ vật liệu (V1a hạng mục 5).
+ *
+ * Giá trị điển hình, chưa đối chiếu datasheet. Cần xác minh trước khi dùng
+ * cho báo giá thực tế.
+ *
+ * Là tham số vật lý → code + test, không qua admin.
+ *
+ * Nhóm có dải rộng lấy về phía XẤU (theo §3.3: thiếu thông tin thì giả định xấu
+ * nhất, giống contrast mặc định 'low'). α lớn hơn → sai số giãn nở lớn hơn →
+ * MEC-001 khó PASS hơn. Lấy giá trị giữa dải thì khoảng một nửa số trường hợp
+ * tính THIẾU sai số: MEC-001 báo PASS trong khi thực tế FAIL.
+ * - Nhựa: dải 50–150 → lấy 120, cận trên thực dụng (nhựa kỹ thuật thường dùng
+ *   ABS, POM, PA, PC ở khoảng 70–110).
+ * - Inox: 17 (austenit SUS304/316) — cảnh báo ferrit SUS430 chỉ khoảng 10.
+ */
+export const MATERIAL_ALPHA: Record<KnownMaterial, MaterialAlpha> = {
+  aluminium: {
+    alpha: 23,
+    level: 'info',
+    basis: {
+      vi: 'Suy từ vật liệu: hợp kim nhôm, α điển hình ở 20 °C (khoảng 21–24). Cần datasheet để chốt.',
+      en: 'Inferred from material: aluminium alloy, typical α at 20 °C (about 21–24). Confirm with the datasheet.',
+    },
+  },
+  steel: {
+    alpha: 12,
+    level: 'info',
+    basis: {
+      vi: 'Suy từ vật liệu: thép carbon, α điển hình ở 20 °C (khoảng 11–13). Cần datasheet để chốt.',
+      en: 'Inferred from material: carbon steel, typical α at 20 °C (about 11–13). Confirm with the datasheet.',
+    },
+  },
+  stainless: {
+    alpha: 17,
+    level: 'warning',
+    basis: {
+      vi: 'Suy từ vật liệu: inox austenit (SUS304/316) khoảng 16–17. Inox ferrit (SUS430) chỉ khoảng 10 — mác khác thì chọn "Khác" và nhập α.',
+      en: 'Inferred from material: austenitic stainless (SUS304/316) about 16–17. Ferritic grades (SUS430) are only about 10 — for other grades choose "Other" and enter α.',
+    },
+  },
+  plastic: {
+    alpha: 120,
+    level: 'warning',
+    basis: {
+      vi: 'Suy từ vật liệu: nhựa lệch rất rộng (khoảng 50–150 tuỳ loại). Lấy 120 — phía xấu của dải, để không tính thiếu giãn nở nhiệt. Biết loại nhựa thì chọn "Khác" và nhập α theo datasheet.',
+      en: 'Inferred from material: plastics vary widely (about 50–150 by type). Using 120 — the unfavourable end of the range, so thermal expansion is not underestimated. If the grade is known, choose "Other" and enter α from the datasheet.',
+    },
+  },
+};
 
 /**
  * RES-001 — số pixel phủ lên lỗi nhỏ nhất, theo độ tương phản lỗi.

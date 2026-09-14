@@ -1356,7 +1356,8 @@
         "stated": "Đã nêu",
         "inferred": "Suy ra",
         "assumed": "Giả định",
-        "unknown": "Chưa có"
+        "unknown": "Chưa rõ",
+        "notAsked": "Chưa có"
       },
       "sections": {
         "object": "Vật thể",
@@ -1457,19 +1458,110 @@
           "medium": "Trung bình — có biến thiên nhưng vẫn mô tả được",
           "high": "Cao — hình dạng, vị trí, màu sắc thay đổi nhiều",
           "unknown": "Chưa rõ"
+        },
+        "material": {
+          "aluminium": "Nhôm",
+          "steel": "Thép",
+          "stainless": "Inox",
+          "plastic": "Nhựa",
+          "other": "Khác — nhập α"
         }
       },
       "assumedOption": "Giả định: {value}",
       "assumptions": {
         "title": "Giả định đang dùng",
         "subtitle": "Áp lúc hiển thị, không lưu vào bản nháp. Nhập số thật trong bảng để thay giả định.",
-        "defaultsTitle": "Ô còn trống — đang lấy mặc định",
+        "defaultsTitle": "Ô còn trống — hệ thống đang điền",
         "methodTitle": "Cách tính hiện tại",
         "noDefaults": "Không còn ô nào dùng mặc định.",
         "editInTable": "Sửa trong bảng",
         "fixedInCode": "Tham số kỹ thuật, cố định trong code",
-        "rules": "Ảnh hưởng",
         "warningLabel": "Cần lưu ý"
+      },
+      "inferredOption": "Suy ra: {value}",
+      "purposes": {
+        "detectionResolution": "để tính độ phân giải phát hiện lỗi",
+        "measurementResolution": "để tính độ phân giải đo",
+        "pixelCount": "để tính số pixel camera cần",
+        "multiCamera": "để chia vùng quan sát cho nhiều camera",
+        "lighting": "để chọn phương án chiếu sáng",
+        "lens": "để chọn tiêu cự lens",
+        "depthOfField": "để kiểm độ sâu trường ảnh",
+        "perspective": "để kiểm sai số phối cảnh",
+        "thermal": "để kiểm giãn nở nhiệt",
+        "stitching": "để kiểm sai số ghép ảnh giữa các camera",
+        "algorithm": "để quyết định dùng xử lý ảnh truyền thống hay Deep Learning",
+        "motionBlur": "để kiểm nhoè chuyển động"
+      },
+      "questions": {
+        "title": "Thông tin còn thiếu",
+        "subtitle": "Chỉ hỏi những gì cần để kết luận. Trả lời ở đây hoặc sửa trực tiếp trong bảng.",
+        "done": "Đã đủ thông tin cần hỏi ở bước này.",
+        "more": "Còn {count} câu nữa — sẽ hiện khi trả lời xong các câu trên.",
+        "markedUnknown": "Đã đánh dấu chưa rõ:",
+        "askAgain": "Hỏi lại",
+        "unknown": "Chưa rõ",
+        "confirm": "Ghi",
+        "suggestions": "Điền nhanh:",
+        "invalidNumber": "Nhập số hợp lệ (dùng dấu chấm hoặc phẩy).",
+        "items": {
+          "objectSize": {
+            "question": "Vật cần quan sát kích thước bao nhiêu (rộng × cao)?",
+            "short": "Kích thước vật"
+          },
+          "defectMinSize": {
+            "question": "Lỗi nhỏ nhất cần phát hiện là bao nhiêu?",
+            "short": "Lỗi nhỏ nhất"
+          },
+          "tolerance": {
+            "question": "Kích thước cần đo có dung sai bao nhiêu (±)?",
+            "short": "Dung sai đo"
+          },
+          "contrast": {
+            "question": "Lỗi có nổi rõ so với nền không?",
+            "short": "Độ tương phản lỗi"
+          },
+          "heightVariation": {
+            "question": "Chiều cao bề mặt đo dao động bao nhiêu giữa các sản phẩm?",
+            "short": "Biến động chiều cao"
+          },
+          "workingDistance": {
+            "question": "Camera đặt cách vật bao xa (theo không gian máy)?",
+            "short": "Khoảng cách làm việc"
+          },
+          "spanLength": {
+            "question": "Kích thước cần đo dài bao nhiêu?",
+            "short": "Chiều dài kích thước đo"
+          },
+          "ambientTempRange": {
+            "question": "Nhiệt độ vùng đo dao động bao nhiêu độ (ΔT)?",
+            "short": "Dao động nhiệt độ"
+          },
+          "material": {
+            "question": "Sản phẩm làm bằng vật liệu gì?",
+            "short": "Vật liệu"
+          },
+          "crossesCameraSeam": {
+            "question": "Kích thước cần đo có vắt qua ranh giới giữa các camera không?",
+            "short": "Vắt qua ranh giới camera"
+          },
+          "cameraCount": {
+            "question": "Dự kiến dùng mấy camera?",
+            "short": "Số camera"
+          },
+          "surface": {
+            "question": "Bề mặt sản phẩm thế nào?",
+            "short": "Bề mặt"
+          },
+          "motion": {
+            "question": "Sản phẩm đứng yên hay đang chạy khi chụp?",
+            "short": "Chuyển động khi chụp"
+          },
+          "variability": {
+            "question": "Hình dạng, vị trí, màu của lỗi có thay đổi nhiều không?",
+            "short": "Biến động ngoại hình lỗi"
+          }
+        }
       }
     }
   }

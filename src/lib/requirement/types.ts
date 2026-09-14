@@ -22,7 +22,13 @@ export type Confidence = 'stated' | 'inferred' | 'assumed' | 'unknown';
 
 export interface Field<T> {
   value: T | null;
-  confidence: Confidence;
+  /**
+   * Không có = CHƯA HỎI (value luôn null).
+   * 'unknown' = ĐÃ HỎI, người dùng trả lời "Chưa rõ" (value null).
+   * Hai trạng thái này phải phân biệt được: câu hỏi bổ sung không hỏi lại ô
+   * 'unknown', nhưng vẫn hỏi ô chưa hỏi.
+   */
+  confidence?: Confidence;
   /** Đoạn text gốc (khi confidence = 'stated' và đến từ parser). */
   sourceSpan?: string;
   /** Trỏ tới ASSUMPTION (khi confidence = 'assumed'). */
@@ -32,10 +38,11 @@ export interface Field<T> {
 
 /**
  * Giả định đến từ đâu (xem assumptions.ts):
- * 'default' ô trống lấy mặc định · 'adapter' xấp xỉ khi chuyển sang bộ chọn cũ ·
- * 'parameter' tham số tính cố định trong code.
+ * 'default' ô trống lấy mặc định · 'derived' ô trống suy từ ô khác (α từ vật
+ * liệu) · 'adapter' xấp xỉ khi chuyển sang bộ chọn cũ · 'parameter' tham số tính
+ * cố định trong code.
  */
-export type AssumptionSource = 'default' | 'adapter' | 'parameter';
+export type AssumptionSource = 'default' | 'derived' | 'adapter' | 'parameter';
 /** 'warning': giả định sai có thể làm kết quả lệch về phía nguy hiểm. */
 export type AssumptionLevel = 'info' | 'warning';
 

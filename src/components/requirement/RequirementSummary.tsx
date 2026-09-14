@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useSyncExternalStore } from 'react';
+import { useEffect, useMemo, useState, useSyncExternalStore, type FormEvent } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { APPLICATION_SHORTCUT_ORDER, type ApplicationType } from '@/lib/visionEntry';
 import {
@@ -16,6 +16,7 @@ import {
   type RequirementFieldDef,
 } from '@/lib/requirement/fields';
 import {
+  DRAFT_VERSION,
   isApplicationType,
   parseDraft,
   startDraftFromApp,
@@ -23,7 +24,16 @@ import {
 } from '@/lib/requirement/draft';
 import { readDraftRaw, subscribeDraft, writeDraft } from '@/lib/requirement/draftStore';
 import { resolveAssumptions } from '@/lib/requirement/assumptions';
-import type { Assumption, Confidence } from '@/lib/requirement/types';
+import { purposesOf } from '@/lib/requirement/purposes';
+import {
+  MAX_VISIBLE_QUESTIONS,
+  answerUnknown,
+  pendingPaths,
+  pendingQuestions,
+  resetQuestion,
+  type QuestionDef,
+} from '@/lib/requirement/questions';
+import type { Assumption, Confidence, Requirement } from '@/lib/requirement/types';
 
 /**
  * Bảng tóm tắt yêu cầu — spec V1.1 §10.2 "Tôi hiểu bài toán của bạn".
@@ -32,24 +42,36 @@ import type { Assumption, Confidence } from '@/lib/requirement/types';
  * "Đã nêu". Chưa có parser (V1a hạng mục 3) nên mọi ô bắt đầu ở "Chưa có".
  * Bản nháp nằm ở sessionStorage; chưa lưu database (hạng mục 7).
  *
+ * Khối "Thông tin còn thiếu" (hạng mục 5) phía trên bảng: tối đa 3 câu, chỉ hỏi
+ * cái luật đang cần. Trả lời ở đó hay sửa trong bảng đều ghi cùng một bản nháp.
+ *
  * Panel Assumptions (hạng mục 6) ở cột phải, dính khi cuộn. Giả định áp lúc
  * hiển thị, không ghi vào bản nháp; panel chỉ đọc — muốn thay giả định thì nhập
  * số thật trong bảng.
+ *
+ * V1a chưa có luật nào chạy nên giao diện hiện MỤC ĐÍCH, không hiện mã luật.
  */
 
 // Cùng class với ô nhập trong Field.tsx.
 const INPUT_CLASS =
   'block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100';
 
-const BADGE_CLASS: Record<Confidence, string> = {
+const CHIP_CLASS =
+  'inline-flex min-h-9 items-center rounded-full border border-slate-300 bg-white px-3 text-sm text-slate-700 transition hover:border-sky-500 hover:bg-sky-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800';
+
+/** Không có confidence = chưa hỏi. */
+type BadgeKey = Confidence | 'notAsked';
+
+const BADGE_CLASS: Record<BadgeKey, string> = {
   stated: 'bg-sky-100 text-sky-800 dark:bg-sky-500/15 dark:text-sky-300',
   inferred: 'bg-violet-100 text-violet-800 dark:bg-violet-500/15 dark:text-violet-300',
   assumed: 'bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300',
-  unknown: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
+  unknown: 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200',
+  notAsked: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
 };
 
 const EMPTY_DRAFT: RequirementDraft = {
-  version: 1,
+  version: DRAFT_VERSION,
   startedFrom: 'manual',
   rawText: null,
   requirement: null,
@@ -57,6 +79,7 @@ const EMPTY_DRAFT: RequirementDraft = {
 };
 
 const inputId = (path: string) => `req-${path.replace(/\./g, '-')}`;
+const fieldDef = (path: string) => V1A_FIELDS.find((def) => def.path === path);
 
 /** Panel bấm "Sửa trong bảng" → cuộn tới ô đó và đặt con trỏ vào. */
 function focusField(path: string) {
@@ -90,8 +113,8 @@ export function RequirementSummary({ initialApp }: { initialApp: ApplicationType
 
   const base = draft ?? EMPTY_DRAFT;
   const requirement = base.requirement;
-  // Ô số/chữ không điều khiển: vẽ lại khi đổi loại, làm lại, hoặc lúc bản nháp
-  // đã lưu vừa đọc xong sau hydrate.
+  // Ô số/chữ không điều khiển: vẽ lại khi đổi loại, làm lại, trả lời câu hỏi,
+  // hoặc lúc bản nháp đã lưu vừa đọc xong sau hydrate.
   const mountKey = `${base.revision}-${raw !== null}`;
 
   // Bản đã điền mặc định — CHỈ để hiển thị. Mọi thao tác ghi vẫn trên `requirement`.
@@ -104,6 +127,11 @@ export function RequirementSummary({ initialApp }: { initialApp: ApplicationType
   const onValue = (path: string, value: unknown) => {
     if (!requirement) return;
     writeDraft({ ...base, requirement: withFieldValue(requirement, path, value) });
+  };
+  /* Câu hỏi ghi ra ngoài ô trên bảng → tăng revision để các ô không-điều-khiển
+     trên bảng vẽ lại với giá trị mới. */
+  const onAnswer = (next: Requirement) => {
+    writeDraft({ ...base, requirement: next, revision: base.revision + 1 });
   };
   const onReset = () => {
     if (!requirement) return;
@@ -162,6 +190,10 @@ export function RequirementSummary({ initialApp }: { initialApp: ApplicationType
           )}
         </div>
 
+        {requirement ? (
+          <RequirementQuestions requirement={requirement} revision={base.revision} onAnswer={onAnswer} />
+        ) : null}
+
         {requirement && resolved
           ? REQUIREMENT_SECTIONS.map((section) => {
               const sectionDefs = defs.filter((def) => def.section === section);
@@ -178,7 +210,8 @@ export function RequirementSummary({ initialApp }: { initialApp: ApplicationType
                     {sectionDefs.map((def) => {
                       const field = readField(requirement, def.path);
                       const shown = readField(resolved.requirement, def.path);
-                      const confidence = shown?.confidence ?? 'unknown';
+                      const badge: BadgeKey = shown?.confidence ?? 'notAsked';
+                      const filledBySystem = badge === 'assumed' || badge === 'inferred';
                       const id = inputId(def.path);
                       const label = (
                         <>
@@ -207,14 +240,18 @@ export function RequirementSummary({ initialApp }: { initialApp: ApplicationType
                             id={id}
                             def={def}
                             value={field?.value ?? null}
-                            assumedValue={confidence === 'assumed' ? (shown?.value ?? null) : null}
+                            systemValue={
+                              filledBySystem
+                                ? { value: shown?.value ?? null, messageKey: badge === 'assumed' ? 'assumedOption' : 'inferredOption' }
+                                : null
+                            }
                             onChange={(value) => onValue(def.path, value)}
                           />
                           <span
-                            className={`justify-self-start rounded-full px-2 py-0.5 text-xs font-medium sm:justify-self-end ${BADGE_CLASS[confidence]}`}
+                            className={`justify-self-start rounded-full px-2 py-0.5 text-xs font-medium sm:justify-self-end ${BADGE_CLASS[badge]}`}
                           >
-                            {confidence === 'assumed' ? <span aria-hidden="true">⚠ </span> : null}
-                            {t(`confidence.${confidence}`)}
+                            {badge === 'assumed' ? <span aria-hidden="true">⚠ </span> : null}
+                            {t(`confidence.${badge}`)}
                           </span>
                         </li>
                       );
@@ -247,34 +284,247 @@ export function RequirementSummary({ initialApp }: { initialApp: ApplicationType
   );
 }
 
+// ─────────────────────────────── Câu hỏi bổ sung ───────────────────────────────
+
+function RequirementQuestions({
+  requirement,
+  revision,
+  onAnswer,
+}: {
+  requirement: Requirement;
+  revision: number;
+  onAnswer: (next: Requirement) => void;
+}) {
+  const t = useTranslations('designer.requirement.questions');
+  const { open, unknown } = useMemo(() => pendingQuestions(requirement), [requirement]);
+  const visible = open.slice(0, MAX_VISIBLE_QUESTIONS);
+  const more = open.length - visible.length;
+
+  return (
+    <section
+      aria-labelledby="questions-title"
+      className="rounded-2xl border border-sky-200 bg-white shadow-sm dark:border-sky-500/30 dark:bg-slate-900"
+    >
+      <div className="border-b border-slate-200 px-4 py-3 sm:px-5 dark:border-slate-800">
+        <h2 id="questions-title" className="text-sm font-semibold">
+          {t('title')}
+        </h2>
+        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('subtitle')}</p>
+      </div>
+
+      {visible.length > 0 ? (
+        <ol className="divide-y divide-slate-100 dark:divide-slate-800">
+          {visible.map((question) => (
+            <QuestionItem
+              key={`${question.id}-${revision}`}
+              question={question}
+              requirement={requirement}
+              onAnswer={onAnswer}
+            />
+          ))}
+        </ol>
+      ) : (
+        <p className="px-4 py-3 text-sm text-slate-600 sm:px-5 dark:text-slate-400">{t('done')}</p>
+      )}
+
+      {more > 0 ? (
+        <p className="border-t border-slate-100 px-4 py-2 text-xs text-slate-500 sm:px-5 dark:border-slate-800 dark:text-slate-400">
+          {t('more', { count: more })}
+        </p>
+      ) : null}
+
+      {unknown.length > 0 ? (
+        <div className="border-t border-slate-200 px-4 py-3 sm:px-5 dark:border-slate-800">
+          <p className="text-xs font-medium text-slate-600 dark:text-slate-400">{t('markedUnknown')}</p>
+          <ul className="mt-2 flex flex-wrap gap-2">
+            {unknown.map((question) => (
+              <li key={question.id}>
+                <button
+                  type="button"
+                  onClick={() => onAnswer(resetQuestion(requirement, question))}
+                  className="inline-flex min-h-8 items-center gap-1 rounded-full border border-dashed border-slate-300 px-3 text-xs text-slate-700 hover:border-sky-500 dark:border-slate-600 dark:text-slate-300"
+                >
+                  {t(`items.${question.id}.short`)}
+                  <span className="text-sky-700 dark:text-sky-400">· {t('askAgain')}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function QuestionItem({
+  question,
+  requirement,
+  onAnswer,
+}: {
+  question: QuestionDef;
+  requirement: Requirement;
+  onAnswer: (next: Requirement) => void;
+}) {
+  const t = useTranslations('designer.requirement');
+  const [typed, setTyped] = useState<Record<string, string>>({});
+  const [invalid, setInvalid] = useState(false);
+
+  const pending = pendingPaths(requirement, question)
+    .map(fieldDef)
+    .filter((def): def is RequirementFieldDef => Boolean(def));
+  const choiceDefs = pending.filter((def) => def.kind === 'select' || def.kind === 'boolean');
+  const numberDefs = pending.filter((def) => def.kind === 'number');
+  const purposes = purposesOf(question.ruleIds)
+    .map((purpose) => t(`purposes.${purpose}`))
+    .join(', ');
+  const fieldLabel = (def: RequirementFieldDef) => t(`fields.${def.section}.${def.key}`);
+
+  const submitNumbers = (event: FormEvent) => {
+    event.preventDefault();
+    const parsed = numberDefs.map((def) => {
+      const text = (typed[def.path] ?? '').trim().replace(',', '.');
+      const number = Number(text);
+      const ok = text !== '' && Number.isFinite(number) && (def.min === undefined || number >= def.min);
+      return { def, number, ok };
+    });
+    if (parsed.some((entry) => !entry.ok)) return setInvalid(true);
+    onAnswer(parsed.reduce((req, entry) => withFieldValue(req, entry.def.path, entry.number), requirement));
+  };
+
+  const headingId = `question-${question.id}`;
+
+  return (
+    <li className="px-4 py-4 sm:px-5" aria-labelledby={headingId}>
+      <p id={headingId} className="text-sm font-medium text-slate-900 dark:text-slate-100">
+        {t(`questions.items.${question.id}.question`)}
+      </p>
+      {purposes ? <p className="mt-0.5 text-xs text-sky-700 dark:text-sky-400">→ {purposes}</p> : null}
+
+      <div className="mt-3 space-y-3">
+        {choiceDefs.map((def) => (
+          <div key={def.path} role="group" aria-label={fieldLabel(def)} className="flex flex-wrap gap-2">
+            {def.kind === 'boolean'
+              ? (['yes', 'no'] as const).map((choice) => (
+                  <button
+                    key={choice}
+                    type="button"
+                    onClick={() => onAnswer(withFieldValue(requirement, def.path, choice === 'yes'))}
+                    className={CHIP_CLASS}
+                  >
+                    {t(choice)}
+                  </button>
+                ))
+              : (def.options ?? [])
+                  .filter((option) => option !== 'unknown')
+                  .map((option) => (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() => onAnswer(withFieldValue(requirement, def.path, option))}
+                      className={CHIP_CLASS}
+                    >
+                      {t(`options.${def.optionsKey}.${option}`)}
+                    </button>
+                  ))}
+          </div>
+        ))}
+
+        {numberDefs.length > 0 ? (
+          <form onSubmit={submitNumbers} className="flex flex-wrap items-end gap-2">
+            {numberDefs.map((def) => (
+              <label key={def.path} className="block text-xs text-slate-600 dark:text-slate-400">
+                <span className="mb-1 block">
+                  {fieldLabel(def)}
+                  {def.unit ? ` (${def.unit})` : ''}
+                </span>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={typed[def.path] ?? ''}
+                  aria-invalid={invalid || undefined}
+                  onChange={(event) => {
+                    setInvalid(false);
+                    setTyped((current) => ({ ...current, [def.path]: event.target.value }));
+                  }}
+                  className={`${INPUT_CLASS} w-36`}
+                />
+              </label>
+            ))}
+            <button
+              type="submit"
+              className="inline-flex min-h-10 items-center rounded-lg bg-sky-600 px-4 text-sm font-medium text-white transition hover:bg-sky-700"
+            >
+              {t('questions.confirm')}
+            </button>
+          </form>
+        ) : null}
+
+        {question.suggestions && numberDefs[0] ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs text-slate-500 dark:text-slate-400">{t('questions.suggestions')}</span>
+            {question.suggestions.map((suggestion) => (
+              <button
+                key={suggestion}
+                type="button"
+                onClick={() => onAnswer(withFieldValue(requirement, numberDefs[0].path, suggestion))}
+                className={CHIP_CLASS}
+              >
+                {suggestion}
+                {numberDefs[0].unit ? ` ${numberDefs[0].unit}` : ''}
+              </button>
+            ))}
+          </div>
+        ) : null}
+
+        {invalid ? (
+          <p role="alert" className="text-xs text-red-600 dark:text-red-400">
+            {t('questions.invalidNumber')}
+          </p>
+        ) : null}
+
+        <button
+          type="button"
+          onClick={() => onAnswer(answerUnknown(requirement, question))}
+          className={`${CHIP_CLASS} border-dashed`}
+        >
+          {t('questions.unknown')}
+        </button>
+      </div>
+    </li>
+  );
+}
+
+// ─────────────────────────────── Panel giả định ───────────────────────────────
+
 function AssumptionsPanel({ assumptions }: { assumptions: Assumption[] }) {
   const t = useTranslations('designer.requirement');
   const locale = useLocale();
   const pick = (text: { vi: string; en: string }) => (locale === 'en' ? text.en : text.vi);
 
-  const defaults = assumptions.filter((a) => a.source === 'default');
-  const method = assumptions.filter((a) => a.source !== 'default');
+  // Ô trống được hệ thống điền (mặc định hoặc suy ra) — có nút "Sửa trong bảng".
+  const filled = assumptions.filter((a) => a.source === 'default' || a.source === 'derived');
+  const method = assumptions.filter((a) => a.source === 'adapter' || a.source === 'parameter');
 
   const titleOf = (assumption: Assumption) => {
-    const def = assumption.path ? V1A_FIELDS.find((d) => d.path === assumption.path) : undefined;
+    const def = assumption.path ? fieldDef(assumption.path) : undefined;
     if (def) return t(`fields.${def.section}.${def.key}`);
     return assumption.title ? pick(assumption.title) : assumption.key;
   };
   const valueOf = (assumption: Assumption) => {
     if (assumption.value === undefined) return null;
-    const def = assumption.path ? V1A_FIELDS.find((d) => d.path === assumption.path) : undefined;
+    const def = assumption.path ? fieldDef(assumption.path) : undefined;
     if (def?.kind === 'select') return t(`options.${def.optionsKey}.${assumption.value}`);
     return assumption.unit ? `${assumption.value} ${assumption.unit}` : String(assumption.value);
   };
 
   const row = (assumption: Assumption) => {
     const value = valueOf(assumption);
-    const highlight = assumption.source !== 'default' && assumption.level === 'warning';
+    const highlight = method.includes(assumption) && assumption.level === 'warning';
+    const purposes = purposesOf(assumption.ruleIds)
+      .map((purpose) => t(`purposes.${purpose}`))
+      .join(', ');
     return (
-      <li
-        key={assumption.key}
-        className={`px-4 py-3 ${highlight ? 'bg-amber-50 dark:bg-amber-950/30' : ''}`}
-      >
+      <li key={assumption.key} className={`px-4 py-3 ${highlight ? 'bg-amber-50 dark:bg-amber-950/30' : ''}`}>
         <div className="flex items-start justify-between gap-3">
           <p className="text-sm font-medium text-slate-800 dark:text-slate-100">
             {assumption.level === 'warning' ? (
@@ -300,20 +550,13 @@ function AssumptionsPanel({ assumptions }: { assumptions: Assumption[] }) {
           ) : null}
         </div>
         <p className="mt-1 text-xs leading-relaxed text-slate-600 dark:text-slate-400">{pick(assumption)}</p>
-        <div className="mt-2 flex flex-wrap items-center gap-1.5">
-          <span className="text-[11px] text-slate-500 dark:text-slate-400">{t('assumptions.rules')}:</span>
-          {assumption.ruleIds.map((ruleId) => (
-            <span
-              key={ruleId}
-              className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-600 dark:bg-slate-800 dark:text-slate-300"
-            >
-              {ruleId}
-            </span>
-          ))}
-          {assumption.source === 'parameter' ? (
-            <span className="text-[11px] text-slate-500 dark:text-slate-400">· {t('assumptions.fixedInCode')}</span>
-          ) : null}
-        </div>
+        {purposes || assumption.source === 'parameter' ? (
+          <p className="mt-2 text-[11px] text-slate-500 dark:text-slate-400">
+            {purposes ? `→ ${purposes}` : null}
+            {purposes && assumption.source === 'parameter' ? ' · ' : null}
+            {assumption.source === 'parameter' ? t('assumptions.fixedInCode') : null}
+          </p>
+        ) : null}
       </li>
     );
   };
@@ -336,8 +579,8 @@ function AssumptionsPanel({ assumptions }: { assumptions: Assumption[] }) {
       </div>
 
       <h3 className={heading}>{t('assumptions.defaultsTitle')}</h3>
-      {defaults.length > 0 ? (
-        <ul className="divide-y divide-slate-100 dark:divide-slate-800">{defaults.map(row)}</ul>
+      {filled.length > 0 ? (
+        <ul className="divide-y divide-slate-100 dark:divide-slate-800">{filled.map(row)}</ul>
       ) : (
         <p className="px-4 pb-3 text-sm text-slate-600 dark:text-slate-400">{t('assumptions.noDefaults')}</p>
       )}
@@ -354,18 +597,20 @@ function AssumptionsPanel({ assumptions }: { assumptions: Assumption[] }) {
   );
 }
 
+// ─────────────────────────────── Ô trên bảng ───────────────────────────────
+
 function FieldInput({
   id,
   def,
   value,
-  assumedValue,
+  systemValue,
   onChange,
 }: {
   id: string;
   def: RequirementFieldDef;
   value: unknown;
-  /** Giá trị mặc định đang áp khi ô trống — chỉ hiện làm gợi ý, không phải giá trị ô. */
-  assumedValue: unknown;
+  /** Giá trị hệ thống đang điền khi ô trống (giả định / suy ra) — chỉ là gợi ý, không phải giá trị ô. */
+  systemValue: { value: unknown; messageKey: 'assumedOption' | 'inferredOption' } | null;
   onChange: (value: unknown) => void;
 }) {
   const t = useTranslations('designer.requirement');
@@ -381,7 +626,11 @@ function FieldInput({
           step="any"
           min={def.min}
           defaultValue={typeof value === 'number' ? value : ''}
-          placeholder={assumedValue !== null ? t('assumedOption', { value: String(assumedValue) }) : undefined}
+          placeholder={
+            systemValue && systemValue.value !== null
+              ? t(systemValue.messageKey, { value: String(systemValue.value) })
+              : undefined
+          }
           onChange={(event) => {
             const text = event.target.value.trim();
             if (text === '') return onChange(null);
@@ -412,8 +661,8 @@ function FieldInput({
           className={INPUT_CLASS}
         >
           <option value="">
-            {typeof assumedValue === 'string'
-              ? t('assumedOption', { value: optionLabel(assumedValue) })
+            {systemValue && typeof systemValue.value === 'string'
+              ? t(systemValue.messageKey, { value: optionLabel(systemValue.value) })
               : t('notSet')}
           </option>
           {(def.options ?? []).map((option) => (

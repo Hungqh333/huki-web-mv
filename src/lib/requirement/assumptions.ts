@@ -12,16 +12,24 @@
  * File thuần TypeScript: không import React, không import tầng AI.
  */
 import { DEFAULT_PX_PER_DEFECT, GRR_DIVISOR, K_SUBPIXEL } from '../vision/resolution';
-import { FIELD_DEFAULTS, N_DET_BY_CONTRAST } from './defaults';
+import { FIELD_DEFAULTS, MATERIAL_ALPHA, N_DET_BY_CONTRAST, type KnownMaterial } from './defaults';
 import { fieldsFor, readField } from './fields';
 import { requirementToSelectorInput } from './toSelectorInput';
 import type { Assumption, DefectContrast, Requirement } from './types';
 
 export const defaultAssumptionKey = (path: string) => `default:${path}`;
+export const derivedAssumptionKey = (path: string) => `derived:${path}`;
+
+const ALPHA_PATH = 'object.thermalExpansionCoeff';
+
+function isKnownMaterial(value: unknown): value is KnownMaterial {
+  return typeof value === 'string' && Object.prototype.hasOwnProperty.call(MATERIAL_ALPHA, value);
+}
 
 /**
- * Điền mặc định vào những ô còn trống của bảng tóm tắt. Trả requirement MỚI
- * (ô được điền mang confidence 'assumed' + assumptionId), không sửa object cũ.
+ * Điền những ô còn trống của bảng tóm tắt. Trả requirement MỚI, không sửa
+ * object cũ. Thứ tự: suy từ ô khác ('inferred') trước, mặc định ('assumed') sau.
+ * Ô chưa hỏi và ô "Chưa rõ" (value null) đều được điền.
  *
  * Chỉ điền ô đang hiện trên bảng của loại ứng dụng này — giả định nào cũng phải
  * thay được bằng số thật ngay trong bảng.
@@ -30,6 +38,28 @@ export function applyDefaults(requirement: Requirement): { requirement: Requirem
   const shown = new Set(fieldsFor(requirement.applicationType).map((def) => def.path));
   const next = structuredClone(requirement);
   const assumptions: Assumption[] = [];
+
+  // α suy từ vật liệu đi TRƯỚC mặc định: đã biết vật liệu thì không lấy "nhôm".
+  const alpha = readField(next, ALPHA_PATH);
+  const material = readField(next, 'object.material')?.value;
+  if (shown.has(ALPHA_PATH) && alpha && alpha.value === null && isKnownMaterial(material)) {
+    const typical = MATERIAL_ALPHA[material];
+    const key = derivedAssumptionKey(ALPHA_PATH);
+    alpha.value = typical.alpha;
+    alpha.confidence = 'inferred';
+    alpha.assumptionId = key;
+    assumptions.push({
+      key,
+      source: 'derived',
+      level: typical.level,
+      ruleIds: ['MEC-001'],
+      path: ALPHA_PATH,
+      value: typical.alpha,
+      unit: 'µm/(m·K)',
+      vi: typical.basis.vi,
+      en: typical.basis.en,
+    });
+  }
 
   for (const def of FIELD_DEFAULTS) {
     if (!shown.has(def.path)) continue;
@@ -99,12 +129,12 @@ function pxPerDefectAssumption(effective: Requirement): Assumption | null {
       level: 'warning',
       vi:
         `px/lỗi đang dùng cố định ${used}${usedLabel ? ` (tương ứng contrast ${usedLabel.vi})` : ''}. ` +
-        `Theo RES-001, contrast ${label.vi} phải dùng ${driving.n}. ` +
+        `Theo luật chọn độ phân giải theo độ tương phản, contrast ${label.vi} phải dùng ${driving.n}. ` +
         `Số MP yêu cầu hiện tại có thể ĐANG BỊ TÍNH THIẾU — nhánh phát hiện lỗi cần gấp ` +
         `(${driving.n}/${used})² ≈ ${String(factor).replace('.', ',')} lần. Sẽ áp dụng đầy đủ ở V1b.`,
       en:
         `px/defect is currently fixed at ${used}${usedLabel ? ` (matches ${usedLabel.en} contrast)` : ''}. ` +
-        `Per RES-001, ${label.en} contrast requires ${driving.n}. ` +
+        `Per the contrast-based resolution rule, ${label.en} contrast requires ${driving.n}. ` +
         `The required MP may currently be UNDERESTIMATED — the detection branch needs ` +
         `(${driving.n}/${used})² ≈ ${factor}× as many. Will be fully applied in V1b.`,
     };
@@ -115,12 +145,12 @@ function pxPerDefectAssumption(effective: Requirement): Assumption | null {
     level: 'info',
     vi:
       driving.n === used
-        ? `px/lỗi đang dùng cố định ${used} — khớp RES-001 cho contrast ${label.vi}.`
-        : `px/lỗi đang dùng cố định ${used} — nhiều hơn RES-001 yêu cầu (${driving.n}) cho contrast ${label.vi}, số MP tính dư.`,
+        ? `px/lỗi đang dùng cố định ${used} — khớp luật chọn độ phân giải theo độ tương phản cho contrast ${label.vi}.`
+        : `px/lỗi đang dùng cố định ${used} — nhiều hơn luật chọn độ phân giải theo độ tương phản yêu cầu (${driving.n}) cho contrast ${label.vi}, số MP tính dư.`,
     en:
       driving.n === used
-        ? `px/defect is currently fixed at ${used} — matches RES-001 for ${label.en} contrast.`
-        : `px/defect is currently fixed at ${used} — more than RES-001 requires (${driving.n}) for ${label.en} contrast; MP is overestimated.`,
+        ? `px/defect is currently fixed at ${used} — matches the contrast-based resolution rule for ${label.en} contrast.`
+        : `px/defect is currently fixed at ${used} — more than the contrast-based resolution rule requires (${driving.n}) for ${label.en} contrast; MP is overestimated.`,
   };
 }
 

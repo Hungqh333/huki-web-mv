@@ -63,6 +63,8 @@ export const FEATURES = ['dimension', 'diameter', 'angle', 'position'] as const;
 export const MOTIONS = ['static', 'indexed', 'continuous'] as const;
 export const CONDITIONS = ['clean', 'dust', 'oil', 'vibration', 'variableLight', 'highTemp'] as const;
 export const IP_REQUIREMENTS = ['none', 'ip54', 'ip65', 'ip67'] as const;
+/** Vật liệu để suy α (MATERIAL_ALPHA trong defaults.ts). 'other' → nhập α tay. */
+export const MATERIALS = ['aluminium', 'steel', 'stainless', 'plastic', 'other'] as const;
 
 /** Danh sách trường V1a, theo thứ tự hiện trên bảng. */
 export const V1A_FIELDS: readonly RequirementFieldDef[] = [
@@ -71,8 +73,9 @@ export const V1A_FIELDS: readonly RequirementFieldDef[] = [
   { path: 'object.surface', section: 'object', key: 'surface', kind: 'select', options: SURFACES, optionsKey: 'surface' },
   { path: 'object.colorInspection', section: 'object', key: 'colorInspection', kind: 'boolean' },
   { path: 'object.heightVariation', section: 'object', key: 'heightVariation', kind: 'number', unit: 'mm', min: 0 },
-  { path: 'object.material', section: 'object', key: 'material', kind: 'text' },
-  // Có ô riêng vì giả định α = 23 (nhôm) phải sửa được ngay trong bảng — MEC-001.
+  // Ô chọn (không phải ô chữ) để suy được α. Vật liệu khác danh sách → 'other' + nhập α.
+  { path: 'object.material', section: 'object', key: 'material', kind: 'select', options: MATERIALS, optionsKey: 'material' },
+  // Có ô riêng vì α suy từ vật liệu / giả định 23 (nhôm) phải sửa được ngay trong bảng — MEC-001.
   { path: 'object.thermalExpansionCoeff', section: 'object', key: 'thermalExpansionCoeff', kind: 'number', unit: 'µm/(m·K)', min: 0 },
 
   { path: 'detection.0.minSize', section: 'detection', key: 'minSize', kind: 'number', unit: 'mm', min: 0.001 },
@@ -111,76 +114,78 @@ export function fieldsFor(type: ApplicationType): RequirementFieldDef[] {
   });
 }
 
-function unknown<T>(unit?: string): Field<T> {
-  return unit ? { value: null, confidence: 'unknown', unit } : { value: null, confidence: 'unknown' };
+/** Ô chưa hỏi: không có confidence. Khác với 'unknown' = đã hỏi, chưa rõ. */
+function notAsked<T>(unit?: string): Field<T> {
+  return unit ? { value: null, unit } : { value: null };
 }
 
 function emptyDetection(id: string): DetectionItem {
   return {
     id,
-    defectType: unknown(),
-    minSize: unknown('mm'),
-    contrast: unknown(),
-    region: unknown(),
-    variability: unknown(),
+    defectType: notAsked(),
+    minSize: notAsked('mm'),
+    contrast: notAsked(),
+    region: notAsked(),
+    variability: notAsked(),
   };
 }
 
 function emptyMeasurement(id: string): MeasurementItem {
   return {
     id,
-    feature: unknown(),
-    nominal: unknown('mm'),
-    tolerance: unknown('mm'),
-    spanLength: unknown('mm'),
-    crossesCameraSeam: unknown(),
-    perspectiveFree: unknown(),
+    feature: notAsked(),
+    nominal: notAsked('mm'),
+    tolerance: notAsked('mm'),
+    spanLength: notAsked('mm'),
+    crossesCameraSeam: notAsked(),
+    perspectiveFree: notAsked(),
   };
 }
 
-/** Requirement chưa có thông số nào: mọi Field đều `unknown`. */
+/** Requirement chưa có thông số nào: mọi Field đều chưa hỏi. */
 export function emptyRequirement(type: ApplicationType, id = 'draft'): Requirement {
   return {
     id,
     applicationType: type,
     object: {
-      sizeX: unknown('mm'),
-      sizeY: unknown('mm'),
-      heightVariation: unknown('mm'),
-      surface: unknown(),
-      colorInspection: unknown(),
-      material: unknown(),
-      thermalExpansionCoeff: unknown('µm/(m·K)'),
+      sizeX: notAsked('mm'),
+      sizeY: notAsked('mm'),
+      heightVariation: notAsked('mm'),
+      surface: notAsked(),
+      colorInspection: notAsked(),
+      material: notAsked(),
+      thermalExpansionCoeff: notAsked('µm/(m·K)'),
     },
     detection: hasDetection(type) ? [emptyDetection('det-1')] : [],
     measurement: hasMeasurement(type) ? [emptyMeasurement('meas-1')] : [],
     production: {
-      taktTime: unknown('s'),
-      partsPerMinute: unknown('part/min'),
-      motion: unknown(),
-      conveyorSpeed: unknown('mm/s'),
+      taktTime: notAsked('s'),
+      partsPerMinute: notAsked('part/min'),
+      motion: notAsked(),
+      conveyorSpeed: notAsked('mm/s'),
     },
     system: {
-      cameraCount: unknown(),
-      workingDistance: unknown('mm'),
-      workingDistanceMax: unknown('mm'),
-      mountingRigidity: unknown(),
+      cameraCount: notAsked(),
+      workingDistance: notAsked('mm'),
+      workingDistanceMax: notAsked('mm'),
+      mountingRigidity: notAsked(),
     },
     environment: {
-      conditions: unknown(),
-      ambientTempRange: unknown('K'),
-      ipRequirement: unknown(),
+      conditions: notAsked(),
+      ambientTempRange: notAsked('K'),
+      ipRequirement: notAsked(),
     },
     integration: {
-      plc: unknown(),
-      robot: unknown(),
-      resultInterface: unknown(),
+      plc: notAsked(),
+      robot: notAsked(),
+      resultInterface: notAsked(),
     },
   };
 }
 
+// `confidence` có thể không có (ô chưa hỏi) nên chỉ dựa vào `value`.
 function isField(node: unknown): node is Field<unknown> {
-  return Boolean(node) && typeof node === 'object' && 'value' in (node as object) && 'confidence' in (node as object);
+  return Boolean(node) && typeof node === 'object' && !Array.isArray(node) && 'value' in (node as object);
 }
 
 /** Đọc một Field theo đường dẫn; `null` nếu đường dẫn không tồn tại. */
@@ -193,21 +198,48 @@ export function readField(requirement: Requirement, path: string): Field<unknown
   return isField(node) ? node : null;
 }
 
-/**
- * Người dùng sửa một ô trên bảng tóm tắt → giá trị đó thành 'stated'.
- * Xoá trắng → quay về 'unknown'. Trả object mới, không sửa object cũ.
- */
-export function withFieldValue(requirement: Requirement, path: string, value: unknown): Requirement {
+/** Ghi đè một Field trên bản sao; đường dẫn sai thì trả nguyên object cũ. */
+function rewriteField(
+  requirement: Requirement,
+  path: string,
+  write: (field: Field<unknown>) => void
+): Requirement {
   const next = structuredClone(requirement);
   const field = readField(next, path);
   if (!field) return requirement;
-
-  const empty = value === null || value === '' || (Array.isArray(value) && value.length === 0);
-  field.value = empty ? null : value;
-  field.confidence = empty ? 'unknown' : 'stated';
   delete field.sourceSpan;
   delete field.assumptionId;
+  write(field);
   return next;
+}
+
+/**
+ * Người dùng nhập một giá trị (ô trên bảng hoặc câu hỏi) → 'stated'.
+ * Xoá trắng → quay về CHƯA HỎI. Trả object mới, không sửa object cũ.
+ */
+export function withFieldValue(requirement: Requirement, path: string, value: unknown): Requirement {
+  const empty = value === null || value === '' || (Array.isArray(value) && value.length === 0);
+  if (empty) return withFieldNotAsked(requirement, path);
+  return rewriteField(requirement, path, (field) => {
+    field.value = value;
+    field.confidence = 'stated';
+  });
+}
+
+/** Đã hỏi, người dùng trả lời "Chưa rõ": `{ value: null, confidence: 'unknown' }`. */
+export function withFieldUnknown(requirement: Requirement, path: string): Requirement {
+  return rewriteField(requirement, path, (field) => {
+    field.value = null;
+    field.confidence = 'unknown';
+  });
+}
+
+/** Về trạng thái chưa hỏi: value null, không có confidence. */
+export function withFieldNotAsked(requirement: Requirement, path: string): Requirement {
+  return rewriteField(requirement, path, (field) => {
+    field.value = null;
+    delete field.confidence;
+  });
 }
 
 /**

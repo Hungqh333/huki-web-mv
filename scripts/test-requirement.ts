@@ -1,6 +1,7 @@
 /**
  * Requirement layer V1a (hạng mục 4): schema, bảng tóm tắt, bản nháp, adapter
- * sang bộ chọn cũ. Hạng mục 6: mặc định §3.3 + panel Assumptions.
+ * sang bộ chọn cũ. Hạng mục 6: mặc định §3.3 + panel Assumptions. Hạng mục 5:
+ * câu hỏi bổ sung.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -13,7 +14,9 @@ import {
   countFilled,
   emptyRequirement,
   fieldsFor,
+  MATERIALS,
   readField,
+  withFieldUnknown,
   withFieldValue,
 } from '../src/lib/requirement/fields';
 import {
@@ -24,7 +27,17 @@ import {
 } from '../src/lib/requirement/draft';
 import { requirementToSelectorInput } from '../src/lib/requirement/toSelectorInput';
 import { applyDefaults, defaultAssumptionKey, resolveAssumptions } from '../src/lib/requirement/assumptions';
-import { FIELD_DEFAULTS, N_DET_BY_CONTRAST } from '../src/lib/requirement/defaults';
+import { FIELD_DEFAULTS, MATERIAL_ALPHA, N_DET_BY_CONTRAST } from '../src/lib/requirement/defaults';
+import { PURPOSES, RULE_PURPOSE } from '../src/lib/requirement/purposes';
+import {
+  MAX_VISIBLE_QUESTIONS,
+  QUESTIONS,
+  answerUnknown,
+  pendingPaths,
+  pendingQuestions,
+  questionStatus,
+  resetQuestion,
+} from '../src/lib/requirement/questions';
 import type { Requirement } from '../src/lib/requirement/types';
 import { FIELD_CATALOG } from '../src/lib/selector/fields';
 import { DEFAULT_PX_PER_DEFECT, GRR_DIVISOR, K_SUBPIXEL } from '../src/lib/vision/resolution';
@@ -35,9 +48,9 @@ function loadMessages(locale: 'vi' | 'en') {
 }
 
 /** Mọi Field lá trong requirement. */
-function leaves(node: unknown, path = ''): { path: string; field: { value: unknown; confidence: string } }[] {
+function leaves(node: unknown, path = ''): { path: string; field: { value: unknown; confidence?: string } }[] {
   if (!node || typeof node !== 'object') return [];
-  if ('confidence' in node && 'value' in node) return [{ path, field: node as never }];
+  if ('value' in node) return [{ path, field: node as never }];
   return Object.entries(node).flatMap(([key, child]) => leaves(child, path ? `${path}.${key}` : key));
 }
 
@@ -45,13 +58,13 @@ function filled(type: Requirement['applicationType'], values: Record<string, unk
   return Object.entries(values).reduce((req, [path, value]) => withFieldValue(req, path, value), emptyRequirement(type));
 }
 
-test('requirement rỗng: mọi thông số là Field chưa có giá trị', () => {
+test('requirement rỗng: mọi thông số là Field chưa hỏi (không có confidence)', () => {
   const req = emptyRequirement('AppearanceInspection');
   const all = leaves(req);
   assert.ok(all.length >= 30, `it nhat 30 Field, co ${all.length}`);
   for (const { path, field } of all) {
     assert.equal(field.value, null, path);
-    assert.equal(field.confidence, 'unknown', path);
+    assert.equal(field.confidence, undefined, path);
   }
 });
 
@@ -89,7 +102,7 @@ test('bảng tóm tắt chỉ hiện nhánh mà loại ứng dụng có, và m�
   }
 });
 
-test('sửa một ô → "stated"; xoá trắng → "unknown"; object cũ không bị đổi', () => {
+test('sửa một ô → "stated"; xoá trắng → chưa hỏi; object cũ không bị đổi', () => {
   const before = emptyRequirement('Measurement');
   const after = withFieldValue(before, 'measurement.0.tolerance', 0.1);
 
@@ -98,7 +111,7 @@ test('sửa một ô → "stated"; xoá trắng → "unknown"; object cũ không
   assert.equal(readField(before, 'measurement.0.tolerance')!.value, null, 'khong sua object cu');
 
   const cleared = withFieldValue(after, 'measurement.0.tolerance', '');
-  assert.equal(readField(cleared, 'measurement.0.tolerance')!.confidence, 'unknown');
+  assert.equal(readField(cleared, 'measurement.0.tolerance')!.confidence, undefined);
   assert.equal(withFieldValue(after, 'khong.ton.tai', 1), after, 'duong dan sai thi giu nguyen');
 
   assert.deepEqual(countFilled(after), { filled: 1, total: fieldsFor('Measurement').length });
@@ -132,7 +145,7 @@ test('bản nháp: văn bản không qua URL, dữ liệu hỏng thì bỏ', () 
 
   assert.equal(parseDraft(null), null);
   assert.equal(parseDraft('{khong phai json'), null);
-  assert.equal(parseDraft(JSON.stringify({ ...fromApp, version: 2 })), null);
+  assert.equal(parseDraft(JSON.stringify({ ...fromApp, version: 3 })), null);
   assert.equal(
     parseDraft(JSON.stringify({ ...fromApp, requirement: { ...fromApp.requirement, applicationType: 'Laser' } })),
     null
@@ -246,7 +259,7 @@ test('nhãn bảng tóm tắt đủ ở cả hai ngôn ngữ', () => {
     for (const key of ['step', 'title', 'subtitle', 'applicationType', 'progress', 'reset', 'notSet', 'yes', 'no']) {
       assert.ok(r[key], `${locale}: ${key}`);
     }
-    for (const c of ['stated', 'inferred', 'assumed', 'unknown']) assert.ok(r.confidence[c], `${locale}: confidence.${c}`);
+    for (const c of ['stated', 'inferred', 'assumed', 'unknown', 'notAsked']) assert.ok(r.confidence[c], `${locale}: confidence.${c}`);
     for (const s of REQUIREMENT_SECTIONS) assert.ok(r.sections[s], `${locale}: sections.${s}`);
     for (const def of V1A_FIELDS) {
       assert.ok(r.fields[def.section]?.[def.key], `${locale}: fields.${def.section}.${def.key}`);
@@ -294,7 +307,7 @@ test('áp mặc định lúc hiển thị: ô trống → "assumed", bản nháp
   assert.equal(contrast.confidence, 'assumed');
   assert.equal(contrast.assumptionId, defaultAssumptionKey('detection.0.contrast'));
   assert.equal(readField(draft, 'detection.0.contrast')!.value, null, 'ban nhap khong bi ghi gia dinh');
-  assert.equal(readField(draft, 'detection.0.contrast')!.confidence, 'unknown');
+  assert.equal(readField(draft, 'detection.0.contrast')!.confidence, undefined, 'ban nhap van la chua hoi');
 
   assert.deepEqual(assumptions.map((a) => a.path).sort(), FIELD_DEFAULTS.map((d) => d.path).sort());
   assert.ok(assumptions.every((a) => a.source === 'default'));
@@ -324,7 +337,13 @@ test('px/lỗi: contrast chưa xác định → ghi rõ đang dùng 3 và MP có
     const px = pxOf(req)!;
     assert.equal(px.level, 'warning');
     assert.equal(px.value, 3);
-    for (const phrase of ['cố định 3', 'tương ứng contrast CAO', 'contrast chưa xác định phải dùng 5', 'ĐANG BỊ TÍNH THIẾU', 'V1b']) {
+    for (const phrase of [
+      'cố định 3',
+      'tương ứng contrast CAO',
+      'Theo luật chọn độ phân giải theo độ tương phản, contrast chưa xác định phải dùng 5',
+      'ĐANG BỊ TÍNH THIẾU',
+      'V1b',
+    ]) {
       assert.ok(px.vi.includes(phrase), `thieu "${phrase}": ${px.vi}`);
     }
     assert.ok(px.en.includes('UNDERESTIMATED'), px.en);
@@ -368,8 +387,237 @@ test('nhãn panel giả định đủ ở cả hai ngôn ngữ', () => {
   for (const locale of ['vi', 'en'] as const) {
     const r = loadMessages(locale).designer.requirement;
     assert.ok(r.assumedOption?.includes('{value}'), `${locale}: assumedOption`);
-    for (const key of ['title', 'subtitle', 'defaultsTitle', 'methodTitle', 'noDefaults', 'editInTable', 'fixedInCode', 'rules', 'warningLabel']) {
+    for (const key of ['title', 'subtitle', 'defaultsTitle', 'methodTitle', 'noDefaults', 'editInTable', 'fixedInCode', 'warningLabel']) {
       assert.ok(r.assumptions?.[key], `${locale}: assumptions.${key}`);
     }
+  }
+});
+
+// ───────────────────────────── Hạng mục 5: câu hỏi bổ sung ─────────────────────────────
+
+const question = (id: string) => QUESTIONS.find((q) => q.id === id)!;
+const openIds = (req: Requirement) => pendingQuestions(req).open.map((q) => q.id);
+const GT001_CORE = {
+  'object.sizeX': 380,
+  'object.sizeY': 280,
+  'detection.0.minSize': 0.5,
+  'measurement.0.tolerance': 0.1,
+};
+
+test('chưa hỏi ≠ chưa rõ: hai trạng thái dùng đúng Confidence §3.2', () => {
+  const req = emptyRequirement('Measurement');
+  assert.ok(!('confidence' in readField(req, 'system.workingDistance')!), 'chua hoi: khong co confidence');
+
+  const unknown = withFieldUnknown(req, 'system.workingDistance');
+  assert.deepEqual({ ...readField(unknown, 'system.workingDistance')! }, { value: null, confidence: 'unknown', unit: 'mm' });
+  assert.ok(!('confidence' in readField(req, 'system.workingDistance')!), 'khong sua object cu');
+
+  const cleared = withFieldValue(unknown, 'system.workingDistance', '');
+  assert.ok(!('confidence' in readField(cleared, 'system.workingDistance')!), 'xoa trang = chua hoi');
+});
+
+test('bản nháp v1 → v2: ô trống v1 là chưa hỏi, vật liệu chữ tự do bỏ', () => {
+  const v1 = JSON.parse(JSON.stringify(startDraftFromApp('AppearanceInspection')));
+  v1.version = 1;
+  v1.requirement.system.workingDistance = { value: null, confidence: 'unknown', unit: 'mm' };
+  v1.requirement.object.material = { value: 'nhôm 6061', confidence: 'stated' };
+  v1.requirement.object.sizeX = { value: 380, confidence: 'stated', unit: 'mm' };
+
+  const parsed = parseDraft(JSON.stringify(v1))!;
+  assert.equal(parsed.version, 2);
+  const req = parsed.requirement!;
+  assert.ok(!('confidence' in readField(req, 'system.workingDistance')!));
+  assert.equal(readField(req, 'object.material')!.value, null);
+  assert.ok(!('confidence' in readField(req, 'object.material')!));
+  assert.equal(readField(req, 'object.sizeX')!.confidence, 'stated');
+
+  // v2 giữ nguyên 'unknown' — đó là câu trả lời thật.
+  const v2 = withFieldUnknown(emptyRequirement('Measurement'), 'system.workingDistance');
+  const kept = parseDraft(JSON.stringify({ ...startDraftFromApp('Measurement'), requirement: v2 }))!;
+  assert.equal(readField(kept.requirement!, 'system.workingDistance')!.confidence, 'unknown');
+});
+
+test('bộ câu hỏi: đúng thứ tự bậc đã duyệt, trỏ tới ô có trên bảng', () => {
+  assert.deepEqual(QUESTIONS.map((q) => q.id), [
+    'objectSize', 'defectMinSize', 'tolerance', 'contrast', 'heightVariation', 'workingDistance',
+    'spanLength', 'ambientTempRange', 'material', 'crossesCameraSeam', 'cameraCount',
+    'surface', 'motion', 'variability',
+  ]);
+  assert.deepEqual(QUESTIONS.map((q) => q.tier), [1, 2, 2, 3, 4, 4, 5, 5, 5, 6, 7, 8, 8, 8]);
+  assert.equal(MAX_VISIBLE_QUESTIONS, 3);
+
+  const paths = new Set(V1A_FIELDS.map((f) => f.path));
+  for (const q of QUESTIONS) {
+    for (const path of [...q.paths, ...(q.followUp ? [q.followUp.path] : []), ...(q.satisfiedBy ? [q.satisfiedBy] : [])]) {
+      assert.ok(paths.has(path), `${q.id}: ${path}`);
+    }
+    assert.ok(q.ruleIds.length > 0, q.id);
+  }
+});
+
+test('bản nháp trống: chỉ hỏi cái luật đang cần', () => {
+  assert.deepEqual(openIds(emptyRequirement('AppearanceInspection')), ['objectSize', 'defectMinSize', 'surface', 'motion']);
+  assert.deepEqual(openIds(emptyRequirement('Measurement')), ['objectSize', 'tolerance', 'surface', 'motion']);
+  // Loại chưa hỗ trợ đủ: chỉ phần chung, không hỏi ô loại đó không có.
+  assert.deepEqual(openIds(emptyRequirement('RobotGuidance')), ['objectSize', 'surface', 'motion']);
+});
+
+test('GT-001: có dung sai thì hỏi Δh, WD, span, ΔT, vật liệu — kể cả khi đang giả định', () => {
+  const gt = filled('AppearanceInspection', GT001_CORE);
+  assert.deepEqual(openIds(gt), [
+    'contrast', 'heightVariation', 'workingDistance', 'spanLength', 'ambientTempRange', 'material',
+    'crossesCameraSeam', 'cameraCount', 'surface', 'motion', 'variability',
+  ]);
+  const assumed = resolveAssumptions(gt).assumptions.map((a) => a.path);
+  for (const path of ['object.heightVariation', 'system.workingDistance', 'environment.ambientTempRange', 'detection.0.contrast']) {
+    assert.ok(assumed.includes(path), `${path} dang gia dinh ma van phai hoi`);
+  }
+
+  assert.ok(!openIds(withFieldValue(gt, 'system.cameraCount', 1)).includes('crossesCameraSeam'), 'mot camera: khong co ranh gioi');
+  assert.ok(openIds(withFieldValue(gt, 'system.cameraCount', 4)).includes('crossesCameraSeam'));
+
+  const noTolerance = filled('AppearanceInspection', { 'object.sizeX': 380, 'object.sizeY': 280, 'detection.0.minSize': 0.5 });
+  for (const id of ['heightVariation', 'workingDistance', 'spanLength', 'ambientTempRange', 'material', 'crossesCameraSeam']) {
+    assert.ok(!openIds(noTolerance).includes(id), `khong co dung sai thi khong hoi ${id}`);
+  }
+});
+
+test('"Chưa rõ": ô không có enum unknown → {null, unknown}; không hỏi lại; vẫn áp giả định; hỏi lại được', () => {
+  const gt4 = filled('AppearanceInspection', { ...GT001_CORE, 'system.cameraCount': 4 });
+  const seam = question('crossesCameraSeam');
+
+  const answered = answerUnknown(gt4, seam);
+  assert.deepEqual({ ...readField(answered, 'measurement.0.crossesCameraSeam')! }, { value: null, confidence: 'unknown' });
+  assert.equal(questionStatus(answered, seam), 'unknown');
+  assert.ok(!openIds(answered).includes('crossesCameraSeam'));
+  assert.ok(pendingQuestions(answered).unknown.includes(seam));
+  assert.equal(questionStatus(resetQuestion(answered, seam), seam), 'open');
+
+  const h = answerUnknown(gt4, question('heightVariation'));
+  assert.equal(readField(h, 'object.heightVariation')!.confidence, 'unknown');
+  assert.equal(readField(resolveAssumptions(h).requirement, 'object.heightVariation')!.value, 2, 'chua ro van gia dinh 2 mm');
+
+  const size = answerUnknown(emptyRequirement('Measurement'), question('objectSize'));
+  assert.equal(readField(size, 'object.sizeX')!.confidence, 'unknown');
+  assert.equal(readField(size, 'object.sizeY')!.confidence, 'unknown');
+});
+
+test('"Chưa rõ" cho contrast / biến động lỗi ghi thẳng giá trị enum unknown', () => {
+  const gt = filled('AppearanceInspection', GT001_CORE);
+  for (const id of ['contrast', 'variability']) {
+    const q = question(id);
+    const answered = answerUnknown(gt, q);
+    const field = readField(answered, q.paths[0])!;
+    assert.deepEqual([field.value, field.confidence], ['unknown', 'stated'], id);
+    assert.equal(questionStatus(answered, q), 'unknown', id);
+    assert.equal(questionStatus(resetQuestion(answered, q), q), 'open', id);
+  }
+});
+
+test('trả lời một phần: chỉ ô còn thiếu được hỏi tiếp, "Hỏi lại" không xoá ô đã có', () => {
+  const partSize = withFieldValue(emptyRequirement('Measurement'), 'object.sizeX', 100);
+  assert.deepEqual(pendingPaths(partSize, question('objectSize')), ['object.sizeY']);
+  const unknownY = answerUnknown(partSize, question('objectSize'));
+  assert.equal(readField(unknownY, 'object.sizeX')!.value, 100);
+  assert.equal(readField(resetQuestion(unknownY, question('objectSize')), 'object.sizeX')!.value, 100);
+});
+
+test('vật liệu: suy α có nguồn; "Khác" hỏi tiếp α; α nhập tay thắng', () => {
+  const gt = filled('AppearanceInspection', GT001_CORE);
+  const material = question('material');
+
+  const steel = withFieldValue(gt, 'object.material', 'steel');
+  assert.equal(questionStatus(steel, material), 'answered');
+  const resolved = resolveAssumptions(steel);
+  const alpha = readField(resolved.requirement, 'object.thermalExpansionCoeff')!;
+  assert.equal(alpha.value, MATERIAL_ALPHA.steel.alpha);
+  assert.equal(alpha.confidence, 'inferred');
+  const source = resolved.assumptions.find((a) => a.key === alpha.assumptionId)!;
+  assert.equal(source.source, 'derived');
+  assert.ok(source.vi.includes('Suy từ vật liệu') && source.en.includes('Inferred from material'));
+  assert.ok(
+    !resolved.assumptions.some((a) => a.source === 'default' && a.path === 'object.thermalExpansionCoeff'),
+    'da biet vat lieu thi khong gia dinh nhom'
+  );
+
+  const other = withFieldValue(gt, 'object.material', 'other');
+  assert.equal(questionStatus(other, material), 'open');
+  assert.deepEqual(pendingPaths(other, material), ['object.thermalExpansionCoeff']);
+  assert.equal(questionStatus(withFieldValue(other, 'object.thermalExpansionCoeff', 70), material), 'answered');
+
+  const manual = withFieldValue(steel, 'object.thermalExpansionCoeff', 11);
+  assert.equal(readField(resolveAssumptions(manual).requirement, 'object.thermalExpansionCoeff')!.confidence, 'stated');
+  assert.equal(
+    questionStatus(withFieldValue(gt, 'object.thermalExpansionCoeff', 23), material),
+    'answered',
+    'alpha nhap tay thi khoi hoi vat lieu'
+  );
+
+  assert.equal(
+    readField(resolveAssumptions(gt).requirement, 'object.thermalExpansionCoeff')!.confidence,
+    'assumed',
+    'chua biet vat lieu: mac dinh nhom'
+  );
+
+  for (const m of MATERIALS.filter((item) => item !== 'other')) {
+    assert.ok(MATERIAL_ALPHA[m].alpha > 0, m);
+  }
+  // Dải rộng lấy phía xấu (§3.3): α lớn → không tính thiếu giãn nở nhiệt.
+  assert.equal(MATERIAL_ALPHA.plastic.alpha, 120, 'nhua: can tren thuc dung, khong lay giua dai 50-150');
+  assert.equal(MATERIAL_ALPHA.plastic.level, 'warning');
+  assert.ok(MATERIAL_ALPHA.plastic.basis.vi.includes('50–150') && MATERIAL_ALPHA.plastic.basis.vi.includes('"Khác"'));
+  assert.equal(MATERIAL_ALPHA.stainless.alpha, 17);
+  assert.ok(MATERIAL_ALPHA.stainless.basis.vi.includes('SUS430'));
+});
+
+test('chuyển động "chạy liên tục" hỏi tiếp tốc độ băng tải', () => {
+  const gt = filled('AppearanceInspection', GT001_CORE);
+  const motion = question('motion');
+  const continuous = withFieldValue(gt, 'production.motion', 'continuous');
+  assert.equal(questionStatus(continuous, motion), 'open');
+  assert.deepEqual(pendingPaths(continuous, motion), ['production.conveyorSpeed']);
+  assert.equal(questionStatus(withFieldValue(continuous, 'production.conveyorSpeed', 200), motion), 'answered');
+  assert.equal(questionStatus(withFieldValue(gt, 'production.motion', 'indexed'), motion), 'answered');
+});
+
+test('V1a hiện MỤC ĐÍCH: mọi mã luật trong cấu hình có mục đích, nhãn không lộ mã luật', () => {
+  const gt = filled('AppearanceInspection', { ...GT001_CORE, 'object.material': 'plastic' });
+  const ruleIds = [
+    ...QUESTIONS.flatMap((q) => q.ruleIds),
+    ...FIELD_DEFAULTS.flatMap((d) => d.ruleIds),
+    ...resolveAssumptions(gt).assumptions.flatMap((a) => a.ruleIds),
+    ...resolveAssumptions(emptyRequirement('Measurement')).assumptions.flatMap((a) => a.ruleIds),
+  ];
+  for (const id of ruleIds) assert.ok(RULE_PURPOSE[id], `${id} chua co muc dich`);
+
+  const RULE_CODE = /\b[A-Z]{2,3}-\d{3}\b/;
+
+  // Chữ của panel giả định (sinh trong code, không nằm trong messages) cũng không lộ mã luật.
+  const contrasts = ['high', 'medium', 'low', 'unknown'] as const;
+  const panelSources = [
+    gt,
+    filled('AppearanceInspection', { ...GT001_CORE, 'object.material': 'stainless' }),
+    ...contrasts.map((c) => filled('AppearanceInspection', { ...GT001_CORE, 'detection.0.contrast': c })),
+    emptyRequirement('AppearanceInspection'),
+    emptyRequirement('Measurement'),
+  ];
+  for (const req of panelSources) {
+    for (const a of resolveAssumptions(req).assumptions) {
+      const text = [a.vi, a.en, a.title?.vi ?? '', a.title?.en ?? ''].join(' | ');
+      assert.ok(!RULE_CODE.test(text), `${a.key}: lo ma luat — ${text}`);
+    }
+  }
+  for (const locale of ['vi', 'en'] as const) {
+    const r = loadMessages(locale).designer.requirement;
+    for (const p of PURPOSES) assert.ok(r.purposes?.[p], `${locale}: purposes.${p}`);
+    for (const q of QUESTIONS) {
+      assert.ok(r.questions?.items?.[q.id]?.question && r.questions.items[q.id].short, `${locale}: questions.items.${q.id}`);
+    }
+    for (const key of ['title', 'subtitle', 'done', 'more', 'markedUnknown', 'askAgain', 'unknown', 'confirm', 'suggestions', 'invalidNumber']) {
+      assert.ok(r.questions[key], `${locale}: questions.${key}`);
+    }
+    assert.ok(r.inferredOption?.includes('{value}'), `${locale}: inferredOption`);
+    for (const m of MATERIALS) assert.ok(r.options.material?.[m], `${locale}: options.material.${m}`);
+    assert.ok(!RULE_CODE.test(JSON.stringify({ q: r.questions, p: r.purposes, a: r.assumptions })), `${locale}: nhan lo ma luat`);
   }
 });

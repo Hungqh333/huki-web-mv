@@ -86,6 +86,74 @@ const MUTATIONS = [
             from public.articles a where a.published_at is not null;
           grant select on public.article_previews to anon, authenticated;`,
   },
+  {
+    name: 'Du an: moi authenticated doc duoc projects',
+    sql: `drop policy "projects_select_own_member_plus" on public.projects;
+          create policy "projects_select_own_member_plus" on public.projects for select
+            to authenticated using (true);`,
+  },
+  {
+    name: 'Du an: Registered tao duoc du an',
+    sql: `drop policy "projects_insert_own_member_plus" on public.projects;
+          create policy "projects_insert_own_member_plus" on public.projects for insert
+            to authenticated with check (user_id = auth.uid());`,
+  },
+  {
+    name: 'Du an: tao duoc du an dung ten nguoi khac',
+    sql: `drop policy "projects_insert_own_member_plus" on public.projects;
+          create policy "projects_insert_own_member_plus" on public.projects for insert
+            to authenticated with check (public.is_member_plus());`,
+  },
+  {
+    name: 'Du an: sua duoc du an cua nguoi khac',
+    sql: `drop policy "projects_update_own_member_plus" on public.projects;
+          create policy "projects_update_own_member_plus" on public.projects for update
+            to authenticated using (true) with check (true);`,
+  },
+  // Không có mutation "xoá được dự án của người khác": DELETE chỉ chạm được dòng
+  // mà policy ĐỌC cho thấy, và người duy nhất thấy dự án của người khác là admin —
+  // đúng người policy xoá cho phép. Nới policy xoá thành using (true) vì vậy không
+  // đổi hành vi (mutation tương đương). Lỗ hổng thật nằm ở policy đọc, đã có
+  // mutation riêng ở trên.
+  {
+    name: 'Revision: doc duoc revision cua nguoi khac',
+    sql: `drop policy "project_revisions_select_own_member_plus" on public.project_revisions;
+          create policy "project_revisions_select_own_member_plus" on public.project_revisions for select
+            to authenticated using (true);`,
+  },
+  {
+    name: 'Revision: chen duoc revision vao du an nguoi khac',
+    sql: `drop policy "project_revisions_insert_own_member_plus" on public.project_revisions;
+          create policy "project_revisions_insert_own_member_plus" on public.project_revisions for insert
+            to authenticated with check (true);`,
+  },
+  {
+    name: 'Revision: RLS khong loc revision da khoa khi sua',
+    sql: `drop policy "project_revisions_update_open_own" on public.project_revisions;
+          create policy "project_revisions_update_open_own" on public.project_revisions for update
+            to authenticated
+            using (public.is_member_plus() and exists (select 1 from public.projects p
+                   where p.id = project_revisions.project_id and p.user_id = auth.uid()))
+            with check (true);`,
+  },
+  {
+    name: 'Revision: bo index mot revision dang sua',
+    sql: `drop index public.project_revisions_one_open_idx;`,
+  },
+  {
+    name: 'Revision: bo trigger bao ve revision da khoa / nhan',
+    sql: `drop trigger project_revisions_guard on public.project_revisions;`,
+  },
+  {
+    name: 'Revision: cho xoa le revision',
+    sql: `grant delete on public.project_revisions to authenticated;
+          create policy "project_revisions_delete_any" on public.project_revisions for delete
+            to authenticated using (true);`,
+  },
+  {
+    name: 'Revision: start_next_revision chay quyen chu ham (bo qua RLS)',
+    sql: `alter function public.start_next_revision(uuid) security definer;`,
+  },
 ];
 
 let caught = 0;

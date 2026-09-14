@@ -1564,5 +1564,72 @@
         }
       }
     }
+  },
+  "projects": {
+    "list": {
+      "title": "Dự án",
+      "subtitle": "Bài toán đã lưu từ bước Yêu cầu. Mỗi lần gửi khách một phiên bản, tạo revision mới để khoá bản đó lại.",
+      "empty": "Chưa có dự án nào. Mô tả bài toán ở trang chủ, điền bảng yêu cầu rồi bấm \"Lưu thành dự án\".",
+      "newProject": "Bài toán mới",
+      "columns": {
+        "name": "Tên dự án",
+        "application": "Loại ứng dụng",
+        "status": "Trạng thái",
+        "revision": "Revision",
+        "updated": "Cập nhật"
+      },
+      "currentRevision": "Rev {label}"
+    },
+    "detail": {
+      "back": "Tất cả dự án",
+      "revisions": "Các revision",
+      "lockedHint": "Revision đã khoá giữ nguyên nội dung và giả định lúc khoá — dùng để tái lập báo giá đã gửi.",
+      "editing": "Đang sửa",
+      "locked": "Đã khoá",
+      "open": "Mở để sửa",
+      "view": "Mở để xem",
+      "updatedAt": "Lưu lần cuối {date}",
+      "lockedAt": "Khoá lúc {date}",
+      "unreadable": "Không đọc được nội dung revision này (phiên bản dữ liệu không hỗ trợ).",
+      "replaceDraft": "Bản nháp đang mở có nội dung chưa lưu sẽ bị thay bằng revision này. Tiếp tục?"
+    },
+    "status": {
+      "draft": "Nháp",
+      "analysis": "Phân tích",
+      "design": "Thiết kế",
+      "testing": "Thử nghiệm",
+      "validated": "Đã xác nhận",
+      "completed": "Hoàn thành"
+    },
+    "save": {
+      "title": "Lưu dự án",
+      "hint": "Bản nháp chỉ nằm trong tab trình duyệt này. Lưu thành dự án để mở lại sau.",
+      "linked": "{name} · Rev {label}",
+      "unsaved": "Có thay đổi chưa lưu",
+      "upToDate": "Đã lưu, không có thay đổi",
+      "lockedNote": "Rev {label} đã khoá — chỉ xem. Sửa trên bảng sẽ không lưu được.",
+      "nameLabel": "Tên dự án",
+      "create": "Lưu thành dự án",
+      "save": "Lưu Rev {label}",
+      "saving": "Đang lưu…",
+      "newRevision": "Tạo revision mới",
+      "confirmNewRevision": "Khoá Rev {label} và tạo revision mới",
+      "confirmHint": "Nội dung hiện tại được lưu vào Rev {label} rồi khoá lại — sau đó không sửa được Rev {label} nữa.",
+      "cancel": "Huỷ",
+      "created": "Đã tạo dự án, đang sửa Rev {label}.",
+      "saved": "Đã lưu Rev {label}.",
+      "revisionCreated": "Đã khoá Rev {locked}. Đang sửa Rev {label}.",
+      "openProject": "Xem dự án",
+      "allProjects": "Tất cả dự án"
+    },
+    "errors": {
+      "notSignedIn": "Bạn cần đăng nhập để lưu dự án.",
+      "notAllowed": "Tài khoản của bạn chưa được dùng tính năng dự án.",
+      "invalidDraft": "Bản nháp không hợp lệ — tải lại trang rồi thử lại.",
+      "pickApplication": "Chọn loại ứng dụng trước khi lưu.",
+      "nameRequired": "Nhập tên dự án (tối đa {max} ký tự).",
+      "notEditable": "Revision này đã khoá hoặc không còn tồn tại.",
+      "saveFailed": "Không lưu được. Thử lại sau."
+    }
   }
 }

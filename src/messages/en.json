@@ -1564,5 +1564,72 @@
         }
       }
     }
+  },
+  "projects": {
+    "list": {
+      "title": "Projects",
+      "subtitle": "Problems saved from the Requirements step. Each time you send a version to the customer, start a new revision to lock that one.",
+      "empty": "No projects yet. Describe a problem on the home page, fill in the requirements and click \"Save as project\".",
+      "newProject": "New problem",
+      "columns": {
+        "name": "Project name",
+        "application": "Application",
+        "status": "Status",
+        "revision": "Revision",
+        "updated": "Updated"
+      },
+      "currentRevision": "Rev {label}"
+    },
+    "detail": {
+      "back": "All projects",
+      "revisions": "Revisions",
+      "lockedHint": "A locked revision keeps its content and assumptions as they were when locked — use it to reproduce a quote already sent.",
+      "editing": "Editing",
+      "locked": "Locked",
+      "open": "Open to edit",
+      "view": "Open to view",
+      "updatedAt": "Last saved {date}",
+      "lockedAt": "Locked {date}",
+      "unreadable": "This revision cannot be read (unsupported data version).",
+      "replaceDraft": "The open draft has unsaved content that will be replaced by this revision. Continue?"
+    },
+    "status": {
+      "draft": "Draft",
+      "analysis": "Analysis",
+      "design": "Design",
+      "testing": "Testing",
+      "validated": "Validated",
+      "completed": "Completed"
+    },
+    "save": {
+      "title": "Save project",
+      "hint": "The draft only lives in this browser tab. Save it as a project to reopen it later.",
+      "linked": "{name} · Rev {label}",
+      "unsaved": "Unsaved changes",
+      "upToDate": "Saved, no changes",
+      "lockedNote": "Rev {label} is locked — view only. Edits in the table will not be saved.",
+      "nameLabel": "Project name",
+      "create": "Save as project",
+      "save": "Save Rev {label}",
+      "saving": "Saving…",
+      "newRevision": "New revision",
+      "confirmNewRevision": "Lock Rev {label} and start a new revision",
+      "confirmHint": "The current content is saved into Rev {label} and then locked — Rev {label} cannot be edited afterwards.",
+      "cancel": "Cancel",
+      "created": "Project created, editing Rev {label}.",
+      "saved": "Rev {label} saved.",
+      "revisionCreated": "Rev {locked} locked. Now editing Rev {label}.",
+      "openProject": "View project",
+      "allProjects": "All projects"
+    },
+    "errors": {
+      "notSignedIn": "Sign in to save projects.",
+      "notAllowed": "Your account cannot use projects yet.",
+      "invalidDraft": "The draft is invalid — reload the page and try again.",
+      "pickApplication": "Choose an application type before saving.",
+      "nameRequired": "Enter a project name (up to {max} characters).",
+      "notEditable": "This revision is locked or no longer exists.",
+      "saveFailed": "Could not save. Please try again later."
+    }
   }
 }

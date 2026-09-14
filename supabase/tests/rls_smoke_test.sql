@@ -272,6 +272,275 @@ end $$;
 
 reset role;
 
+-- =============================================================================
+-- DỰ ÁN + REVISION (V1a mục 7)
+-- =============================================================================
+
+-- Khối ADMIN ở trên đã nâng user 1 lên vip; trả về registered cho phần này.
+reset role;
+select set_config('request.jwt.claims', '', true);
+update public.profiles set role = 'registered' where id = 'aaaaaaaa-0000-4000-8000-000000000001';
+
+do $$
+begin
+  if public.revision_label(0) <> 'A' or public.revision_label(25) <> 'Z'
+     or public.revision_label(26) <> 'AA' or public.revision_label(701) <> 'ZZ' then
+    raise exception 'FAIL: revision_label sai: % % % %',
+      public.revision_label(0), public.revision_label(25), public.revision_label(26), public.revision_label(701);
+  end if;
+  raise notice 'PASS: nhãn revision A..Z rồi AA..ZZ';
+end $$;
+
+-- --- MEMBER: tạo, lưu, khoá, mở revision kế tiếp -----------------------------
+
+select set_config('request.jwt.claims', '{"sub":"aaaaaaaa-0000-4000-8000-000000000002","role":"authenticated"}', true);
+set local role authenticated;
+
+do $$
+declare
+  created  record;
+  next_rev record;
+  v_project uuid;
+  v_rev_a   uuid;
+begin
+  select * into created from public.create_project(
+    'Dự án RLS', 'Measurement', '{"id":"draft","applicationType":"Measurement"}'::jsonb, '[]'::jsonb, 'mô tả gốc', 2);
+  v_project := created.new_project_id;
+  v_rev_a := created.new_revision_id;
+
+  if created.new_rev_label <> 'A' then
+    raise exception 'FAIL: revision đầu tiên phải là A, nhận %', created.new_rev_label;
+  end if;
+  perform pg_temp.assert_eq(
+    (select count(*) from public.projects where id = v_project and status = 'draft'), 1,
+    'Member tạo được dự án của mình, trạng thái draft');
+  perform pg_temp.assert_eq(
+    (select count(*) from public.project_revisions where project_id = v_project and rev_label = 'A' and locked_at is null), 1,
+    'Dự án mới có Rev A đang sửa');
+
+  perform public.save_revision(v_rev_a, 'Dự án RLS (đã sửa)', 'AppearanceInspection',
+    '{"id":"draft","applicationType":"AppearanceInspection"}'::jsonb, '[]'::jsonb, null, 2);
+  perform pg_temp.assert_eq(
+    (select count(*) from public.projects
+      where id = v_project and name = 'Dự án RLS (đã sửa)' and application_type = 'AppearanceInspection'), 1,
+    'Lưu revision cập nhật cả tên và loại ứng dụng của dự án');
+
+  select * into next_rev from public.start_next_revision(v_project);
+  if next_rev.new_rev_label <> 'B' or next_rev.locked_rev_label <> 'A' then
+    raise exception 'FAIL: tạo revision mới phải khoá A và mở B, nhận khoá % / mở %',
+      next_rev.locked_rev_label, next_rev.new_rev_label;
+  end if;
+  perform pg_temp.assert_eq(
+    (select count(*) from public.project_revisions where project_id = v_project and locked_at is null), 1,
+    'Luôn chỉ có một revision đang sửa');
+  perform pg_temp.assert_eq(
+    (select count(*) from public.project_revisions
+      where project_id = v_project and rev_label = 'B' and requirement ->> 'applicationType' = 'AppearanceInspection'), 1,
+    'Rev B chép nội dung đã lưu của Rev A');
+
+  -- RLS lọc revision đã khoá: UPDATE khớp 0 dòng, không lỗi.
+  update public.project_revisions set requirement = '{}'::jsonb where id = v_rev_a;
+  if found then
+    raise exception 'FAIL: Member sửa được revision đã khoá';
+  end if;
+  raise notice 'PASS: Member không sửa được revision đã khoá';
+
+  begin
+    perform public.save_revision(v_rev_a, 'x', 'Measurement', '{}'::jsonb, '[]'::jsonb, null, 2);
+    raise exception 'FAIL: save_revision ghi được vào revision đã khoá';
+  exception when no_data_found then
+    raise notice 'PASS: save_revision từ chối revision đã khoá';
+  end;
+
+  begin
+    insert into public.project_revisions (project_id, rev_label, requirement, schema_version)
+    values (v_project, 'C', '{}'::jsonb, 2);
+    raise exception 'FAIL: tạo được revision đang sửa thứ hai';
+  exception when unique_violation then
+    raise notice 'PASS: Một dự án không có hai revision cùng đang sửa';
+  end;
+
+  begin
+    update public.project_revisions set rev_label = 'Z' where project_id = v_project and locked_at is null;
+    raise exception 'FAIL: đổi được nhãn revision';
+  exception when integrity_constraint_violation then
+    raise notice 'PASS: Không đổi được nhãn revision';
+  end;
+
+  -- Không có quyền DELETE trên bảng này (migration thu hồi tường minh).
+  begin
+    delete from public.project_revisions where project_id = v_project;
+    raise exception 'FAIL: Member xoá lẻ được revision';
+  exception when insufficient_privilege then
+    raise notice 'PASS: Không xoá lẻ được revision';
+  end;
+
+  begin
+    insert into public.projects (user_id, name, application_type)
+    values ('aaaaaaaa-0000-4000-8000-000000000003', 'Dự án giả mạo', 'Other');
+    raise exception 'FAIL: Member tạo được dự án đứng tên người khác';
+  exception when insufficient_privilege then
+    raise notice 'PASS: Không tạo được dự án đứng tên người khác';
+  end;
+
+  perform set_config('rls_test.project_id', v_project::text, true);
+end $$;
+
+reset role;
+
+-- --- REGISTERED --------------------------------------------------------------
+
+select set_config('request.jwt.claims', '{"sub":"aaaaaaaa-0000-4000-8000-000000000001","role":"authenticated"}', true);
+set local role authenticated;
+
+do $$
+begin
+  perform pg_temp.assert_eq(
+    (select count(*) from public.projects), 0,
+    'Registered không thấy dự án nào');
+
+  begin
+    perform public.create_project('Dự án của registered', 'Other', '{}'::jsonb, '[]'::jsonb, null, 2);
+    raise exception 'FAIL: Registered tạo được dự án';
+  exception when insufficient_privilege then
+    raise notice 'PASS: Registered bị chặn tạo dự án';
+  end;
+
+  -- Ghi thẳng vào bảng, không qua hàm: policy của projects phải tự chặn, không
+  -- được trông vào việc insert revision bên trong create_project thất bại theo.
+  begin
+    insert into public.projects (user_id, name, application_type)
+    values ('aaaaaaaa-0000-4000-8000-000000000001', 'Dự án của registered', 'Other');
+    raise exception 'FAIL: Registered ghi thẳng được vào projects';
+  exception when insufficient_privilege then
+    raise notice 'PASS: Registered bị chặn ghi thẳng vào projects';
+  end;
+end $$;
+
+reset role;
+
+-- --- VIP: không chạm được dự án của Member -----------------------------------
+
+select set_config('request.jwt.claims', '{"sub":"aaaaaaaa-0000-4000-8000-000000000003","role":"authenticated"}', true);
+set local role authenticated;
+
+do $$
+declare
+  v_project uuid := current_setting('rls_test.project_id')::uuid;
+begin
+  perform pg_temp.assert_eq(
+    (select count(*) from public.projects where id = v_project), 0,
+    'VIP không thấy dự án của Member');
+  perform pg_temp.assert_eq(
+    (select count(*) from public.project_revisions where project_id = v_project), 0,
+    'VIP không thấy revision của Member');
+
+  update public.projects set name = 'hacked' where id = v_project;
+  if found then
+    raise exception 'FAIL: VIP sửa được dự án của Member';
+  end if;
+  raise notice 'PASS: VIP bị chặn sửa dự án của Member';
+
+  begin
+    perform public.start_next_revision(v_project);
+    raise exception 'FAIL: VIP khoá được revision của Member';
+  exception when no_data_found then
+    raise notice 'PASS: VIP không tạo được revision trên dự án của Member';
+  end;
+
+  begin
+    insert into public.project_revisions (project_id, rev_label, requirement, schema_version, locked_at)
+    values (v_project, 'Q', '{}'::jsonb, 2, now());
+    raise exception 'FAIL: VIP chèn được revision vào dự án của Member';
+  exception when insufficient_privilege then
+    raise notice 'PASS: VIP bị chặn chèn revision vào dự án của Member';
+  end;
+
+  delete from public.projects where id = v_project;
+  if found then
+    raise exception 'FAIL: VIP xoá được dự án của Member';
+  end if;
+  raise notice 'PASS: VIP bị chặn xoá dự án của Member';
+end $$;
+
+reset role;
+
+-- --- ADMIN: đọc được, không sửa được nội dung revision ------------------------
+
+select set_config('request.jwt.claims', '{"sub":"aaaaaaaa-0000-4000-8000-000000000004","role":"authenticated"}', true);
+set local role authenticated;
+
+do $$
+declare
+  v_project uuid := current_setting('rls_test.project_id')::uuid;
+begin
+  perform pg_temp.assert_eq(
+    (select count(*) from public.projects where id = v_project), 1,
+    'Admin xem được dự án của người khác');
+  perform pg_temp.assert_eq(
+    (select count(*) from public.project_revisions where project_id = v_project), 2,
+    'Admin xem được revision của người khác');
+
+  update public.project_revisions set raw_text = 'admin sửa' where project_id = v_project;
+  if found then
+    raise exception 'FAIL: Admin sửa được nội dung revision';
+  end if;
+  raise notice 'PASS: Admin cũng không sửa được nội dung revision';
+
+  -- Admin THẤY được dự án của người khác nên đây mới là phép thử thật của policy
+  -- sửa — những người khác đã bị chặn ngay từ policy đọc.
+  update public.projects set name = 'admin sửa' where id = v_project;
+  if found then
+    raise exception 'FAIL: Admin sửa được dự án của người khác';
+  end if;
+  raise notice 'PASS: Admin không sửa được dự án của người khác';
+end $$;
+
+reset role;
+
+-- --- Ngoài RLS (SQL Editor): trigger vẫn giữ revision đã khoá -----------------
+
+select set_config('request.jwt.claims', '', true);
+
+do $$
+declare
+  v_project uuid := current_setting('rls_test.project_id')::uuid;
+begin
+  begin
+    update public.project_revisions set raw_text = 'sửa tay' where project_id = v_project and rev_label = 'A';
+    raise exception 'FAIL: sửa tay được revision đã khoá';
+  exception when integrity_constraint_violation then
+    raise notice 'PASS: Trigger chặn sửa revision đã khoá kể cả ngoài RLS';
+  end;
+end $$;
+
+-- --- MEMBER xoá dự án của mình → revision mất theo ----------------------------
+
+select set_config('request.jwt.claims', '{"sub":"aaaaaaaa-0000-4000-8000-000000000002","role":"authenticated"}', true);
+set local role authenticated;
+
+do $$
+declare
+  v_project uuid := current_setting('rls_test.project_id')::uuid;
+begin
+  delete from public.projects where id = v_project;
+  if not found then
+    raise exception 'FAIL: Member không xoá được dự án của mình';
+  end if;
+  raise notice 'PASS: Member xoá được dự án của mình';
+end $$;
+
+reset role;
+select set_config('request.jwt.claims', '', true);
+
+do $$
+begin
+  perform pg_temp.assert_eq(
+    (select count(*) from public.project_revisions
+      where project_id = current_setting('rls_test.project_id')::uuid), 0,
+    'Xoá dự án xoá luôn các revision');
+end $$;
+
 do $$ begin raise notice '=== TẤT CẢ KIỂM TRA RLS ĐÃ QUA ==='; end $$;
 
 -- Không ghi gì vào database.

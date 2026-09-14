@@ -19,6 +19,21 @@ export const REQUIREMENT_ROUTE = '/thiet-ke-he-thong/yeu-cau';
  */
 export const DRAFT_VERSION = 2;
 
+/**
+ * Bản nháp đang gắn với revision nào của dự án (hạng mục 7). Không có = bản nháp
+ * tự do, chưa lưu. Chỉ là con trỏ để hiển thị và gọi lưu — quyền thật do RLS.
+ */
+export type DraftProjectLink = {
+  id: string;
+  name: string;
+  revisionId: string;
+  revLabel: string;
+  /** Revision đã khoá: chỉ xem, không lưu đè được. */
+  locked: boolean;
+  /** Dấu vân tay nội dung lúc lưu gần nhất (draftFingerprint) để biết có thay đổi chưa lưu. */
+  savedFingerprint: string;
+};
+
 export type RequirementDraft = {
   version: typeof DRAFT_VERSION;
   /**
@@ -31,7 +46,17 @@ export type RequirementDraft = {
   requirement: Requirement | null;
   /** Tăng mỗi lần làm lại / đổi loại / trả lời câu hỏi, để ô nhập không-điều-khiển vẽ lại. */
   revision: number;
+  project?: DraftProjectLink;
 };
+
+function isProjectLink(value: unknown): value is DraftProjectLink {
+  if (!value || typeof value !== 'object') return false;
+  const link = value as Record<string, unknown>;
+  return (
+    ['id', 'name', 'revisionId', 'revLabel', 'savedFingerprint'].every((key) => typeof link[key] === 'string') &&
+    typeof link.locked === 'boolean'
+  );
+}
 
 export function isApplicationType(value: unknown): value is ApplicationType {
   return typeof value === 'string' && (APPLICATION_TYPES as readonly string[]).includes(value);
@@ -108,5 +133,8 @@ export function parseDraft(raw: string | null): RequirementDraft | null {
     }
   }
 
-  return { ...(draft as RequirementDraft), version: DRAFT_VERSION };
+  const result = { ...(draft as RequirementDraft), version: DRAFT_VERSION } as RequirementDraft;
+  // Liên kết dự án hỏng thì bỏ liên kết, giữ nội dung — mất nội dung tệ hơn mất con trỏ.
+  if ('project' in result && !isProjectLink(result.project)) delete result.project;
+  return result;
 }

@@ -4,7 +4,7 @@ import { LanguageSwitcher } from './LanguageSwitcher';
 import { NavDropdown } from './NavDropdown';
 import { RoleBadge } from '@/components/auth/RoleBadge';
 import { SignOutButton } from '@/components/auth/SignOutButton';
-import { getSessionContext, isAdmin } from '@/lib/auth';
+import { canUseSelector, getSessionContext, isAdmin } from '@/lib/auth';
 
 /*
  * Menu theo spec §0.2: Vision Engineer | Knowledge | Tools | Equipment | Projects.
@@ -14,9 +14,9 @@ import { getSessionContext, isAdmin } from '@/lib/auth';
  *   Thiết bị = chọn ra MÓN HÀNG đi vào BOM
  * Máy tính (PC) là món hàng nên nằm dưới Thiết bị, dù route là /cong-cu-may-tinh.
  *
- * Mục phẳng. "Thiết bị" tách riêng bên dưới vì nó xổ xuống.
- * nav.projects: unused until V1a item 7 (Save Project + Revision) — key đã có
- * sẵn trong messages, thêm { href, key: 'projects' } khi có trang dự án.
+ * Mục phẳng. "Thiết bị" tách riêng bên dưới vì nó xổ xuống. "Dự án" (V1a mục 7)
+ * đứng cuối theo spec và chỉ hiện cho Member trở lên — người khác không lưu được
+ * dự án (RLS chặn), hiện ra chỉ để bấm vào bị đẩy đi.
  */
 const navItems = [
   { href: '/', key: 'visionEngineer' },
@@ -85,6 +85,11 @@ export async function Header() {
               description: t(`${item.key}Desc`),
             }))}
           />
+          {canUseSelector(role) ? (
+            <Link href="/du-an" className={navLinkClass}>
+              {t('projects')}
+            </Link>
+          ) : null}
           {isAdmin(role) ? (
             <Link href="/admin" className={navLinkClass}>
               {t('admin')}

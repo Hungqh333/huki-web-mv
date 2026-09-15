@@ -58,7 +58,9 @@ async function get(path) {
 console.log(`Dò RLS với vai khách trên ${BASE}\n`);
 
 console.log('Bảng phải CHẶN hoàn toàn với khách:');
-for (const table of ['profiles', 'selector_rules', 'selector_history']) {
+// Bảng chưa tồn tại (chưa dán migration) trả 404 — không phải "từ chối" cũng không
+// phải "rỗng", nên bị báo THỦNG thay vì đạt giả.
+for (const table of ['profiles', 'selector_rules', 'selector_history', 'projects', 'project_revisions']) {
   const { status, body } = await get(`${table}?select=*&limit=5`);
   const denied = status === 401 || status === 403;
   const emptied = status === 200 && Array.isArray(body) && body.length === 0;
@@ -84,6 +86,11 @@ for (const [table, payload] of [
   ['articles', { slug: `probe-${Date.now()}`, title_vi: 'x', title_en: 'x', access_tier: 'public' }],
   ['selector_rules', { task_type_id: '00000000-0000-0000-0000-000000000000', condition_json: {} }],
   ['profiles', { id: '00000000-0000-0000-0000-000000000000', email: 'x@y.z', role: 'admin' }],
+  ['projects', { user_id: '00000000-0000-0000-0000-000000000000', name: 'probe', application_type: 'Other' }],
+  [
+    'project_revisions',
+    { project_id: '00000000-0000-0000-0000-000000000000', rev_label: 'A', requirement: {}, schema_version: 2 },
+  ],
 ]) {
   const res = await fetch(`${BASE}/rest/v1/${table}`, {
     method: 'POST',
@@ -91,6 +98,33 @@ for (const [table, payload] of [
     body: JSON.stringify(payload),
   });
   record(res.status >= 400, `INSERT ${table}`, `HTTP ${res.status}`);
+}
+
+/*
+ * Ba hàm ghi dự án chạy quyền người gọi, và khách không có quyền execute. Phải bị
+ * từ chối quyền (401/403) — 404 PGRST202 nghĩa là hàm chưa tồn tại, báo THỦNG để
+ * không đạt giả khi quên dán migration.
+ */
+console.log('\nKhách phải KHÔNG gọi được hàm ghi dự án:');
+const ZERO = '00000000-0000-0000-0000-000000000000';
+const projectArgs = { p_name: 'probe', p_application_type: 'Other', p_requirement: {}, p_assumptions: [], p_raw_text: null, p_schema_version: 2 };
+for (const [fn, args] of [
+  ['create_project', projectArgs],
+  ['save_revision', { p_revision_id: ZERO, ...projectArgs }],
+  ['start_next_revision', { p_project_id: ZERO }],
+]) {
+  const res = await fetch(`${BASE}/rest/v1/rpc/${fn}`, {
+    method: 'POST',
+    headers: { ...headers, 'Content-Type': 'application/json' },
+    body: JSON.stringify(args),
+  });
+  let code = '';
+  try {
+    code = (await res.json())?.code ?? '';
+  } catch {
+    /* không phải JSON */
+  }
+  record(res.status === 401 || res.status === 403, `RPC ${fn}`, `HTTP ${res.status}${code ? ` ${code}` : ''}`);
 }
 
 const failed = results.filter((r) => !r.ok);

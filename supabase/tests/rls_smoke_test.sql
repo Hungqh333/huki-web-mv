@@ -185,7 +185,9 @@ begin
   raise notice 'PASS: Member ghi được selector_history';
 
   -- Không được sửa bảng luật (việc của admin). RLS làm UPDATE khớp 0 dòng.
-  update public.selector_rules set recommended_camera = 'hacked';
+  -- Luôn giới hạn vào luật của bài toán test: file này chạy trên Supabase production.
+  update public.selector_rules set recommended_camera = 'hacked'
+  where task_type_id = 'bbbbbbbb-0000-4000-8000-000000000001';
   if found then
     raise exception 'FAIL: Member sửa được selector_rules';
   end if;
@@ -266,8 +268,15 @@ begin
      where id = 'aaaaaaaa-0000-4000-8000-000000000001' and role = 'vip'), 1,
     'Admin gán được role member/vip cho user khác');
 
-  update public.selector_rules set recommended_camera = 'Area scan 12MP';
-  raise notice 'PASS: Admin sửa được selector_rules';
+  -- Chỉ sửa luật của bài toán test. Trước đây câu này không có WHERE: trên Supabase
+  -- production nó ghi đè camera của TOÀN BỘ bảng luật thật, chỉ an toàn nhờ lệnh
+  -- rollback cuối file — chạy lẻ câu này hay file bị cắt giữa chừng là hỏng dữ liệu.
+  update public.selector_rules set recommended_camera = 'Area scan 12MP'
+  where task_type_id = 'bbbbbbbb-0000-4000-8000-000000000001';
+  perform pg_temp.assert_eq(
+    (select count(*) from public.selector_rules
+     where task_type_id = 'bbbbbbbb-0000-4000-8000-000000000001' and recommended_camera = 'Area scan 12MP'), 1,
+    'Admin sửa được selector_rules (chỉ luật của bài toán test)');
 end $$;
 
 reset role;

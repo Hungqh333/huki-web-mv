@@ -15,6 +15,13 @@ import { hasSupabaseEnv } from '@/lib/supabase/env';
  * `?app=<ApplicationType>` điền sẵn loại ứng dụng. Văn bản khách gõ ở trang chủ
  * KHÔNG đi qua URL — nằm trong sessionStorage (xem lib/requirement/draft.ts).
  */
+/**
+ * Server action của trang này gồm cả lượt đọc mô tả bằng LLM (V1a hạng mục 3), có
+ * thể mất vài chục giây. Gói Vercel đang dùng là Hobby: đặt 60 giây. SDK tự dừng ở
+ * 45 giây và không thử lại (lib/ai/parser.ts) để luôn kết thúc trước giới hạn này.
+ */
+export const maxDuration = 60;
+
 export default async function RequirementPage({ searchParams }: PageProps<'/thiet-ke-he-thong/yeu-cau'>) {
   if (!hasSupabaseEnv()) redirect('/cong-cu-chon-thiet-bi');
 

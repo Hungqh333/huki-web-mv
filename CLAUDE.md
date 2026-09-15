@@ -43,6 +43,7 @@ Ngôn ngữ giao diện: **song ngữ Việt – Anh** (i18n ngay từ đầu, k
 
 ### Nguyên tắc thiết kế logic (quan trọng)
 - Engine là **rule-based / bảng luật lưu trong database**, KHÔNG gọi AI/LLM để suy luận kỹ thuật.
+- LLM chỉ được xuất hiện ở **đúng 2 điểm** (docs/VISION_ENGINEER_SPEC_V1.1.md §1): (1) đọc mô tả bài toán bằng lời → điền trước bảng yêu cầu — chỉ trích xuất, kèm đoạn văn gốc, không tính toán, không suy ra thông số, không chọn thiết bị; (2) diễn giải kết quả đã tính (V1c), không tạo số mới. Mọi con số kỹ thuật đến từ code hoặc luật có ID. Code gọi LLM chỉ nằm trong `src/lib/ai` và chỉ chạy phía server; ESLint chặn engine import thư mục này.
 - Thứ tự ưu tiên khi có nhiều phương án thoả điều kiện: **Độ ổn định → Độ chính xác → Tốc độ xử lý → Khả năng bảo trì → Dễ triển khai → Chi phí**.
 - Chỉ gợi ý Deep Learning khi rule-based không đáp ứng được (biến thiên hình dạng/màu sắc lớn, không định nghĩa được bằng ngưỡng cố định). Mặc định luôn ưu tiên rule-based/truyền thống trước.
 

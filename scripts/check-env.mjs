@@ -53,7 +53,14 @@ const OPTIONAL = [
   {
     name: 'NEXT_PUBLIC_SITE_URL',
     check: (v) => /^https?:\/\//.test(v),
+    missing: 'link xác nhận email sẽ trỏ về localhost.',
     hint: 'URL gốc của site, dùng cho link xác nhận email. Trên Vercel đặt là https://<domain>.',
+  },
+  {
+    name: 'ANTHROPIC_API_KEY',
+    check: (v) => v.startsWith('sk-ant-'),
+    missing: 'bộ đọc mô tả bài toán tắt — người dùng tự điền bảng yêu cầu.',
+    hint: 'Key Claude API (console.anthropic.com), chỉ đặt ở server. KHÔNG thêm tiền tố NEXT_PUBLIC_.',
   },
 ];
 
@@ -66,9 +73,9 @@ for (const { name, check, hint } of REQUIRED) {
   else if (!check(value)) problems.push(`  ✗ ${name} — giá trị trông không hợp lệ.\n      ${hint}`);
 }
 
-for (const { name, check, hint } of OPTIONAL) {
+for (const { name, check, missing, hint } of OPTIONAL) {
   const value = process.env[name];
-  if (!value) warnings.push(`  ! ${name} chưa đặt — link xác nhận email sẽ trỏ về localhost.\n      ${hint}`);
+  if (!value) warnings.push(`  ! ${name} chưa đặt — ${missing}\n      ${hint}`);
   else if (!check(value)) warnings.push(`  ! ${name} trông không hợp lệ.\n      ${hint}`);
 }
 
@@ -77,6 +84,10 @@ for (const { name, check, hint } of OPTIONAL) {
 for (const [key, value] of Object.entries(process.env)) {
   if (key.startsWith('NEXT_PUBLIC_') && typeof value === 'string' && value.includes('service_role')) {
     problems.push(`  ✗ ${key} chứa service_role key. Key này bypass toàn bộ RLS và sẽ lộ ra client.`);
+  }
+  // Key Claude API trong biến NEXT_PUBLIC_ cũng bị nhúng xuống trình duyệt: ai xem source cũng dùng được.
+  if (key.startsWith('NEXT_PUBLIC_') && typeof value === 'string' && value.startsWith('sk-ant-')) {
+    problems.push(`  ✗ ${key} chứa key Claude API. Key này sẽ lộ ra client — đổi tên thành ANTHROPIC_API_KEY.`);
   }
 }
 

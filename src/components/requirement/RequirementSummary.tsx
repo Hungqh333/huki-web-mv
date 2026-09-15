@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect, useMemo, useState, useSyncExternalStore, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition, type FormEvent } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
+import { parseRequirementAction } from '@/app/actions/parseRequirement';
 import { APPLICATION_SHORTCUT_ORDER, type ApplicationType } from '@/lib/visionEntry';
 import {
   REQUIREMENT_SECTIONS,
   V1A_FIELDS,
   V1A_FULL_SUPPORT,
-  changeApplicationType,
   countFilled,
   emptyRequirement,
   fieldsFor,
@@ -20,10 +20,12 @@ import {
   isApplicationType,
   parseDraft,
   startDraftFromApp,
+  type DraftParse,
   type RequirementDraft,
 } from '@/lib/requirement/draft';
 import { readDraftRaw, subscribeDraft, writeDraft } from '@/lib/requirement/draftStore';
 import { resolveAssumptions } from '@/lib/requirement/assumptions';
+import { PARSE_TEXT_MAX, applyParseResult, pickApplicationType } from '@/lib/requirement/parseResult';
 import { purposesOf } from '@/lib/requirement/purposes';
 import {
   MAX_VISIBLE_QUESTIONS,
@@ -39,8 +41,12 @@ import type { Assumption, Confidence, Requirement } from '@/lib/requirement/type
  * Bảng tóm tắt yêu cầu — spec V1.1 §10.2 "Tôi hiểu bài toán của bạn".
  *
  * Mỗi dòng: thông số | ô sửa được | badge confidence. Sửa một ô thì ô đó thành
- * "Đã nêu". Chưa có parser (V1a hạng mục 3) nên mọi ô bắt đầu ở "Chưa có".
- * Bản nháp nằm ở sessionStorage; chưa lưu database (hạng mục 7).
+ * "Đã nêu". Bản nháp nằm ở sessionStorage; lưu thành dự án ở thanh phía trên
+ * (hạng mục 7).
+ *
+ * Bộ đọc mô tả (hạng mục 3): bản nháp có mô tả mà chưa đọc thì tự đọc MỘT lần, điền
+ * trước các ô chưa hỏi, mỗi ô kèm đoạn văn gốc để người dùng đối chiếu. Nút "Đọc
+ * lại" chạy lại, cũng không đè ô đã có.
  *
  * Khối "Thông tin còn thiếu" (hạng mục 5) phía trên bảng: tối đa 3 câu, chỉ hỏi
  * cái luật đang cần. Trả lời ở đó hay sửa trong bảng đều ghi cùng một bản nháp.
@@ -111,10 +117,36 @@ export function RequirementSummary({ initialApp }: { initialApp: ApplicationType
     }
   }, [initialApp, stored]);
 
+  // ─── Bộ đọc mô tả ───
+  const [parsing, startParsing] = useTransition();
+  const parseRequestedFor = useRef<string | null>(null);
+
+  const runParse = useCallback((source: RequirementDraft) => {
+    const text = source.rawText;
+    if (!text) return;
+    startParsing(async () => {
+      const result = await parseRequirementAction(text);
+      /* Người dùng có thể sửa bảng hoặc mở bài toán khác trong lúc chờ: áp vào bản
+         nháp MỚI NHẤT, và bỏ kết quả nếu bản nháp đã bị thay. */
+      const latest = parseDraft(readDraftRaw());
+      if (!latest || latest.startedFrom !== source.startedFrom) return;
+      writeDraft(applyParseResult(latest, result));
+    });
+  }, []);
+
+  useEffect(() => {
+    // Chỉ sau khi đã đọc storage (raw !== null), và mỗi bản nháp chỉ tự đọc một lần.
+    const current = parseDraft(raw);
+    if (!current?.rawText || current.parse) return;
+    if (parseRequestedFor.current === current.startedFrom) return;
+    parseRequestedFor.current = current.startedFrom;
+    runParse(current);
+  }, [raw, runParse]);
+
   const base = draft ?? EMPTY_DRAFT;
   const requirement = base.requirement;
   // Ô số/chữ không điều khiển: vẽ lại khi đổi loại, làm lại, trả lời câu hỏi,
-  // hoặc lúc bản nháp đã lưu vừa đọc xong sau hydrate.
+  // có kết quả đọc mô tả, hoặc lúc bản nháp đã lưu vừa đọc xong sau hydrate.
   const mountKey = `${base.revision}-${raw !== null}`;
 
   // Bản đã điền mặc định — CHỈ để hiển thị. Mọi thao tác ghi vẫn trên `requirement`.
@@ -122,7 +154,7 @@ export function RequirementSummary({ initialApp }: { initialApp: ApplicationType
 
   const onPickApp = (value: string) => {
     if (!isApplicationType(value)) return;
-    writeDraft({ ...base, requirement: changeApplicationType(requirement, value), revision: base.revision + 1 });
+    writeDraft(pickApplicationType(base, value));
   };
   const onValue = (path: string, value: unknown) => {
     if (!requirement) return;
@@ -144,23 +176,45 @@ export function RequirementSummary({ initialApp }: { initialApp: ApplicationType
 
   const defs = requirement ? fieldsFor(requirement.applicationType) : [];
   const progress = requirement ? countFilled(requirement) : null;
+  const inferredType =
+    requirement && base.parse?.inferredApplicationType === requirement.applicationType
+      ? base.parse.inferredApplicationType
+      : null;
+  const canReread = Boolean(base.parse) && base.parse?.status !== 'unavailable' && base.parse?.status !== 'denied';
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
       <div className="min-w-0 space-y-6">
         {base.rawText ? (
           <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5 dark:border-slate-800 dark:bg-slate-900/60">
-            <h2 className="text-sm font-semibold">{t('rawTextTitle')}</h2>
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <h2 className="text-sm font-semibold">{t('rawTextTitle')}</h2>
+              {canReread ? (
+                <button
+                  type="button"
+                  disabled={parsing}
+                  onClick={() => runParse(base)}
+                  className="text-xs font-medium text-sky-700 hover:underline disabled:cursor-not-allowed disabled:opacity-50 dark:text-sky-400"
+                >
+                  {t('parser.reread')}
+                </button>
+              ) : null}
+            </div>
             <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-slate-700 dark:text-slate-300">
               {base.rawText}
             </p>
-            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{t('rawTextNote')}</p>
+            <ParseStatus parsing={parsing} parse={base.parse} />
           </div>
         ) : null}
 
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5 dark:border-slate-800 dark:bg-slate-900">
           <label htmlFor="application-type" className="block text-sm font-medium text-slate-700 dark:text-slate-200">
             {t('applicationType')}
+            {inferredType ? (
+              <span className={`ml-2 rounded-full px-2 py-0.5 text-xs font-medium ${BADGE_CLASS.inferred}`}>
+                {t('confidence.inferred')}
+              </span>
+            ) : null}
           </label>
           <select
             id="application-type"
@@ -177,6 +231,9 @@ export function RequirementSummary({ initialApp }: { initialApp: ApplicationType
               </option>
             ))}
           </select>
+          {inferredType ? (
+            <p className="mt-2 text-xs text-violet-700 dark:text-violet-300">{t('parser.inferredType')}</p>
+          ) : null}
 
           {requirement && !V1A_FULL_SUPPORT.includes(requirement.applicationType) ? (
             <p className="mt-3 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
@@ -253,6 +310,12 @@ export function RequirementSummary({ initialApp }: { initialApp: ApplicationType
                             {badge === 'assumed' ? <span aria-hidden="true">⚠ </span> : null}
                             {t(`confidence.${badge}`)}
                           </span>
+                          {field?.sourceSpan ? (
+                            // Đoạn văn gốc bộ đọc lấy ra — để người dùng đối chiếu (spec §1).
+                            <p className="text-xs text-slate-500 sm:col-start-2 sm:col-end-4 dark:text-slate-400">
+                              {t('parser.sourceSpan', { span: field.sourceSpan })}
+                            </p>
+                          ) : null}
                         </li>
                       );
                     })}
@@ -279,6 +342,68 @@ export function RequirementSummary({ initialApp }: { initialApp: ApplicationType
         <aside className="min-w-0 lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:self-start lg:overflow-y-auto">
           <AssumptionsPanel assumptions={resolved.assumptions} />
         </aside>
+      ) : null}
+    </div>
+  );
+}
+
+// ─────────────────────────────── Trạng thái đọc mô tả ───────────────────────────────
+
+function ParseStatus({ parsing, parse }: { parsing: boolean; parse: DraftParse | undefined }) {
+  const t = useTranslations('designer.requirement.parser');
+
+  let tone: 'info' | 'ok' | 'warn' = 'info';
+  let message: string | null = null;
+
+  if (parsing) {
+    message = t('reading');
+  } else if (parse) {
+    switch (parse.status) {
+      case 'ok':
+        if (parse.applied > 0) {
+          tone = 'ok';
+          message = t('filled', { count: parse.applied });
+        } else if (parse.pending.length > 0) {
+          message = t('pickType', { count: parse.pending.length });
+        } else {
+          tone = 'warn';
+          message = t('noData');
+        }
+        break;
+      case 'empty':
+        tone = 'warn';
+        message = t('noData');
+        break;
+      case 'failed':
+        tone = 'warn';
+        message = t('failed');
+        break;
+      case 'tooLong':
+        tone = 'warn';
+        message = t('tooLong', { max: PARSE_TEXT_MAX });
+        break;
+      case 'unavailable':
+        message = t('unavailable');
+        break;
+      case 'denied':
+        message = null;
+        break;
+    }
+  }
+
+  if (!message) return null;
+  const color =
+    tone === 'ok'
+      ? 'text-emerald-700 dark:text-emerald-400'
+      : tone === 'warn'
+        ? 'text-amber-700 dark:text-amber-400'
+        : 'text-slate-500 dark:text-slate-400';
+
+  return (
+    <div role="status" className={`mt-2 space-y-1 text-xs ${color}`}>
+      <p>{message}</p>
+      {!parsing && parse && parse.dropped > 0 ? (
+        <p className="text-slate-500 dark:text-slate-400">{t('dropped', { count: parse.dropped })}</p>
       ) : null}
     </div>
   );

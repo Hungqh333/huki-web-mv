@@ -78,8 +78,13 @@ export function ProblemInput() {
         value={text}
         onChange={(event) => setText(event.target.value)}
         placeholder={t('problemPlaceholder')}
+        aria-describedby="vision-problem-note"
         className={`mt-2 ${TEXTAREA_CLASS}`}
       />
+      {/* Đã chốt 2026-09-15: nói rõ mô tả được gửi tới dịch vụ AI để đọc thông số. */}
+      <p id="vision-problem-note" className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+        {t('aiNotice')}
+      </p>
       <div className="mt-4 flex justify-center">
         <button type="submit" disabled={!payload} className={PRIMARY_BUTTON_CLASS}>
           {t('analyze')}

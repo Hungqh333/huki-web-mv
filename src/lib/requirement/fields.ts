@@ -216,14 +216,40 @@ function rewriteField(
 /**
  * Người dùng nhập một giá trị (ô trên bảng hoặc câu hỏi) → 'stated'.
  * Xoá trắng → quay về CHƯA HỎI. Trả object mới, không sửa object cũ.
+ * `sourceSpan`: đoạn văn gốc khi giá trị đến từ bộ đọc mô tả; sửa tay thì mất.
  */
-export function withFieldValue(requirement: Requirement, path: string, value: unknown): Requirement {
+export function withFieldValue(requirement: Requirement, path: string, value: unknown, sourceSpan?: string): Requirement {
   const empty = value === null || value === '' || (Array.isArray(value) && value.length === 0);
   if (empty) return withFieldNotAsked(requirement, path);
   return rewriteField(requirement, path, (field) => {
     field.value = value;
     field.confidence = 'stated';
+    if (sourceSpan) field.sourceSpan = sourceSpan;
   });
+}
+
+/** Một ô bộ đọc mô tả nhận ra (hạng mục 3): giá trị đã đổi về đơn vị của ô + đoạn văn gốc. */
+export type ParsedField = { path: string; value: unknown; sourceSpan: string };
+
+/**
+ * Điền các ô bộ đọc mô tả nhận ra. Chỉ điền ô đang hiện trên bảng của loại ứng
+ * dụng này và còn CHƯA HỎI — không đè giá trị người dùng đã nhập hay đã trả lời
+ * "Chưa rõ". Trả requirement mới và số ô đã điền.
+ */
+export function applyParsedFields(
+  requirement: Requirement,
+  fields: readonly ParsedField[]
+): { requirement: Requirement; applied: number } {
+  const shown = new Set(fieldsFor(requirement.applicationType).map((def) => def.path));
+  let next = requirement;
+  let applied = 0;
+  for (const { path, value, sourceSpan } of fields) {
+    if (!shown.has(path)) continue;
+    if (readField(next, path)?.confidence !== undefined) continue;
+    next = withFieldValue(next, path, value, sourceSpan);
+    applied++;
+  }
+  return { requirement: next, applied };
 }
 
 /** Đã hỏi, người dùng trả lời "Chưa rõ": `{ value: null, confidence: 'unknown' }`. */

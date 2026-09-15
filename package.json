@@ -10,6 +10,7 @@
     "test:db": "node scripts/verify-db.mjs",
     "test:db:mutate": "node scripts/mutation-test-db.mjs",
     "test:unit": "tsx --test scripts/test-*.ts",
+    "eval:parser": "tsx scripts/eval-parser.ts",
     "check:env": "node scripts/check-env.mjs",
     "test:all": "npm run check:env && npm run lint && npm run test:unit && npm run test:pdf && npm run test:db && npm run test:db:mutate",
     "probe:rls": "node scripts/probe-rls.mjs",
@@ -19,6 +20,7 @@
     "build:sql": "node scripts/build-sql-bundle.mjs"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.125.0",
     "@react-pdf/renderer": "^4.8.1",
     "@supabase/ssr": "^0.12.4",
     "@supabase/supabase-js": "^2.112.3",
@@ -30,7 +32,8 @@
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "sanitize-html": "^2.17.7",
-    "server-only": "^0.0.1"
+    "server-only": "^0.0.1",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.6",

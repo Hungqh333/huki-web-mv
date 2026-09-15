@@ -8,7 +8,7 @@
  * File thuần TypeScript: không import React, không import tầng AI.
  */
 import { APPLICATION_TYPES, type ApplicationType } from '../visionEntry';
-import { MATERIALS, emptyRequirement, fieldsFor, readField } from './fields';
+import { MATERIALS, emptyRequirement, fieldsFor, readField, type ParsedField } from './fields';
 import type { Requirement } from './types';
 
 export const REQUIREMENT_ROUTE = '/thiet-ke-he-thong/yeu-cau';
@@ -47,7 +47,43 @@ export type RequirementDraft = {
   /** Tăng mỗi lần làm lại / đổi loại / trả lời câu hỏi, để ô nhập không-điều-khiển vẽ lại. */
   revision: number;
   project?: DraftProjectLink;
+  /** Kết quả lượt đọc mô tả gần nhất (hạng mục 3). Không có = chưa đọc. */
+  parse?: DraftParse;
 };
+
+export const DRAFT_PARSE_STATUSES = ['ok', 'empty', 'failed', 'unavailable', 'tooLong', 'denied'] as const;
+export type DraftParseStatus = (typeof DRAFT_PARSE_STATUSES)[number];
+
+export type DraftParse = {
+  status: DraftParseStatus;
+  /** Số ô đã điền vào bảng. */
+  applied: number;
+  /** Số ô bộ đọc trả về nhưng bị loại khi kiểm (không khớp nguyên văn mô tả, mơ hồ...). */
+  dropped: number;
+  /** Loại ứng dụng do bộ đọc chọn — hiện nhãn "Suy ra" tới khi người dùng đổi. */
+  inferredApplicationType: ApplicationType | null;
+  /** Ô đọc được khi chưa có loại ứng dụng — áp khi người dùng chọn loại. */
+  pending: ParsedField[];
+};
+
+function isDraftParse(value: unknown): value is DraftParse {
+  if (!value || typeof value !== 'object') return false;
+  const parse = value as Record<string, unknown>;
+  return (
+    (DRAFT_PARSE_STATUSES as readonly unknown[]).includes(parse.status) &&
+    typeof parse.applied === 'number' &&
+    typeof parse.dropped === 'number' &&
+    (parse.inferredApplicationType === null || isApplicationType(parse.inferredApplicationType)) &&
+    Array.isArray(parse.pending) &&
+    parse.pending.every(
+      (item) =>
+        Boolean(item) &&
+        typeof (item as ParsedField).path === 'string' &&
+        typeof (item as ParsedField).sourceSpan === 'string' &&
+        'value' in (item as object)
+    )
+  );
+}
 
 function isProjectLink(value: unknown): value is DraftProjectLink {
   if (!value || typeof value !== 'object') return false;
@@ -144,5 +180,7 @@ export function parseDraft(raw: string | null): RequirementDraft | null {
   const result = { ...(draft as RequirementDraft), version: DRAFT_VERSION } as RequirementDraft;
   // Liên kết dự án hỏng thì bỏ liên kết, giữ nội dung — mất nội dung tệ hơn mất con trỏ.
   if ('project' in result && !isProjectLink(result.project)) delete result.project;
+  // Trạng thái đọc hỏng thì bỏ: tệ nhất là trang đọc lại mô tả một lần nữa.
+  if ('parse' in result && !isDraftParse(result.parse)) delete result.parse;
   return result;
 }

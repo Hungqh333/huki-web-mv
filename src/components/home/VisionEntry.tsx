@@ -5,9 +5,16 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { IconBadge, type BadgeTone, type IconName } from '@/components/ui/Icon';
-import { selectorHrefFor } from '@/lib/application-type-map';
-import { REQUIREMENT_ROUTE, startDraftFromText } from '@/lib/requirement/draft';
-import { writeDraft } from '@/lib/requirement/draftStore';
+import { draftAtRisk } from '@/lib/projects/model';
+import { V1A_FULL_SUPPORT } from '@/lib/requirement/fields';
+import {
+  REQUIREMENT_ROUTE,
+  parseDraft,
+  requirementHrefFor,
+  startDraftFromApp,
+  startDraftFromText,
+} from '@/lib/requirement/draft';
+import { readDraftRaw, writeDraft } from '@/lib/requirement/draftStore';
 import {
   APPLICATION_SHORTCUT_ORDER,
   applicationCardEntry,
@@ -18,10 +25,13 @@ import {
 
 /**
  * Hai cửa vào Vision Engineer ở trang chủ: ô mô tả bài toán và 8 thẻ ứng dụng.
+ * Cả hai mở CÙNG một luồng — bảng tóm tắt yêu cầu (spec §10.1). Bộ chọn thiết bị
+ * cũ vào từ menu Thiết bị, không từ trang chủ.
  *
  * Chưa có parser (V1a hạng mục 3). Ô nhập lưu văn bản vào bản nháp
- * (sessionStorage, không qua URL) rồi mở bảng tóm tắt yêu cầu. Thẻ ứng dụng tạm
- * vẫn vào thẳng bộ chọn — chuyển sang bảng tóm tắt sau hạng mục 4, 6, 5.
+ * (sessionStorage, không qua URL) rồi mở bảng tóm tắt; thẻ truyền loại qua `?app=`.
+ * Mở cửa nào cũng THAY bản nháp đang có trong tab, nên hỏi trước nếu bản nháp đó
+ * còn nội dung chưa lưu (draftAtRisk).
  * Cả hai vẫn ghi VisionEntryPayload ra console — đúng shape bước sau sẽ nhận.
  */
 function submitEntry(payload: VisionEntryPayload) {
@@ -43,8 +53,10 @@ export function ProblemInput() {
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!payload?.rawText) return;
+    const next = startDraftFromText(payload.rawText);
+    if (draftAtRisk(parseDraft(readDraftRaw()), next.startedFrom) && !window.confirm(t('replaceDraft'))) return;
     submitEntry(payload);
-    writeDraft(startDraftFromText(payload.rawText));
+    writeDraft(next);
     router.push(REQUIREMENT_ROUTE);
   };
 
@@ -92,8 +104,6 @@ const CARD_CLASS =
   'flex h-full w-full items-center gap-3 rounded-2xl border p-4 text-left shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/40';
 const CARD_READY_CLASS =
   'border-slate-200 bg-white hover:border-slate-300 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700';
-const CARD_SOON_CLASS =
-  'cursor-default border-dashed border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900/50';
 
 export function ApplicationCards() {
   const t = useTranslations('home.entry.apps');
@@ -104,54 +114,40 @@ export function ApplicationCards() {
       {APPLICATION_SHORTCUT_ORDER.map((type) => {
         const title = t(`${type}.title`);
         const term = t(`${type}.term`);
-        const href = selectorHrefFor(type);
         const payload = applicationCardEntry(type);
-
-        const body = (
-          <>
-            <IconBadge
-              name={APP_ICON[type].icon}
-              tone={href ? APP_ICON[type].tone : 'slate'}
-              className="size-10"
-            />
-            <span className="min-w-0">
-              <span className="block text-sm font-semibold text-slate-900 dark:text-slate-100">
-                {title}
-              </span>
-              {/* Tiếng Việt chính, thuật ngữ English dòng nhỏ (spec §0.2). Bản en trùng thì ẩn. */}
-              {term !== title ? (
-                <span className="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">{term}</span>
-              ) : null}
-              {href ? null : (
-                <span className="mt-1.5 inline-block rounded-full bg-slate-200 px-2 py-0.5 text-[11px] font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-                  {tEntry('comingSoon')}
-                </span>
-              )}
-            </span>
-          </>
-        );
+        // V1 chỉ làm đủ ngoại quan + đo lường; loại khác vẫn vào bảng, chỉ có phần chung.
+        const partial = !V1A_FULL_SUPPORT.includes(type);
 
         return (
           <li key={type}>
-            {href ? (
-              // Vào thẳng bài toán có sẵn. Vẫn ghi payload để bước parser sau này nhận đúng shape.
-              <Link
-                href={href}
-                onClick={() => submitEntry(payload)}
-                className={`${CARD_CLASS} ${CARD_READY_CLASS}`}
-              >
-                {body}
-              </Link>
-            ) : (
-              <button
-                type="button"
-                aria-disabled="true"
-                onClick={() => submitEntry(payload)}
-                className={`${CARD_CLASS} ${CARD_SOON_CLASS}`}
-              >
-                {body}
-              </button>
-            )}
+            <Link
+              href={requirementHrefFor(type)}
+              onClick={(event) => {
+                const next = startDraftFromApp(type).startedFrom;
+                if (draftAtRisk(parseDraft(readDraftRaw()), next) && !window.confirm(tEntry('replaceDraft'))) {
+                  event.preventDefault();
+                  return;
+                }
+                submitEntry(payload);
+              }}
+              className={`${CARD_CLASS} ${CARD_READY_CLASS}`}
+            >
+              <IconBadge name={APP_ICON[type].icon} tone={APP_ICON[type].tone} className="size-10" />
+              <span className="min-w-0">
+                <span className="block text-sm font-semibold text-slate-900 dark:text-slate-100">
+                  {title}
+                </span>
+                {/* Tiếng Việt chính, thuật ngữ English dòng nhỏ (spec §0.2). Bản en trùng thì ẩn. */}
+                {term !== title ? (
+                  <span className="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">{term}</span>
+                ) : null}
+                {partial ? (
+                  <span className="mt-1.5 inline-block rounded-full bg-slate-200 px-2 py-0.5 text-[11px] font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                    {tEntry('partialSupport')}
+                  </span>
+                ) : null}
+              </span>
+            </Link>
           </li>
         );
       })}

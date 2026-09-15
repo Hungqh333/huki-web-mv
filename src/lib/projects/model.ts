@@ -80,6 +80,26 @@ export function draftFingerprint(draft: Pick<RequirementDraft, 'rawText' | 'requ
   return stableStringify({ rawText: draft.rawText, requirement: draft.requirement });
 }
 
+/** Có ô nào đã được hỏi (có giá trị hoặc "Chưa rõ") — tức người dùng đã nhập gì đó. */
+function hasAnsweredField(node: unknown): boolean {
+  if (!node || typeof node !== 'object') return false;
+  if ('value' in node) return (node as { confidence?: unknown }).confidence !== undefined;
+  return Object.values(node).some(hasAnsweredField);
+}
+
+/**
+ * Mở một bản nháp khác (thẻ ứng dụng, ô mô tả, revision) sẽ THAY bản nháp đang có
+ * trong tab. Chỉ hỏi xác nhận khi thật sự có thứ để mất: bản nháp hiện tại có nội
+ * dung, và chưa lưu (chưa gắn dự án, hoặc đã sửa sau lần lưu gần nhất). Bản nháp
+ * trống hoặc chính bản sắp mở thì không hỏi.
+ */
+export function draftAtRisk(current: RequirementDraft | null, nextStartedFrom: string): boolean {
+  if (!current || current.startedFrom === nextStartedFrom) return false;
+  const hasContent = Boolean(current.rawText) || hasAnsweredField(current.requirement);
+  if (!hasContent) return false;
+  return !current.project || draftFingerprint(current) !== current.project.savedFingerprint;
+}
+
 /**
  * Revision → bản nháp để mở lại trên bảng tóm tắt. Đi qua đúng parseDraft như
  * bản nháp trong trình duyệt: schema cũ được chuyển đổi, schema lạ / hỏng → null.

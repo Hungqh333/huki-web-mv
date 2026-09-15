@@ -62,6 +62,14 @@ export function isApplicationType(value: unknown): value is ApplicationType {
   return typeof value === 'string' && (APPLICATION_TYPES as readonly string[]).includes(value);
 }
 
+/**
+ * Thẻ ứng dụng ở trang chủ → bảng tóm tắt yêu cầu với loại điền sẵn. Cả 8 thẻ
+ * vào CÙNG một luồng (spec §10.1), không trỏ riêng vào từng bộ chọn.
+ */
+export function requirementHrefFor(type: ApplicationType): string {
+  return `${REQUIREMENT_ROUTE}?app=${encodeURIComponent(type)}`;
+}
+
 export function startDraftFromText(text: string, now: number = Date.now()): RequirementDraft {
   return { version: DRAFT_VERSION, startedFrom: `text:${now}`, rawText: text.trim() || null, requirement: null, revision: 0 };
 }

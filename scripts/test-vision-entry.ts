@@ -7,7 +7,8 @@ import {
   applicationCardEntry,
   freeTextEntry,
 } from '../src/lib/visionEntry';
-import { APPLICATION_TASK_SLUG, selectorHrefFor } from '../src/lib/application-type-map';
+import { APPLICATION_TASK_SLUG } from '../src/lib/application-type-map';
+import { REQUIREMENT_ROUTE, isApplicationType, requirementHrefFor } from '../src/lib/requirement/draft';
 
 const PAYLOAD_KEYS = ['applicationType', 'rawText', 'source'];
 
@@ -66,9 +67,22 @@ test('vi và en có nhãn cho mọi thẻ; key home.* cũ vẫn còn cho /home-o
   }
 });
 
-// ------------------------------------------------ THẺ → BÀI TOÁN (hạng mục 2) --
+// ----------------------------------------------- THẺ → BẢNG YÊU CẦU (spec §10.1) --
 
-test('mapping thẻ → task slug đúng bảng đã duyệt', () => {
+test('cả 8 thẻ vào cùng một luồng: bảng tóm tắt yêu cầu với loại điền sẵn', () => {
+  for (const type of APPLICATION_SHORTCUT_ORDER) {
+    const href = requirementHrefFor(type);
+    const url = new URL(href, 'http://localhost');
+    assert.equal(url.pathname, REQUIREMENT_ROUTE, type);
+    const app = url.searchParams.get('app');
+    assert.equal(app, type, `${type}: tham so app doc lai dung (ke ca '3D')`);
+    assert.ok(isApplicationType(app), type);
+  }
+});
+
+// ------------------------------------ APPLICATION TYPE → BÀI TOÁN BỘ CHỌN (adapter) --
+
+test('mapping loại ứng dụng → task slug đúng bảng đã duyệt', () => {
   assert.deepEqual(APPLICATION_TASK_SLUG, {
     Measurement: '2d-measurement',
     AppearanceInspection: 'appearance-inspection',
@@ -82,14 +96,6 @@ test('mapping thẻ → task slug đúng bảng đã duyệt', () => {
   assert.deepEqual(Object.keys(APPLICATION_TASK_SLUG).sort(), [...APPLICATION_TYPES].sort(), 'du 8 loai');
 });
 
-test('thẻ map được thì trỏ route bộ chọn có sẵn, thẻ null thì không điều hướng', () => {
-  assert.equal(selectorHrefFor('Measurement'), '/cong-cu-chon-thiet-bi/2d-measurement');
-  assert.equal(selectorHrefFor('OCR'), '/cong-cu-chon-thiet-bi/ocr-ocv');
-  for (const type of ['AIInspection', 'AssemblyInspection', 'Other'] as const) {
-    assert.equal(selectorHrefFor(type), null, type);
-  }
-});
-
 test('mọi slug trong mapping đều có trong task_types của seed', () => {
   // Chặn gõ nhầm slug: link sai sẽ ra 404 mà không test nào khác bắt được.
   const seed = readFileSync(new URL('../supabase/seed.sql', import.meta.url), 'utf8');
@@ -101,8 +107,11 @@ test('mọi slug trong mapping đều có trong task_types của seed', () => {
   }
 });
 
-test('nhãn "Sắp có" có ở cả hai ngôn ngữ', () => {
+test('nhãn "Hỗ trợ một phần" và câu hỏi thay bản nháp có ở cả hai ngôn ngữ', () => {
   for (const locale of ['vi', 'en'] as const) {
-    assert.ok(loadMessages(locale).home.entry.comingSoon, `${locale}: thieu home.entry.comingSoon`);
+    const entry = loadMessages(locale).home.entry;
+    assert.ok(entry.partialSupport, `${locale}: thieu home.entry.partialSupport`);
+    assert.ok(entry.replaceDraft, `${locale}: thieu home.entry.replaceDraft`);
+    assert.equal(entry.comingSoon, undefined, `${locale}: nhan "Sap co" khong con dung`);
   }
 });

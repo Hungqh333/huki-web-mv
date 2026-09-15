@@ -13,6 +13,7 @@ import {
   PROJECT_NAME_MAX,
   PROJECT_STATUSES,
   buildRevisionPayload,
+  draftAtRisk,
   draftFingerprint,
   normalizeProjectName,
   revisionToDraft,
@@ -182,6 +183,29 @@ test('dấu vân tay: không đổi theo thứ tự khoá hay liên kết dự �
   assert.equal(draftFingerprint(linked), base);
   assert.notEqual(draftFingerprint({ ...draft, requirement: withFieldValue(requirement, 'object.sizeX', 381) }), base);
   assert.notEqual(draftFingerprint({ ...draft, rawText: 'mô tả khác' }), base);
+});
+
+test('mở bản nháp khác chỉ hỏi xác nhận khi bản đang mở có nội dung chưa lưu', () => {
+  const next = 'app:Measurement';
+  const empty = startDraftFromApp('AppearanceInspection');
+  assert.equal(draftAtRisk(null, next), false);
+  assert.equal(draftAtRisk(empty, next), false, 'ban nhap trong: khong co gi de mat');
+
+  const typed: RequirementDraft = { ...empty, requirement: withFieldValue(empty.requirement!, 'object.sizeX', 380) };
+  assert.equal(draftAtRisk(typed, next), true, 'co noi dung, chua luu');
+  assert.equal(draftAtRisk(typed, typed.startedFrom), false, 'mo lai chinh ban nay');
+
+  const unknownOnly: RequirementDraft = { ...empty, requirement: withFieldUnknown(empty.requirement!, 'system.workingDistance') };
+  assert.equal(draftAtRisk(unknownOnly, next), true, 'tra loi "Chua ro" cung la noi dung');
+  assert.equal(draftAtRisk(startDraftFromText('kiểm tra vỏ nhôm'), next), true, 'co mo ta go tay');
+
+  const saved: RequirementDraft = {
+    ...typed,
+    project: { id: 'p', name: 'n', revisionId: 'r', revLabel: 'A', locked: false, savedFingerprint: draftFingerprint(typed) },
+  };
+  assert.equal(draftAtRisk(saved, next), false, 'da luu het');
+  const edited: RequirementDraft = { ...saved, requirement: withFieldValue(saved.requirement!, 'object.sizeX', 400) };
+  assert.equal(draftAtRisk(edited, next), true, 'sua sau lan luu gan nhat');
 });
 
 test('bản nháp giữ liên kết dự án hợp lệ; liên kết hỏng thì bỏ liên kết, giữ nội dung', () => {

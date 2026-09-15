@@ -4,13 +4,13 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { REQUIREMENT_ROUTE, parseDraft } from '@/lib/requirement/draft';
 import { readDraftRaw, writeDraft } from '@/lib/requirement/draftStore';
-import { draftFingerprint } from '@/lib/projects/model';
+import { draftAtRisk } from '@/lib/projects/model';
 
 /**
  * Mở một revision trên bảng tóm tắt: nạp vào bản nháp của tab rồi chuyển trang.
  *
- * Bản nháp đang mở có nội dung chưa lưu (chưa gắn dự án, hoặc khác lần lưu gần
- * nhất) thì hỏi trước — mở revision sẽ thay nó.
+ * Bản nháp đang mở có nội dung chưa lưu thì hỏi trước — mở revision sẽ thay nó
+ * (xem draftAtRisk).
  */
 export function OpenRevisionButton({ draftJson, label }: { draftJson: string; label: string }) {
   const t = useTranslations('projects.detail');
@@ -20,12 +20,7 @@ export function OpenRevisionButton({ draftJson, label }: { draftJson: string; la
     const next = parseDraft(draftJson);
     if (!next) return;
 
-    const current = parseDraft(readDraftRaw());
-    const unsaved =
-      current?.requirement &&
-      current.startedFrom !== next.startedFrom &&
-      (!current.project || draftFingerprint(current) !== current.project.savedFingerprint);
-    if (unsaved && !window.confirm(t('replaceDraft'))) return;
+    if (draftAtRisk(parseDraft(readDraftRaw()), next.startedFrom) && !window.confirm(t('replaceDraft'))) return;
 
     writeDraft(next);
     router.push(REQUIREMENT_ROUTE);

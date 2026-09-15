@@ -1,22 +1,24 @@
 /**
- * Đo bộ đọc mô tả trên bộ mẫu (V1a hạng mục 3). GỌI CLAUDE API THẬT — TỐN TIỀN.
+ * Đo bộ đọc mô tả trên bộ mẫu (V1a hạng mục 3). GỌI GEMINI API THẬT.
  *
- *   npm run eval:parser -- --model claude-opus-5
- *   npm run eval:parser -- --model claude-sonnet-5 --only gt001,thermal
- *   npm run eval:parser -- --model claude-haiku-4-5          (tự bỏ effort)
- *   npm run eval:parser -- --model claude-opus-5 --effort medium
+ *   npm run eval:parser
+ *   npm run eval:parser -- --model gemini-3.6-flash --only gt001,thermal
+ *   npm run eval:parser -- --model gemini-3.5-flash-lite --thinking minimal
+ *   npm run eval:parser -- --thinking none          (dùng mặc định của model)
  *
- * Cần ANTHROPIC_API_KEY (đọc từ .env.local hoặc biến môi trường).
- * Ước tính thô: 16 mẫu × ~$0.08 ≈ $1.3 với Opus 5. Số thật in ở cuối.
+ * Cần GEMINI_API_KEY (đọc từ .env.local hoặc biến môi trường). Gói miễn phí không
+ * tốn tiền nhưng có hạn mức lượt gọi: gặp lỗi 429 thì script chờ 60 giây rồi thử lại
+ * (tối đa 2 lần). Script in số token để so các model.
  *
  * Mẫu ở scripts/eval/parser-samples.ts do Claude soạn — sạch hơn khách viết thật,
  * nên điểm ở đây là cận trên. Chạy cùng đường xử lý với server: runParser →
  * extractionToFields (kiểm đoạn văn gốc, đổi đơn vị).
  */
 import { existsSync, readFileSync } from 'node:fs';
-import Anthropic from '@anthropic-ai/sdk';
+import { setTimeout as sleep } from 'node:timers/promises';
+import { GoogleGenAI } from '@google/genai';
 import { extractionToFields } from '../src/lib/ai/extraction';
-import { PARSER_MODEL, runParser, type ParserUsage } from '../src/lib/ai/parserCore';
+import { PARSER_MODEL, runParser, type ParserOptions, type ParserOutcome } from '../src/lib/ai/parserCore';
 import { PARSER_SAMPLES } from './eval/parser-samples';
 
 function loadEnvLocal(path = '.env.local') {
@@ -38,39 +40,16 @@ function arg(name: string): string | undefined {
 }
 
 loadEnvLocal();
-if (!process.env.ANTHROPIC_API_KEY) {
-  console.error('Thiếu ANTHROPIC_API_KEY (.env.local hoặc biến môi trường).');
+if (!process.env.GEMINI_API_KEY) {
+  console.error('Thiếu GEMINI_API_KEY (.env.local hoặc biến môi trường).');
   process.exit(1);
 }
 
-const model = arg('--model') ?? PARSER_MODEL;
-const effortArg = arg('--effort');
-// Claude Haiku 4.5 không nhận tham số effort.
-const effort =
-  effortArg === 'none' || (!effortArg && model.startsWith('claude-haiku'))
-    ? null
-    : ((effortArg ?? 'low') as 'low' | 'medium' | 'high');
+const model = arg('--model') ?? process.env.GEMINI_MODEL ?? PARSER_MODEL;
+const thinkingArg = (arg('--thinking') ?? 'low').toUpperCase();
+const thinking = thinkingArg === 'NONE' ? null : (thinkingArg as NonNullable<ParserOptions['thinking']>);
 const only = arg('--only')?.split(',').map((id) => id.trim());
 const samples = only ? PARSER_SAMPLES.filter((sample) => only.includes(sample.id)) : PARSER_SAMPLES;
-
-/** Giá API ($ / 1 triệu token) theo bảng giá hiện hành. Cache đọc ×0,1, cache ghi ×1,25 giá vào. */
-const PRICES: Record<string, { input: number; output: number }> = {
-  'claude-opus-5': { input: 5, output: 25 },
-  'claude-sonnet-5': { input: 2, output: 10 },
-  'claude-haiku-4-5': { input: 1, output: 5 },
-};
-
-function costOf(usage: ParserUsage | undefined, servedBy: string): number {
-  const price = PRICES[servedBy] ?? PRICES[model];
-  if (!usage || !price) return 0;
-  return (
-    (usage.inputTokens * price.input +
-      usage.cacheWriteTokens * price.input * 1.25 +
-      usage.cacheReadTokens * price.input * 0.1 +
-      usage.outputTokens * price.output) /
-    1_000_000
-  );
-}
 
 function same(got: unknown, expected: unknown): boolean {
   if (typeof got === 'number' && typeof expected === 'number') {
@@ -84,9 +63,21 @@ function same(got: unknown, expected: unknown): boolean {
 
 const show = (value: unknown) => (value === undefined ? '—' : JSON.stringify(value));
 
-const client = new Anthropic({ timeout: 60_000, maxRetries: 2 });
+const client = new GoogleGenAI({
+  apiKey: process.env.GEMINI_API_KEY,
+  httpOptions: { timeout: 60_000, retryOptions: { attempts: 1 } },
+});
 
-console.log(`Đo bộ đọc mô tả: model ${model}, effort ${effort ?? 'không gửi'}, ${samples.length} mẫu\n`);
+async function parseWithQuotaRetry(text: string): Promise<ParserOutcome> {
+  for (let attempt = 0; ; attempt++) {
+    const outcome = await runParser(client, text, { model, thinking });
+    if (outcome.ok || !outcome.detail?.endsWith(' 429') || attempt === 2) return outcome;
+    console.log('  … hết hạn mức phút (429), chờ 60 giây rồi thử lại');
+    await sleep(60_000);
+  }
+}
+
+console.log(`Đo bộ đọc mô tả: model ${model}, thinking ${thinking ?? 'mặc định'}, ${samples.length} mẫu\n`);
 
 let expectedTotal = 0;
 let correctTotal = 0;
@@ -94,15 +85,18 @@ let wrongTotal = 0;
 let extraTotal = 0;
 let typeHits = 0;
 let failures = 0;
-let costTotal = 0;
+let tokensIn = 0;
+let tokensOut = 0;
 let latencyTotal = 0;
 
 for (const sample of samples) {
   const started = Date.now();
-  const outcome = await runParser(client, sample.text, { model, effort });
+  const outcome = await parseWithQuotaRetry(sample.text);
   const ms = Date.now() - started;
   latencyTotal += ms;
-  costTotal += costOf(outcome.usage, outcome.model);
+  const tokens = outcome.usage ? `in ${outcome.usage.inputTokens} / out ${outcome.usage.outputTokens + outcome.usage.thinkingTokens}` : 'token ?';
+  tokensIn += outcome.usage?.inputTokens ?? 0;
+  tokensOut += (outcome.usage?.outputTokens ?? 0) + (outcome.usage?.thinkingTokens ?? 0);
 
   if (!outcome.ok) {
     failures++;
@@ -154,8 +148,8 @@ for (const sample of samples) {
   const clean = typeOk && wrong === 0 && missing === 0 && extra === 0;
   console.log(
     `${clean ? '✓' : '✗'} ${sample.id}  đúng ${correct}/${Object.keys(sample.expect).length}  sai ${wrong}  ` +
-      `thiếu ${missing}  bịa ${extra}  bỏ ${result.dropped.length}  $${costOf(outcome.usage, outcome.model).toFixed(4)}  ${ms} ms` +
-      (outcome.model !== model ? `  (phục vụ bởi ${outcome.model})` : '')
+      `thiếu ${missing}  bịa ${extra}  bỏ ${result.dropped.length}  ${tokens}  ${ms} ms` +
+      (outcome.model !== model ? `  (model ${outcome.model})` : '')
   );
   for (const line of lines) console.log(line);
 }
@@ -169,5 +163,5 @@ console.log(
 console.log(`Ô sai giá trị / ô bịa        : ${wrongTotal} / ${extraTotal}`);
 console.log(`Loại ứng dụng đúng           : ${typeHits}/${samples.length - failures}`);
 console.log(`Lượt thất bại                : ${failures}`);
-console.log(`Chi phí ước tính             : $${costTotal.toFixed(4)} (≈ $${(costTotal / Math.max(1, samples.length)).toFixed(4)} / mẫu)`);
+console.log(`Token (vào / ra kể cả thinking): ${tokensIn} / ${tokensOut}`);
 console.log(`Thời gian trung bình         : ${Math.round(latencyTotal / Math.max(1, samples.length))} ms / mẫu`);

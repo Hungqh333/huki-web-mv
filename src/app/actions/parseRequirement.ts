@@ -8,7 +8,7 @@ import { PARSE_TEXT_MAX, type ParseResult } from '@/lib/requirement/parseResult'
 /**
  * Đọc mô tả bài toán bằng LLM → các ô điền trước cho bảng yêu cầu (V1a hạng mục 3).
  *
- * Member trở lên, giống trang Yêu cầu: mỗi lượt đọc tốn tiền API. Kết quả chỉ là
+ * Member trở lên, giống trang Yêu cầu: mỗi lượt đọc ăn vào hạn mức API. Kết quả chỉ là
  * gợi ý điền trước — bản nháp vẫn nằm ở trình duyệt, người dùng xem lại từng ô.
  */
 export async function parseRequirementAction(rawText: string): Promise<ParseResult> {

@@ -57,10 +57,10 @@ const OPTIONAL = [
     hint: 'URL gốc của site, dùng cho link xác nhận email. Trên Vercel đặt là https://<domain>.',
   },
   {
-    name: 'ANTHROPIC_API_KEY',
-    check: (v) => v.startsWith('sk-ant-'),
+    name: 'GEMINI_API_KEY',
+    check: (v) => v.length >= 30 && !/\s/.test(v),
     missing: 'bộ đọc mô tả bài toán tắt — người dùng tự điền bảng yêu cầu.',
-    hint: 'Key Claude API (console.anthropic.com), chỉ đặt ở server. KHÔNG thêm tiền tố NEXT_PUBLIC_.',
+    hint: 'Key Gemini API (aistudio.google.com → Get API key), chỉ đặt ở server. KHÔNG thêm tiền tố NEXT_PUBLIC_.',
   },
 ];
 
@@ -85,9 +85,14 @@ for (const [key, value] of Object.entries(process.env)) {
   if (key.startsWith('NEXT_PUBLIC_') && typeof value === 'string' && value.includes('service_role')) {
     problems.push(`  ✗ ${key} chứa service_role key. Key này bypass toàn bộ RLS và sẽ lộ ra client.`);
   }
-  // Key Claude API trong biến NEXT_PUBLIC_ cũng bị nhúng xuống trình duyệt: ai xem source cũng dùng được.
-  if (key.startsWith('NEXT_PUBLIC_') && typeof value === 'string' && value.startsWith('sk-ant-')) {
-    problems.push(`  ✗ ${key} chứa key Claude API. Key này sẽ lộ ra client — đổi tên thành ANTHROPIC_API_KEY.`);
+  // Key Gemini API trong biến NEXT_PUBLIC_ cũng bị nhúng xuống trình duyệt: ai xem source cũng dùng được.
+  const gemini = process.env.GEMINI_API_KEY;
+  if (
+    key.startsWith('NEXT_PUBLIC_') &&
+    typeof value === 'string' &&
+    (/GEMINI|GOOGLE_API_KEY/.test(key) || (gemini && value === gemini))
+  ) {
+    problems.push(`  ✗ ${key} chứa key Gemini API. Key này sẽ lộ ra client — đổi tên thành GEMINI_API_KEY.`);
   }
 }
 

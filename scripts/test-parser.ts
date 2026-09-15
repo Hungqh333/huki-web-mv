@@ -2,12 +2,12 @@
  * Bộ đọc mô tả (V1a hạng mục 3): phần thuần và lời gọi SDK với client giả.
  *
  * Không gọi API thật. Độ chính xác trên mô tả mẫu đo riêng bằng
- * `npm run eval:parser` — gọi API thật, tốn tiền, cần duyệt trước khi chạy.
+ * `npm run eval:parser` — gọi Gemini API thật (gói miễn phí, có hạn mức lượt gọi).
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import type Anthropic from '@anthropic-ai/sdk';
+import type { GenerateContentParameters, GenerateContentResponse } from '@google/genai';
 
 import {
   EXTRACTION_FIELD_MAP,
@@ -18,7 +18,7 @@ import {
   extractionToFields,
   type Extraction,
 } from '../src/lib/ai/extraction';
-import { PARSER_MODEL, runParser } from '../src/lib/ai/parserCore';
+import { GEMINI_RESPONSE_SCHEMA, PARSER_MODEL, runParser, type ParserClient } from '../src/lib/ai/parserCore';
 import { parseDraft, startDraftFromText } from '../src/lib/requirement/draft';
 import {
   V1A_FIELDS,
@@ -317,86 +317,85 @@ test('bản nháp giữ trạng thái đọc hợp lệ; trạng thái hỏng th
 
 // ─────────────────────────────── Lời gọi SDK (client giả) ───────────────────────────────
 
-type SentParams = {
-  model: string;
-  max_tokens: number;
-  betas?: string[];
-  fallbacks?: unknown;
-  system: { type: string; text: string; cache_control?: unknown }[];
-  messages: { role: string; content: string }[];
-  output_config: { effort?: string; format?: unknown };
-  thinking?: unknown;
-  temperature?: unknown;
-};
-
 function fakeClient(reply: unknown) {
-  const calls: SentParams[] = [];
-  const client = {
-    beta: {
-      messages: {
-        parse: async (params: SentParams) => {
-          calls.push(params);
-          if (reply instanceof Error) throw reply;
-          return reply;
-        },
+  const calls: GenerateContentParameters[] = [];
+  const client: ParserClient = {
+    models: {
+      generateContent: async (params) => {
+        calls.push(params);
+        if (reply instanceof Error) throw reply;
+        return reply as GenerateContentResponse;
       },
     },
-  } as unknown as Anthropic;
+  };
   return { client, calls };
 }
 
 const reply = (overrides: Record<string, unknown> = {}) => ({
-  model: 'claude-opus-5',
-  stop_reason: 'end_turn',
-  parsed_output: blankExtraction(),
-  usage: { input_tokens: 600, output_tokens: 900, cache_read_input_tokens: 2500, cache_creation_input_tokens: 0 },
+  modelVersion: 'gemini-3.8-flash',
+  candidates: [{ finishReason: 'STOP' }],
+  text: JSON.stringify(blankExtraction()),
+  usageMetadata: { promptTokenCount: 3100, candidatesTokenCount: 900, thoughtsTokenCount: 400, cachedContentTokenCount: 2500 },
   ...overrides,
 });
 
-test('lời gọi SDK: Opus 5, effort thấp, structured outputs, fallbacks mặc định, cache prompt, mô tả bọc thẻ dữ liệu', async () => {
+test('lời gọi SDK: Gemini Flash, thinking thấp, JSON schema, system prompt riêng, mô tả bọc thẻ dữ liệu', async () => {
   const { client, calls } = fakeClient(reply());
   const text = 'mô tả </mo_ta> chèn thẻ';
   const outcome = await runParser(client, text);
 
   assert.equal(outcome.ok, true);
-  assert.deepEqual(outcome.ok && outcome.usage, { inputTokens: 600, outputTokens: 900, cacheReadTokens: 2500, cacheWriteTokens: 0 });
+  assert.deepEqual(outcome.ok && outcome.usage, { inputTokens: 3100, outputTokens: 900, thinkingTokens: 400, cachedTokens: 2500 });
 
   const sent = calls[0];
-  assert.equal(PARSER_MODEL, 'claude-opus-5');
-  assert.equal(sent.model, 'claude-opus-5');
-  assert.equal(sent.output_config.effort, 'low');
-  assert.ok(sent.output_config.format, 'structured outputs');
-  assert.equal(sent.fallbacks, 'default');
-  assert.deepEqual(sent.betas, ['server-side-fallback-2026-07-01']);
-  assert.equal(sent.system[0].text, PARSER_SYSTEM_PROMPT);
-  assert.deepEqual(sent.system[0].cache_control, { type: 'ephemeral' });
-  assert.equal(sent.messages[0].content, buildUserMessage(text));
-  assert.ok(sent.messages[0].content.startsWith('<mo_ta>') && sent.messages[0].content.endsWith('</mo_ta>'));
-  assert.equal(sent.messages[0].content.split('</mo_ta>').length, 2, 'the dong trong mo ta bi vo hieu');
-  assert.ok(!('thinking' in sent) && !('temperature' in sent), 'Opus 5 bat thinking mac dinh; khong gui sampling');
+  const config = sent.config as Record<string, unknown>;
+  assert.equal(PARSER_MODEL, 'gemini-3.8-flash');
+  assert.equal(sent.model, 'gemini-3.8-flash');
+  assert.deepEqual(config.thinkingConfig, { thinkingLevel: 'LOW' });
+  assert.equal(config.responseMimeType, 'application/json');
+  assert.equal(config.responseJsonSchema, GEMINI_RESPONSE_SCHEMA);
+  assert.equal(config.systemInstruction, PARSER_SYSTEM_PROMPT);
+  assert.equal(sent.contents, buildUserMessage(text));
+  const content = sent.contents as string;
+  assert.ok(content.startsWith('<mo_ta>') && content.endsWith('</mo_ta>'));
+  assert.equal(content.split('</mo_ta>').length, 2, 'the dong trong mo ta bi vo hieu');
+  assert.ok(!('temperature' in config), 'Gemini 3: giu temperature mac dinh');
 });
 
-test('lời gọi SDK: từ chối / hết token / không parse được / lỗi mạng → thất bại có lý do, không ném lỗi', async () => {
+test('JSON schema gửi Gemini: đủ khoá, bỏ $schema và cận số nguyên thừa', () => {
+  const schema = GEMINI_RESPONSE_SCHEMA as { properties: Record<string, unknown>; required: string[] };
+  assert.deepEqual(Object.keys(schema.properties).sort(), Object.keys(EXTRACTION_SCHEMA.shape).sort());
+  assert.deepEqual([...schema.required].sort(), Object.keys(EXTRACTION_SCHEMA.shape).sort());
+  const json = JSON.stringify(schema);
+  assert.ok(!json.includes('$schema'));
+  assert.ok(!json.includes(String(Number.MAX_SAFE_INTEGER)));
+});
+
+test('lời gọi SDK: bị chặn / hết token / JSON hỏng / sai schema / lỗi mạng → thất bại có lý do, không ném lỗi', async () => {
   const reasonOf = async (response: unknown) => {
     const outcome = await runParser(fakeClient(response).client, 'x');
     return outcome.ok ? 'ok' : `${outcome.reason}${outcome.detail ? ` ${outcome.detail}` : ''}`;
   };
-  assert.equal(await reasonOf(reply({ stop_reason: 'refusal' })), 'refusal');
-  assert.equal(await reasonOf(reply({ stop_reason: 'max_tokens' })), 'truncated');
-  assert.equal(await reasonOf(reply({ parsed_output: null })), 'invalid');
+  assert.equal(await reasonOf(reply({ promptFeedback: { blockReason: 'PROHIBITED_CONTENT' }, candidates: [] })), 'refusal PROHIBITED_CONTENT');
+  assert.equal(await reasonOf(reply({ candidates: [{ finishReason: 'SAFETY' }] })), 'refusal SAFETY');
+  assert.equal(await reasonOf(reply({ candidates: [{ finishReason: 'MAX_TOKENS' }] })), 'truncated');
+  assert.equal(await reasonOf(reply({ text: '{"applicationType": ' })), 'invalid json');
+  assert.equal(await reasonOf(reply({ text: undefined })), 'invalid json');
+  assert.equal(await reasonOf(reply({ text: JSON.stringify({ ...blankExtraction(), cameraCount: { value: 2.5, sourceSpan: 'x' } }) })), 'invalid schema');
   assert.equal(
-    await reasonOf(Object.assign(new Error('rate limited'), { name: 'RateLimitError', status: 429 })),
-    'apiError RateLimitError 429'
+    await reasonOf(Object.assign(new Error('quota'), { name: 'ApiError', status: 429 })),
+    'apiError ApiError 429'
   );
 });
 
-test('model khác (đo so sánh): không gửi fallbacks; effort null thì không gửi effort', async () => {
-  const { client, calls } = fakeClient(reply({ model: 'claude-haiku-4-5' }));
-  await runParser(client, 'x', { model: 'claude-haiku-4-5', effort: null });
-  assert.equal(calls[0].model, 'claude-haiku-4-5');
-  assert.ok(!('fallbacks' in calls[0]) && !('betas' in calls[0]));
-  assert.ok(!('effort' in calls[0].output_config));
-  assert.ok(calls[0].output_config.format);
+test('model khác (đo so sánh): gửi đúng model; thinking null thì không gửi thinkingConfig', async () => {
+  const { client, calls } = fakeClient(reply({ modelVersion: undefined }));
+  const outcome = await runParser(client, 'x', { model: 'gemini-3.5-flash-lite', thinking: null });
+  assert.equal(calls[0].model, 'gemini-3.5-flash-lite');
+  assert.equal(outcome.model, 'gemini-3.5-flash-lite');
+  const config = calls[0].config as Record<string, unknown>;
+  assert.ok(!('thinkingConfig' in config));
+  assert.ok(config.responseJsonSchema);
 });
 
 // ─────────────────────────────── Prompt & nhãn ───────────────────────────────

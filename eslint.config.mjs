@@ -20,11 +20,11 @@ const eslintConfig = defineConfig([
         "error",
         {
           paths: [
-            { name: "@anthropic-ai/sdk", message: "Spec §2: engine không gọi LLM. Dùng src/lib/ai qua server action." },
+            { name: "@google/genai", message: "Spec §2: engine không gọi LLM. Dùng src/lib/ai qua server action." },
           ],
           patterns: [
             {
-              group: ["@/lib/ai", "@/lib/ai/*", "../ai", "../ai/*", "../../ai/*", "@anthropic-ai/sdk/*"],
+              group: ["@/lib/ai", "@/lib/ai/*", "../ai", "../ai/*", "../../ai/*", "@google/genai/*"],
               message: "Spec §2: engine không được import tầng AI (src/lib/ai).",
             },
           ],

@@ -20,7 +20,7 @@
     "build:sql": "node scripts/build-sql-bundle.mjs"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.125.0",
+    "@google/genai": "^2.22.0",
     "@react-pdf/renderer": "^4.8.1",
     "@supabase/ssr": "^0.12.4",
     "@supabase/supabase-js": "^2.112.3",

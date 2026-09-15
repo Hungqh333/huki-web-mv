@@ -16,7 +16,18 @@ import { z } from 'zod';
 import type { GenerateContentParameters, GenerateContentResponse } from '@google/genai';
 import { EXTRACTION_SCHEMA, PARSER_SYSTEM_PROMPT, buildUserMessage, type Extraction } from './extraction';
 
-export const PARSER_MODEL = 'gemini-3.8-flash';
+/*
+ * Chốt 2026-09-15 theo `npm run eval:parser` trên gói miễn phí: 3.5-flash-lite
+ * 0/16 lượt lỗi, đúng 63/64 ô; 3.8-flash và 3.7-flash bị 503 "high demand" cả 16
+ * lượt; 3.6-flash lỗi 4/16 nhưng đọc tốt khi chạy được — dùng làm dự phòng.
+ */
+export const PARSER_MODEL = 'gemini-3.5-flash-lite';
+export const PARSER_FALLBACK_MODEL = 'gemini-3.6-flash';
+
+/** Lỗi đáng thử model dự phòng: quá tải (503) hoặc hết hạn mức riêng của model (429). */
+const FALLBACK_STATUSES = [' 503', ' 429'];
+/** Chỉ thử dự phòng khi lượt đầu hỏng nhanh, để cả hai lượt vẫn nằm trong maxDuration 60 giây. */
+const FALLBACK_WITHIN_MS = 10_000;
 
 /** Chỉ phần client bộ đọc cần — test truyền object giả có đúng hàm này. */
 export type ParserClient = {
@@ -27,6 +38,13 @@ export type ParserOptions = {
   model?: string;
   /** `null` = không gửi thinkingConfig (dùng mặc định của model). */
   thinking?: 'MINIMAL' | 'LOW' | 'MEDIUM' | 'HIGH' | null;
+  /**
+   * Model đọc lại khi lượt đầu hỏng nhanh vì 503 / 429. Bỏ trống = không dự phòng
+   * (script đo dùng cách này để đo đúng một model).
+   */
+  fallbackModel?: string;
+  /** Đồng hồ, test truyền vào để giả lập lượt đầu hỏng chậm. */
+  now?: () => number;
 };
 
 export type ParserUsage = {
@@ -82,8 +100,32 @@ function usageOf(response: GenerateContentResponse): ParserUsage | undefined {
 }
 
 export async function runParser(client: ParserClient, rawText: string, options: ParserOptions = {}): Promise<ParserOutcome> {
-  const requested = options.model ?? PARSER_MODEL;
-  const thinking = options.thinking === undefined ? 'LOW' : options.thinking;
+  const model = options.model ?? PARSER_MODEL;
+  const now = options.now ?? Date.now;
+  const started = now();
+  const first = await callModel(client, rawText, model, options.thinking);
+
+  const { fallbackModel } = options;
+  if (
+    first.ok ||
+    first.reason !== 'apiError' ||
+    !fallbackModel ||
+    fallbackModel === model ||
+    !FALLBACK_STATUSES.some((status) => first.detail?.endsWith(status)) ||
+    now() - started > FALLBACK_WITHIN_MS
+  ) {
+    return first;
+  }
+  return callModel(client, rawText, fallbackModel, options.thinking);
+}
+
+async function callModel(
+  client: ParserClient,
+  rawText: string,
+  requested: string,
+  thinkingOption: ParserOptions['thinking']
+): Promise<ParserOutcome> {
+  const thinking = thinkingOption === undefined ? 'LOW' : thinkingOption;
 
   try {
     const response = await client.models.generateContent({

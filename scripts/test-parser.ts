@@ -18,7 +18,7 @@ import {
   extractionToFields,
   type Extraction,
 } from '../src/lib/ai/extraction';
-import { GEMINI_RESPONSE_SCHEMA, PARSER_MODEL, runParser, type ParserClient } from '../src/lib/ai/parserCore';
+import { GEMINI_RESPONSE_SCHEMA, PARSER_FALLBACK_MODEL, PARSER_MODEL, runParser, type ParserClient } from '../src/lib/ai/parserCore';
 import { parseDraft, startDraftFromText } from '../src/lib/requirement/draft';
 import {
   V1A_FIELDS,
@@ -332,7 +332,7 @@ function fakeClient(reply: unknown) {
 }
 
 const reply = (overrides: Record<string, unknown> = {}) => ({
-  modelVersion: 'gemini-3.8-flash',
+  modelVersion: 'gemini-3.5-flash-lite',
   candidates: [{ finishReason: 'STOP' }],
   text: JSON.stringify(blankExtraction()),
   usageMetadata: { promptTokenCount: 3100, candidatesTokenCount: 900, thoughtsTokenCount: 400, cachedContentTokenCount: 2500 },
@@ -349,8 +349,8 @@ test('lời gọi SDK: Gemini Flash, thinking thấp, JSON schema, system prompt
 
   const sent = calls[0];
   const config = sent.config as Record<string, unknown>;
-  assert.equal(PARSER_MODEL, 'gemini-3.8-flash');
-  assert.equal(sent.model, 'gemini-3.8-flash');
+  assert.equal(PARSER_MODEL, 'gemini-3.5-flash-lite');
+  assert.equal(sent.model, 'gemini-3.5-flash-lite');
   assert.deepEqual(config.thinkingConfig, { thinkingLevel: 'LOW' });
   assert.equal(config.responseMimeType, 'application/json');
   assert.equal(config.responseJsonSchema, GEMINI_RESPONSE_SCHEMA);
@@ -390,12 +390,70 @@ test('lời gọi SDK: bị chặn / hết token / JSON hỏng / sai schema / l�
 
 test('model khác (đo so sánh): gửi đúng model; thinking null thì không gửi thinkingConfig', async () => {
   const { client, calls } = fakeClient(reply({ modelVersion: undefined }));
-  const outcome = await runParser(client, 'x', { model: 'gemini-3.5-flash-lite', thinking: null });
-  assert.equal(calls[0].model, 'gemini-3.5-flash-lite');
-  assert.equal(outcome.model, 'gemini-3.5-flash-lite');
+  const outcome = await runParser(client, 'x', { model: 'gemini-3.6-flash', thinking: null });
+  assert.equal(calls[0].model, 'gemini-3.6-flash');
+  assert.equal(outcome.model, 'gemini-3.6-flash');
   const config = calls[0].config as Record<string, unknown>;
   assert.ok(!('thinkingConfig' in config));
   assert.ok(config.responseJsonSchema);
+});
+
+// ─────────────────────────────── Model dự phòng ───────────────────────────────
+
+/** Client trả lần lượt từng phản hồi; Error thì ném. */
+function sequenceClient(replies: unknown[]) {
+  const models: string[] = [];
+  const client: ParserClient = {
+    models: {
+      generateContent: async (params) => {
+        models.push(params.model);
+        const next = replies[models.length - 1];
+        if (next instanceof Error) throw next;
+        return next as GenerateContentResponse;
+      },
+    },
+  };
+  return { client, models };
+}
+
+const apiError = (status: number) => Object.assign(new Error(`status ${status}`), { name: 'ApiError', status });
+
+test('dự phòng: model mặc định 3.5-flash-lite, dự phòng 3.6-flash', () => {
+  assert.equal(PARSER_MODEL, 'gemini-3.5-flash-lite');
+  assert.equal(PARSER_FALLBACK_MODEL, 'gemini-3.6-flash');
+});
+
+test('dự phòng: lượt đầu hỏng nhanh vì 503 / 429 → đọc lại một lần bằng model dự phòng', async () => {
+  for (const status of [503, 429]) {
+    const { client, models } = sequenceClient([apiError(status), reply({ modelVersion: 'gemini-3.6-flash' })]);
+    const outcome = await runParser(client, 'x', { fallbackModel: PARSER_FALLBACK_MODEL });
+    assert.equal(outcome.ok, true, `${status}`);
+    assert.equal(outcome.model, 'gemini-3.6-flash');
+    assert.deepEqual(models, ['gemini-3.5-flash-lite', 'gemini-3.6-flash']);
+  }
+
+  const { client, models } = sequenceClient([apiError(503), apiError(503)]);
+  const outcome = await runParser(client, 'x', { fallbackModel: PARSER_FALLBACK_MODEL });
+  assert.equal(models.length, 2, 'chi thu du phong mot lan');
+  assert.deepEqual(outcome.ok ? null : [outcome.reason, outcome.model], ['apiError', 'gemini-3.6-flash']);
+});
+
+test('dự phòng: KHÔNG đọc lại khi lỗi khác, bị chặn, không khai dự phòng, trùng model, hoặc lượt đầu hỏng chậm', async () => {
+  const callsFor = async (first: unknown, options: Parameters<typeof runParser>[2]) => {
+    const { client, models } = sequenceClient([first, reply()]);
+    await runParser(client, 'x', options);
+    return models.length;
+  };
+  const withFallback = { fallbackModel: PARSER_FALLBACK_MODEL };
+  assert.equal(await callsFor(apiError(400), withFallback), 1, 'loi 400');
+  assert.equal(await callsFor(apiError(504), withFallback), 1, 'het gio 504 da ton thoi gian');
+  assert.equal(await callsFor(reply({ candidates: [{ finishReason: 'SAFETY' }] }), withFallback), 1, 'bi chan');
+  assert.equal(await callsFor(apiError(503), {}), 1, 'khong khai du phong');
+  assert.equal(await callsFor(apiError(503), { model: 'gemini-3.6-flash', fallbackModel: 'gemini-3.6-flash' }), 1, 'trung model');
+
+  let tick = 0;
+  const slowClock = () => (tick++ === 0 ? 0 : 20_000);
+  assert.equal(await callsFor(apiError(503), { ...withFallback, now: slowClock }), 1, 'luot dau hong cham');
 });
 
 // ─────────────────────────────── Prompt & nhãn ───────────────────────────────

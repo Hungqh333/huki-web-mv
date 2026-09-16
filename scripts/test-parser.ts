@@ -28,7 +28,7 @@ import {
   withFieldUnknown,
   withFieldValue,
 } from '../src/lib/requirement/fields';
-import { PARSE_TEXT_MAX, applyParseResult, pickApplicationType } from '../src/lib/requirement/parseResult';
+import { PARSE_TEXT_MAX, applyParseResult, pickApplicationType, safeParseCode } from '../src/lib/requirement/parseResult';
 
 function loadMessages(locale: 'vi' | 'en') {
   return JSON.parse(readFileSync(new URL(`../src/messages/${locale}.json`, import.meta.url), 'utf8'));
@@ -315,6 +315,24 @@ test('bản nháp giữ trạng thái đọc hợp lệ; trạng thái hỏng th
   assert.equal(broken.rawText, 'mô tả');
 });
 
+test('lượt đọc hỏng: mã lỗi ngắn theo bản nháp ra tới màn hình, ký tự lạ bị lọc', () => {
+  const draft = startDraftFromText('mô tả', 1);
+  const code = 'ApiError 503 · gemini-3.5-flash-lite';
+
+  const failed = applyParseResult(draft, { status: 'failed', detail: code });
+  assert.equal(failed.parse?.status, 'failed');
+  assert.equal(failed.parse?.detail, code);
+  assert.equal(parseDraft(JSON.stringify(failed))!.parse?.detail, code, 'ban nhap luu roi doc lai van con ma loi');
+
+  assert.equal(applyParseResult(draft, { status: 'failed' }).parse?.detail, undefined);
+  assert.equal(applyParseResult(draft, { status: 'unavailable' }).parse?.detail, undefined);
+
+  assert.equal(safeParseCode(undefined), undefined);
+  assert.equal(safeParseCode('   '), undefined);
+  assert.equal(safeParseCode('<script>alert("x")</script>'), 'scriptalertxscript');
+  assert.equal(safeParseCode('A'.repeat(200))!.length, 60);
+});
+
 // ─────────────────────────────── Lời gọi SDK (client giả) ───────────────────────────────
 
 function fakeClient(reply: unknown) {
@@ -469,7 +487,7 @@ test('nhãn bộ đọc và dòng cảnh báo AI đủ ở cả hai ngôn ngữ'
   for (const locale of ['vi', 'en'] as const) {
     const m = loadMessages(locale);
     assert.ok(m.home.entry.aiNotice, `${locale}: home.entry.aiNotice`);
-    for (const key of ['reading', 'readingBanner', 'cancel', 'cancelled', 'filled', 'pickType', 'noData', 'failed', 'unavailable', 'tooLong', 'dropped', 'reread', 'inferredType', 'sourceSpan']) {
+    for (const key of ['reading', 'readingBanner', 'cancel', 'cancelled', 'filled', 'pickType', 'noData', 'failed', 'failedWithCode', 'unavailable', 'tooLong', 'dropped', 'reread', 'inferredType', 'sourceSpan']) {
       assert.ok(m.designer.requirement.parser?.[key], `${locale}: parser.${key}`);
     }
     assert.equal(m.designer.requirement.rawTextNote, undefined, `${locale}: cau "chua co bo doc" da bo`);

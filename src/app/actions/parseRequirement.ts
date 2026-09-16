@@ -35,7 +35,9 @@ export async function parseRequirementAction(rawText: string): Promise<ParseResu
     })
   );
 
-  if (!outcome.ok) return { status: 'failed' };
+  // Mã lỗi đi cùng ra giao diện: gói Vercel Hobby chỉ giữ log một giờ, người dùng
+  // đọc mã này báo lại là biết ngay lỗi key, quá tải hay hết hạn mức.
+  if (!outcome.ok) return { status: 'failed', detail: `${outcome.detail ?? outcome.reason} · ${outcome.model}` };
 
   const { applicationType, fields, dropped } = extractionToFields(outcome.extraction, text);
   if (!applicationType && fields.length === 0) return { status: 'empty' };

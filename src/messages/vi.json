@@ -1353,6 +1353,7 @@
         "pickType": "Đọc được {count} thông số — chọn loại ứng dụng để điền vào bảng.",
         "noData": "Chưa đọc được thông số từ mô tả — hãy điền bảng.",
         "failed": "Chưa đọc được thông số từ mô tả (dịch vụ đọc gặp lỗi) — hãy điền bảng hoặc bấm Đọc lại.",
+        "failedWithCode": "Chưa đọc được thông số từ mô tả — hãy điền bảng hoặc bấm Đọc lại. Mã lỗi: {code}",
         "unavailable": "Bộ đọc tự động chưa bật — hãy điền các thông số bên dưới.",
         "tooLong": "Mô tả dài hơn {max} ký tự nên không đọc tự động — hãy rút gọn hoặc điền bảng.",
         "dropped": "Đã bỏ {count} thông số vì không khớp nguyên văn mô tả hoặc ghi chưa rõ.",

@@ -469,7 +469,8 @@ function ParseStatus({ parse }: { parse: DraftParse | undefined }) {
         break;
       case 'failed':
         tone = 'warn';
-        message = t('failed');
+        // Mã lỗi hiện luôn: gói Vercel Hobby chỉ giữ log một giờ, không tra lại được.
+        message = parse.detail ? t('failedWithCode', { code: parse.detail }) : t('failed');
         break;
       case 'tooLong':
         tone = 'warn';

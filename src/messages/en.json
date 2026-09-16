@@ -1353,6 +1353,7 @@
         "pickType": "Found {count} values — choose the application type to fill them in.",
         "noData": "No values could be read from the description — please fill in the table.",
         "failed": "No values could be read from the description (the reader service failed) — fill in the table or click Read again.",
+        "failedWithCode": "No values could be read from the description — fill in the table or click Read again. Error code: {code}",
         "unavailable": "The automatic reader is not enabled — please fill in the values below.",
         "tooLong": "The description is longer than {max} characters, so it was not read automatically — shorten it or fill in the table.",
         "dropped": "Dropped {count} values that did not match the description wording or were unclear.",

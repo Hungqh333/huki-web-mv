@@ -19,18 +19,32 @@ export const PARSE_TEXT_MAX = 4000;
 
 export type ParseResult =
   | { status: 'ok'; applicationType: ApplicationType | null; fields: ParsedField[]; dropped: number }
-  | { status: Exclude<DraftParseStatus, 'ok'> };
+  /** `detail` = mã lỗi ngắn hiện lên màn hình để người dùng đọc lại cho người trực. */
+  | { status: 'failed'; detail?: string }
+  | { status: Exclude<DraftParseStatus, 'ok' | 'failed'> };
 
-const noResult = (status: DraftParseStatus): DraftParse => ({
+/**
+ * Mã lỗi hiện ra màn hình: chỉ chữ, số và vài dấu, tối đa 60 ký tự. Chặn trường
+ * hợp thông báo lỗi của thư viện lọt nguyên văn ra giao diện.
+ */
+export function safeParseCode(raw: string | undefined): string | undefined {
+  const code = raw?.replace(/[^A-Za-z0-9 .·_-]/g, '').trim().slice(0, 60);
+  return code || undefined;
+}
+
+const noResult = (status: DraftParseStatus, detail?: string): DraftParse => ({
   status,
   applied: 0,
   dropped: 0,
   inferredApplicationType: null,
   pending: [],
+  ...(detail ? { detail } : {}),
 });
 
 export function applyParseResult(draft: RequirementDraft, result: ParseResult): RequirementDraft {
-  if (result.status !== 'ok') return { ...draft, parse: noResult(result.status) };
+  if (result.status !== 'ok') {
+    return { ...draft, parse: noResult(result.status, result.status === 'failed' ? safeParseCode(result.detail) : undefined) };
+  }
 
   let requirement = draft.requirement;
   let inferred = draft.parse?.inferredApplicationType ?? null;

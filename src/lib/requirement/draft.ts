@@ -65,6 +65,11 @@ export type DraftParse = {
   inferredApplicationType: ApplicationType | null;
   /** Ô đọc được khi chưa có loại ứng dụng — áp khi người dùng chọn loại. */
   pending: ParsedField[];
+  /**
+   * Mã lỗi ngắn của lượt đọc hỏng ("ApiError 503 · gemini-3.5-flash-lite"), hiện
+   * lên màn hình vì gói Vercel Hobby chỉ giữ log một giờ. Không chứa mô tả hay key.
+   */
+  detail?: string;
 };
 
 function isDraftParse(value: unknown): value is DraftParse {
@@ -75,6 +80,7 @@ function isDraftParse(value: unknown): value is DraftParse {
     typeof parse.applied === 'number' &&
     typeof parse.dropped === 'number' &&
     (parse.inferredApplicationType === null || isApplicationType(parse.inferredApplicationType)) &&
+    (parse.detail === undefined || typeof parse.detail === 'string') &&
     Array.isArray(parse.pending) &&
     parse.pending.every(
       (item) =>

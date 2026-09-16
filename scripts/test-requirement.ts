@@ -43,7 +43,7 @@ import {
 } from '../src/lib/requirement/questions';
 import type { Requirement } from '../src/lib/requirement/types';
 import { FIELD_CATALOG } from '../src/lib/selector/fields';
-import { DEFAULT_PX_PER_DEFECT, GRR_DIVISOR, K_SUBPIXEL } from '../src/lib/vision/resolution';
+import { GRR_DIVISOR, K_SUBPIXEL } from '../src/lib/vision/resolution';
 import { APPLICATION_TYPES } from '../src/lib/visionEntry';
 
 function loadMessages(locale: 'vi' | 'en') {
@@ -336,38 +336,34 @@ test('ô đã nhập thì không giả định — kể cả khi người dùng 
   assert.ok(!assumptions.some((a) => a.path === 'system.workingDistance' || a.path === 'detection.0.contrast'));
 });
 
-test('px/lỗi: contrast chưa xác định → ghi rõ đang dùng 3 và MP có thể TÍNH THIẾU', () => {
+test('px/lỗi theo độ tương phản (V1b): cao 3 · trung bình 4 · thấp/chưa rõ 5; chưa xác nhận thì cảnh báo', () => {
   const pxOf = (req: Requirement) => resolveAssumptions(req).assumptions.find((a) => a.key === 'parameter:pxPerDefect');
-  assert.equal(DEFAULT_PX_PER_DEFECT, 3, 'doi so nay (V1b) thi phai sua canh bao va test nay');
 
+  // Chưa nêu độ tương phản (mặc định đang giả định "thấp") → N = 5, cảnh báo cần ảnh mẫu.
   for (const req of [emptyRequirement('AppearanceInspection'), filled('AppearanceInspection', { 'detection.0.contrast': 'unknown' })]) {
     const px = pxOf(req)!;
     assert.equal(px.level, 'warning');
-    assert.equal(px.value, 3);
-    for (const phrase of [
-      'cố định 3',
-      'tương ứng contrast CAO',
-      'Theo luật chọn độ phân giải theo độ tương phản, contrast chưa xác định phải dùng 5',
-      'ĐANG BỊ TÍNH THIẾU',
-      'V1b',
-    ]) {
-      assert.ok(px.vi.includes(phrase), `thieu "${phrase}": ${px.vi}`);
-    }
-    assert.ok(px.en.includes('UNDERESTIMATED'), px.en);
-    assert.ok(px.vi.includes('(5/3)² ≈ 2,8 lần'), px.vi);
+    assert.equal(px.value, 5);
+    assert.deepEqual(px.ruleIds, ['RES-001', 'RES-006']);
+    assert.ok(px.vi.includes('contrast chưa xác định → 5 px'), px.vi);
+    assert.ok(px.vi.includes('cần ảnh mẫu'), px.vi);
+    assert.ok(!px.vi.includes('cố định 3'), 'engine V1b khong con dung co dinh 3');
+    assert.ok(px.en.includes('sample images'), px.en);
   }
 
-  assert.ok(pxOf(filled('AppearanceInspection', { 'detection.0.contrast': 'medium' }))!.vi.includes('contrast TRUNG BÌNH phải dùng 4'));
+  const medium = pxOf(filled('AppearanceInspection', { 'detection.0.contrast': 'medium' }))!;
+  assert.equal(medium.value, 4);
+  assert.equal(medium.level, 'info', 'nguoi dung da neu thi khong canh bao');
 
   const high = pxOf(filled('AppearanceInspection', { 'detection.0.contrast': 'high' }))!;
-  assert.equal(high.level, 'info');
-  assert.ok(!high.vi.includes('THIẾU'), high.vi);
+  assert.equal(high.value, 3);
+  assert.ok(!high.vi.includes('ảnh mẫu'), high.vi);
 
   // Nhiều mục lỗi: mục cần nhiều px nhất quyết định.
   const two = filled('AppearanceInspection', { 'detection.0.contrast': 'high' });
   two.detection.push({ ...structuredClone(two.detection[0]), id: 'det-2' });
   two.detection[1].contrast.value = 'low';
-  assert.ok(pxOf(two)!.vi.includes('contrast THẤP phải dùng 5'));
+  assert.equal(pxOf(two)!.value, 5);
 
   assert.equal(pxOf(emptyRequirement('Measurement')), undefined, 'khong co nhanh loi thi khong co px/loi');
 });

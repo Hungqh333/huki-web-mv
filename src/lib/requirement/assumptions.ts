@@ -11,7 +11,7 @@
  *
  * File thuần TypeScript: không import React, không import tầng AI.
  */
-import { DEFAULT_PX_PER_DEFECT, GRR_DIVISOR, K_SUBPIXEL } from '../vision/resolution';
+import { GRR_DIVISOR, K_SUBPIXEL } from '../vision/resolution';
 import { FIELD_DEFAULTS, MATERIAL_ALPHA, N_DET_BY_CONTRAST, type KnownMaterial } from './defaults';
 import { fieldsFor, readField } from './fields';
 import { requirementToSelectorInput } from './toSelectorInput';
@@ -153,13 +153,16 @@ const CONTRAST_LABEL: Record<DefectContrast, { vi: string; en: string }> = {
 };
 
 /**
- * px/lỗi: bộ tính hiện tại dùng CỐ ĐỊNH `DEFAULT_PX_PER_DEFECT`, chưa theo
- * RES-001. Panel phải nói rõ lệch về phía nào, không viết chung chung "chưa áp
- * dụng": N nhỏ hơn luật → mm/px lớn hơn → số MP yêu cầu bị tính THIẾU.
+ * px/lỗi theo RES-001 — engine V1b (vision/requirementAnalysis.ts) dùng N theo
+ * độ tương phản: cao 3 · trung bình 4 · thấp / chưa rõ 5. Panel nói rõ đang
+ * dùng bao nhiêu và vì sao.
  *
- * TODO(V1b): đổi 3 → N theo contrast (N_DET_BY_CONTRAST) trong bộ tính vision
- * và selector; cần test hồi quy vì mọi kết quả ngoại quan đang có sẽ đổi.
- * Khi đó bỏ cảnh báo này.
+ * Độ tương phản người dùng chưa nêu (kể cả đang giả định "thấp") → cảnh báo:
+ * N = 5 là phía xấu, nhưng chỉ ảnh mẫu mới xác nhận được (RES-006).
+ *
+ * Trước V1b bộ tính dùng CỐ ĐỊNH 3 và panel phải cảnh báo MP bị tính thiếu. Bộ
+ * chọn thiết bị cũ vẫn dùng DEFAULT_PX_PER_DEFECT = 3, nhưng trang Yêu cầu
+ * không còn đi qua nó.
  */
 function pxPerDefectAssumption(effective: Requirement): Assumption | null {
   if (effective.detection.length === 0) return null;
@@ -169,47 +172,32 @@ function pxPerDefectAssumption(effective: Requirement): Assumption | null {
     .map((item) => {
       const stated = item.contrast.confidence !== 'assumed' ? item.contrast.value : null;
       const contrast: DefectContrast = stated ?? 'unknown';
-      return { contrast, n: N_DET_BY_CONTRAST[contrast] };
+      return { contrast, stated: stated !== null && stated !== 'unknown', n: N_DET_BY_CONTRAST[contrast] };
     })
     .reduce((worst, entry) => (entry.n > worst.n ? entry : worst));
 
-  const used = DEFAULT_PX_PER_DEFECT;
-  const usedMatches = (Object.keys(CONTRAST_LABEL) as DefectContrast[]).find((c) => N_DET_BY_CONTRAST[c] === used);
-  const usedLabel = usedMatches ? CONTRAST_LABEL[usedMatches] : null;
   const label = CONTRAST_LABEL[driving.contrast];
   const title = { vi: 'Số pixel phủ lên lỗi (px/lỗi)', en: 'Pixels per defect (px/defect)' };
-  const base = { key: 'parameter:pxPerDefect', source: 'parameter' as const, ruleIds: ['RES-001'], value: used, title };
-
-  if (driving.n > used) {
-    // MP tỉ lệ với N² (N tăng thì mm/px giảm theo cả hai trục).
-    const factor = Math.round((driving.n / used) ** 2 * 10) / 10;
-    return {
-      ...base,
-      level: 'warning',
-      vi:
-        `px/lỗi đang dùng cố định ${used}${usedLabel ? ` (tương ứng contrast ${usedLabel.vi})` : ''}. ` +
-        `Theo luật chọn độ phân giải theo độ tương phản, contrast ${label.vi} phải dùng ${driving.n}. ` +
-        `Số MP yêu cầu hiện tại có thể ĐANG BỊ TÍNH THIẾU — nhánh phát hiện lỗi cần gấp ` +
-        `(${driving.n}/${used})² ≈ ${String(factor).replace('.', ',')} lần. Sẽ áp dụng đầy đủ ở V1b.`,
-      en:
-        `px/defect is currently fixed at ${used}${usedLabel ? ` (matches ${usedLabel.en} contrast)` : ''}. ` +
-        `Per the contrast-based resolution rule, ${label.en} contrast requires ${driving.n}. ` +
-        `The required MP may currently be UNDERESTIMATED — the detection branch needs ` +
-        `(${driving.n}/${used})² ≈ ${factor}× as many. Will be fully applied in V1b.`,
-    };
-  }
+  const confirm = driving.stated
+    ? { vi: '', en: '' }
+    : {
+        vi: ' Độ tương phản chưa được xác nhận nên đang lấy trường hợp xấu — cần ảnh mẫu để xác nhận.',
+        en: ' Contrast is not confirmed, so the worst case is used — sample images are needed to confirm.',
+      };
 
   return {
-    ...base,
-    level: 'info',
+    key: 'parameter:pxPerDefect',
+    source: 'parameter',
+    ruleIds: ['RES-001', 'RES-006'],
+    value: driving.n,
+    title,
+    level: driving.stated ? 'info' : 'warning',
     vi:
-      driving.n === used
-        ? `px/lỗi đang dùng cố định ${used} — khớp luật chọn độ phân giải theo độ tương phản cho contrast ${label.vi}.`
-        : `px/lỗi đang dùng cố định ${used} — nhiều hơn luật chọn độ phân giải theo độ tương phản yêu cầu (${driving.n}) cho contrast ${label.vi}, số MP tính dư.`,
+      `px/lỗi theo luật chọn độ phân giải theo độ tương phản: contrast ${label.vi} → ${driving.n} px ` +
+      `(cao 3 · trung bình 4 · thấp hoặc chưa rõ 5).${confirm.vi}`,
     en:
-      driving.n === used
-        ? `px/defect is currently fixed at ${used} — matches the contrast-based resolution rule for ${label.en} contrast.`
-        : `px/defect is currently fixed at ${used} — more than the contrast-based resolution rule requires (${driving.n}) for ${label.en} contrast; MP is overestimated.`,
+      `px/defect per the contrast-based resolution rule: ${label.en} contrast → ${driving.n} px ` +
+      `(high 3 · medium 4 · low or unknown 5).${confirm.en}`,
   };
 }
 

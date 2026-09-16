@@ -1631,6 +1631,45 @@
             "short": "Defect variability"
           }
         }
+      },
+      "analysis": {
+        "title": "Engineering analysis",
+        "subtitle": "Computed by coded rules; every number comes from a formula, not from AI. Updates as soon as the table changes.",
+        "empty": "Enter the part size plus the smallest defect or the measurement tolerance to start the analysis.",
+        "status": {
+          "NOT_FEASIBLE": "Not feasible as specified",
+          "FEASIBLE_WITH_VALIDATION": "Feasible, needs validation with real samples",
+          "TECHNICALLY_FEASIBLE": "Technically feasible",
+          "INSUFFICIENT_DATA": "Not enough data to assess"
+        },
+        "overall": "Feasibility score {score}/100",
+        "limiting": "Limiting factor: {factors}",
+        "completeness": "Data completeness: {percent}% — the rest uses assumed values.",
+        "disclaimer": "Engineering estimation — sample testing recommended.",
+        "toFeasible": "To become feasible, resolve:",
+        "dimensionsTitle": "Seven feasibility dimensions",
+        "dimensions": {
+          "Resolution": "Resolution",
+          "Optics": "Optics",
+          "Lighting": "Lighting",
+          "Throughput": "Throughput",
+          "Mechanical": "Mechanical / thermal",
+          "Algorithm": "Algorithm",
+          "Integration": "Integration"
+        },
+        "dimensionStatus": {
+          "PASS": "Pass",
+          "MARGINAL": "Marginal",
+          "FAIL": "Fail",
+          "UNKNOWN": "Needs validation"
+        },
+        "notEvaluated": "Not evaluated",
+        "scoreNote": "Feasibility takes the lowest dimension, not the average. Scores only display the safety margin; they are not mathematical truth.",
+        "warningsTitle": "Warnings ({count})",
+        "allResults": "Show all {count} calculations",
+        "needsSample": "Sample test needed",
+        "assumedInputs": "Based on {count} assumed value(s)",
+        "enterCameraCount": "Enter camera count"
       }
     }
   },

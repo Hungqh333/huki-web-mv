@@ -1631,6 +1631,45 @@
             "short": "Biến động ngoại hình lỗi"
           }
         }
+      },
+      "analysis": {
+        "title": "Phân tích kỹ thuật",
+        "subtitle": "Tính theo luật có mã, mọi con số đến từ công thức — không do AI suy ra. Cập nhật ngay khi bảng thay đổi.",
+        "empty": "Nhập kích thước vật cùng lỗi nhỏ nhất hoặc dung sai đo để bắt đầu phân tích.",
+        "status": {
+          "NOT_FEASIBLE": "Không khả thi với yêu cầu hiện tại",
+          "FEASIBLE_WITH_VALIDATION": "Khả thi, cần xác nhận bằng mẫu thật",
+          "TECHNICALLY_FEASIBLE": "Khả thi về kỹ thuật",
+          "INSUFFICIENT_DATA": "Chưa đủ dữ liệu để đánh giá"
+        },
+        "overall": "Điểm khả thi {score}/100",
+        "limiting": "Yếu tố giới hạn: {factors}",
+        "completeness": "Độ đầy đủ dữ liệu: {percent}% — phần còn lại đang dùng giá trị giả định.",
+        "disclaimer": "Ước tính kỹ thuật — nên chụp mẫu thật để xác nhận.",
+        "toFeasible": "Để chuyển thành khả thi, cần xử lý:",
+        "dimensionsTitle": "Bảy nhóm khả thi",
+        "dimensions": {
+          "Resolution": "Độ phân giải",
+          "Optics": "Quang học",
+          "Lighting": "Chiếu sáng",
+          "Throughput": "Tốc độ / băng thông",
+          "Mechanical": "Cơ khí / nhiệt",
+          "Algorithm": "Thuật toán",
+          "Integration": "Tích hợp"
+        },
+        "dimensionStatus": {
+          "PASS": "Đạt",
+          "MARGINAL": "Sát biên",
+          "FAIL": "Không đạt",
+          "UNKNOWN": "Chờ xác nhận"
+        },
+        "notEvaluated": "Chưa đánh giá",
+        "scoreNote": "Khả thi lấy nhóm thấp nhất, không lấy trung bình. Điểm chỉ là cách hiển thị biên an toàn, không phải chân lý toán học.",
+        "warningsTitle": "Cảnh báo ({count})",
+        "allResults": "Xem toàn bộ {count} phép tính",
+        "needsSample": "Cần thử mẫu",
+        "assumedInputs": "Dựa trên {count} giá trị giả định",
+        "enterCameraCount": "Nhập số camera"
       }
     }
   },

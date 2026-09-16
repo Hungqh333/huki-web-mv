@@ -277,3 +277,24 @@ test('GT-001: KHÔNG KHẢ THI; yếu tố giới hạn Quang học + Cơ khí (
   assert.equal(dim('Throughput').evaluated, false, 'GT-001 khong co san luong');
   assert.equal(dim('Integration').evaluated, false);
 });
+
+// ─────────────────────────────── B8: nhãn panel phân tích ───────────────────────────────
+
+test('nhãn panel phân tích kỹ thuật đủ ở cả hai ngôn ngữ: kết luận, 7 nhóm, trạng thái nhóm', () => {
+  for (const locale of ['vi', 'en'] as const) {
+    const messages = JSON.parse(readFileSync(new URL(`../src/messages/${locale}.json`, import.meta.url), 'utf8'));
+    const analysis = messages.designer.requirement.analysis;
+    for (const key of [
+      'title', 'subtitle', 'empty', 'overall', 'limiting', 'completeness', 'disclaimer', 'toFeasible',
+      'dimensionsTitle', 'notEvaluated', 'scoreNote', 'warningsTitle', 'allResults', 'needsSample', 'assumedInputs', 'enterCameraCount',
+    ]) {
+      assert.ok(analysis?.[key], `${locale}: analysis.${key}`);
+    }
+    for (const status of ['NOT_FEASIBLE', 'FEASIBLE_WITH_VALIDATION', 'TECHNICALLY_FEASIBLE', 'INSUFFICIENT_DATA']) {
+      assert.ok(analysis.status[status], `${locale}: analysis.status.${status}`);
+    }
+    for (const dimension of FEASIBILITY_DIMENSIONS) assert.ok(analysis.dimensions[dimension], `${locale}: dimensions.${dimension}`);
+    for (const status of ['PASS', 'MARGINAL', 'FAIL', 'UNKNOWN']) assert.ok(analysis.dimensionStatus[status], `${locale}: dimensionStatus.${status}`);
+    assert.ok(/mẫu|sample/i.test(analysis.disclaimer), 'spec §7.3: luon nhac thu mau');
+  }
+});

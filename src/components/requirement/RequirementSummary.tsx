@@ -40,6 +40,7 @@ import {
   type QuestionDef,
 } from '@/lib/requirement/questions';
 import type { Assumption, Confidence, Requirement } from '@/lib/requirement/types';
+import { AnalysisPanel } from './AnalysisPanel';
 
 /**
  * Bảng tóm tắt yêu cầu — spec V1.1 §10.2 "Tôi hiểu bài toán của bạn".
@@ -429,6 +430,9 @@ export function RequirementSummary({ initialApp }: { initialApp: ApplicationType
               );
             })
           : null}
+
+        {/* V1b: phân tích kỹ thuật chạy trên chính bảng này (engine + đánh giá khả thi). */}
+        {requirement ? <AnalysisPanel requirement={requirement} onFocusField={focusField} /> : null}
 
         {requirement && missingOnly && shownDefs.length === 0 ? (
           <p className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">

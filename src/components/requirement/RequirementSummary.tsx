@@ -84,7 +84,8 @@ const NEED_CLASS: Record<FieldNeed, string> = {
 };
 
 const BADGE_CLASS: Record<BadgeKey, string> = {
-  stated: 'bg-sky-100 text-sky-800 dark:bg-sky-500/15 dark:text-sky-300',
+  // Xanh lá: ô đã có số liệu người dùng nêu — cùng màu "xong" với dòng báo đọc thành công.
+  stated: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-300',
   inferred: 'bg-violet-100 text-violet-800 dark:bg-violet-500/15 dark:text-violet-300',
   assumed: 'bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300',
   unknown: 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200',

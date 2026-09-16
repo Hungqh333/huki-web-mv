@@ -47,6 +47,12 @@ export type RequirementAnalysis = {
   uncertaintyBudgetMm: number | null;
   tile: CameraTile | null;
   megapixelsPerCamera: number | null;
+  /** Cho sơ đồ kiến trúc (architecture.ts). */
+  fovWidthMm: number | null;
+  fovHeightMm: number | null;
+  cameraCount: number | null;
+  dataRateTotalMBs: number | null;
+  interfaceName: string | null;
 };
 
 const CONTRASTS: readonly DefectContrast[] = ['high', 'medium', 'low', 'unknown'];
@@ -303,11 +309,14 @@ export function analyseRequirement(draft: Requirement): RequirementAnalysis {
   }
 
   // ─── THR-001 / THR-002: băng thông, giao tiếp tối thiểu ───
+  let dataRateTotal: number | null = null;
+  let interfaceName: string | null = null;
   const ppm = num('production.partsPerMinute') ?? (num('production.taktTime') ? 60 / num('production.taktTime')! : null);
   if (ppm !== null && ppm > 0 && megapixels !== null && cameraCount !== null) {
     const fps = ppm / 60;
     const perCamera = megapixels * BYTES_PER_PX * fps;
     const total = perCamera * cameraCount;
+    dataRateTotal = total;
     const throughputPaths = ['production.partsPerMinute', 'production.taktTime', ...sizePaths];
     push(
       'THR-001',
@@ -323,6 +332,7 @@ export function analyseRequirement(draft: Requirement): RequirementAnalysis {
     const choice = Object.entries(INTERFACE_BANDWIDTH)
       .sort((a, b) => a[1] - b[1])
       .find(([, capacity]) => capacity * INTERFACE_MAX_SHARE >= perCamera);
+    interfaceName = choice ? choice[0] : null;
     push(
       'THR-002',
       choice
@@ -397,5 +407,10 @@ export function analyseRequirement(draft: Requirement): RequirementAnalysis {
     uncertaintyBudgetMm: U,
     tile,
     megapixelsPerCamera: megapixels,
+    fovWidthMm: fovW,
+    fovHeightMm: fovH,
+    cameraCount,
+    dataRateTotalMBs: dataRateTotal,
+    interfaceName,
   };
 }

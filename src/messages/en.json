@@ -1670,6 +1670,39 @@
         "needsSample": "Sample test needed",
         "assumedInputs": "Based on {count} assumed value(s)",
         "enterCameraCount": "Enter camera count"
+      },
+      "architecture": {
+        "title": "System diagram",
+        "hint": "Generated from the calculations, not drawn in advance. Click a block to see which rules decided it.",
+        "nodes": {
+          "product": "Product & environment",
+          "lighting": "Lighting",
+          "lens": "Lens",
+          "camera": "Camera",
+          "interface": "Interface / image transfer",
+          "ipc": "Processing PC",
+          "software": "Vision software",
+          "plc": "PLC / robot"
+        },
+        "details": {
+          "productSize": "Field of view {w} × {h} mm",
+          "lightType": "Suggested light: {type} (needs a sample test)",
+          "lensStandard": "Standard lens",
+          "lensTelecentric": "Telecentric — feasible, get a quote",
+          "lensTelecentricExpensive": "Telecentric — available but very expensive",
+          "lensTelecentricInfeasible": "Telecentric not feasible — see alternatives",
+          "cameraUnknown": "No camera count yet",
+          "cameraCountOnly": "{count} camera(s)",
+          "cameraSpec": "{count} × camera, about {mp} MP each",
+          "interfaceSpec": "{name} · {total} MB/s total",
+          "softwareTraditional": "Traditional image processing",
+          "softwareDeepLearning": "Deep learning — needs real sample images",
+          "softwareUndecided": "Traditional vs deep learning not decided yet"
+        },
+        "pending": "Chosen in the equipment step",
+        "pendingDetail": "This block needs specific equipment (PC configuration, PLC protocol) — it is computed when equipment is chosen.",
+        "noData": "Not enough data",
+        "noRules": "No rule decides this block yet."
       }
     }
   },

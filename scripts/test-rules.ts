@@ -13,6 +13,7 @@ import type { Requirement } from '../src/lib/requirement/types';
 import { analyseRequirement, K_BLUR, STROBE_EXPOSURE_LIMIT_US } from '../src/lib/vision/requirementAnalysis';
 import { completeness, FEASIBILITY_DIMENSIONS, knowledgeSlugFor, RULES, type RuleResult } from '../src/lib/vision/rules';
 import { assessFeasibility, scoreResult } from '../src/lib/vision/feasibility';
+import { ARCHITECTURE_NODES, buildArchitecture } from '../src/lib/vision/architecture';
 
 function filled(type: Requirement['applicationType'], values: Record<string, unknown>): Requirement {
   return Object.entries(values).reduce((req, [path, value]) => withFieldValue(req, path, value), emptyRequirement(type));
@@ -296,5 +297,46 @@ test('nhãn panel phân tích kỹ thuật đủ ở cả hai ngôn ngữ: kết
     for (const dimension of FEASIBILITY_DIMENSIONS) assert.ok(analysis.dimensions[dimension], `${locale}: dimensions.${dimension}`);
     for (const status of ['PASS', 'MARGINAL', 'FAIL', 'UNKNOWN']) assert.ok(analysis.dimensionStatus[status], `${locale}: dimensionStatus.${status}`);
     assert.ok(/mẫu|sample/i.test(analysis.disclaimer), 'spec §7.3: luon nhac thu mau');
+  }
+});
+
+// ─────────────────────────────── B9: sơ đồ kiến trúc ───────────────────────────────
+
+test('sơ đồ GT-001: sinh từ kết quả engine, khối mang trạng thái xấu nhất của luật gắn vào nó', () => {
+  const arch = buildArchitecture(analyseRequirement(filled('AppearanceInspection', GT001_INPUT)));
+  const node = (id: string) => arch.nodes.find((n) => n.id === id)!;
+
+  assert.deepEqual(arch.nodes.map((n) => n.id), [...ARCHITECTURE_NODES]);
+  assert.equal(arch.cameraCount, 4);
+
+  assert.equal(node('product').status, 'fail', 'MEC-001, MEC-003 gan vao khoi san pham');
+  assert.deepEqual(node('product').detail, { key: 'productSize', values: { w: 380, h: 280 } });
+  assert.equal(node('lens').status, 'fail');
+  assert.equal(node('lens').detail!.key, 'lensTelecentricInfeasible');
+  assert.deepEqual(node('camera').detail, { key: 'cameraSpec', values: { count: 4, mp: 8.9 } });
+  assert.equal(node('lighting').detail!.values!.type, 'dome');
+  assert.equal(node('interface').detail, null, 'GT-001 khong co san luong');
+  assert.equal(node('ipc').pending, true);
+  assert.equal(node('plc').pending, true);
+
+  const withRate = buildArchitecture(analyseRequirement(filled('AppearanceInspection', { ...GT001_INPUT, 'production.partsPerMinute': 60 })));
+  assert.deepEqual(withRate.nodes.find((n) => n.id === 'interface')!.detail, { key: 'interfaceSpec', values: { name: 'GigE', total: 35.8 } });
+
+  const noCount = buildArchitecture(
+    analyseRequirement(filled('AppearanceInspection', { 'object.sizeX': 100, 'object.sizeY': 80, 'detection.0.minSize': 0.2 }))
+  );
+  assert.equal(noCount.nodes.find((n) => n.id === 'camera')!.detail!.key, 'cameraUnknown');
+});
+
+test('nhãn sơ đồ đủ ở cả hai ngôn ngữ: mọi khối, mọi dạng chi tiết', () => {
+  const details = [
+    'productSize', 'lightType', 'lensStandard', 'lensTelecentric', 'lensTelecentricExpensive', 'lensTelecentricInfeasible',
+    'cameraUnknown', 'cameraCountOnly', 'cameraSpec', 'interfaceSpec', 'softwareTraditional', 'softwareDeepLearning', 'softwareUndecided',
+  ];
+  for (const locale of ['vi', 'en'] as const) {
+    const arch = JSON.parse(readFileSync(new URL(`../src/messages/${locale}.json`, import.meta.url), 'utf8')).designer.requirement.architecture;
+    for (const key of ['title', 'hint', 'pending', 'pendingDetail', 'noData', 'noRules']) assert.ok(arch[key], `${locale}: ${key}`);
+    for (const id of ARCHITECTURE_NODES) assert.ok(arch.nodes[id], `${locale}: nodes.${id}`);
+    for (const key of details) assert.ok(arch.details[key], `${locale}: details.${key}`);
   }
 });

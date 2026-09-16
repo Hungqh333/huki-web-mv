@@ -3,10 +3,12 @@
 import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import type { Requirement } from '@/lib/requirement/types';
+import { buildArchitecture } from '@/lib/vision/architecture';
 import { assessFeasibility, type DimensionStatus, type FeasibilityStatus } from '@/lib/vision/feasibility';
 import { analyseRequirement } from '@/lib/vision/requirementAnalysis';
 import { FEASIBILITY_DIMENSIONS, type RuleResult } from '@/lib/vision/rules';
 import type { CheckStatus } from '@/lib/vision/types';
+import { ArchitectureDiagram } from './ArchitectureDiagram';
 
 /**
  * Phân tích kỹ thuật dưới bảng Yêu cầu — V1b B8 (spec V1.1 §7, §10.3, §10.4).
@@ -59,6 +61,7 @@ export function AnalysisPanel({
 
   const analysis = useMemo(() => analyseRequirement(requirement), [requirement]);
   const feasibility = useMemo(() => assessFeasibility(analysis.results), [analysis]);
+  const architecture = useMemo(() => buildArchitecture(analysis), [analysis]);
 
   const noteOf = (result: RuleResult) =>
     result.noteKey
@@ -165,6 +168,9 @@ export function AnalysisPanel({
           </ul>
           <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{t('scoreNote')}</p>
         </div>
+
+        {/* Sơ đồ hệ thống sinh từ kết quả engine (spec §9). */}
+        <ArchitectureDiagram architecture={architecture} noteOf={noteOf} />
 
         {/* Cảnh báo — không che giấu bất định (spec §10.4). */}
         {warnings.length > 0 ? (

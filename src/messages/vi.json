@@ -1670,6 +1670,39 @@
         "needsSample": "Cần thử mẫu",
         "assumedInputs": "Dựa trên {count} giá trị giả định",
         "enterCameraCount": "Nhập số camera"
+      },
+      "architecture": {
+        "title": "Sơ đồ hệ thống",
+        "hint": "Sinh từ kết quả tính, không vẽ sẵn. Bấm vào từng khối để xem luật nào đã quyết định nó.",
+        "nodes": {
+          "product": "Sản phẩm & môi trường",
+          "lighting": "Chiếu sáng",
+          "lens": "Ống kính",
+          "camera": "Camera",
+          "interface": "Giao tiếp / truyền ảnh",
+          "ipc": "Máy tính xử lý",
+          "software": "Phần mềm xử lý ảnh",
+          "plc": "PLC / robot"
+        },
+        "details": {
+          "productSize": "Vùng quan sát {w} × {h} mm",
+          "lightType": "Kiểu đèn gợi ý: {type} (cần thử mẫu)",
+          "lensStandard": "Ống kính thường",
+          "lensTelecentric": "Telecentric — khả thi, cần hỏi giá",
+          "lensTelecentricExpensive": "Telecentric — mua được nhưng rất đắt",
+          "lensTelecentricInfeasible": "Telecentric không khả thi — xem phương án thay thế",
+          "cameraUnknown": "Chưa có số camera",
+          "cameraCountOnly": "{count} camera",
+          "cameraSpec": "{count} × camera, cần khoảng {mp} MP mỗi camera",
+          "interfaceSpec": "{name} · tổng {total} MB/s",
+          "softwareTraditional": "Xử lý ảnh truyền thống",
+          "softwareDeepLearning": "Học sâu — cần tập ảnh mẫu thật",
+          "softwareUndecided": "Chưa chọn được truyền thống hay học sâu"
+        },
+        "pending": "Chọn ở bước thiết bị",
+        "pendingDetail": "Khối này cần thiết bị cụ thể (cấu hình máy tính, giao thức với PLC) — sẽ tính khi chọn thiết bị.",
+        "noData": "Chưa đủ dữ liệu",
+        "noRules": "Chưa có luật nào quyết định khối này."
       }
     }
   },

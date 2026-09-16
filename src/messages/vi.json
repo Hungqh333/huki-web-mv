@@ -1346,6 +1346,9 @@
       "rawTextTitle": "Mô tả bạn đã nhập",
       "parser": {
         "reading": "Đang đọc mô tả để điền trước bảng…",
+        "readingBanner": "Đang đọc mô tả để điền trước bảng, thường khoảng 3 giây. Bảng tạm khoá để kết quả không đè lên thao tác của bạn.",
+        "cancel": "Bỏ chờ, tôi tự điền",
+        "cancelled": "Đã bỏ chờ đọc tự động — hãy tự điền bảng, hoặc bấm Đọc lại.",
         "filled": "Đã điền {count} thông số từ mô tả. Mỗi ô ghi kèm đoạn văn gốc — hãy xem lại.",
         "pickType": "Đọc được {count} thông số — chọn loại ứng dụng để điền vào bảng.",
         "noData": "Chưa đọc được thông số từ mô tả — hãy điền bảng.",
@@ -1362,6 +1365,14 @@
       "pickApplicationHint": "Chọn loại ứng dụng để hiện bảng thông số.",
       "partialSupport": "Bản hiện tại mới có đủ thông số cho Kiểm tra ngoại quan và Đo lường. Loại này tạm chỉ có phần thông số chung.",
       "progress": "{filled}/{total} thông số đã có",
+      "need": {
+        "required": "Cần để tính",
+        "recommended": "Nên có",
+        "optional": "Tuỳ chọn"
+      },
+      "needLegend": "Thiếu ô “Cần để tính” thì chưa ra được kết quả. Ô “Nên có” bỏ trống thì hệ thống phải giả định thay bạn.",
+      "missingOnly": "Chỉ hiện ô còn thiếu",
+      "missingOnlyNone": "Không còn ô nào trống.",
       "reset": "Làm lại từ đầu",
       "notSet": "Chưa có",
       "yes": "Có",

@@ -28,7 +28,17 @@
  *
  * File thuần TypeScript: không import React, không import tầng AI.
  */
-import { V1A_FIELDS, fieldsFor, readField, withFieldNotAsked, withFieldUnknown, withFieldValue } from './fields';
+import {
+  V1A_FIELDS,
+  emptyRequirement,
+  fieldsFor,
+  readField,
+  withFieldNotAsked,
+  withFieldUnknown,
+  withFieldValue,
+  type RequirementFieldDef,
+} from './fields';
+import type { ApplicationType } from '../visionEntry';
 import type { Field, Requirement } from './types';
 
 export const MAX_VISIBLE_QUESTIONS = 3;
@@ -183,4 +193,84 @@ export function resetQuestion(requirement: Requirement, question: QuestionDef): 
   return activePaths(requirement, question)
     .filter((path) => isUnknownAnswer(readField(requirement, path)))
     .reduce((req, path) => withFieldNotAsked(req, path), requirement);
+}
+
+// ─────────────────────────── Mức cần thiết của từng ô ───────────────────────────
+
+/*
+ * Bảng Yêu cầu ghi rõ ô nào phải điền: 'required' = luật không chạy được nếu
+ * thiếu (bậc 1–2: kích thước, lỗi nhỏ nhất / dung sai), 'recommended' = có câu
+ * hỏi ở bậc sau, thiếu thì luật vẫn chạy nhưng phải giả định, 'optional' = không
+ * câu hỏi nào cần.
+ *
+ * Mức SUY TỪ bảng câu hỏi trên, không khai riêng: hai nguồn tách ra là sớm muộn
+ * cũng lệch nhau. Ô hỏi tiếp (α khi vật liệu "Khác", tốc độ băng tải khi chạy
+ * liên tục) chỉ cần trong đúng trường hợp đó nên xếp 'optional' — lúc người dùng
+ * chọn tới trường hợp đó thì khối câu hỏi hỏi ngay.
+ *
+ * TODO(V1b): thay bằng `requiredInputs` của rule registry, cùng lúc với QUESTIONS.
+ */
+export const NEED_LEVELS = ['required', 'recommended', 'optional'] as const;
+export type FieldNeed = (typeof NEED_LEVELS)[number];
+
+/** Giá trị mồi để xét câu hỏi có điều kiện ("có dung sai thì mới cần Δh, WD…"). */
+function probeValue(def: RequirementFieldDef): unknown {
+  switch (def.kind) {
+    case 'number':
+      return def.min ?? 1;
+    case 'boolean':
+      return true;
+    case 'multiselect':
+      return def.options ? [def.options[0]] : [];
+    case 'text':
+      return 'x';
+    case 'select':
+      return def.options?.[0] ?? null;
+  }
+}
+
+const needsCache = new Map<ApplicationType, ReadonlyMap<string, FieldNeed>>();
+
+/**
+ * Mức của từng ô đang hiện cho một loại ứng dụng. Xét trên bản mồi đã điền đủ,
+ * nên mức KHÔNG đổi khi người dùng điền dần — bảng không nhảy mức giữa chừng.
+ */
+export function needsFor(type: ApplicationType): ReadonlyMap<string, FieldNeed> {
+  const cached = needsCache.get(type);
+  if (cached) return cached;
+
+  const defs = fieldsFor(type);
+  const probe = defs.reduce((req, def) => withFieldValue(req, def.path, probeValue(def)), emptyRequirement(type));
+  const shown = new Set(defs.map((def) => def.path));
+  const needs = new Map<string, FieldNeed>(defs.map((def) => [def.path, 'optional' as FieldNeed]));
+
+  for (const question of QUESTIONS) {
+    if (!question.paths.every((path) => shown.has(path))) continue;
+    /* Ô có trên bảng nhưng luật của loại này không đòi (dung sai trong bài ngoại
+       quan): vẫn "nên có", vì mấy ô đi kèm nó thì có hỏi. */
+    const need: FieldNeed = !question.askWhen(probe) ? 'recommended' : question.tier <= 2 ? 'required' : 'recommended';
+    for (const path of activePaths(probe, question)) {
+      if (!shown.has(path)) continue;
+      // Ô nằm trong nhiều câu thì lấy mức nặng nhất.
+      if (needs.get(path) !== 'required') needs.set(path, need);
+    }
+  }
+
+  needsCache.set(type, needs);
+  return needs;
+}
+
+/** Đếm ô đã có giá trị theo từng mức — dòng tiến độ trên bảng. */
+export function countByNeed(requirement: Requirement): Record<FieldNeed, { filled: number; total: number }> {
+  const needs = needsFor(requirement.applicationType);
+  const counts = Object.fromEntries(NEED_LEVELS.map((level) => [level, { filled: 0, total: 0 }])) as Record<
+    FieldNeed,
+    { filled: number; total: number }
+  >;
+  for (const def of fieldsFor(requirement.applicationType)) {
+    const entry = counts[needs.get(def.path) ?? 'optional'];
+    entry.total++;
+    if (readField(requirement, def.path)?.value != null) entry.filled++;
+  }
+  return counts;
 }

@@ -31,8 +31,11 @@ import { FIELD_DEFAULTS, MATERIAL_ALPHA, N_DET_BY_CONTRAST } from '../src/lib/re
 import { PURPOSES, RULE_PURPOSE } from '../src/lib/requirement/purposes';
 import {
   MAX_VISIBLE_QUESTIONS,
+  NEED_LEVELS,
   QUESTIONS,
   answerUnknown,
+  countByNeed,
+  needsFor,
   pendingPaths,
   pendingQuestions,
   questionStatus,
@@ -256,9 +259,13 @@ test('adapter chỉ sinh khoá và giá trị form bộ chọn chấp nhận', (
 test('nhãn bảng tóm tắt đủ ở cả hai ngôn ngữ', () => {
   for (const locale of ['vi', 'en'] as const) {
     const r = loadMessages(locale).designer.requirement;
-    for (const key of ['step', 'title', 'subtitle', 'applicationType', 'progress', 'reset', 'notSet', 'yes', 'no']) {
+    for (const key of [
+      'step', 'title', 'subtitle', 'applicationType', 'progress', 'reset', 'notSet', 'yes', 'no',
+      'needLegend', 'missingOnly', 'missingOnlyNone',
+    ]) {
       assert.ok(r[key], `${locale}: ${key}`);
     }
+    for (const level of NEED_LEVELS) assert.ok(r.need?.[level], `${locale}: need.${level}`);
     for (const c of ['stated', 'inferred', 'assumed', 'unknown', 'notAsked']) assert.ok(r.confidence[c], `${locale}: confidence.${c}`);
     for (const s of REQUIREMENT_SECTIONS) assert.ok(r.sections[s], `${locale}: sections.${s}`);
     for (const def of V1A_FIELDS) {
@@ -453,6 +460,64 @@ test('bộ câu hỏi: đúng thứ tự bậc đã duyệt, trỏ tới ô có 
     }
     assert.ok(q.ruleIds.length > 0, q.id);
   }
+});
+
+test('mức cần thiết của ô: suy từ bảng câu hỏi, chỉ gồm ô đang hiện của loại đó', () => {
+  const insp = needsFor('AppearanceInspection');
+  const meas = needsFor('Measurement');
+
+  // Bậc 1–2 (kích thước, lỗi nhỏ nhất / dung sai) = thiếu thì luật không chạy.
+  assert.equal(insp.get('object.sizeX'), 'required');
+  assert.equal(insp.get('object.sizeY'), 'required');
+  assert.equal(insp.get('detection.0.minSize'), 'required');
+  assert.equal(meas.get('measurement.0.tolerance'), 'required');
+  // Bài ngoại quan không bắt buộc dung sai, nhưng vẫn nên có.
+  assert.equal(insp.get('measurement.0.tolerance'), 'recommended');
+
+  for (const path of ['detection.0.contrast', 'object.heightVariation', 'system.workingDistance', 'object.surface']) {
+    assert.equal(insp.get(path), 'recommended', path);
+  }
+  // Không câu hỏi nào cần: α chỉ hỏi khi vật liệu "Khác", tốc độ chỉ khi chạy liên tục.
+  for (const path of ['object.colorInspection', 'environment.ipRequirement', 'object.thermalExpansionCoeff', 'production.conveyorSpeed']) {
+    assert.equal(insp.get(path), 'optional', path);
+  }
+
+  assert.deepEqual(
+    [...insp.keys()].sort(),
+    fieldsFor('AppearanceInspection').map((def) => def.path).sort()
+  );
+  assert.equal(meas.has('detection.0.minSize'), false, 'bai do khong co nhanh phat hien loi');
+
+  // Mức 'required' luôn đến từ câu hỏi bậc ≤ 2 — hai nguồn không lệch nhau.
+  const tier12 = new Set(QUESTIONS.filter((q) => q.tier <= 2).flatMap((q) => q.paths));
+  for (const needs of [insp, meas]) {
+    for (const [path, need] of needs) {
+      if (need === 'required') assert.ok(tier12.has(path), path);
+    }
+  }
+});
+
+test('đếm theo mức: tổng bằng số ô đang hiện, điền ô nào thì đúng mức đó tăng', () => {
+  const empty = emptyRequirement('Measurement');
+  const counts = countByNeed(empty);
+  assert.deepEqual(NEED_LEVELS.map((level) => counts[level].filled), [0, 0, 0]);
+  assert.equal(
+    NEED_LEVELS.reduce((sum, level) => sum + counts[level].total, 0),
+    fieldsFor('Measurement').length
+  );
+
+  const withSize = countByNeed(withFieldValue(empty, 'object.sizeX', 380));
+  assert.equal(withSize.required.filled, 1);
+  assert.equal(withSize.recommended.filled, 0);
+  assert.equal(withSize.optional.filled, 0);
+});
+
+test('bản nháp: bỏ chờ bộ đọc là một trạng thái đọc hợp lệ', () => {
+  const draft = {
+    ...startDraftFromApp('Measurement'),
+    parse: { status: 'cancelled', applied: 0, dropped: 0, inferredApplicationType: null, pending: [] },
+  };
+  assert.deepEqual(parseDraft(JSON.stringify(draft))!.parse, draft.parse);
 });
 
 test('bản nháp trống: chỉ hỏi cái luật đang cần', () => {

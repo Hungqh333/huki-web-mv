@@ -51,7 +51,8 @@ export type RequirementDraft = {
   parse?: DraftParse;
 };
 
-export const DRAFT_PARSE_STATUSES = ['ok', 'empty', 'failed', 'unavailable', 'tooLong', 'denied'] as const;
+// 'cancelled' = người dùng bấm "Bỏ chờ, tôi tự điền" trong lúc bộ đọc đang chạy.
+export const DRAFT_PARSE_STATUSES = ['ok', 'empty', 'failed', 'unavailable', 'tooLong', 'denied', 'cancelled'] as const;
 export type DraftParseStatus = (typeof DRAFT_PARSE_STATUSES)[number];
 
 export type DraftParse = {

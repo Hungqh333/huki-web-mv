@@ -469,7 +469,7 @@ test('nhãn bộ đọc và dòng cảnh báo AI đủ ở cả hai ngôn ngữ'
   for (const locale of ['vi', 'en'] as const) {
     const m = loadMessages(locale);
     assert.ok(m.home.entry.aiNotice, `${locale}: home.entry.aiNotice`);
-    for (const key of ['reading', 'filled', 'pickType', 'noData', 'failed', 'unavailable', 'tooLong', 'dropped', 'reread', 'inferredType', 'sourceSpan']) {
+    for (const key of ['reading', 'readingBanner', 'cancel', 'cancelled', 'filled', 'pickType', 'noData', 'failed', 'unavailable', 'tooLong', 'dropped', 'reread', 'inferredType', 'sourceSpan']) {
       assert.ok(m.designer.requirement.parser?.[key], `${locale}: parser.${key}`);
     }
     assert.equal(m.designer.requirement.rawTextNote, undefined, `${locale}: cau "chua co bo doc" da bo`);

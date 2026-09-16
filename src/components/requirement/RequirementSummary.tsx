@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type FormEvent } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { parseRequirementAction } from '@/app/actions/parseRequirement';
 import { APPLICATION_SHORTCUT_ORDER, type ApplicationType } from '@/lib/visionEntry';
@@ -29,10 +29,14 @@ import { PARSE_TEXT_MAX, applyParseResult, pickApplicationType } from '@/lib/req
 import { purposesOf } from '@/lib/requirement/purposes';
 import {
   MAX_VISIBLE_QUESTIONS,
+  NEED_LEVELS,
   answerUnknown,
+  countByNeed,
+  needsFor,
   pendingPaths,
   pendingQuestions,
   resetQuestion,
+  type FieldNeed,
   type QuestionDef,
 } from '@/lib/requirement/questions';
 import type { Assumption, Confidence, Requirement } from '@/lib/requirement/types';
@@ -67,6 +71,13 @@ const CHIP_CLASS =
 
 /** Không có confidence = chưa hỏi. */
 type BadgeKey = Confidence | 'notAsked';
+
+/** Mức cần thiết của ô (questions.ts). Ô "Cần để tính" còn trống được tô để nhìn ra ngay. */
+const NEED_CLASS: Record<FieldNeed, string> = {
+  required: 'bg-amber-100 text-amber-900 dark:bg-amber-500/15 dark:text-amber-200',
+  recommended: 'bg-sky-50 text-sky-800 dark:bg-sky-500/10 dark:text-sky-300',
+  optional: 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400',
+};
 
 const BADGE_CLASS: Record<BadgeKey, string> = {
   stated: 'bg-sky-100 text-sky-800 dark:bg-sky-500/15 dark:text-sky-300',
@@ -117,22 +128,38 @@ export function RequirementSummary({ initialApp }: { initialApp: ApplicationType
     }
   }, [initialApp, stored]);
 
-  // ─── Bộ đọc mô tả ───
-  const [parsing, startParsing] = useTransition();
+  /* ─── Bộ đọc mô tả ───
+     Trong lúc đọc, bảng bị khoá (fieldset disabled): kết quả về sau sẽ điền vào
+     các ô chưa hỏi, nên nếu vừa đọc vừa cho sửa thì người dùng không biết ô nào
+     là của mình. `runToken` để một lượt đã bỏ chờ không còn ghi được vào bản nháp. */
+  const [reading, setReading] = useState(false);
+  const runToken = useRef(0);
   const parseRequestedFor = useRef<string | null>(null);
 
   const runParse = useCallback((source: RequirementDraft) => {
     const text = source.rawText;
     if (!text) return;
-    startParsing(async () => {
+    const token = ++runToken.current;
+    setReading(true);
+    void (async () => {
       const result = await parseRequirementAction(text);
-      /* Người dùng có thể sửa bảng hoặc mở bài toán khác trong lúc chờ: áp vào bản
-         nháp MỚI NHẤT, và bỏ kết quả nếu bản nháp đã bị thay. */
+      if (runToken.current !== token) return; // đã bỏ chờ, hoặc có lượt đọc mới
+      setReading(false);
+      /* Người dùng có thể mở bài toán khác trong lúc chờ: áp vào bản nháp MỚI NHẤT,
+         và bỏ kết quả nếu bản nháp đã bị thay. */
       const latest = parseDraft(readDraftRaw());
       if (!latest || latest.startedFrom !== source.startedFrom) return;
       writeDraft(applyParseResult(latest, result));
-    });
+    })();
   }, []);
+
+  /** "Bỏ chờ, tôi tự điền": mở khoá bảng ngay, kết quả về sau bị bỏ. */
+  const cancelParse = () => {
+    runToken.current++;
+    setReading(false);
+    const latest = parseDraft(readDraftRaw());
+    if (latest) writeDraft(applyParseResult(latest, { status: 'cancelled' }));
+  };
 
   useEffect(() => {
     // Chỉ sau khi đã đọc storage (raw !== null), và mỗi bản nháp chỉ tự đọc một lần.
@@ -165,6 +192,7 @@ export function RequirementSummary({ initialApp }: { initialApp: ApplicationType
   const onAnswer = (next: Requirement) => {
     writeDraft({ ...base, requirement: next, revision: base.revision + 1 });
   };
+  const [missingOnly, setMissingOnly] = useState(false);
   const onReset = () => {
     if (!requirement) return;
     writeDraft({
@@ -176,6 +204,11 @@ export function RequirementSummary({ initialApp }: { initialApp: ApplicationType
 
   const defs = requirement ? fieldsFor(requirement.applicationType) : [];
   const progress = requirement ? countFilled(requirement) : null;
+  const applicationType = requirement?.applicationType ?? null;
+  const needs = useMemo(() => (applicationType ? needsFor(applicationType) : null), [applicationType]);
+  const needCounts = useMemo(() => (requirement ? countByNeed(requirement) : null), [requirement]);
+  const isEmptyField = (path: string) => (requirement ? readField(requirement, path)?.value == null : true);
+  const shownDefs = missingOnly ? defs.filter((def) => isEmptyField(def.path)) : defs;
   const inferredType =
     requirement && base.parse?.inferredApplicationType === requirement.applicationType
       ? base.parse.inferredApplicationType
@@ -185,6 +218,33 @@ export function RequirementSummary({ initialApp }: { initialApp: ApplicationType
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
       <div className="min-w-0 space-y-6">
+        {reading ? (
+          <div
+            role="status"
+            aria-live="polite"
+            className="flex flex-wrap items-center gap-3 rounded-2xl border border-sky-300 bg-sky-50 px-4 py-3 text-sm text-sky-900 dark:border-sky-500/40 dark:bg-sky-500/10 dark:text-sky-200"
+          >
+            <span
+              aria-hidden="true"
+              className="size-4 shrink-0 animate-spin rounded-full border-2 border-sky-600 border-t-transparent dark:border-sky-300"
+            />
+            <p className="min-w-0 flex-1">{t('parser.readingBanner')}</p>
+            <button
+              type="button"
+              onClick={cancelParse}
+              className="inline-flex min-h-9 items-center rounded-lg border border-sky-600 px-3 text-sm font-medium text-sky-800 transition hover:bg-sky-100 dark:border-sky-400 dark:text-sky-200 dark:hover:bg-sky-500/20"
+            >
+              {t('parser.cancel')}
+            </button>
+          </div>
+        ) : null}
+
+        {/* Khoá cả bảng trong lúc đọc — nút "Bỏ chờ" nằm ngoài fieldset nên vẫn bấm được. */}
+        <fieldset
+          disabled={reading}
+          aria-busy={reading}
+          className="m-0 min-w-0 space-y-6 border-0 p-0 disabled:opacity-60"
+        >
         {base.rawText ? (
           <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5 dark:border-slate-800 dark:bg-slate-900/60">
             <div className="flex flex-wrap items-start justify-between gap-2">
@@ -192,7 +252,6 @@ export function RequirementSummary({ initialApp }: { initialApp: ApplicationType
               {canReread ? (
                 <button
                   type="button"
-                  disabled={parsing}
                   onClick={() => runParse(base)}
                   className="text-xs font-medium text-sky-700 hover:underline disabled:cursor-not-allowed disabled:opacity-50 dark:text-sky-400"
                 >
@@ -203,7 +262,7 @@ export function RequirementSummary({ initialApp }: { initialApp: ApplicationType
             <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-slate-700 dark:text-slate-300">
               {base.rawText}
             </p>
-            <ParseStatus parsing={parsing} parse={base.parse} />
+            {reading ? null : <ParseStatus parse={base.parse} />}
           </div>
         ) : null}
 
@@ -240,8 +299,30 @@ export function RequirementSummary({ initialApp }: { initialApp: ApplicationType
               {t('partialSupport')}
             </p>
           ) : null}
-          {progress ? (
-            <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">{t('progress', progress)}</p>
+          {progress && needCounts ? (
+            <>
+              <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">{t('progress', progress)}</p>
+              <ul className="mt-2 flex flex-wrap gap-2">
+                {NEED_LEVELS.map((level) => (
+                  <li
+                    key={level}
+                    className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${NEED_CLASS[level]}`}
+                  >
+                    {t(`need.${level}`)}: {needCounts[level].filled}/{needCounts[level].total}
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{t('needLegend')}</p>
+              <label className="mt-3 inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+                <input
+                  type="checkbox"
+                  checked={missingOnly}
+                  onChange={(event) => setMissingOnly(event.target.checked)}
+                  className="size-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500 dark:border-slate-600"
+                />
+                {t('missingOnly')}
+              </label>
+            </>
           ) : (
             <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">{t('pickApplicationHint')}</p>
           )}
@@ -253,7 +334,7 @@ export function RequirementSummary({ initialApp }: { initialApp: ApplicationType
 
         {requirement && resolved
           ? REQUIREMENT_SECTIONS.map((section) => {
-              const sectionDefs = defs.filter((def) => def.section === section);
+              const sectionDefs = shownDefs.filter((def) => def.section === section);
               if (sectionDefs.length === 0) return null;
               return (
                 <section
@@ -270,18 +351,25 @@ export function RequirementSummary({ initialApp }: { initialApp: ApplicationType
                       const badge: BadgeKey = shown?.confidence ?? 'notAsked';
                       const filledBySystem = badge === 'assumed' || badge === 'inferred';
                       const id = inputId(def.path);
+                      const need = needs?.get(def.path) ?? 'optional';
+                      const missingNeeded = need === 'required' && isEmptyField(def.path);
                       const label = (
                         <>
                           {t(`fields.${def.section}.${def.key}`)}
                           {def.unit ? (
                             <span className="ml-1 text-xs text-slate-500 dark:text-slate-400">({def.unit})</span>
                           ) : null}
+                          <span className={`ml-2 rounded px-1.5 py-0.5 text-[11px] font-medium ${NEED_CLASS[need]}`}>
+                            {t(`need.${need}`)}
+                          </span>
                         </>
                       );
                       return (
                         <li
                           key={def.path}
-                          className="grid items-center gap-2 px-4 py-3 sm:grid-cols-[minmax(0,13rem)_minmax(0,1fr)_6.5rem] sm:gap-4 sm:px-5"
+                          className={`grid items-center gap-2 px-4 py-3 sm:grid-cols-[minmax(0,13rem)_minmax(0,1fr)_6.5rem] sm:gap-4 sm:px-5 ${
+                            missingNeeded ? 'bg-amber-50/60 dark:bg-amber-500/10' : ''
+                          }`}
                         >
                           {def.kind === 'multiselect' ? (
                             <span id={`${id}-label`} className="text-sm text-slate-700 dark:text-slate-300">
@@ -325,6 +413,12 @@ export function RequirementSummary({ initialApp }: { initialApp: ApplicationType
             })
           : null}
 
+        {requirement && missingOnly && shownDefs.length === 0 ? (
+          <p className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
+            {t('missingOnlyNone')}
+          </p>
+        ) : null}
+
         {requirement ? (
           <div className="flex justify-end">
             <button
@@ -336,6 +430,7 @@ export function RequirementSummary({ initialApp }: { initialApp: ApplicationType
             </button>
           </div>
         ) : null}
+        </fieldset>
       </div>
 
       {resolved ? (
@@ -349,15 +444,13 @@ export function RequirementSummary({ initialApp }: { initialApp: ApplicationType
 
 // ─────────────────────────────── Trạng thái đọc mô tả ───────────────────────────────
 
-function ParseStatus({ parsing, parse }: { parsing: boolean; parse: DraftParse | undefined }) {
+function ParseStatus({ parse }: { parse: DraftParse | undefined }) {
   const t = useTranslations('designer.requirement.parser');
 
   let tone: 'info' | 'ok' | 'warn' = 'info';
   let message: string | null = null;
 
-  if (parsing) {
-    message = t('reading');
-  } else if (parse) {
+  if (parse) {
     switch (parse.status) {
       case 'ok':
         if (parse.applied > 0) {
@@ -385,6 +478,9 @@ function ParseStatus({ parsing, parse }: { parsing: boolean; parse: DraftParse |
       case 'unavailable':
         message = t('unavailable');
         break;
+      case 'cancelled':
+        message = t('cancelled');
+        break;
       case 'denied':
         message = null;
         break;
@@ -402,7 +498,7 @@ function ParseStatus({ parsing, parse }: { parsing: boolean; parse: DraftParse |
   return (
     <div role="status" className={`mt-2 space-y-1 text-xs ${color}`}>
       <p>{message}</p>
-      {!parsing && parse && parse.dropped > 0 ? (
+      {parse && parse.dropped > 0 ? (
         <p className="text-slate-500 dark:text-slate-400">{t('dropped', { count: parse.dropped })}</p>
       ) : null}
     </div>

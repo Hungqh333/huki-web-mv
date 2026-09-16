@@ -72,9 +72,13 @@ const CHIP_CLASS =
 /** Không có confidence = chưa hỏi. */
 type BadgeKey = Confidence | 'notAsked';
 
-/** Mức cần thiết của ô (questions.ts). Ô "Cần để tính" còn trống được tô để nhìn ra ngay. */
+/*
+ * Mức cần thiết của ô (questions.ts). Trên từng dòng, ô bắt buộc chỉ mang dấu *
+ * đỏ theo lệ thường của biểu mẫu — nhãn chữ dài làm rối bảng; ô "Nên có" mang
+ * nhãn ngắn; ô tuỳ chọn không ghi gì. Dòng đếm phía trên vẫn ghi đủ ba mức.
+ */
 const NEED_CLASS: Record<FieldNeed, string> = {
-  required: 'bg-amber-100 text-amber-900 dark:bg-amber-500/15 dark:text-amber-200',
+  required: 'bg-rose-100 text-rose-900 dark:bg-rose-500/15 dark:text-rose-200',
   recommended: 'bg-sky-50 text-sky-800 dark:bg-sky-500/10 dark:text-sky-300',
   optional: 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400',
 };
@@ -359,16 +363,28 @@ export function RequirementSummary({ initialApp }: { initialApp: ApplicationType
                           {def.unit ? (
                             <span className="ml-1 text-xs text-slate-500 dark:text-slate-400">({def.unit})</span>
                           ) : null}
-                          <span className={`ml-2 rounded px-1.5 py-0.5 text-[11px] font-medium ${NEED_CLASS[need]}`}>
-                            {t(`need.${need}`)}
-                          </span>
+                          {need === 'required' ? (
+                            <>
+                              <span aria-hidden="true" className="ml-1 font-bold text-rose-600 dark:text-rose-400">
+                                *
+                              </span>
+                              <span className="sr-only"> {t('need.required')}</span>
+                            </>
+                          ) : null}
+                          {need === 'recommended' ? (
+                            <span className={`ml-2 rounded px-1.5 py-0.5 text-[11px] font-medium ${NEED_CLASS[need]}`}>
+                              {t('need.recommended')}
+                            </span>
+                          ) : null}
                         </>
                       );
                       return (
                         <li
                           key={def.path}
                           className={`grid items-center gap-2 px-4 py-3 sm:grid-cols-[minmax(0,13rem)_minmax(0,1fr)_6.5rem] sm:gap-4 sm:px-5 ${
-                            missingNeeded ? 'bg-amber-50/60 dark:bg-amber-500/10' : ''
+                            missingNeeded
+                              ? 'border-l-4 border-rose-500 bg-rose-50 pl-3 sm:pl-4 dark:bg-rose-500/10'
+                              : ''
                           }`}
                         >
                           {def.kind === 'multiselect' ? (

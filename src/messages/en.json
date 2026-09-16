@@ -1367,11 +1367,11 @@
       "partialSupport": "This version only has full parameters for Appearance Inspection and Measurement. This type shows the common parameters for now.",
       "progress": "{filled}/{total} parameters filled",
       "need": {
-        "required": "Needed to compute",
+        "required": "Required",
         "recommended": "Good to have",
         "optional": "Optional"
       },
-      "needLegend": "A missing “Needed to compute” value means no result yet. Empty “Good to have” values force the system to assume one for you.",
+      "needLegend": "Values marked with a red * are required — without them there is no result yet. Empty “Good to have” values force the system to assume one for you.",
       "missingOnly": "Show only empty values",
       "missingOnlyNone": "No empty values left.",
       "reset": "Start over",

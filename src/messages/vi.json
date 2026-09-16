@@ -1367,11 +1367,11 @@
       "partialSupport": "Bản hiện tại mới có đủ thông số cho Kiểm tra ngoại quan và Đo lường. Loại này tạm chỉ có phần thông số chung.",
       "progress": "{filled}/{total} thông số đã có",
       "need": {
-        "required": "Cần để tính",
+        "required": "Bắt buộc",
         "recommended": "Nên có",
         "optional": "Tuỳ chọn"
       },
-      "needLegend": "Thiếu ô “Cần để tính” thì chưa ra được kết quả. Ô “Nên có” bỏ trống thì hệ thống phải giả định thay bạn.",
+      "needLegend": "Ô có dấu * đỏ là bắt buộc — thiếu thì chưa ra được kết quả. Ô “Nên có” bỏ trống thì hệ thống phải giả định thay bạn.",
       "missingOnly": "Chỉ hiện ô còn thiếu",
       "missingOnlyNone": "Không còn ô nào trống.",
       "reset": "Làm lại từ đầu",

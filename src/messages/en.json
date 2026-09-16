@@ -611,6 +611,7 @@
         "encoder": "Encoder",
         "detectionBudget": "Defect detection budget",
         "measurementBudget": "Measurement budget (gage)",
+        "perspectiveError": "Perspective error (standard lens)",
         "governingResolution": "Branch that sets the resolution",
         "measurementResolution": "Camera meets the measurement budget"
       },
@@ -637,7 +638,10 @@
         "encoderMissing": "No encoder specified. Without one, any conveyor speed drift stretches or squeezes the image.",
         "governedByMeasurement": "The measurement branch is {ratio}× tighter — the tolerance, not the defect size, sets the resolution.",
         "governedByDetection": "The detection branch is {ratio}× tighter — the measurement tolerance adds no pixel demand.",
-        "measurementTooCoarse": "Each pixel covers {actual} mm, coarser than the {target} mm/px measurement budget: the defect may still be visible, but the required tolerance cannot be measured."
+        "measurementTooCoarse": "Each pixel covers {actual} mm, coarser than the {target} mm/px measurement budget: the defect may still be visible, but the required tolerance cannot be measured.",
+        "perspectiveExceedsBudget": "Perspective error {error} mm exceeds the {budget} mm measurement budget ({ratio}×). A standard lens cannot meet it: use a telecentric lens, hold part height mechanically, or shrink the field of view per camera.",
+        "perspectiveEatsBudget": "Perspective error {error} mm already uses {share}% of the {budget} mm measurement budget — over half, leaving almost no room for other error sources (thermal, stitching).",
+        "perspectiveNeedsTelecentric": "A perspective-free measurement was requested: a telecentric lens is required. With a standard lens the perspective error would be {error} mm against a {budget} mm budget."
       },
       "lightingReason": {
         "scratch": "Scratches and shallow cracks only stand out under a very low angle against a dark background.",

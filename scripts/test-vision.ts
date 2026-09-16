@@ -6,12 +6,18 @@
  * cho nhịp ảnh, nhoè chuyển động, và byte/px theo định dạng ảnh.
  */
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 import {
   airyDiskUm,
   analyseAppearance,
   cameraCount,
+  cameraGrid,
+  cameraTile,
+  perspectiveCheck,
+  perspectiveErrorMm,
+  PERSPECTIVE_WARN_SHARE,
   cameraCoversNeed,
   cycleBudget,
   depthOfFieldMm,
@@ -786,3 +792,116 @@ test('form đọc measurement_tolerance_mm, để trống thì null', () => {
   assert.equal(without.measurementToleranceMm, null);
   assert.equal(DEFAULT_APPEARANCE_INPUT.measurementToleranceMm, null, 'mac dinh khong co yeu cau do');
 });
+
+// ------------------------------------------------ CHIA CAMERA & PHỐI CẢNH --
+// V1b B2 — RES-005 (chia vùng nhìn) và OPT-008 (sai số phối cảnh), chốt 2026-09-16.
+
+test('lưới camera gần vuông, đúng bằng số camera, chiều nhiều camera theo trục dài', () => {
+  const grid = (cameraCount: number, fovWidthMm = 380, fovHeightMm = 280) =>
+    cameraGrid({ cameraCount, fovWidthMm, fovHeightMm });
+
+  assert.deepEqual(grid(1), { cols: 1, rows: 1 });
+  assert.deepEqual(grid(2), { cols: 2, rows: 1 });
+  assert.deepEqual(grid(3), { cols: 3, rows: 1 });
+  assert.deepEqual(grid(4), { cols: 2, rows: 2 });
+  assert.deepEqual(grid(6), { cols: 3, rows: 2 });
+  assert.deepEqual(grid(5), { cols: 5, rows: 1 }, 'so nguyen to thanh mot hang dai');
+  assert.deepEqual(grid(2, 100, 300), { cols: 1, rows: 2 }, 'vat dung thi xep theo truc doc');
+
+  assert.equal(grid(0), null);
+  assert.equal(grid(2.5), null);
+  assert.equal(grid(2, 0, 280), null);
+});
+
+test('vùng nhìn một camera = ô lưới + chồng lấn max(10%, 20 px); trục một camera không chồng lấn', () => {
+  // GT-001: 380 × 280, 4 camera, 0,06 mm/px → ô 190 × 140, chồng lấn 19 và 14 (10% thắng 1,2 mm).
+  const gt001 = cameraTile({ fovWidthMm: 380, fovHeightMm: 280, cameraCount: 4, mmPerPx: 0.06 })!;
+  assert.deepEqual(gt001.grid, { cols: 2, rows: 2 });
+  assert.equal(gt001.widthMm, 209);
+  assert.equal(gt001.heightMm, 154);
+  assert.equal(gt001.halfDiagonalMm, 129.805);
+
+  // Pixel thô: 20 px × 0,5 mm = 10 mm thắng 10% của ô 50 mm.
+  const coarse = cameraTile({ fovWidthMm: 100, fovHeightMm: 40, cameraCount: 2, mmPerPx: 0.5 })!;
+  assert.equal(coarse.overlapXMm, 10);
+  assert.equal(coarse.widthMm, 60);
+  assert.equal(coarse.overlapYMm, 0, 'mot hang thi khong co duong ghep doc');
+  assert.equal(coarse.heightMm, 40);
+
+  const single = cameraTile({ fovWidthMm: 380, fovHeightMm: 280, cameraCount: 1, mmPerPx: null })!;
+  assert.equal(single.widthMm, 380);
+  assert.equal(single.halfDiagonalMm, 236.008);
+});
+
+test('sai số phối cảnh = Δh ÷ WD × r — ví dụ spec §4.2 ra 0,83 mm', () => {
+  assert.equal(round4(perspectiveErrorMm({ heightVariationMm: 2, workingDistanceMm: 300, offAxisMm: 125 })!), 0.8333);
+  assert.equal(perspectiveErrorMm({ heightVariationMm: 0, workingDistanceMm: 300, offAxisMm: 125 }), 0);
+  assert.equal(perspectiveErrorMm({ heightVariationMm: 2, workingDistanceMm: 0, offAxisMm: 125 }), null);
+  assert.equal(perspectiveErrorMm({ heightVariationMm: -1, workingDistanceMm: 300, offAxisMm: 125 }), null);
+});
+
+test('GT-001: phối cảnh vượt ngân sách đo ~43 lần → FAIL, dùng CẢ dải Δh và r của MỘT camera', () => {
+  const tile = cameraTile({ fovWidthMm: 380, fovHeightMm: 280, cameraCount: 4, mmPerPx: 0.06 });
+  const budget = measurementBudget(0.1)!; // U = 0,02 mm
+  const check = perspectiveCheck({
+    heightVariationMm: 2,
+    workingDistanceMm: 300,
+    tile,
+    uncertaintyBudgetMm: budget.uncertaintyBudgetMm,
+    perspectiveFree: false,
+  })!;
+
+  assert.equal(check.key, 'perspectiveError');
+  assert.equal(check.status, 'fail');
+  assert.equal(check.noteKey, 'perspectiveExceedsBudget');
+  assert.equal(check.noteValues!.error, 0.8654, 'ca dai 2 mm, khong chia doi; r = 129,8 mm cua mot camera');
+  assert.equal(check.noteValues!.budget, 0.02);
+  assert.ok(check.formula.includes('> U 0.02 mm'), check.formula);
+});
+
+test('phối cảnh: quá nửa ngân sách → WARN, dưới nửa → PASS', () => {
+  const tile = cameraTile({ fovWidthMm: 200, fovHeightMm: 0.0001, cameraCount: 1, mmPerPx: null })!; // r ≈ 100 mm
+  const run = (heightVariationMm: number) =>
+    perspectiveCheck({ heightVariationMm, workingDistanceMm: 300, tile, uncertaintyBudgetMm: 0.02, perspectiveFree: false })!;
+
+  assert.equal(PERSPECTIVE_WARN_SHARE, 0.5);
+  const eats = run(0.05); // 0,05 ÷ 300 × 100 = 0,0167 mm = 83% U
+  assert.equal(eats.status, 'warn');
+  assert.equal(eats.noteKey, 'perspectiveEatsBudget');
+  assert.equal(eats.noteValues!.share, 83);
+
+  const fine = run(0.01); // 0,0033 mm = 17% U
+  assert.equal(fine.status, 'pass');
+  assert.equal(fine.noteKey, undefined);
+});
+
+test('phối cảnh: khách yêu cầu đo không phối cảnh → WARN cần telecentric, không FAIL', () => {
+  const tile = cameraTile({ fovWidthMm: 380, fovHeightMm: 280, cameraCount: 4, mmPerPx: 0.06 });
+  const check = perspectiveCheck({ heightVariationMm: 2, workingDistanceMm: 300, tile, uncertaintyBudgetMm: 0.02, perspectiveFree: true })!;
+  assert.equal(check.status, 'warn');
+  assert.equal(check.noteKey, 'perspectiveNeedsTelecentric');
+});
+
+test('phối cảnh: không có dung sai đo hoặc thiếu Δh / WD / vùng nhìn → không có phép kiểm, không đoán', () => {
+  const tile = cameraTile({ fovWidthMm: 380, fovHeightMm: 280, cameraCount: 4, mmPerPx: 0.06 });
+  const base = { heightVariationMm: 2, workingDistanceMm: 300, tile, uncertaintyBudgetMm: 0.02, perspectiveFree: false };
+  assert.equal(perspectiveCheck({ ...base, uncertaintyBudgetMm: null }), null);
+  assert.equal(perspectiveCheck({ ...base, heightVariationMm: null }), null);
+  assert.equal(perspectiveCheck({ ...base, workingDistanceMm: null }), null);
+  assert.equal(perspectiveCheck({ ...base, tile: null }), null);
+});
+
+test('nhãn phép kiểm phối cảnh đủ ở cả hai ngôn ngữ', () => {
+  for (const locale of ['vi', 'en'] as const) {
+    const messages = JSON.parse(readFileSync(new URL(`../src/messages/${locale}.json`, import.meta.url), 'utf8'));
+    const vision = messages.selector.vision;
+    assert.ok(vision.checks.perspectiveError, `${locale}: checks.perspectiveError`);
+    for (const note of ['perspectiveExceedsBudget', 'perspectiveEatsBudget', 'perspectiveNeedsTelecentric']) {
+      assert.ok(vision.notes[note]?.includes('{error}'), `${locale}: notes.${note}`);
+    }
+  }
+});
+
+function round4(value: number): number {
+  return Math.round(value * 10_000) / 10_000;
+}

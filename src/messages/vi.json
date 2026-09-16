@@ -611,6 +611,7 @@
         "encoder": "Encoder",
         "detectionBudget": "Ngân sách phát hiện lỗi",
         "measurementBudget": "Ngân sách đo lường (gage)",
+        "perspectiveError": "Sai số phối cảnh (ống kính thường)",
         "governingResolution": "Nhánh quyết định độ phân giải",
         "measurementResolution": "Camera đạt ngân sách đo"
       },
@@ -637,7 +638,10 @@
         "encoderMissing": "Chưa khai encoder. Không có encoder thì tốc độ băng tải trôi bao nhiêu, ảnh dãn/nén bấy nhiêu.",
         "governedByMeasurement": "Nhánh đo lường chặt hơn {ratio}× — dung sai quyết định độ phân giải, không phải kích thước lỗi.",
         "governedByDetection": "Nhánh phát hiện lỗi chặt hơn {ratio}× — dung sai đo không đòi thêm pixel.",
-        "measurementTooCoarse": "Mỗi pixel {actual} mm, thô hơn ngân sách đo {target} mm/px: có thể vẫn thấy lỗi nhưng không đo được tới dung sai yêu cầu."
+        "measurementTooCoarse": "Mỗi pixel {actual} mm, thô hơn ngân sách đo {target} mm/px: có thể vẫn thấy lỗi nhưng không đo được tới dung sai yêu cầu.",
+        "perspectiveExceedsBudget": "Sai số phối cảnh {error} mm vượt ngân sách đo {budget} mm ({ratio}×). Ống kính thường không đạt: cần ống kính telecentric, giữ chiều cao sản phẩm ổn định bằng cơ khí, hoặc thu nhỏ vùng nhìn mỗi camera.",
+        "perspectiveEatsBudget": "Sai số phối cảnh {error} mm đã chiếm {share}% ngân sách đo {budget} mm — quá nửa, các nguồn sai số khác (nhiệt, ghép ảnh) gần như không còn chỗ.",
+        "perspectiveNeedsTelecentric": "Khách yêu cầu đo không phối cảnh: phải dùng ống kính telecentric. Nếu dùng ống kính thường, sai số phối cảnh sẽ là {error} mm so với ngân sách {budget} mm."
       },
       "lightingReason": {
         "scratch": "Xước và nứt nông chỉ nổi lên khi chiếu góc rất thấp, nền tối hẳn.",

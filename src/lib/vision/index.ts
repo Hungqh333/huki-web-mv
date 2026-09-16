@@ -11,6 +11,7 @@ export * from './timing';
 export * from './optics';
 export * from './lighting';
 export * from './linescan';
+export * from './tiling';
 
 /**
  * Bộ tính toán cho bài Kiểm tra ngoại quan.

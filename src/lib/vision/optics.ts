@@ -1,4 +1,5 @@
 import { SENSOR_FORMATS, sensorDiagonalMm } from '@/lib/components/specs';
+import type { CameraTile } from './tiling';
 import { fmt, round, type Check } from './types';
 
 /**
@@ -70,6 +71,88 @@ export function depthOfFieldMm(input: {
   const { fNumber, circleOfConfusionMm, beta } = input;
   if (fNumber <= 0 || circleOfConfusionMm <= 0 || beta <= 0) return null;
   return round((2 * fNumber * circleOfConfusionMm * (1 + beta)) / beta ** 2, 3);
+}
+
+// --------------------------------------------------------- SAI SỐ PHỐI CẢNH --
+/*
+ * OPT-008 — spec V1.1 §4.2. Ống kính thường (entocentric) nhìn theo chùm tia
+ * toả ra: điểm cao hơn mặt chuẩn Δh hiện ra lệch khỏi chỗ thật một đoạn tỉ lệ
+ * với khoảng cách của nó tới tâm ảnh. Hiệu chuẩn mặt phẳng không bù được, vì
+ * mỗi sản phẩm cao thấp khác nhau.
+ *
+ * Chốt 2026-09-16:
+ * - Δh lấy CẢ DẢI, không chia đôi. Chỉ chia đôi được khi hiệu chuẩn đúng ở mặt
+ *   giữa, mà điều đó chưa ai xác nhận — lấy phía xấu.
+ * - r là nửa đường chéo MỘT camera (tiling.ts), đã cộng chồng lấn.
+ * - Chưa chọn ống kính (V1c) thì mặc định ống kính thường: rẻ và phổ biến nhất,
+ *   nên đó là trường hợp phải kiểm.
+ */
+
+/** Một nguồn sai số ăn quá nửa ngân sách đo thì các nguồn khác gần như hết chỗ. */
+export const PERSPECTIVE_WARN_SHARE = 0.5;
+
+/** Sai số phối cảnh (mm): Δh ÷ WD × r. */
+export function perspectiveErrorMm(input: {
+  heightVariationMm: number;
+  workingDistanceMm: number;
+  offAxisMm: number;
+}): number | null {
+  const { heightVariationMm, workingDistanceMm, offAxisMm } = input;
+  if (!(heightVariationMm >= 0) || !(workingDistanceMm > 0) || !(offAxisMm >= 0)) return null;
+  return (heightVariationMm / workingDistanceMm) * offAxisMm;
+}
+
+/**
+ * So sai số phối cảnh với ngân sách đo U (resolution.ts):
+ * > U → FAIL · > 50% U → WARN · còn lại PASS.
+ *
+ * Khách yêu cầu đo không phối cảnh thì KHÔNG FAIL: con số vẫn hiện để thấy vì
+ * sao, nhưng kết luận là phải dùng ống kính telecentric (OPT-006).
+ *
+ * Bài không có dung sai đo (U = null), hoặc thiếu Δh / WD / vùng nhìn, thì
+ * không có phép kiểm này — trả null, không đoán.
+ */
+export function perspectiveCheck(input: {
+  heightVariationMm: number | null;
+  workingDistanceMm: number | null;
+  tile: CameraTile | null;
+  uncertaintyBudgetMm: number | null;
+  perspectiveFree: boolean;
+}): Check | null {
+  const { heightVariationMm, workingDistanceMm, tile, uncertaintyBudgetMm } = input;
+  if (uncertaintyBudgetMm === null || !(uncertaintyBudgetMm > 0)) return null;
+  if (heightVariationMm === null || workingDistanceMm === null || !tile) return null;
+
+  const errorMm = perspectiveErrorMm({ heightVariationMm, workingDistanceMm, offAxisMm: tile.halfDiagonalMm });
+  if (errorMm === null) return null;
+
+  const ratio = errorMm / uncertaintyBudgetMm;
+  const values = {
+    error: round(errorMm, 4),
+    budget: round(uncertaintyBudgetMm, 4),
+    ratio: round(ratio, 1),
+    share: Math.round(ratio * 100),
+  };
+  const base = `${fmt(heightVariationMm)} mm ÷ ${fmt(workingDistanceMm)} mm × ${fmt(tile.halfDiagonalMm, 1)} mm = ${fmt(errorMm, 4)} mm`;
+
+  if (input.perspectiveFree) {
+    return {
+      key: 'perspectiveError',
+      status: 'warn',
+      formula: `${base} (nếu dùng ống kính thường)`,
+      noteKey: 'perspectiveNeedsTelecentric',
+      noteValues: values,
+    };
+  }
+
+  const status = ratio > 1 ? 'fail' : ratio > PERSPECTIVE_WARN_SHARE ? 'warn' : 'pass';
+  return {
+    key: 'perspectiveError',
+    status,
+    formula: `${base} ${ratio > 1 ? '>' : '≤'} U ${fmt(uncertaintyBudgetMm, 4)} mm`,
+    noteKey: status === 'fail' ? 'perspectiveExceedsBudget' : status === 'warn' ? 'perspectiveEatsBudget' : undefined,
+    noteValues: status === 'pass' ? undefined : values,
+  };
 }
 
 // --------------------------------------------------------------- CÁC BƯỚC --

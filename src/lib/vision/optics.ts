@@ -1,6 +1,6 @@
 import { SENSOR_FORMATS, sensorDiagonalMm } from '@/lib/components/specs';
 import { ERROR_WARN_SHARE } from './resolution';
-import type { CameraTile } from './tiling';
+import { TILE_OVERLAP_RATIO, type CameraTile } from './tiling';
 import { fmt, round, type Check } from './types';
 
 /**
@@ -150,6 +150,111 @@ export function perspectiveCheck(input: {
     formula: `${base} ${ratio > 1 ? '>' : '≤'} U ${fmt(uncertaintyBudgetMm, 4)} mm`,
     noteKey: status === 'fail' ? 'perspectiveExceedsBudget' : status === 'warn' ? 'perspectiveEatsBudget' : undefined,
     noteValues: status === 'pass' ? undefined : values,
+  };
+}
+
+// ------------------------------------------------------ TRẦN TELECENTRIC --
+/*
+ * OPT-007 — spec V1.1 §6. Khi phối cảnh FAIL (hoặc khách yêu cầu đo không phối
+ * cảnh), gợi ý thẳng "dùng telecentric" là chưa đủ: ống telecentric cần đường
+ * kính đầu lớn hơn vùng nhìn, nên vùng nhìn lớn thì ống kính không tồn tại hoặc
+ * không mua nổi. Engine phải nói điều đó VÀ đưa phương án thay thế có số.
+ *
+ * Chốt 2026-09-17 (gộp spec §6 và UI_CONTENT màn 6, hai nguồn ghi lệch nhau):
+ * - Cạnh lớn nhất vùng nhìn MỘT camera (có chồng lấn): ≤ 100 mm PASS kèm lưu ý
+ *   chi phí · 100–200 mm WARN rất đắt · > 200 mm FAIL không khả thi.
+ * - Đường kính đầu ≈ 1,3 × cạnh vùng nhìn (spec cho 1,15–1,3, lấy phía xấu).
+ * - Chỉ chạy khi engine sắp gợi ý telecentric.
+ * - 100 / 200 mm và 1,3 là PHÁN ĐOÁN THỊ TRƯỜNG (giá đổi thì phải sửa), khác
+ *   hằng số vật lý. TODO(V1b B6): cân nhắc đưa lên database + admin cùng khung luật.
+ */
+
+/** Vùng nhìn mỗi camera đến mức này thì telecentric còn hợp lý về giá. */
+export const TELECENTRIC_PRACTICAL_MAX_MM = 100;
+/** Quá mức này thì ống telecentric thực tế không có hoặc không mua nổi. */
+export const TELECENTRIC_FEASIBLE_MAX_MM = 200;
+/** Đường kính đầu ống kính ≈ hệ số này × cạnh vùng nhìn. */
+export const TELECENTRIC_FRONT_DIAMETER_FACTOR = 1.3;
+
+/** Đường kính đầu ống telecentric cần cho một cạnh vùng nhìn (mm). */
+export function telecentricFrontDiameterMm(fovMaxMm: number): number | null {
+  if (!(fovMaxMm > 0)) return null;
+  return fovMaxMm * TELECENTRIC_FRONT_DIAMETER_FACTOR;
+}
+
+/**
+ * Phương án thay thế ①: lưới camera để mỗi camera ≤ 100 mm, tính cả chồng lấn
+ * 10% như tiling.ts. Trục vừa một camera thì không cần chồng lấn.
+ */
+export function camerasForTelecentric(input: { fovWidthMm: number; fovHeightMm: number }): {
+  cols: number;
+  rows: number;
+  count: number;
+} | null {
+  const { fovWidthMm, fovHeightMm } = input;
+  if (!(fovWidthMm > 0) || !(fovHeightMm > 0)) return null;
+  const maxBase = TELECENTRIC_PRACTICAL_MAX_MM / (1 + TILE_OVERLAP_RATIO);
+  const axis = (totalMm: number) => (totalMm <= TELECENTRIC_PRACTICAL_MAX_MM ? 1 : Math.ceil(totalMm / maxBase));
+  const cols = axis(fovWidthMm);
+  const rows = axis(fovHeightMm);
+  return { cols, rows, count: cols * rows };
+}
+
+/**
+ * Phương án thay thế ②: giữ ống kính thường thì chiều cao sản phẩm phải ổn định
+ * trong Δh_max = U × WD ÷ r (đảo công thức phối cảnh).
+ */
+export function maxHeightVariationMm(input: {
+  uncertaintyBudgetMm: number;
+  workingDistanceMm: number;
+  offAxisMm: number;
+}): number | null {
+  const { uncertaintyBudgetMm, workingDistanceMm, offAxisMm } = input;
+  if (!(uncertaintyBudgetMm > 0) || !(workingDistanceMm > 0) || !(offAxisMm > 0)) return null;
+  return (uncertaintyBudgetMm * workingDistanceMm) / offAxisMm;
+}
+
+export function telecentricCheck(input: {
+  /** true khi phối cảnh FAIL hoặc khách yêu cầu đo không phối cảnh. */
+  needed: boolean;
+  tile: CameraTile | null;
+  fovWidthMm: number;
+  fovHeightMm: number;
+  uncertaintyBudgetMm: number | null;
+  workingDistanceMm: number | null;
+}): Check | null {
+  const { tile } = input;
+  if (!input.needed || !tile) return null;
+
+  const sizeMm = Math.max(tile.widthMm, tile.heightMm);
+  const diameterMm = telecentricFrontDiameterMm(sizeMm);
+  if (diameterMm === null) return null;
+
+  const status = sizeMm <= TELECENTRIC_PRACTICAL_MAX_MM ? 'pass' : sizeMm <= TELECENTRIC_FEASIBLE_MAX_MM ? 'warn' : 'fail';
+  const grid = camerasForTelecentric({ fovWidthMm: input.fovWidthMm, fovHeightMm: input.fovHeightMm });
+  const maxHeight =
+    input.uncertaintyBudgetMm !== null && input.workingDistanceMm !== null
+      ? maxHeightVariationMm({
+          uncertaintyBudgetMm: input.uncertaintyBudgetMm,
+          workingDistanceMm: input.workingDistanceMm,
+          offAxisMm: tile.halfDiagonalMm,
+        })
+      : null;
+
+  const limit = status === 'fail' ? `> ${TELECENTRIC_FEASIBLE_MAX_MM}` : status === 'warn' ? `> ${TELECENTRIC_PRACTICAL_MAX_MM}` : `≤ ${TELECENTRIC_PRACTICAL_MAX_MM}`;
+  return {
+    key: 'telecentricFeasibility',
+    status,
+    formula: `cạnh vùng nhìn một camera ${fmt(sizeMm, 1)} mm ${limit} mm · đường kính đầu ≈ ${fmt(sizeMm, 1)} × ${TELECENTRIC_FRONT_DIAMETER_FACTOR} = ${fmt(diameterMm, 0)} mm`,
+    noteKey: status === 'fail' ? 'telecentricInfeasible' : status === 'warn' ? 'telecentricExpensive' : 'telecentricCostNote',
+    noteValues: {
+      size: round(sizeMm, 1),
+      diameter: Math.round(diameterMm),
+      cols: grid?.cols ?? '—',
+      rows: grid?.rows ?? '—',
+      cameras: grid?.count ?? '—',
+      maxHeight: maxHeight !== null ? round(maxHeight, 3) : '—',
+    },
   };
 }
 

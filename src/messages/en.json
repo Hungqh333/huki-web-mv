@@ -614,6 +614,7 @@
         "perspectiveError": "Perspective error (standard lens)",
         "thermalError": "Thermal expansion error",
         "stitchError": "Stitching error between cameras",
+        "telecentricFeasibility": "Telecentric lens feasibility",
         "governingResolution": "Branch that sets the resolution",
         "measurementResolution": "Camera meets the measurement budget"
       },
@@ -647,7 +648,10 @@
         "thermalExceedsBudget": "Thermal expansion {error} mm exceeds the {budget} mm measurement budget ({ratio}×): this is a mechanical/thermal problem before it is a camera problem, and more resolution will not fix it. One of these is needed: keep the temperature swing at the measuring zone within {maxDeltaT} K (that is ±{halfDeltaT} K), compensate with a reference artifact in the image, or reconfirm the material and measuring conditions with the customer.",
         "thermalEatsBudget": "Thermal expansion {error} mm already uses {share}% of the {budget} mm measurement budget. Keep the temperature swing at the measuring zone within {maxDeltaT} K (±{halfDeltaT} K), or compensate with a reference artifact in the image.",
         "stitchExceedsBudget": "The measured dimension crosses {seams} seam(s): stitching error {stitch} mm plus thermal expansion {thermal} mm = {total} mm, exceeding the {budget} mm measurement budget ({ratio}×). More resolution will not fix it. Rearrange the cameras so tight-tolerance dimensions lie within one camera; if crossing is unavoidable, use a global calibration with a reference artifact covering the whole field of view, rigid camera mounts and periodic recalibration.",
-        "stitchEatsBudget": "The measured dimension crosses {seams} seam(s): stitching error {stitch} mm plus thermal expansion {thermal} mm = {total} mm, already {share}% of the {budget} mm measurement budget. A global calibration with a reference artifact covering the whole field of view and rigid camera mounts are needed."
+        "stitchEatsBudget": "The measured dimension crosses {seams} seam(s): stitching error {stitch} mm plus thermal expansion {thermal} mm = {total} mm, already {share}% of the {budget} mm measurement budget. A global calibration with a reference artifact covering the whole field of view and rigid camera mounts are needed.",
+        "telecentricInfeasible": "A {size} mm field of view per camera needs a telecentric lens with a front diameter of about {diameter} mm — in practice it does not exist or costs too much. Alternatives: (1) split so each camera sees at most 100 mm: a {cols}×{rows} grid = {cameras} telecentric cameras; (2) keep standard lenses, fix the working distance, calibrate the plane and clamp part height within {maxHeight} mm; (3) commit to the tolerance only for dimensions that lie within one camera.",
+        "telecentricExpensive": "A {size} mm field of view per camera needs a telecentric lens with a front diameter of about {diameter} mm — available but very expensive. Compare prices with: (1) a {cols}×{rows} grid = {cameras} cameras so each sees at most 100 mm; (2) standard lenses + plane calibration + clamping part height within {maxHeight} mm.",
+        "telecentricCostNote": "Telecentric is feasible: {size} mm field of view per camera, front diameter about {diameter} mm. Price climbs steeply with diameter — get a quote before committing."
       },
       "lightingReason": {
         "scratch": "Scratches and shallow cracks only stand out under a very low angle against a dark background.",

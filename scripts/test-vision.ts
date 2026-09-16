@@ -24,6 +24,13 @@ import {
   K_STITCH,
   seamsCrossed,
   stitchCheck,
+  camerasForTelecentric,
+  maxHeightVariationMm,
+  telecentricCheck,
+  telecentricFrontDiameterMm,
+  TELECENTRIC_FEASIBLE_MAX_MM,
+  TELECENTRIC_FRONT_DIAMETER_FACTOR,
+  TELECENTRIC_PRACTICAL_MAX_MM,
   cameraCoversNeed,
   cycleBudget,
   depthOfFieldMm,
@@ -1060,5 +1067,91 @@ test('nhãn phép kiểm ghép ảnh đủ ở cả hai ngôn ngữ', () => {
         assert.ok(vision.notes[note]?.includes(slot), `${locale}: notes.${note} ${slot}`);
       }
     }
+  }
+});
+
+// ------------------------------------------------------ TRẦN TELECENTRIC --
+// V1b B5 — OPT-007, chốt 2026-09-17.
+
+test('telecentric: ngưỡng 100 / 200 mm mỗi camera, đường kính đầu ≈ 1,3 × cạnh vùng nhìn', () => {
+  assert.equal(TELECENTRIC_PRACTICAL_MAX_MM, 100);
+  assert.equal(TELECENTRIC_FEASIBLE_MAX_MM, 200);
+  assert.equal(TELECENTRIC_FRONT_DIAMETER_FACTOR, 1.3);
+  assert.equal(round4(telecentricFrontDiameterMm(209)!), 271.7);
+  assert.equal(telecentricFrontDiameterMm(0), null);
+});
+
+test('phương án ①: lưới camera để mỗi camera ≤ 100 mm, có chồng lấn 10%', () => {
+  assert.deepEqual(camerasForTelecentric({ fovWidthMm: 380, fovHeightMm: 280 }), { cols: 5, rows: 4, count: 20 });
+  assert.deepEqual(camerasForTelecentric({ fovWidthMm: 90, fovHeightMm: 60 }), { cols: 1, rows: 1, count: 1 });
+  assert.deepEqual(camerasForTelecentric({ fovWidthMm: 150, fovHeightMm: 80 }), { cols: 2, rows: 1, count: 2 });
+
+  // Chéo lại bằng tiling.ts: 20 camera trên 380 × 280 thì mỗi camera thật sự ≤ 100 mm.
+  const tile = cameraTile({ fovWidthMm: 380, fovHeightMm: 280, cameraCount: 20, mmPerPx: null })!;
+  assert.ok(Math.max(tile.widthMm, tile.heightMm) <= 100, JSON.stringify(tile));
+});
+
+test('phương án ②: giữ ống kính thường thì chiều cao phải ổn định trong U × WD ÷ r', () => {
+  assert.equal(round4(maxHeightVariationMm({ uncertaintyBudgetMm: 0.02, workingDistanceMm: 300, offAxisMm: 129.805 })!), 0.0462);
+  assert.equal(maxHeightVariationMm({ uncertaintyBudgetMm: 0.02, workingDistanceMm: 300, offAxisMm: 0 }), null);
+});
+
+test('GT-001: 209 mm/camera → telecentric không khả thi (FAIL), kèm 20 camera hoặc kẹp chiều cao 0,046 mm', () => {
+  const tile = cameraTile({ fovWidthMm: 380, fovHeightMm: 280, cameraCount: 4, mmPerPx: 0.06 });
+  const check = telecentricCheck({
+    needed: true,
+    tile,
+    fovWidthMm: 380,
+    fovHeightMm: 280,
+    uncertaintyBudgetMm: 0.02,
+    workingDistanceMm: 300,
+  })!;
+
+  assert.equal(check.key, 'telecentricFeasibility');
+  assert.equal(check.status, 'fail');
+  assert.equal(check.noteKey, 'telecentricInfeasible');
+  assert.deepEqual(check.noteValues, { size: 209, diameter: 272, cols: 5, rows: 4, cameras: 20, maxHeight: 0.046 });
+  assert.ok(check.formula.includes('209 mm > 200 mm'), check.formula);
+});
+
+test('telecentric: 100–200 mm → WARN rất đắt; ≤ 100 mm → PASS kèm lưu ý giá', () => {
+  const run = (fovWidthMm: number, fovHeightMm: number) =>
+    telecentricCheck({
+      needed: true,
+      tile: cameraTile({ fovWidthMm, fovHeightMm, cameraCount: 1, mmPerPx: null }),
+      fovWidthMm,
+      fovHeightMm,
+      uncertaintyBudgetMm: 0.02,
+      workingDistanceMm: 300,
+    })!;
+
+  const expensive = run(150, 100);
+  assert.equal(expensive.status, 'warn');
+  assert.equal(expensive.noteKey, 'telecentricExpensive');
+  assert.equal(expensive.noteValues!.cameras, 2);
+
+  const fine = run(80, 60);
+  assert.equal(fine.status, 'pass');
+  assert.equal(fine.noteKey, 'telecentricCostNote');
+});
+
+test('telecentric: chỉ chạy khi engine sắp gợi ý telecentric; chưa có vùng nhìn camera thì không kiểm', () => {
+  const tile = cameraTile({ fovWidthMm: 380, fovHeightMm: 280, cameraCount: 4, mmPerPx: 0.06 });
+  const base = { needed: true, tile, fovWidthMm: 380, fovHeightMm: 280, uncertaintyBudgetMm: 0.02, workingDistanceMm: 300 };
+  assert.equal(telecentricCheck({ ...base, needed: false }), null);
+  assert.equal(telecentricCheck({ ...base, tile: null }), null);
+  assert.equal(telecentricCheck({ ...base, workingDistanceMm: null })!.noteValues!.maxHeight, '—');
+});
+
+test('nhãn phép kiểm telecentric đủ ở cả hai ngôn ngữ, phương án thay thế có số', () => {
+  for (const locale of ['vi', 'en'] as const) {
+    const vision = JSON.parse(readFileSync(new URL(`../src/messages/${locale}.json`, import.meta.url), 'utf8')).selector.vision;
+    assert.ok(vision.checks.telecentricFeasibility, `${locale}: checks.telecentricFeasibility`);
+    for (const note of ['telecentricInfeasible', 'telecentricExpensive']) {
+      for (const slot of ['{size}', '{diameter}', '{cameras}', '{maxHeight}']) {
+        assert.ok(vision.notes[note]?.includes(slot), `${locale}: notes.${note} ${slot}`);
+      }
+    }
+    assert.ok(vision.notes.telecentricCostNote?.includes('{diameter}'), `${locale}: notes.telecentricCostNote`);
   }
 });

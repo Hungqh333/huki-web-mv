@@ -53,6 +53,14 @@ export const GRR_DIVISOR = 10;
  */
 export const K_SUBPIXEL = 3;
 
+/**
+ * Ngưỡng WARN chung cho mọi nguồn sai số đem so với ngân sách đo U: phối cảnh
+ * (OPT-008), giãn nở nhiệt (MEC-001), ghép ảnh (MEC-003) cùng chia MỘT ngân
+ * sách, nên một nguồn ăn quá nửa thì các nguồn còn lại gần như hết chỗ.
+ * Chốt 2026-09-16.
+ */
+export const ERROR_WARN_SHARE = 0.5;
+
 export type MeasurementBudget = {
   /** Dung sai nhập vào, dạng ± (mm). */
   toleranceMm: number;

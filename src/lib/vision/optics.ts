@@ -1,4 +1,5 @@
 import { SENSOR_FORMATS, sensorDiagonalMm } from '@/lib/components/specs';
+import { ERROR_WARN_SHARE } from './resolution';
 import type { CameraTile } from './tiling';
 import { fmt, round, type Check } from './types';
 
@@ -88,9 +89,6 @@ export function depthOfFieldMm(input: {
  *   nên đó là trường hợp phải kiểm.
  */
 
-/** Một nguồn sai số ăn quá nửa ngân sách đo thì các nguồn khác gần như hết chỗ. */
-export const PERSPECTIVE_WARN_SHARE = 0.5;
-
 /** Sai số phối cảnh (mm): Δh ÷ WD × r. */
 export function perspectiveErrorMm(input: {
   heightVariationMm: number;
@@ -145,7 +143,7 @@ export function perspectiveCheck(input: {
     };
   }
 
-  const status = ratio > 1 ? 'fail' : ratio > PERSPECTIVE_WARN_SHARE ? 'warn' : 'pass';
+  const status = ratio > 1 ? 'fail' : ratio > ERROR_WARN_SHARE ? 'warn' : 'pass';
   return {
     key: 'perspectiveError',
     status,

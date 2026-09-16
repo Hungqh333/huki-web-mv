@@ -612,6 +612,7 @@
         "detectionBudget": "Ngân sách phát hiện lỗi",
         "measurementBudget": "Ngân sách đo lường (gage)",
         "perspectiveError": "Sai số phối cảnh (ống kính thường)",
+        "thermalError": "Sai số do giãn nở nhiệt",
         "governingResolution": "Nhánh quyết định độ phân giải",
         "measurementResolution": "Camera đạt ngân sách đo"
       },
@@ -641,7 +642,9 @@
         "measurementTooCoarse": "Mỗi pixel {actual} mm, thô hơn ngân sách đo {target} mm/px: có thể vẫn thấy lỗi nhưng không đo được tới dung sai yêu cầu.",
         "perspectiveExceedsBudget": "Sai số phối cảnh {error} mm vượt ngân sách đo {budget} mm ({ratio}×). Ống kính thường không đạt: cần ống kính telecentric, giữ chiều cao sản phẩm ổn định bằng cơ khí, hoặc thu nhỏ vùng nhìn mỗi camera.",
         "perspectiveEatsBudget": "Sai số phối cảnh {error} mm đã chiếm {share}% ngân sách đo {budget} mm — quá nửa, các nguồn sai số khác (nhiệt, ghép ảnh) gần như không còn chỗ.",
-        "perspectiveNeedsTelecentric": "Khách yêu cầu đo không phối cảnh: phải dùng ống kính telecentric. Nếu dùng ống kính thường, sai số phối cảnh sẽ là {error} mm so với ngân sách {budget} mm."
+        "perspectiveNeedsTelecentric": "Khách yêu cầu đo không phối cảnh: phải dùng ống kính telecentric. Nếu dùng ống kính thường, sai số phối cảnh sẽ là {error} mm so với ngân sách {budget} mm.",
+        "thermalExceedsBudget": "Giãn nở nhiệt {error} mm vượt ngân sách đo {budget} mm ({ratio}×): đây là bài toán cơ khí/nhiệt trước khi là bài toán camera, tăng độ phân giải không giải quyết được. Cần một trong: giữ dao động nhiệt vùng đo không quá {maxDeltaT} K (tức ±{halfDeltaT} K), bù nhiệt bằng vật chuẩn đặt trong ảnh, hoặc xác nhận lại vật liệu và điều kiện đo với khách.",
+        "thermalEatsBudget": "Giãn nở nhiệt {error} mm đã chiếm {share}% ngân sách đo {budget} mm. Nên giữ dao động nhiệt vùng đo không quá {maxDeltaT} K (±{halfDeltaT} K), hoặc bù nhiệt bằng vật chuẩn đặt trong ảnh."
       },
       "lightingReason": {
         "scratch": "Xước và nứt nông chỉ nổi lên khi chiếu góc rất thấp, nền tối hẳn.",

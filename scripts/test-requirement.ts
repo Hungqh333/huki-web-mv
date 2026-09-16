@@ -372,11 +372,13 @@ test('px/lỗi: contrast chưa xác định → ghi rõ đang dùng 3 và MP có
   assert.equal(pxOf(emptyRequirement('Measurement')), undefined, 'khong co nhanh loi thi khong co px/loi');
 });
 
-test('panel gom MỘT kiểu Assumption từ ba nguồn, đủ song ngữ và rule ID', () => {
+test('panel gom MỘT kiểu Assumption từ bốn nguồn, đủ song ngữ và rule ID', () => {
   const req = filled('Measurement', { 'object.sizeX': 100, 'measurement.0.tolerance': 0.05 });
   const { assumptions } = resolveAssumptions(req);
 
-  assert.deepEqual([...new Set(assumptions.map((a) => a.source))], ['default', 'adapter', 'parameter']);
+  // 'derived' từ V1b B3: có dung sai mà chưa có chiều dài cần đo → suy từ cạnh dài của vật.
+  assert.deepEqual([...new Set(assumptions.map((a) => a.source))], ['derived', 'default', 'adapter', 'parameter']);
+  assert.equal(assumptions.find((a) => a.source === 'derived')!.value, 100);
   assert.ok(assumptions.some((a) => a.key === 'fovEqualsObject'));
   assert.equal(assumptions.find((a) => a.key === 'parameter:grrDivisor')!.value, GRR_DIVISOR);
   assert.equal(assumptions.find((a) => a.key === 'parameter:kSubpixel')!.value, K_SUBPIXEL);
@@ -685,4 +687,34 @@ test('V1a hiện MỤC ĐÍCH: mọi mã luật trong cấu hình có mục đí
     for (const m of MATERIALS) assert.ok(r.options.material?.[m], `${locale}: options.material.${m}`);
     assert.ok(!RULE_CODE.test(JSON.stringify({ q: r.questions, p: r.purposes, a: r.assumptions })), `${locale}: nhan lo ma luat`);
   }
+});
+
+// ─────────────────────────── V1b B3: chiều dài cần đo suy ra ───────────────────────────
+
+test('chưa có chiều dài cần đo → giả định cạnh dài nhất của vật, chỉ khi có dung sai đo', () => {
+  const SPAN = 'measurement.0.spanLength';
+  const base = { 'object.sizeX': 100, 'object.sizeY': 380, 'measurement.0.tolerance': 0.1 };
+
+  const derived = applyDefaults(filled('Measurement', base));
+  const span = readField(derived.requirement, SPAN)!;
+  assert.equal(span.value, 380, 'lay canh dai nhat, du canh do nam o truc doc');
+  assert.equal(span.confidence, 'inferred');
+  const assumption = derived.assumptions.find((a) => a.path === SPAN)!;
+  assert.equal(assumption.key, 'derived:measurement.0.spanLength');
+  assert.equal(assumption.source, 'derived');
+  assert.deepEqual(assumption.ruleIds, ['MEC-001']);
+  assert.equal(assumption.level, 'warning');
+
+  // Người dùng đã nhập thì giữ nguyên, không giả định.
+  const entered = applyDefaults(filled('Measurement', { ...base, [SPAN]: 200 }));
+  assert.equal(readField(entered.requirement, SPAN)!.value, 200);
+  assert.ok(!entered.assumptions.some((a) => a.path === SPAN));
+
+  // Không có dung sai đo → chiều dài không dùng vào đâu → không giả định.
+  const noTolerance = applyDefaults(filled('Measurement', { 'object.sizeX': 100, 'object.sizeY': 380 }));
+  assert.equal(readField(noTolerance.requirement, SPAN)!.value, null);
+
+  // Chưa có kích thước vật → không có gì để suy.
+  const noSize = applyDefaults(filled('Measurement', { 'measurement.0.tolerance': 0.1 }));
+  assert.equal(readField(noSize.requirement, SPAN)!.value, null);
 });

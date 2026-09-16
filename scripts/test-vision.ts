@@ -17,7 +17,10 @@ import {
   cameraTile,
   perspectiveCheck,
   perspectiveErrorMm,
-  PERSPECTIVE_WARN_SHARE,
+  ERROR_WARN_SHARE,
+  maxDeltaTK,
+  thermalCheck,
+  thermalErrorUm,
   cameraCoversNeed,
   cycleBudget,
   depthOfFieldMm,
@@ -864,7 +867,7 @@ test('phối cảnh: quá nửa ngân sách → WARN, dưới nửa → PASS', (
   const run = (heightVariationMm: number) =>
     perspectiveCheck({ heightVariationMm, workingDistanceMm: 300, tile, uncertaintyBudgetMm: 0.02, perspectiveFree: false })!;
 
-  assert.equal(PERSPECTIVE_WARN_SHARE, 0.5);
+  assert.equal(ERROR_WARN_SHARE, 0.5);
   const eats = run(0.05); // 0,05 ÷ 300 × 100 = 0,0167 mm = 83% U
   assert.equal(eats.status, 'warn');
   assert.equal(eats.noteKey, 'perspectiveEatsBudget');
@@ -905,3 +908,65 @@ test('nhãn phép kiểm phối cảnh đủ ở cả hai ngôn ngữ', () => {
 function round4(value: number): number {
   return Math.round(value * 10_000) / 10_000;
 }
+
+// ------------------------------------------------------------ GIÃN NỞ NHIỆT --
+// V1b B3 — MEC-001, chốt 2026-09-16.
+
+test('giãn nở nhiệt = α × L × ΔT — GT-001 nhôm 380 mm, ΔT 10 K ra 87 µm', () => {
+  assert.equal(round4(thermalErrorUm({ alphaUmPerMK: 23, lengthMm: 380, deltaTK: 10 })!), 87.4);
+  assert.equal(thermalErrorUm({ alphaUmPerMK: 23, lengthMm: 380, deltaTK: 0 }), 0);
+  assert.equal(thermalErrorUm({ alphaUmPerMK: -1, lengthMm: 380, deltaTK: 10 }), null);
+});
+
+test('dao động nhiệt tối đa = U ÷ (α × L) — GT-001 chỉ được 2,29 K, tức ±1,14 K', () => {
+  assert.equal(round4(maxDeltaTK({ uncertaintyBudgetMm: 0.02, alphaUmPerMK: 23, lengthMm: 380 })!), 2.2883);
+  assert.equal(maxDeltaTK({ uncertaintyBudgetMm: 0.02, alphaUmPerMK: 0, lengthMm: 380 }), null, 'alpha 0 thi nhiet khong gioi han');
+});
+
+test('GT-001: giãn nở nhiệt vượt ngân sách đo ~4,4 lần → FAIL, kèm dao động nhiệt tối đa để làm việc với khách', () => {
+  const check = thermalCheck({ alphaUmPerMK: 23, lengthMm: 380, deltaTK: 10, uncertaintyBudgetMm: 0.02 })!;
+  assert.equal(check.key, 'thermalError');
+  assert.equal(check.status, 'fail');
+  assert.equal(check.noteKey, 'thermalExceedsBudget');
+  assert.deepEqual(check.noteValues, {
+    error: 0.0874,
+    budget: 0.02,
+    ratio: 4.4,
+    share: 437,
+    maxDeltaT: 2.29,
+    halfDeltaT: 1.14,
+  });
+  assert.ok(check.formula.includes('= 87.4 µm > U 20 µm'), check.formula);
+  assert.ok(check.formula.includes('dao động nhiệt tối đa 2.29 K'), check.formula);
+});
+
+test('giãn nở nhiệt: quá nửa ngân sách → WARN, dưới nửa → PASS (ngưỡng chung với phối cảnh)', () => {
+  const run = (deltaTK: number) => thermalCheck({ alphaUmPerMK: 12, lengthMm: 100, deltaTK, uncertaintyBudgetMm: 0.02 })!;
+
+  const eats = run(10); // thép, 100 mm, 10 K → 12 µm = 60% U
+  assert.equal(eats.status, 'warn');
+  assert.equal(eats.noteKey, 'thermalEatsBudget');
+  assert.equal(eats.noteValues!.share, 60);
+
+  const fine = run(2); // 2,4 µm = 12% U
+  assert.equal(fine.status, 'pass');
+  assert.equal(fine.noteKey, undefined);
+});
+
+test('giãn nở nhiệt: bài không có dung sai đo, hoặc thiếu α / L / ΔT → không kiểm, không đoán', () => {
+  const base = { alphaUmPerMK: 23, lengthMm: 380, deltaTK: 10, uncertaintyBudgetMm: 0.02 };
+  assert.equal(thermalCheck({ ...base, uncertaintyBudgetMm: null }), null);
+  assert.equal(thermalCheck({ ...base, alphaUmPerMK: null }), null);
+  assert.equal(thermalCheck({ ...base, lengthMm: null }), null);
+  assert.equal(thermalCheck({ ...base, deltaTK: null }), null);
+});
+
+test('nhãn phép kiểm giãn nở nhiệt đủ ở cả hai ngôn ngữ', () => {
+  for (const locale of ['vi', 'en'] as const) {
+    const vision = JSON.parse(readFileSync(new URL(`../src/messages/${locale}.json`, import.meta.url), 'utf8')).selector.vision;
+    assert.ok(vision.checks.thermalError, `${locale}: checks.thermalError`);
+    for (const note of ['thermalExceedsBudget', 'thermalEatsBudget']) {
+      assert.ok(vision.notes[note]?.includes('{maxDeltaT}') && vision.notes[note].includes('{halfDeltaT}'), `${locale}: notes.${note}`);
+    }
+  }
+});

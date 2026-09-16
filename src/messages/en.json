@@ -612,6 +612,7 @@
         "detectionBudget": "Defect detection budget",
         "measurementBudget": "Measurement budget (gage)",
         "perspectiveError": "Perspective error (standard lens)",
+        "thermalError": "Thermal expansion error",
         "governingResolution": "Branch that sets the resolution",
         "measurementResolution": "Camera meets the measurement budget"
       },
@@ -641,7 +642,9 @@
         "measurementTooCoarse": "Each pixel covers {actual} mm, coarser than the {target} mm/px measurement budget: the defect may still be visible, but the required tolerance cannot be measured.",
         "perspectiveExceedsBudget": "Perspective error {error} mm exceeds the {budget} mm measurement budget ({ratio}×). A standard lens cannot meet it: use a telecentric lens, hold part height mechanically, or shrink the field of view per camera.",
         "perspectiveEatsBudget": "Perspective error {error} mm already uses {share}% of the {budget} mm measurement budget — over half, leaving almost no room for other error sources (thermal, stitching).",
-        "perspectiveNeedsTelecentric": "A perspective-free measurement was requested: a telecentric lens is required. With a standard lens the perspective error would be {error} mm against a {budget} mm budget."
+        "perspectiveNeedsTelecentric": "A perspective-free measurement was requested: a telecentric lens is required. With a standard lens the perspective error would be {error} mm against a {budget} mm budget.",
+        "thermalExceedsBudget": "Thermal expansion {error} mm exceeds the {budget} mm measurement budget ({ratio}×): this is a mechanical/thermal problem before it is a camera problem, and more resolution will not fix it. One of these is needed: keep the temperature swing at the measuring zone within {maxDeltaT} K (that is ±{halfDeltaT} K), compensate with a reference artifact in the image, or reconfirm the material and measuring conditions with the customer.",
+        "thermalEatsBudget": "Thermal expansion {error} mm already uses {share}% of the {budget} mm measurement budget. Keep the temperature swing at the measuring zone within {maxDeltaT} K (±{halfDeltaT} K), or compensate with a reference artifact in the image."
       },
       "lightingReason": {
         "scratch": "Scratches and shallow cracks only stand out under a very low angle against a dark background.",

@@ -21,6 +21,7 @@ export const defaultAssumptionKey = (path: string) => `default:${path}`;
 export const derivedAssumptionKey = (path: string) => `derived:${path}`;
 
 const ALPHA_PATH = 'object.thermalExpansionCoeff';
+const SPAN_PATH = 'measurement.0.spanLength';
 
 function isKnownMaterial(value: unknown): value is KnownMaterial {
   return typeof value === 'string' && Object.prototype.hasOwnProperty.call(MATERIAL_ALPHA, value);
@@ -58,6 +59,33 @@ export function applyDefaults(requirement: Requirement): { requirement: Requirem
       unit: 'µm/(m·K)',
       vi: typical.basis.vi,
       en: typical.basis.en,
+    });
+  }
+
+  /* Chiều dài cần đo chưa có → cạnh dài nhất của vật (chốt 2026-09-16, MEC-001).
+     Lấy phía xấu: kích thước đo không thể dài hơn vật. Chỉ khi bài có dung sai
+     đo — không đo thì chiều dài này không dùng vào đâu, giả định chỉ gây nhiễu. */
+  const span = readField(next, SPAN_PATH);
+  const hasTolerance = next.measurement.some((item) => item.tolerance.value !== null);
+  const sides = [readField(next, 'object.sizeX')?.value, readField(next, 'object.sizeY')?.value].filter(
+    (side): side is number => typeof side === 'number' && side > 0
+  );
+  if (shown.has(SPAN_PATH) && span && span.value === null && hasTolerance && sides.length > 0) {
+    const longest = Math.max(...sides);
+    const key = derivedAssumptionKey(SPAN_PATH);
+    span.value = longest;
+    span.confidence = 'inferred';
+    span.assumptionId = key;
+    assumptions.push({
+      key,
+      source: 'derived',
+      level: 'warning',
+      ruleIds: ['MEC-001'],
+      path: SPAN_PATH,
+      value: longest,
+      unit: 'mm',
+      vi: 'Chưa có chiều dài kích thước cần đo — tạm lấy cạnh dài nhất của vật (phía xấu). Nhập chiều dài thật để tính đúng sai số giãn nở nhiệt.',
+      en: 'No measured span yet — using the longest side of the part (worst case). Enter the real span to size the thermal error correctly.',
     });
   }
 

@@ -22,6 +22,7 @@ export const derivedAssumptionKey = (path: string) => `derived:${path}`;
 
 const ALPHA_PATH = 'object.thermalExpansionCoeff';
 const SPAN_PATH = 'measurement.0.spanLength';
+const SEAM_PATH = 'measurement.0.crossesCameraSeam';
 
 function isKnownMaterial(value: unknown): value is KnownMaterial {
   return typeof value === 'string' && Object.prototype.hasOwnProperty.call(MATERIAL_ALPHA, value);
@@ -86,6 +87,36 @@ export function applyDefaults(requirement: Requirement): { requirement: Requirem
       unit: 'mm',
       vi: 'Chưa có chiều dài kích thước cần đo — tạm lấy cạnh dài nhất của vật (phía xấu). Nhập chiều dài thật để tính đúng sai số giãn nở nhiệt.',
       en: 'No measured span yet — using the longest side of the part (worst case). Enter the real span to size the thermal error correctly.',
+    });
+  }
+
+  /* Nhiều camera, có dung sai, mà chưa trả lời "kích thước đo có vắt qua đường
+     ghép không" → coi là CÓ (chốt 2026-09-16, MEC-003). Phía xấu: để trống thì
+     đúng bài nhiều camera — loại dễ trượt nhất — lại không bị kiểm. Một camera
+     hoặc chưa có số camera thì không có đường ghép nào để giả định. */
+  const seam = readField(next, SEAM_PATH);
+  const cameraCount = readField(next, 'system.cameraCount')?.value;
+  if (
+    shown.has(SEAM_PATH) &&
+    seam &&
+    seam.value === null &&
+    hasTolerance &&
+    typeof cameraCount === 'number' &&
+    cameraCount > 1
+  ) {
+    const key = defaultAssumptionKey(SEAM_PATH);
+    seam.value = true;
+    seam.confidence = 'assumed';
+    seam.assumptionId = key;
+    assumptions.push({
+      key,
+      source: 'default',
+      level: 'warning',
+      ruleIds: ['MEC-003'],
+      path: SEAM_PATH,
+      value: true,
+      vi: 'Chưa xác nhận kích thước đo có vắt qua đường ghép giữa hai camera không — tạm coi là CÓ (phía xấu). Chọn "Không" nếu kích thước nằm gọn trong một camera.',
+      en: 'Not yet confirmed whether the measured dimension crosses a seam between two cameras — assuming it DOES (worst case). Choose "No" if it lies within one camera.',
     });
   }
 

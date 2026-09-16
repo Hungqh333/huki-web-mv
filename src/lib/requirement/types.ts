@@ -59,7 +59,8 @@ export interface Assumption {
   ruleIds: readonly string[];
   /** Có khi source = 'default': ô nào trên bảng đang được điền. */
   path?: string;
-  value?: number | string;
+  /** boolean cho ô Có/Không (vd vắt qua đường ghép giữa camera — MEC-003). */
+  value?: number | string | boolean;
   unit?: string;
   /** Tên hiển thị khi không có `path` (với 'default', nhãn lấy từ ô trên bảng). */
   title?: { vi: string; en: string };

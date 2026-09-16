@@ -21,6 +21,9 @@ import {
   maxDeltaTK,
   thermalCheck,
   thermalErrorUm,
+  K_STITCH,
+  seamsCrossed,
+  stitchCheck,
   cameraCoversNeed,
   cycleBudget,
   depthOfFieldMm,
@@ -967,6 +970,95 @@ test('nhãn phép kiểm giãn nở nhiệt đủ ở cả hai ngôn ngữ', () 
     assert.ok(vision.checks.thermalError, `${locale}: checks.thermalError`);
     for (const note of ['thermalExceedsBudget', 'thermalEatsBudget']) {
       assert.ok(vision.notes[note]?.includes('{maxDeltaT}') && vision.notes[note].includes('{halfDeltaT}'), `${locale}: notes.${note}`);
+    }
+  }
+});
+
+// ------------------------------------------------------- GHÉP ẢNH GIỮA CAMERA --
+// V1b B4 — MEC-003, chốt 2026-09-16.
+
+test('số đường ghép chiều dài đo vắt qua: theo trục nhiều camera, tối thiểu 1, không quá số camera − 1', () => {
+  const gt001 = cameraTile({ fovWidthMm: 380, fovHeightMm: 280, cameraCount: 4, mmPerPx: 0.06 })!;
+  assert.equal(seamsCrossed({ tile: gt001, spanLengthMm: 380 }), 1, '380 mm tren luoi 2x2, moi o 190 mm');
+
+  const row3 = cameraTile({ fovWidthMm: 600, fovHeightMm: 100, cameraCount: 3, mmPerPx: 0.1 })!; // bước lưới 200 mm
+  assert.equal(seamsCrossed({ tile: row3, spanLengthMm: 600 }), 2);
+  assert.equal(seamsCrossed({ tile: row3, spanLengthMm: 150 }), 1, 'da xac nhan vat qua thi it nhat 1');
+  assert.equal(seamsCrossed({ tile: row3, spanLengthMm: 5000 }), 2, 'khong qua so duong ghep co that');
+  assert.equal(seamsCrossed({ tile: row3, spanLengthMm: null }), 1);
+
+  const tall = cameraTile({ fovWidthMm: 100, fovHeightMm: 300, cameraCount: 2, mmPerPx: null })!;
+  assert.equal(seamsCrossed({ tile: tall, spanLengthMm: 300 }), 1, 'vat dung: tinh theo truc doc');
+
+  const single = cameraTile({ fovWidthMm: 380, fovHeightMm: 280, cameraCount: 1, mmPerPx: 0.06 })!;
+  assert.equal(seamsCrossed({ tile: single, spanLengthMm: 380 }), 0);
+});
+
+test('GT-001: ghép ảnh 0,03 mm + nhiệt 0,087 mm = 0,117 mm, gấp ~5,9 lần U → FAIL', () => {
+  const tile = cameraTile({ fovWidthMm: 380, fovHeightMm: 280, cameraCount: 4, mmPerPx: 0.06 });
+  const thermal = thermalErrorUm({ alphaUmPerMK: 23, lengthMm: 380, deltaTK: 10 })! / 1000;
+  const check = stitchCheck({
+    tile,
+    crossesCameraSeam: true,
+    spanLengthMm: 380,
+    mmPerPx: 0.06,
+    thermalErrorMm: thermal,
+    uncertaintyBudgetMm: 0.02,
+  })!;
+
+  assert.equal(K_STITCH, 0.5);
+  assert.equal(check.key, 'stitchError');
+  assert.equal(check.status, 'fail');
+  assert.equal(check.noteKey, 'stitchExceedsBudget');
+  assert.deepEqual(check.noteValues, {
+    seams: 1,
+    stitch: 0.03,
+    thermal: 0.0874,
+    total: 0.1174,
+    budget: 0.02,
+    ratio: 5.9,
+    share: 587,
+  });
+  assert.ok(check.formula.includes('1 đường ghép × 0.5 × 0.06 mm/px = 0.03 mm + nhiệt 0.0874 mm = 0.1174 mm > U 0.02 mm'), check.formula);
+});
+
+test('ghép ảnh: quá nửa ngân sách → WARN, dưới nửa → PASS; không có nhiệt thì chỉ tính phần ghép', () => {
+  const tile = cameraTile({ fovWidthMm: 200, fovHeightMm: 50, cameraCount: 2, mmPerPx: 0.02 }); // 1 đường ghép
+  const run = (uncertaintyBudgetMm: number) =>
+    stitchCheck({ tile, crossesCameraSeam: true, spanLengthMm: null, mmPerPx: 0.02, thermalErrorMm: null, uncertaintyBudgetMm })!;
+
+  const eats = run(0.015); // 0,01 mm = 67% U
+  assert.equal(eats.status, 'warn');
+  assert.equal(eats.noteKey, 'stitchEatsBudget');
+  assert.equal(eats.noteValues!.share, 67);
+  assert.equal(eats.noteValues!.thermal, 0);
+  assert.ok(!eats.formula.includes('nhiệt'), eats.formula);
+
+  assert.equal(run(0.05).status, 'pass');
+});
+
+test('ghép ảnh: không vắt qua, một camera, chưa có số camera, không có dung sai đo → không kiểm', () => {
+  const tile = cameraTile({ fovWidthMm: 380, fovHeightMm: 280, cameraCount: 4, mmPerPx: 0.06 });
+  const base = { tile, crossesCameraSeam: true, spanLengthMm: 380, mmPerPx: 0.06, thermalErrorMm: 0.0874, uncertaintyBudgetMm: 0.02 };
+  assert.equal(stitchCheck({ ...base, crossesCameraSeam: false }), null);
+  assert.equal(stitchCheck({ ...base, crossesCameraSeam: null }), null, 'tang Yeu cau da gia dinh truoc khi toi day');
+  assert.equal(stitchCheck({ ...base, tile: null }), null, 'chua co so camera thi khong chia duoc luoi');
+  assert.equal(
+    stitchCheck({ ...base, tile: cameraTile({ fovWidthMm: 380, fovHeightMm: 280, cameraCount: 1, mmPerPx: 0.06 }) }),
+    null
+  );
+  assert.equal(stitchCheck({ ...base, uncertaintyBudgetMm: null }), null);
+  assert.equal(stitchCheck({ ...base, mmPerPx: null }), null);
+});
+
+test('nhãn phép kiểm ghép ảnh đủ ở cả hai ngôn ngữ', () => {
+  for (const locale of ['vi', 'en'] as const) {
+    const vision = JSON.parse(readFileSync(new URL(`../src/messages/${locale}.json`, import.meta.url), 'utf8')).selector.vision;
+    assert.ok(vision.checks.stitchError, `${locale}: checks.stitchError`);
+    for (const note of ['stitchExceedsBudget', 'stitchEatsBudget']) {
+      for (const slot of ['{seams}', '{stitch}', '{thermal}', '{total}', '{budget}']) {
+        assert.ok(vision.notes[note]?.includes(slot), `${locale}: notes.${note} ${slot}`);
+      }
     }
   }
 });

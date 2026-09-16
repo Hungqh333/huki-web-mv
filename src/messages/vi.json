@@ -613,6 +613,7 @@
         "measurementBudget": "Ngân sách đo lường (gage)",
         "perspectiveError": "Sai số phối cảnh (ống kính thường)",
         "thermalError": "Sai số do giãn nở nhiệt",
+        "stitchError": "Sai số ghép ảnh giữa camera",
         "governingResolution": "Nhánh quyết định độ phân giải",
         "measurementResolution": "Camera đạt ngân sách đo"
       },
@@ -644,7 +645,9 @@
         "perspectiveEatsBudget": "Sai số phối cảnh {error} mm đã chiếm {share}% ngân sách đo {budget} mm — quá nửa, các nguồn sai số khác (nhiệt, ghép ảnh) gần như không còn chỗ.",
         "perspectiveNeedsTelecentric": "Khách yêu cầu đo không phối cảnh: phải dùng ống kính telecentric. Nếu dùng ống kính thường, sai số phối cảnh sẽ là {error} mm so với ngân sách {budget} mm.",
         "thermalExceedsBudget": "Giãn nở nhiệt {error} mm vượt ngân sách đo {budget} mm ({ratio}×): đây là bài toán cơ khí/nhiệt trước khi là bài toán camera, tăng độ phân giải không giải quyết được. Cần một trong: giữ dao động nhiệt vùng đo không quá {maxDeltaT} K (tức ±{halfDeltaT} K), bù nhiệt bằng vật chuẩn đặt trong ảnh, hoặc xác nhận lại vật liệu và điều kiện đo với khách.",
-        "thermalEatsBudget": "Giãn nở nhiệt {error} mm đã chiếm {share}% ngân sách đo {budget} mm. Nên giữ dao động nhiệt vùng đo không quá {maxDeltaT} K (±{halfDeltaT} K), hoặc bù nhiệt bằng vật chuẩn đặt trong ảnh."
+        "thermalEatsBudget": "Giãn nở nhiệt {error} mm đã chiếm {share}% ngân sách đo {budget} mm. Nên giữ dao động nhiệt vùng đo không quá {maxDeltaT} K (±{halfDeltaT} K), hoặc bù nhiệt bằng vật chuẩn đặt trong ảnh.",
+        "stitchExceedsBudget": "Kích thước đo vắt qua {seams} đường ghép: sai số ghép {stitch} mm cộng giãn nở nhiệt {thermal} mm = {total} mm, vượt ngân sách đo {budget} mm ({ratio}×). Tăng độ phân giải không giải quyết được. Nên bố trí lại camera để kích thước dung sai chặt nằm gọn trong một camera; nếu buộc phải vắt qua thì cần hiệu chuẩn toàn cục bằng vật chuẩn phủ hết vùng nhìn, gá camera cứng và hiệu chuẩn lại định kỳ.",
+        "stitchEatsBudget": "Kích thước đo vắt qua {seams} đường ghép: sai số ghép {stitch} mm cộng giãn nở nhiệt {thermal} mm = {total} mm, đã chiếm {share}% ngân sách đo {budget} mm. Cần hiệu chuẩn toàn cục bằng vật chuẩn phủ hết vùng nhìn và gá camera cứng."
       },
       "lightingReason": {
         "scratch": "Xước và nứt nông chỉ nổi lên khi chiếu góc rất thấp, nền tối hẳn.",

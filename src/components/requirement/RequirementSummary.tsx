@@ -753,6 +753,7 @@ function AssumptionsPanel({ assumptions }: { assumptions: Assumption[] }) {
     if (assumption.value === undefined) return null;
     const def = assumption.path ? fieldDef(assumption.path) : undefined;
     if (def?.kind === 'select') return t(`options.${def.optionsKey}.${assumption.value}`);
+    if (typeof assumption.value === 'boolean') return t(assumption.value ? 'yes' : 'no');
     return assumption.unit ? `${assumption.value} ${assumption.unit}` : String(assumption.value);
   };
 
@@ -922,7 +923,12 @@ function FieldInput({
           }
           className={INPUT_CLASS}
         >
-          <option value="">{t('notSet')}</option>
+          <option value="">
+            {/* Ô Có/Không cũng có thể do hệ thống giả định (vắt qua đường ghép — MEC-003). */}
+            {systemValue && typeof systemValue.value === 'boolean'
+              ? t(systemValue.messageKey, { value: t(systemValue.value ? 'yes' : 'no') })
+              : t('notSet')}
+          </option>
           <option value="yes">{t('yes')}</option>
           <option value="no">{t('no')}</option>
         </select>

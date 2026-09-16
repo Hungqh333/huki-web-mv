@@ -718,3 +718,34 @@ test('chưa có chiều dài cần đo → giả định cạnh dài nhất củ
   const noSize = applyDefaults(filled('Measurement', { 'measurement.0.tolerance': 0.1 }));
   assert.equal(readField(noSize.requirement, SPAN)!.value, null);
 });
+
+// ─────────────────────────── V1b B4: vắt qua đường ghép giả định ───────────────────────────
+
+test('nhiều camera + có dung sai + chưa trả lời vắt qua đường ghép → giả định CÓ (phía xấu)', () => {
+  const SEAM = 'measurement.0.crossesCameraSeam';
+  const base = { 'object.sizeX': 380, 'object.sizeY': 280, 'measurement.0.tolerance': 0.1, 'system.cameraCount': 4 };
+
+  const assumed = applyDefaults(filled('Measurement', base));
+  const seam = readField(assumed.requirement, SEAM)!;
+  assert.equal(seam.value, true);
+  assert.equal(seam.confidence, 'assumed');
+  const assumption = assumed.assumptions.find((a) => a.path === SEAM)!;
+  assert.equal(assumption.key, defaultAssumptionKey(SEAM));
+  assert.deepEqual(assumption.ruleIds, ['MEC-003']);
+  assert.equal(assumption.level, 'warning');
+
+  const answeredNo = applyDefaults(filled('Measurement', { ...base, [SEAM]: false }));
+  assert.equal(readField(answeredNo.requirement, SEAM)!.value, false, 'nguoi dung da chon Khong');
+  assert.ok(!answeredNo.assumptions.some((a) => a.path === SEAM));
+
+  const one = applyDefaults(filled('Measurement', { ...base, 'system.cameraCount': 1 }));
+  assert.equal(readField(one.requirement, SEAM)!.value, null, 'mot camera thi khong co duong ghep');
+
+  const { 'system.cameraCount': _count, ...noCount } = base;
+  void _count;
+  assert.equal(readField(applyDefaults(filled('Measurement', noCount)).requirement, SEAM)!.value, null, 'chua co so camera');
+
+  const { 'measurement.0.tolerance': _tol, ...noTolerance } = base;
+  void _tol;
+  assert.equal(readField(applyDefaults(filled('Measurement', noTolerance)).requirement, SEAM)!.value, null, 'khong do');
+});

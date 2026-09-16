@@ -12,6 +12,7 @@ import { emptyRequirement, withFieldValue } from '../src/lib/requirement/fields'
 import type { Requirement } from '../src/lib/requirement/types';
 import { analyseRequirement, K_BLUR, STROBE_EXPOSURE_LIMIT_US } from '../src/lib/vision/requirementAnalysis';
 import { completeness, FEASIBILITY_DIMENSIONS, knowledgeSlugFor, RULES, type RuleResult } from '../src/lib/vision/rules';
+import { assessFeasibility, scoreResult } from '../src/lib/vision/feasibility';
 
 function filled(type: Requirement['applicationType'], values: Record<string, unknown>): Requirement {
   return Object.entries(values).reduce((req, [path, value]) => withFieldValue(req, path, value), emptyRequirement(type));
@@ -200,4 +201,79 @@ test('mọi kết quả: mã luật có trong danh mục, nhãn và ghi chú đ�
       }
     }
   }
+});
+
+// ─────────────────────────────── B7: đánh giá khả thi ───────────────────────────────
+
+const fake = (overrides: Partial<RuleResult>): RuleResult => ({
+  key: 'x',
+  formula: '—',
+  ruleId: 'RES-004',
+  ruleVersion: '1.0.0',
+  dimension: 'Resolution',
+  evidence: 'calculated',
+  inputsUsed: [],
+  inputsAssumed: [],
+  marginRatio: null,
+  knowledgeRefs: [],
+  status: 'info',
+  ...overrides,
+});
+
+test('điểm theo bảng spec §7.2: marginRatio → PASS 95/85, MARGINAL 70, FAIL 45/20; cần mẫu / thiếu dữ liệu → UNKNOWN 60', () => {
+  const score = (overrides: Partial<RuleResult>) => scoreResult(fake(overrides));
+  assert.deepEqual(score({ status: 'pass', marginRatio: 1.6 }), { status: 'PASS', score: 95 });
+  assert.deepEqual(score({ status: 'pass', marginRatio: 1.3 }), { status: 'PASS', score: 85 });
+  assert.deepEqual(score({ status: 'pass', marginRatio: 1.1 }), { status: 'MARGINAL', score: 70 });
+  assert.deepEqual(score({ status: 'info' }), { status: 'PASS', score: 95 });
+  assert.deepEqual(score({ status: 'warn' }), { status: 'MARGINAL', score: 70 });
+  assert.deepEqual(score({ status: 'fail', marginRatio: 0.9 }), { status: 'FAIL', score: 45 });
+  assert.deepEqual(score({ status: 'fail', marginRatio: 0.2 }), { status: 'FAIL', score: 20 });
+  assert.deepEqual(score({ status: 'fail' }), { status: 'FAIL', score: 20 });
+  assert.deepEqual(score({ status: 'warn', evidence: 'requires-sample-test' }), { status: 'UNKNOWN', score: 60 });
+  assert.deepEqual(score({ status: 'info', evidence: 'unknown' }), { status: 'UNKNOWN', score: 60 });
+  assert.deepEqual(score({ status: 'fail', evidence: 'requires-sample-test' }), { status: 'FAIL', score: 20 }, 'FAIL van la FAIL');
+});
+
+test('khả thi là MIN: một nhóm FAIL thì không khả thi dù nhóm khác đều tốt; nhóm không có luật là "chưa đánh giá"', () => {
+  const good = fake({ status: 'pass', marginRatio: 2 });
+  const assessment = assessFeasibility([good, fake({ ruleId: 'MEC-001', dimension: 'Mechanical', status: 'fail', marginRatio: 0.9 })]);
+  assert.equal(assessment.status, 'NOT_FEASIBLE');
+  assert.equal(assessment.overall, 45);
+  assert.deepEqual(assessment.limitingFactors, ['Mechanical']);
+  assert.equal(assessment.blockers.length, 1);
+
+  const integration = assessment.dimensions.find((d) => d.dimension === 'Integration')!;
+  assert.equal(integration.evaluated, false);
+  assert.equal(integration.score, null);
+
+  assert.equal(assessFeasibility([good]).status, 'TECHNICALLY_FEASIBLE', 'nhom chua danh gia khong chan ket luan');
+  assert.equal(assessFeasibility([good, fake({ ruleId: 'LGT-001', dimension: 'Lighting', status: 'warn', evidence: 'requires-sample-test' })]).status, 'FEASIBLE_WITH_VALIDATION');
+  assert.equal(assessFeasibility([]).status, 'INSUFFICIENT_DATA');
+});
+
+test('nhiều nhóm cùng điểm thấp nhất → hiện tất cả làm yếu tố giới hạn, không tự chọn một', () => {
+  const assessment = assessFeasibility([
+    fake({ ruleId: 'OPT-008', dimension: 'Optics', status: 'fail', marginRatio: 0.02 }),
+    fake({ ruleId: 'MEC-001', dimension: 'Mechanical', status: 'fail', marginRatio: 0.2 }),
+  ]);
+  assert.deepEqual(assessment.limitingFactors, ['Optics', 'Mechanical']);
+});
+
+test('GT-001: KHÔNG KHẢ THI; yếu tố giới hạn Quang học + Cơ khí (không phải độ phân giải); chiếu sáng chờ mẫu', () => {
+  const { results } = analyseRequirement(filled('AppearanceInspection', GT001_INPUT));
+  const assessment = assessFeasibility(results);
+  const dim = (name: string) => assessment.dimensions.find((d) => d.dimension === name)!;
+
+  assert.equal(assessment.status, 'NOT_FEASIBLE');
+  assert.equal(assessment.overall, 20);
+  assert.deepEqual(assessment.limitingFactors, ['Optics', 'Mechanical']);
+  assert.ok(!assessment.limitingFactors.includes('Resolution'), 'spec §17: khong phai do phan giai camera');
+
+  assert.deepEqual(dim('Mechanical').blockers, ['MEC-001', 'MEC-003']);
+  assert.deepEqual(dim('Optics').blockers, ['OPT-008', 'OPT-007']);
+  assert.equal(dim('Resolution').status, 'UNKNOWN', 'do tuong phan chua xac nhan');
+  assert.equal(dim('Lighting').status, 'UNKNOWN');
+  assert.equal(dim('Throughput').evaluated, false, 'GT-001 khong co san luong');
+  assert.equal(dim('Integration').evaluated, false);
 });

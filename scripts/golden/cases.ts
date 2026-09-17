@@ -80,8 +80,8 @@ export const GOLDEN_CASES: GoldenCase[] = [
     source: 'real-project',
     applicationType: 'AppearanceInspection',
     input: {
-      'object.sizeX': 100,
-      'object.sizeY': 100,
+      'object.sizeX': 80,
+      'object.sizeY': 55,
       'object.surface': 'glossy',
       'detection.0.minSize': 0.3,
       'detection.0.contrast': 'medium',
@@ -98,21 +98,19 @@ export const GOLDEN_CASES: GoldenCase[] = [
       overall: 60,
       limitingFactors: ['Lighting', 'Algorithm'],
       governingMmPerPx: 0.075,
-      megapixelsPerCamera: [2.05, 0.01],
+      megapixelsPerCamera: [0.9, 0.01],
     },
     note:
-      'Dự án thật 2025, sheet DỰ ÁN CŨ dòng 4 (Hưng nhập 2026-09-17). Kết quả thật: ĐẠT, yếu tố giới hạn thực tế: Chiếu sáng — ' +
+      'Dự án thật 2025, sheet DỰ ÁN CŨ dòng 4 (Hưng nhập 2026-09-17; 2026-09-17 Hưng sửa kích thước vật 100×100 → 80×55 mm, vùng nhìn thật 105×70 mm). Kết quả thật: ĐẠT, yếu tố giới hạn thực tế: Chiếu sáng — ' +
       'engine khớp (khả thi cần xác nhận mẫu, Chiếu sáng là yếu tố giới hạn). Tay: tương phản trung bình → 4 px/lỗi → 0,3/4 = 0,075 mm/px; ' +
-      'nghiêng 30° (V1c OPT-009): cạnh dài 100 ÷ (0,075 × cos 30°) = 1540 px × 100 ÷ 0,075 = 1334 px = 2,05 MP (nhìn vuông góc là 1,78 MP). OPT-009 bài phát hiện lỗi chỉ ghi nhận (info). ' +
-      'Thực tế: camera 20 MP 5472×3648, pixel 2,4 µm, ống 25 mm 1,2", WD 200 → vùng nhìn 105×70 mm, 0,019 mm/px (engine tính lại cũng ra ~105 mm). ' +
+      'nghiêng 30° (V1c OPT-009): cạnh dài 80 ÷ (0,075 × cos 30°) = 1232 px × 55 ÷ 0,075 = 734 px = 0,90 MP. OPT-009 bài phát hiện lỗi chỉ ghi nhận (info). ' +
+      'Thực tế: camera 20 MP 5472×3648, pixel 2,4 µm, ống 25 mm 1,2", WD 200 → vùng nhìn 105×70 mm, 0,019 mm/px. Tầng Cấu hình (OPT-001, xấp xỉ thấu kính mỏng β = f/(WD − f)) ra 91,9 × 61,3 mm — vẫn phủ vật 80 × 55, lệch ~13% so với thực tế vì WD đo từ mặt ống chứ không từ điểm chính. ' +
       'Đèn: backlight 200×200 nằm trên (cách 200 mm) + backlight 200×100 dựng bên cạnh (cách 100 mm), camera nghiêng ~25–35° — tấm sáng phẳng ở góc phản xạ gương.',
     knownGaps: [
-      'Độ phân giải: engine đòi tối thiểu 0,075 mm/px (2,05 MP kể cả nghiêng 30°, V1c); thực tế dùng 0,019 mm/px (20 MP) và Hưng xác nhận camera thấp hơn đã thử KHÔNG thấy bụi. ' +
-        'Hệ số nghiêng chỉ là 1/cos 30° = 1,155 (bản ghi trước ghi ×2 là sai), nên chênh lệch vẫn gần 10 lần về MP → số px/lỗi cho bụi trên bề mặt mạ bóng có thể phải cao hơn bảng 3/4/5. Chờ thêm dự án trước khi sửa luật; cần biết camera thấp hơn đã thử là bao nhiêu MP.',
-      'Vùng nhìn (tầng Cấu hình V1c, OPT-001): camera 5472×3648 × 2,4 µm + ống 25 mm ở WD 200 → β = 25/175 → vùng nhìn 91,9 × 61,3 mm, nhỏ hơn vật 100 × 100 mm → engine báo ống kính không phủ đủ. ' +
-        'Hoặc vùng cần soi nhỏ hơn cả vật, hoặc WD 200 đo tới giá đỡ chứ không tới ống kính — cần Hưng xác nhận trước khi dùng dự án này làm golden cho tầng Cấu hình.',
-      'Độ sâu trường ảnh (OPT-005, V1c): nghiêng 30° trên cạnh 100 mm → sâu thêm 50 mm; cộng Δh giả định 2 mm → cần F/97, gấp 27× F#max F/3,6 → engine báo xung đột. Dự án thật vẫn đạt. ' +
-        'Nguyên nhân khả dĩ: spec lấy vòng mờ c = 2 × pixel pitch, nhưng camera 20 MP dư ~4 lần so với 0,065 mm/px cần — mờ cho phép thật tính trên vật lớn hơn nhiều. Chờ Hưng chốt có đổi c theo độ phân giải cần hay không.',
+      'Độ phân giải: engine đòi tối thiểu 0,075 mm/px (0,90 MP kể cả nghiêng 30°, V1c); thực tế dùng 0,019 mm/px (20 MP) và Hưng xác nhận camera thấp hơn đã thử KHÔNG thấy bụi. ' +
+        'Hệ số nghiêng chỉ là 1/cos 30° = 1,155 (bản ghi trước ghi ×2 là sai), nên chênh lệch vẫn khoảng 20 lần về MP → số px/lỗi cho bụi trên bề mặt mạ bóng có thể phải cao hơn bảng 3/4/5. Chờ thêm dự án trước khi sửa luật; cần biết camera thấp hơn đã thử là bao nhiêu MP.',
+      'Độ sâu trường ảnh (OPT-005, V1c): nghiêng 30° trên cạnh 80 mm → sâu thêm 40 mm; cộng Δh giả định 2 mm → cần khoảng F/78, gấp ~22× F#max F/3,6 → engine báo xung đột. Dự án thật vẫn đạt. ' +
+        'Nguyên nhân khả dĩ: spec lấy vòng mờ c = 2 × pixel pitch, nhưng camera 20 MP dư ~4 lần so với 0,065 mm/px cần — mờ cho phép thật tính trên vật lớn hơn nhiều. Hưng chốt 2026-09-17: để sau, chưa đổi công thức.',
       'Chiếu sáng: engine gợi ý dome; thực tế dùng đèn phẳng ở góc phản xạ. Đã thêm "backlight" làm phương án thay thế cho bề mặt bóng (2026-09-17), chưa đổi gợi ý chính.',
     ],
   },

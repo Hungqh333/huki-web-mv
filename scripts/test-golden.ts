@@ -30,7 +30,7 @@ test('chỗ lệch đã biết giữa engine và dự án thật được liệt
   const gaps = GOLDEN_CASES.filter((c) => c.source === 'real-project').flatMap((c) => (c.knownGaps ?? []).map((gap) => `${c.id}: ${gap}`));
   // Có lệch thì in ra để người chạy test luôn thấy, không chỉ nằm trong file dữ liệu.
   for (const gap of gaps) console.log(`  [lech da biet] ${gap.slice(0, 140)}…`);
-  assert.ok(gaps.filter((gap) => gap.startsWith('GT-002')).length >= 4, 'GT-002 co it nhat 4 cho lech da ghi');
+  assert.ok(gaps.filter((gap) => gap.startsWith('GT-002')).length >= 3, 'GT-002 co it nhat 3 cho lech da ghi');
 });
 
 for (const golden of GOLDEN_CASES) {

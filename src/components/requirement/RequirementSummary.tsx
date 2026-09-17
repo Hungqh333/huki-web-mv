@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type FormEvent, type KeyboardEvent } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { parseRequirementAction } from '@/app/actions/parseRequirement';
 import { APPLICATION_SHORTCUT_ORDER, type ApplicationType } from '@/lib/visionEntry';
@@ -622,7 +622,7 @@ function QuestionItem({
     .join(', ');
   const fieldLabel = (def: RequirementFieldDef) => t(`fields.${def.section}.${def.key}`);
 
-  const submitNumbers = (event: FormEvent) => {
+  const submitNumbers = (event: FormEvent | KeyboardEvent<HTMLInputElement>) => {
     event.preventDefault();
     const parsed = numberDefs.map((def) => {
       const text = (typed[def.path] ?? '').trim().replace(',', '.');
@@ -688,6 +688,12 @@ function QuestionItem({
                   onChange={(event) => {
                     setInvalid(false);
                     setTyped((current) => ({ ...current, [def.path]: event.target.value }));
+                  }}
+                  /* Enter gửi câu trả lời một cách tường minh, không trông vào việc trình
+                     duyệt tự gửi form (không ổn định với bàn phím ảo / công cụ gõ tự động).
+                     Bỏ qua lúc đang gõ tiếng Việt có dấu (IME chưa chốt chữ). */
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' && !event.nativeEvent.isComposing) submitNumbers(event);
                   }}
                   className={`${INPUT_CLASS} w-36`}
                 />

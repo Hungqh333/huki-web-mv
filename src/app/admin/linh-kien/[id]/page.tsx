@@ -12,7 +12,7 @@ export default async function EditComponentPage({ params }: PageProps<'/admin/li
   const { data } = await supabase
     .from('components')
     .select(
-      'id, code, kind, brand, model, spec, price_vnd, datasheet_url, source, notes_vi, notes_en, sort_order, is_active'
+      'id, code, kind, brand, model, spec, price_vnd, lead_time_days, supplier, used_in_projects, datasheet_url, source, notes_vi, notes_en, sort_order, is_active'
     )
     .eq('id', id)
     .maybeSingle<Component>();
@@ -33,6 +33,9 @@ export default async function EditComponentPage({ params }: PageProps<'/admin/li
             model: data.model,
             spec: data.spec ?? {},
             price_vnd: data.price_vnd === null ? '' : String(data.price_vnd),
+            lead_time_days: data.lead_time_days == null ? '' : String(data.lead_time_days),
+            supplier: data.supplier ?? '',
+            used_in_projects: String(data.used_in_projects ?? 0),
             datasheet_url: data.datasheet_url ?? '',
             source: data.source,
             notes_vi: data.notes_vi ?? '',

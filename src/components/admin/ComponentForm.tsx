@@ -20,6 +20,9 @@ export type ComponentDraft = {
   model: string;
   spec: Record<string, unknown>;
   price_vnd: string;
+  lead_time_days: string;
+  supplier: string;
+  used_in_projects: string;
   datasheet_url: string;
   source: string;
   notes_vi: string;
@@ -187,6 +190,32 @@ export function ComponentForm({ draft }: { draft: ComponentDraft }) {
             name="price_vnd"
             inputMode="numeric"
             defaultValue={draft.price_vnd}
+            className={inputClass}
+          />
+        </AdminField>
+
+        <AdminField label={t('fieldLeadTime')} error={err('lead_time_days')} hint={t('leadTimeHint')}>
+          <input
+            name="lead_time_days"
+            type="number"
+            min={0}
+            step={1}
+            defaultValue={draft.lead_time_days}
+            className={inputClass}
+          />
+        </AdminField>
+
+        <AdminField label={t('fieldSupplier')}>
+          <input name="supplier" defaultValue={draft.supplier} className={inputClass} />
+        </AdminField>
+
+        <AdminField label={t('fieldUsedInProjects')} error={err('used_in_projects')} hint={t('usedInProjectsHint')}>
+          <input
+            name="used_in_projects"
+            type="number"
+            min={0}
+            step={1}
+            defaultValue={draft.used_in_projects}
             className={inputClass}
           />
         </AdminField>

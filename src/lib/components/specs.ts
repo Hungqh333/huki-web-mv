@@ -37,6 +37,11 @@ export type Component = {
   model: string;
   spec: Record<string, unknown>;
   price_vnd: number | null;
+  /* Ba cột mua hàng (migration 20260917000001). Tuỳ chọn trong kiểu vì nhiều
+     truy vấn cũ chọn cột tường minh và không cần tới chúng. */
+  lead_time_days?: number | null;
+  supplier?: string | null;
+  used_in_projects?: number;
   datasheet_url: string | null;
   source: ComponentSource;
   notes_vi: string | null;
@@ -346,6 +351,9 @@ export type SpecFieldDef = {
 const MOUNTS = ['C', 'CS', 'F', 'M42'];
 const INTERFACES = Object.keys(INTERFACE_BANDWIDTH);
 
+const SHUTTERS = ['global', 'rolling'];
+const YES_NO = ['yes', 'no'];
+
 /** Máy tự thêm theo luật, hay để người dùng tích tay. */
 export const ACCESSORY_PICK_MODES = ['rule', 'manual'];
 
@@ -401,6 +409,16 @@ export const SPEC_FIELDS: Record<ComponentKind, SpecFieldDef[]> = {
     /* Để trống thì suy từ `color`. Chỉ khai khi datasheet nói rõ camera truyền
        RGB đã nội suy — đó là lúc băng thông thật sự gấp ba. */
     { key: 'pixel_format', type: 'select', options: Object.keys(PIXEL_FORMAT_BYTES) },
+    /* Năm khoá dưới đây phục vụ lọc cứng V1c (spec V1.1 §8.1). Để tuỳ chọn vì
+       80 thiết bị cũ chưa khai: thiếu thì bộ lọc gắn cờ "chưa kiểm được" chứ
+       không loại — xem quyết định Q4 khi chốt V1c. */
+    /* Sản phẩm chạy liên tục mà dùng rolling shutter thì ảnh méo (THR-005). */
+    { key: 'shutter', type: 'select', options: SHUTTERS },
+    /* Không có chân trigger phần cứng thì không đồng bộ được với đèn strobe. */
+    { key: 'trigger_io', type: 'select', options: YES_NO },
+    { key: 'bit_depth', type: 'number', unit: 'bit', step: 1 },
+    { key: 'temp_max_c', type: 'number', unit: '°C', step: 1 },
+    { key: 'ip_rating', type: 'text' },
   ],
   lens: [
     { key: 'lens_type', type: 'select', options: ['fixed', 'telecentric', 'macro'], required: true },
@@ -410,6 +428,17 @@ export const SPEC_FIELDS: Record<ComponentKind, SpecFieldDef[]> = {
     { key: 'mount', type: 'select', options: MOUNTS, required: true },
     { key: 'wd_min_mm', type: 'number', unit: 'mm', step: 1 },
     { key: 'wd_max_mm', type: 'number', unit: 'mm', step: 1 },
+    /* Vòng ảnh bằng mm như datasheet ghi. `image_circle` ở trên là cỡ cảm
+       biến LỚN NHẤT mà vòng này phủ được — khi nhập Excel, cái sau suy ra từ
+       cái trước, nên giữ cả số gốc để đối chiếu lại. */
+    { key: 'image_circle_mm', type: 'number', unit: 'mm', step: 0.1 },
+    /* Dải khẩu. F số lớn nhất dùng được bị chặn bởi nhiễu xạ theo cỡ pixel
+       (OPT-004); F số nhỏ nhất quyết định lấy được bao nhiêu sáng. */
+    { key: 'f_number_min', type: 'number', unit: 'F', step: 0.1 },
+    { key: 'f_number_max', type: 'number', unit: 'F', step: 0.1 },
+    /* Độ phân giải quang học — so với tần số Nyquist của cảm biến (OPT-003). */
+    { key: 'resolution_lp_mm', type: 'number', unit: 'lp/mm', step: 1 },
+    { key: 'distortion_pct', type: 'number', unit: '%', step: 0.01 },
   ],
   light: [
     {
@@ -425,12 +454,23 @@ export const SPEC_FIELDS: Record<ComponentKind, SpecFieldDef[]> = {
       required: true,
     },
     { key: 'size_mm', type: 'number', unit: 'mm', step: 1 },
+    /* Cạnh ngắn của đèn nền / đèn thanh. size_mm là cạnh dài hoặc đường kính. */
+    { key: 'size_short_mm', type: 'number', unit: 'mm', step: 1 },
     { key: 'wd_min_mm', type: 'number', unit: 'mm', step: 1 },
     { key: 'wd_max_mm', type: 'number', unit: 'mm', step: 1 },
+    { key: 'wavelength_nm', type: 'number', unit: 'nm', step: 1 },
+    /* Đèn chịu được chạy xung dòng cao (overdrive) — cần khi phơi sáng rất
+       ngắn (LGT-008). Khác với bộ điều khiển đèn có chức năng strobe. */
+    { key: 'strobe', type: 'select', options: YES_NO },
+    { key: 'ip_rating', type: 'text' },
   ],
   controller: [
     { key: 'cpu', type: 'text' },
+    /* Số core quyết định chạy song song được mấy luồng xử lý ảnh (THR-004). */
+    { key: 'cpu_cores', type: 'number', unit: 'core', step: 1 },
     { key: 'ram_gb', type: 'number', unit: 'GB', step: 1 },
+    { key: 'lan_ports', type: 'number', unit: 'cổng', step: 1 },
+    { key: 'storage_gb', type: 'number', unit: 'GB', step: 1 },
     { key: 'gpu', type: 'text' },
     { key: 'interfaces', type: 'multiselect', options: INTERFACES },
     /* Hai thông số quyết định CẦN MẤY MÁY. Khai ở đây thay vì đóng cứng trong

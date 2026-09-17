@@ -17,6 +17,8 @@
     "test:pdf": "node scripts/test-pdf.mjs",
     "import:rules": "tsx scripts/import-rules.ts",
     "import:rules:template": "tsx scripts/rules-template.ts",
+    "import:components": "tsx scripts/import-components.ts",
+    "import:components:template": "tsx scripts/components-template.ts",
     "build:sql": "node scripts/build-sql-bundle.mjs"
   },
   "dependencies": {

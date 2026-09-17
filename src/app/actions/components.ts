@@ -70,6 +70,18 @@ export async function saveComponentAction(
     if (price !== null && !Number.isFinite(price)) fieldErrors.price_vnd = t('invalidNumber');
   }
 
+  /* Số nguyên không âm; ô trống trả null. Cùng ràng buộc với check constraint
+     của migration 20260917000001, bắt ở đây để báo lỗi đúng ô. */
+  const wholeNumber = (key: string): number | null => {
+    const raw = str(formData, key);
+    if (raw === '') return null;
+    const value = Number(raw);
+    if (!Number.isInteger(value) || value < 0) fieldErrors[key] = t('invalidNumber');
+    return value;
+  };
+  const leadTimeDays = wholeNumber('lead_time_days');
+  const usedInProjects = wholeNumber('used_in_projects') ?? 0;
+
   // Dựng spec theo đúng loại đã chọn — khoá của loại khác bị bỏ hẳn.
   const { spec, missing } = COMPONENT_KINDS.includes(kind)
     ? buildSpec(kind, (key) => {
@@ -91,6 +103,9 @@ export async function saveComponentAction(
     model: str(formData, 'model'),
     spec,
     price_vnd: price,
+    lead_time_days: leadTimeDays,
+    supplier: nullable(formData, 'supplier'),
+    used_in_projects: usedInProjects,
     datasheet_url: nullable(formData, 'datasheet_url'),
     source,
     notes_vi: nullable(formData, 'notes_vi'),

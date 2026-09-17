@@ -33,6 +33,12 @@ export const BUNDLES = {
       ['PHAN 4/4: SEED — nap thiet bi mau cua Basler, Hikrobot, iRayple, HZ, Coolens', 'supabase/seed_components.sql'],
     ],
   },
+  'components-sourcing': {
+    out: 'CHAY-BUOC-NAY-THIETBI.sql',
+    parts: [
+      ['PHAN 1/1: MIGRATION — them thoi gian giao hang, nha cung cap, so du an da dung cho linh kien', 'supabase/migrations/20260917000001_component_sourcing.sql'],
+    ],
+  },
   projects: {
     out: 'CHAY-BUOC-NAY-DUAN.sql',
     parts: [

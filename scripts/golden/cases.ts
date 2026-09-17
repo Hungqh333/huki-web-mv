@@ -31,6 +31,12 @@ export type GoldenCase = {
     megapixelsPerCamera?: [number, number];
   };
   note: string;
+  /**
+   * Chỗ engine CHƯA khớp dự án thật, đã biết và chưa sửa (một dự án chưa đủ để
+   * đổi luật). Ghi ra để không bị che đi khi ca vẫn pass; đợt hiệu chỉnh luật đọc
+   * danh sách này.
+   */
+  knownGaps?: string[];
 };
 
 export const GOLDEN_CASES: GoldenCase[] = [
@@ -67,6 +73,43 @@ export const GOLDEN_CASES: GoldenCase[] = [
       'Phối cảnh 2/300×129,8 = 0,865 mm; nhiệt 23×0,38×10 = 87,4 µm; ghép 0,03 + 0,0874 mm; telecentric 209 mm > 200. ' +
       'LỆCH SPEC §13 CÓ CHỦ Ý: spec ghi 8,3 MP (ô ~200×150, không rõ chồng lấn); spec liệt kê OPT-004/006, THR-001/002 — cần thiết bị hoặc sản lượng, V1b chưa có; ' +
       'spec ghi yếu tố giới hạn chỉ Mechanical — engine tính phối cảnh 43× U cũng FAIL cùng điểm 20 nên hiện cả Optics.',
+  },
+  {
+    id: 'GT-002',
+    name: 'Bụi trên lớp mạ sản phẩm nhựa, 1 camera 20 MP, đèn phẳng ở góc phản xạ',
+    source: 'real-project',
+    applicationType: 'AppearanceInspection',
+    input: {
+      'object.sizeX': 100,
+      'object.sizeY': 100,
+      'object.surface': 'glossy',
+      'detection.0.minSize': 0.3,
+      'detection.0.contrast': 'medium',
+      'detection.0.variability': 'high',
+      'production.motion': 'indexed',
+      'system.cameraCount': 1,
+      'system.workingDistance': 200,
+    },
+    expect: {
+      rulesFired: ['RES-001', 'RES-004', 'LGT-001', 'AI-002'],
+      failingRules: [],
+      status: 'FEASIBLE_WITH_VALIDATION',
+      overall: 60,
+      limitingFactors: ['Lighting', 'Algorithm'],
+      governingMmPerPx: 0.075,
+      megapixelsPerCamera: [1.78, 0.01],
+    },
+    note:
+      'Dự án thật 2025, sheet DỰ ÁN CŨ dòng 4 (Hưng nhập 2026-09-17). Kết quả thật: ĐẠT, yếu tố giới hạn thực tế: Chiếu sáng — ' +
+      'engine khớp (khả thi cần xác nhận mẫu, Chiếu sáng là yếu tố giới hạn). Tay: tương phản trung bình → 4 px/lỗi → 0,3/4 = 0,075 mm/px → 1334×1334 = 1,78 MP. ' +
+      'Thực tế: camera 20 MP 5472×3648, pixel 2,4 µm, ống 25 mm 1,2", WD 200 → vùng nhìn 105×70 mm, 0,019 mm/px (engine tính lại cũng ra ~105 mm). ' +
+      'Đèn: backlight 200×200 nằm trên (cách 200 mm) + backlight 200×100 dựng bên cạnh (cách 100 mm), camera nghiêng ~25–35° — tấm sáng phẳng ở góc phản xạ gương.',
+    knownGaps: [
+      'Độ phân giải: engine đòi tối thiểu 0,075 mm/px (1,78 MP); thực tế dùng 0,019 mm/px (20 MP) và Hưng xác nhận camera thấp hơn đã thử KHÔNG thấy bụi. ' +
+        'Kể cả tính nhìn nghiêng (×2) engine vẫn thiếu khoảng 2 lần → số px/lỗi cho bụi trên bề mặt mạ bóng có thể phải cao hơn bảng 3/4/5. Chờ thêm dự án trước khi sửa luật; cần biết camera thấp hơn đã thử là bao nhiêu MP.',
+      'Góc camera: engine giả định nhìn vuông góc; thực tế nghiêng ~30° (mỗi pixel theo chiều nghiêng phủ ~gấp đôi bề mặt, vùng rõ nét phải phủ cả mặt nghiêng). Luật camera nghiêng đưa vào V1c.',
+      'Chiếu sáng: engine gợi ý dome; thực tế dùng đèn phẳng ở góc phản xạ. Đã thêm "backlight" làm phương án thay thế cho bề mặt bóng (2026-09-17), chưa đổi gợi ý chính.',
+    ],
   },
   {
     id: 'S-01',

@@ -690,7 +690,7 @@
         "shallow_dent": "Lõm lồi rất nông cần chụp bốn hướng rồi dựng lại pháp tuyến bề mặt — một hướng chiếu không đủ.",
         "transparent": "Vật trong suốt phải soi xuyên, chiếu nghiêng hoặc DOAL để lỗi hiện thành bóng.",
         "surfaceTransparent": "Bề mặt trong suốt lấn át loại lỗi: phải soi xuyên trước đã.",
-        "surfaceReflective": "Bề mặt bóng như gương lấn át loại lỗi: dark field thông thường chỉ thấy loá."
+        "surfaceReflective": "Bề mặt bóng như gương lấn át loại lỗi: dark field thông thường chỉ thấy loá. Dùng dome khuếch tán, hoặc tấm đèn phẳng diện rộng (backlight) đặt đúng góc phản xạ gương để bề mặt phản chiếu nền sáng đều vào camera — lỗi hiện thành chấm tối."
       },
       "checkCount": "Xem {count} bước kiểm chứng"
     },

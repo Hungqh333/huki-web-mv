@@ -84,7 +84,7 @@ test('GT-001: phối cảnh, telecentric, nhiệt, ghép ảnh đều FAIL; chi�
   const lighting = one(results, 'LGT-001');
   assert.equal(lighting.status, 'warn');
   assert.equal(lighting.evidence, 'requires-sample-test');
-  assert.equal(lighting.formula, 'dome');
+  assert.equal(lighting.formula, 'dome / backlight', 'phuong an thay the: den phang o goc phan xa (GT-002)');
 
   // Vật liệu chưa nêu → α đang giả định 23 (nhôm): phải nằm trong inputsAssumed của MEC-001.
   const thermal = one(results, 'MEC-001');
@@ -314,7 +314,7 @@ test('sơ đồ GT-001: sinh từ kết quả engine, khối mang trạng thái 
   assert.equal(node('lens').status, 'fail');
   assert.equal(node('lens').detail!.key, 'lensTelecentricInfeasible');
   assert.deepEqual(node('camera').detail, { key: 'cameraSpec', values: { count: 4, mp: 8.9 } });
-  assert.equal(node('lighting').detail!.values!.type, 'dome');
+  assert.equal(node('lighting').detail!.values!.type, 'dome / backlight');
   assert.equal(node('interface').detail, null, 'GT-001 khong co san luong');
   assert.equal(node('ipc').pending, true);
   assert.equal(node('plc').pending, true);

@@ -47,7 +47,10 @@ const BY_DEFECT: Record<DefectType, LightingSuggestion> = {
 /** Bề mặt lấn át loại lỗi ở hai trường hợp này. */
 const SURFACE_OVERRIDE: Record<string, LightingSuggestion> = {
   transparent: { lightType: 'backlight', reasonKey: 'surfaceTransparent' },
-  reflective: { lightType: 'dome', reasonKey: 'surfaceReflective' },
+  /* Phương án thay thế: tấm đèn phẳng diện rộng (backlight) đặt ở GÓC PHẢN XẠ GƯƠNG
+     — bề mặt bóng phản chiếu nền sáng đều vào camera, lỗi hiện thành chấm tối.
+     Dự án thật GT-002 (bụi trên lớp mạ, 2025) đạt bằng cách này, không dùng dome. */
+  reflective: { lightType: 'dome', reasonKey: 'surfaceReflective', alternativeType: 'backlight' },
 };
 
 export function suggestLighting(input: {

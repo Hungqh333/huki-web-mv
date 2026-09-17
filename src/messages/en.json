@@ -690,7 +690,7 @@
         "shallow_dent": "Very shallow dents need four directions to reconstruct the surface normal — one direction is not enough.",
         "transparent": "Transparent parts must be lit through, tilted or DOAL, so defects appear as shadows.",
         "surfaceTransparent": "A transparent surface overrides the defect type: it must be lit through first.",
-        "surfaceReflective": "A mirror-like surface overrides the defect type: plain dark field only shows glare."
+        "surfaceReflective": "A mirror-like surface overrides the defect type: ordinary dark field only shows glare. Use a diffuse dome, or a large flat panel light (backlight) placed at the specular reflection angle so the surface mirrors a uniform bright field into the camera — defects show as dark spots."
       },
       "checkCount": "Show {count} verification steps"
     },

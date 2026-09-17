@@ -22,7 +22,15 @@ test('bộ golden: ID duy nhất, có ít nhất một dự án thật, mọi ca
   for (const c of GOLDEN_CASES) {
     assert.ok(c.note.length > 20, `${c.id}: can ghi chu tinh tay`);
     if (c.source === 'synthetic') assert.ok(c.name.startsWith('Mẫu soạn'), `${c.id}: mau soan phai ghi ro trong ten`);
+    for (const gap of c.knownGaps ?? []) assert.ok(gap.trim().length > 20, `${c.id}: knownGaps phai ghi ro`);
   }
+});
+
+test('chỗ lệch đã biết giữa engine và dự án thật được liệt kê, không bị che khi ca vẫn pass', () => {
+  const gaps = GOLDEN_CASES.filter((c) => c.source === 'real-project').flatMap((c) => (c.knownGaps ?? []).map((gap) => `${c.id}: ${gap}`));
+  // Có lệch thì in ra để người chạy test luôn thấy, không chỉ nằm trong file dữ liệu.
+  for (const gap of gaps) console.log(`  [lech da biet] ${gap.slice(0, 140)}…`);
+  assert.ok(gaps.some((gap) => gap.startsWith('GT-002')), 'GT-002 co 3 cho lech da ghi');
 });
 
 for (const golden of GOLDEN_CASES) {

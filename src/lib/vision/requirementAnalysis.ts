@@ -1,7 +1,7 @@
 import { INTERFACE_BANDWIDTH } from '@/lib/components/specs';
 import { resolveAssumptions } from '@/lib/requirement/assumptions';
 import { N_DET_BY_CONTRAST } from '@/lib/requirement/defaults';
-import { readField } from '@/lib/requirement/fields';
+import { fieldsFor, readField } from '@/lib/requirement/fields';
 import type { Assumption, DefectContrast, Requirement } from '@/lib/requirement/types';
 import { suggestLighting } from './lighting';
 import { perspectiveCheck, perspectiveErrorMm, telecentricCheck, TELECENTRIC_FEASIBLE_MAX_MM, TELECENTRIC_PRACTICAL_MAX_MM } from './optics';
@@ -21,9 +21,10 @@ import { fmt, round, type Check } from './types';
  * Không import file này từ `vision/index.ts`: nó phụ thuộc tầng Yêu cầu, còn
  * tầng Yêu cầu lại import `vision/resolution` — đi qua index là thành vòng.
  *
- * Luật cần thiết bị cụ thể (tiêu cự, vòng ảnh, nhiễu xạ, DOF, chu kỳ, IPC) chờ
- * V1c chọn thiết bị. Ở V1b chúng không có mặt, nhóm Integration để trống — đánh
- * giá khả thi coi là CHƯA BIẾT, không coi là đạt.
+ * Luật cần thiết bị cụ thể (tiêu cự, vòng ảnh, nhiễu xạ, DOF, chu kỳ, IPC) chạy
+ * ở tầng Cấu hình — configurationRules.ts, với từng bộ camera + ống kính + IPC.
+ * Ở đây chúng không có mặt, nhóm Integration để trống — đánh giá khả thi coi là
+ * CHƯA BIẾT, không coi là đạt.
  */
 
 /** THR-005: nhoè cho phép = k_blur × mm/px (spec cho 0,3…1, mặc định 0,5). */
@@ -53,6 +54,23 @@ export type RequirementAnalysis = {
   cameraCount: number | null;
   dataRateTotalMBs: number | null;
   interfaceName: string | null;
+  /* Các số tầng Cấu hình (configurationRules.ts) cần — đã qua giả định. */
+  workingDistanceMm: number | null;
+  heightVariationMm: number | null;
+  /** Độ; null = nhìn vuông góc. */
+  cameraTiltDeg: number | null;
+  /** Độ sâu vùng nhìn một camera sinh ra do nghiêng (OPT-009), mm; 0 khi không nghiêng. */
+  tiltDepthMm: number;
+  partsPerMinute: number | null;
+  /** Phơi sáng tối đa để không nhoè (THR-005), µs; null khi sản phẩm không chạy liên tục. */
+  exposureMaxUs: number | null;
+  /** AI-002 đã bật: biến động lỗi lớn, ứng viên học sâu. */
+  usesDeepLearning: boolean;
+  /**
+   * Mọi ô có giá trị (sau giả định), tách thật / giả định — để luật tầng Cấu
+   * hình ghi inputsUsed / inputsAssumed mà không phải chạy lại giả định.
+   */
+  fieldInputs: Record<string, { value: unknown; assumptionId?: string }>;
 };
 
 const CONTRASTS: readonly DefectContrast[] = ['high', 'medium', 'low', 'unknown'];
@@ -164,6 +182,12 @@ export function analyseRequirement(draft: Requirement): RequirementAnalysis {
 
   // ─── RES-005 / RES-004: chia camera, số pixel ───
   const cameraCount = num('system.cameraCount');
+  /* OPT-009: camera nghiêng θ thì trên vật, một pixel theo chiều nghiêng dài ra
+     1/cos θ. Chưa biết nghiêng theo cạnh nào → tính cho CẠNH DÀI của vùng nhìn
+     (cạnh cần nhiều pixel hơn — phía xấu). Nghiêng một chiều nên chỉ nhân một
+     trục, không bình phương. */
+  const tilt = num('system.cameraTiltDeg');
+  const tiltCos = tilt !== null && tilt > 0 ? Math.cos((tilt * Math.PI) / 180) : 1;
   const sizePaths = ['object.sizeX', 'object.sizeY', 'system.cameraCount'];
   let tile: CameraTile | null = null;
   let megapixels: number | null = null;
@@ -194,21 +218,50 @@ export function analyseRequirement(draft: Requirement): RequirementAnalysis {
             sizePaths
           );
         }
-        const nx = Math.ceil(tile.widthMm / governing);
-        const ny = Math.ceil(tile.heightMm / governing);
+        const tiltOnWidth = tile.widthMm >= tile.heightMm;
+        const pitchX = governing * (tiltOnWidth ? tiltCos : 1);
+        const pitchY = governing * (tiltOnWidth ? 1 : tiltCos);
+        const nx = Math.ceil(tile.widthMm / pitchX);
+        const ny = Math.ceil(tile.heightMm / pitchY);
         megapixels = (nx * ny) / 1e6;
+        const tiltPart = (onThisAxis: boolean) => (tiltCos < 1 && onThisAxis ? ` × cos ${fmt(tilt!, 1)}°` : '');
         push(
           'RES-004',
           {
             key: 'megapixelsPerCamera',
             status: 'info',
-            formula: `${fmt(tile.widthMm, 1)} ÷ ${fmt(governing, 5)} = ${nx} px × ${fmt(tile.heightMm, 1)} ÷ ${fmt(governing, 5)} = ${ny} px → ${fmt(megapixels, 2)} MP/camera`,
+            formula: `${fmt(tile.widthMm, 1)} ÷ (${fmt(governing, 5)}${tiltPart(tiltOnWidth)}) = ${nx} px × ${fmt(tile.heightMm, 1)} ÷ (${fmt(governing, 5)}${tiltPart(!tiltOnWidth)}) = ${ny} px → ${fmt(megapixels, 2)} MP/camera`,
           },
           'calculated',
-          [...sizePaths, 'detection.0.minSize', 'measurement.0.tolerance']
+          [...sizePaths, 'detection.0.minSize', 'measurement.0.tolerance', ...(tiltCos < 1 ? ['system.cameraTiltDeg'] : [])]
         );
       }
     }
+  }
+
+  // ─── OPT-009: camera nghiêng ───
+  let tiltDepth = 0;
+  if (tilt !== null && tilt > 0) {
+    const along = tile ? Math.max(tile.widthMm, tile.heightMm) : fovW !== null && fovH !== null ? Math.max(fovW, fovH) : null;
+    const sin = Math.sin((tilt * Math.PI) / 180);
+    tiltDepth = along !== null ? along * sin : 0;
+    const factor = 1 / tiltCos;
+    // Phát hiện lỗi: đã bù vào số pixel ở RES-004, chỉ ghi nhận. Đo lường: tỉ lệ
+    // mm/px đổi dọc theo ảnh — phải hiệu chuẩn phối cảnh, không đo thẳng được.
+    push(
+      'OPT-009',
+      {
+        key: 'cameraTilt',
+        status: U !== null ? 'warn' : 'info',
+        formula:
+          `1 ÷ cos ${fmt(tilt, 1)}° = ${fmt(factor, 3)}` +
+          (along !== null ? ` · ${fmt(along, 1)} mm × sin ${fmt(tilt, 1)}° = ${fmt(tiltDepth, 1)} mm` : ''),
+        noteKey: U !== null ? 'cameraTiltMeasurement' : 'cameraTiltDetection',
+        noteValues: { factor: round(factor, 3), depth: round(tiltDepth, 1) },
+      },
+      'calculated',
+      ['system.cameraTiltDeg', ...sizePaths]
+    );
   }
 
   // ─── OPT-008 / OPT-006 / OPT-007: phối cảnh và telecentric ───
@@ -309,6 +362,8 @@ export function analyseRequirement(draft: Requirement): RequirementAnalysis {
   }
 
   // ─── THR-001 / THR-002: băng thông, giao tiếp tối thiểu ───
+  const exposureMaxUs =
+    raw('production.motion') === 'continuous' && speed !== null && speed > 0 && governing !== null ? ((K_BLUR * governing) / speed) * 1e6 : null;
   let dataRateTotal: number | null = null;
   let interfaceName: string | null = null;
   const ppm = num('production.partsPerMinute') ?? (num('production.taktTime') ? 60 / num('production.taktTime')! : null);
@@ -412,5 +467,18 @@ export function analyseRequirement(draft: Requirement): RequirementAnalysis {
     cameraCount,
     dataRateTotalMBs: dataRateTotal,
     interfaceName,
+    workingDistanceMm: workingDistance,
+    heightVariationMm: heightVariation,
+    cameraTiltDeg: tilt !== null && tilt > 0 ? tilt : null,
+    tiltDepthMm: tiltDepth,
+    partsPerMinute: ppm,
+    exposureMaxUs,
+    usesDeepLearning: results.some((result) => result.ruleId === 'AI-002'),
+    fieldInputs: Object.fromEntries(
+      fieldsFor(req.applicationType).flatMap((def) => {
+        const { inputsUsed, inputsAssumed } = inputs([def.path]);
+        return [...inputsUsed, ...inputsAssumed].map((input) => [input.path, input]);
+      })
+    ),
   };
 }

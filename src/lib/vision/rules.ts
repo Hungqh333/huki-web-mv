@@ -63,9 +63,9 @@ export type RuleDefinition = {
 };
 
 /**
- * Danh mục luật engine V1b đang chạy. ID là hợp đồng — không đổi sau khi phát
- * hành (spec §6). Luật cần thiết bị cụ thể (OPT-001..005, THR-003/004, INT) là
- * việc của V1c, chưa có ở đây.
+ * Danh mục luật engine đang chạy. ID là hợp đồng — không đổi sau khi phát hành
+ * (spec §6). OPT-001..005 và THR-003/004 (V1c) chạy ở tầng Cấu hình, trên từng
+ * bộ thiết bị — configurationRules.ts. INT-001 chưa có.
  */
 export const RULES: readonly RuleDefinition[] = [
   { id: 'RES-001', version: '1.0.0', category: 'RES', dimension: 'Resolution' },
@@ -74,9 +74,15 @@ export const RULES: readonly RuleDefinition[] = [
   { id: 'RES-004', version: '1.0.0', category: 'RES', dimension: 'Resolution' },
   { id: 'RES-005', version: '1.0.0', category: 'RES', dimension: 'Resolution' },
   { id: 'RES-006', version: '1.0.0', category: 'RES', dimension: 'Resolution' },
+  { id: 'OPT-001', version: '1.0.0', category: 'OPT', dimension: 'Optics' },
+  { id: 'OPT-002', version: '1.0.0', category: 'OPT', dimension: 'Optics' },
+  { id: 'OPT-003', version: '1.0.0', category: 'OPT', dimension: 'Optics' },
+  { id: 'OPT-004', version: '1.0.0', category: 'OPT', dimension: 'Optics' },
+  { id: 'OPT-005', version: '1.0.0', category: 'OPT', dimension: 'Optics' },
   { id: 'OPT-006', version: '1.0.0', category: 'OPT', dimension: 'Optics' },
   { id: 'OPT-007', version: '1.0.0', category: 'OPT', dimension: 'Optics' },
   { id: 'OPT-008', version: '1.0.0', category: 'OPT', dimension: 'Optics' },
+  { id: 'OPT-009', version: '1.0.0', category: 'OPT', dimension: 'Optics' },
   { id: 'LGT-001', version: '1.0.0', category: 'LGT', dimension: 'Lighting' },
   { id: 'LGT-002', version: '1.0.0', category: 'LGT', dimension: 'Lighting' },
   { id: 'LGT-003', version: '1.0.0', category: 'LGT', dimension: 'Lighting' },
@@ -87,6 +93,8 @@ export const RULES: readonly RuleDefinition[] = [
   { id: 'LGT-008', version: '1.0.0', category: 'LGT', dimension: 'Lighting' },
   { id: 'THR-001', version: '1.0.0', category: 'THR', dimension: 'Throughput' },
   { id: 'THR-002', version: '1.0.0', category: 'THR', dimension: 'Throughput' },
+  { id: 'THR-003', version: '1.0.0', category: 'THR', dimension: 'Throughput' },
+  { id: 'THR-004', version: '1.0.0', category: 'THR', dimension: 'Throughput' },
   { id: 'THR-005', version: '1.0.0', category: 'THR', dimension: 'Throughput' },
   { id: 'MEC-001', version: '1.0.0', category: 'MEC', dimension: 'Mechanical' },
   { id: 'MEC-002', version: '1.0.0', category: 'MEC', dimension: 'Mechanical' },

@@ -150,6 +150,37 @@ function migrateMaterialV1(requirement: Requirement): void {
 }
 
 /**
+ * Ô thêm SAU khi bản nháp / revision được lưu (ví dụ system.cameraTiltDeg ở V1c)
+ * → điền ô trống "chưa hỏi" từ requirement rỗng cùng loại. CHỈ các ô liệt kê ở
+ * FIELDS_ADDED_AFTER_V2: thiếu ô khác vẫn là bản nháp hỏng và bị loại.
+ *
+ * Không có bước này thì mọi revision đã lưu trước khi thêm ô sẽ bị coi là schema
+ * cũ và không mở lại được — thêm một ô tuỳ chọn không đáng làm mất dự án. Chỉ
+ * điền khi nhánh cha còn nguyên; nhánh cha hỏng thì vẫn để phép kiểm bên dưới
+ * loại bản nháp.
+ */
+export const FIELDS_ADDED_AFTER_V2: readonly string[] = ['system.cameraTiltDeg'];
+
+function backfillAddedFields(requirement: Requirement): void {
+  if (!isApplicationType(requirement.applicationType)) return;
+  const empty = emptyRequirement(requirement.applicationType);
+  for (const def of fieldsFor(requirement.applicationType)) {
+    if (!FIELDS_ADDED_AFTER_V2.includes(def.path) || readField(requirement, def.path) !== null) continue;
+    const parts = def.path.split('.');
+    const key = parts.pop()!;
+    let parent: unknown = requirement;
+    let template: unknown = empty;
+    for (const part of parts) {
+      parent = (parent as Record<string, unknown> | null)?.[part];
+      template = (template as Record<string, unknown> | null)?.[part];
+    }
+    if (parent && typeof parent === 'object' && !Array.isArray(parent) && !(key in parent) && template && typeof template === 'object') {
+      (parent as Record<string, unknown>)[key] = structuredClone((template as Record<string, unknown>)[key]);
+    }
+  }
+}
+
+/**
  * Đọc bản nháp đã lưu. Dữ liệu trong sessionStorage có thể cũ (khác phiên bản
  * schema) hoặc bị sửa tay — không hợp lệ thì bỏ, trả `null`, không ném lỗi.
  */
@@ -174,6 +205,7 @@ export function parseDraft(raw: string | null): RequirementDraft | null {
     if (!requirement || typeof requirement !== 'object') return null;
     if (!isApplicationType(requirement.applicationType)) return null;
     if (!Array.isArray(requirement.detection) || !Array.isArray(requirement.measurement)) return null;
+    backfillAddedFields(requirement);
     // Mọi ô V1a của loại này phải đọc được — chặn bản nháp của schema cũ.
     if (fieldsFor(requirement.applicationType).some((def) => readField(requirement, def.path) === null)) {
       return null;

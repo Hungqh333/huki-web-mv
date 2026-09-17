@@ -38,6 +38,7 @@ export type RequirementFieldDef = {
   kind: RequirementFieldKind;
   unit?: string;
   min?: number;
+  max?: number;
   /** Giá trị lựa chọn; nhãn ở designer.requirement.options.<optionsKey>.<value> */
   options?: readonly string[];
   optionsKey?: string;
@@ -95,6 +96,8 @@ export const V1A_FIELDS: readonly RequirementFieldDef[] = [
 
   { path: 'system.cameraCount', section: 'system', key: 'cameraCount', kind: 'number', min: 1 },
   { path: 'system.workingDistance', section: 'system', key: 'workingDistance', kind: 'number', unit: 'mm', min: 1 },
+  // Trần 80°: gần 90° thì 1/cos θ tiến ra vô cùng — đó là chụp ngang, không còn là camera nghiêng.
+  { path: 'system.cameraTiltDeg', section: 'system', key: 'cameraTiltDeg', kind: 'number', unit: '°', min: 0, max: 80 },
 
   { path: 'environment.conditions', section: 'environment', key: 'conditions', kind: 'multiselect', options: CONDITIONS, optionsKey: 'conditions' },
   { path: 'environment.ambientTempRange', section: 'environment', key: 'ambientTempRange', kind: 'number', unit: 'K', min: 0 },
@@ -169,6 +172,7 @@ export function emptyRequirement(type: ApplicationType, id = 'draft'): Requireme
       workingDistance: notAsked('mm'),
       workingDistanceMax: notAsked('mm'),
       mountingRigidity: notAsked(),
+      cameraTiltDeg: notAsked('°'),
     },
     environment: {
       conditions: notAsked(),

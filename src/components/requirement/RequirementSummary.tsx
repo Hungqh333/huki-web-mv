@@ -627,7 +627,7 @@ function QuestionItem({
     const parsed = numberDefs.map((def) => {
       const text = (typed[def.path] ?? '').trim().replace(',', '.');
       const number = Number(text);
-      const ok = text !== '' && Number.isFinite(number) && (def.min === undefined || number >= def.min);
+      const ok = text !== '' && Number.isFinite(number) && (def.min === undefined || number >= def.min) && (def.max === undefined || number <= def.max);
       return { def, number, ok };
     });
     if (parsed.some((entry) => !entry.ok)) return setInvalid(true);
@@ -875,6 +875,7 @@ function FieldInput({
           inputMode="decimal"
           step="any"
           min={def.min}
+          max={def.max}
           defaultValue={typeof value === 'number' ? value : ''}
           placeholder={
             systemValue && systemValue.value !== null
@@ -885,7 +886,9 @@ function FieldInput({
             const text = event.target.value.trim();
             if (text === '') return onChange(null);
             const parsed = Number(text);
-            if (Number.isFinite(parsed) && (def.min === undefined || parsed >= def.min)) onChange(parsed);
+            if (Number.isFinite(parsed) && (def.min === undefined || parsed >= def.min) && (def.max === undefined || parsed <= def.max)) {
+              onChange(parsed);
+            }
           }}
           className={INPUT_CLASS}
         />

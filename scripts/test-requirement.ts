@@ -156,6 +156,11 @@ test('bản nháp: văn bản không qua URL, dữ liệu hỏng thì bỏ', () 
   const oldSchema = JSON.parse(JSON.stringify(fromApp)) as { requirement: { measurement: Record<string, unknown>[] } };
   delete oldSchema.requirement.measurement[0].perspectiveFree;
   assert.equal(parseDraft(JSON.stringify(oldSchema)), null, 'ban nhap schema cu');
+
+  // Ô thêm sau (góc nghiêng camera, V1c) thì điền ô trống — revision cũ vẫn mở được.
+  const beforeTilt = JSON.parse(JSON.stringify(fromApp)) as { requirement: { system: Record<string, unknown> } };
+  delete beforeTilt.requirement.system.cameraTiltDeg;
+  assert.deepEqual(parseDraft(JSON.stringify(beforeTilt)), fromApp, 'o them sau duoc dien trong');
 });
 
 test('adapter: ngoại quan kiểu GT-001 → đúng khoá form bộ chọn', () => {

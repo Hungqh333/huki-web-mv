@@ -142,6 +142,12 @@ export interface Requirement {
     /** mm — giới hạn không gian máy */
     workingDistanceMax: Field<number>;
     mountingRigidity: Field<MountingRigidity>;
+    /**
+     * Độ — góc trục camera lệch khỏi pháp tuyến bề mặt; 0 = nhìn vuông góc.
+     * Thêm ở V1c (C2, OPT-009) sau GT-002: bụi trên mạ bóng chụp nghiêng ~30°
+     * để né phản xạ gương. Trống = vuông góc, KHÔNG giả định.
+     */
+    cameraTiltDeg: Field<number>;
   };
 
   environment: {

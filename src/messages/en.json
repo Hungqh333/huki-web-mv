@@ -1865,7 +1865,7 @@
         "light": "Lighting",
         "pc": "Computer",
         "software": "Software",
-        "softwareLater": "Chosen in the bill of materials step.",
+        "softwareLater": "See the bill of materials after choosing a solution.",
         "noLight": "No passing light in the catalog.",
         "noPc": "No passing computer in the catalog.",
         "unverified": "Unverified",
@@ -1888,7 +1888,59 @@
           "defect": "smallest defect {value} mm",
           "object": "part {width} × {height} mm",
           "resolution": "{value} mm/px"
-        }
+        },
+        "select": "Choose this solution",
+        "selected": "Used for the bill of materials"
+      },
+      "bom": {
+        "title": "Bill of materials — {level} solution",
+        "subtitle": "Each line carries the rule that justifies it. Save the project to capture price, lead time and supplier as of now.",
+        "clear": "Clear solution",
+        "unavailable": "The chosen solution is no longer available for the current requirements (blocked, or the catalog has no configuration at this level). Please choose again.",
+        "colItem": "Item",
+        "colQty": "Qty",
+        "colPrice": "Unit price (VND)",
+        "colLeadTime": "Lead time",
+        "colRule": "Rule",
+        "categories": {
+          "vision": "Imaging",
+          "lighting": "Lighting",
+          "cabling": "Cables",
+          "computing": "Computer & interface",
+          "software": "Software",
+          "accessory": "Accessories",
+          "mechanical": "Mechanical & calibration"
+        },
+        "placeholders": {
+          "calibrationTarget": "Calibration target",
+          "cameraBracket": "Rigid adjustable camera bracket"
+        },
+        "needsQuote": "Not in catalog — quote separately",
+        "unverified": "Unverified",
+        "qtyFor": "Quantity of {item}",
+        "suggested": "suggested {qty}",
+        "days": "{days} days",
+        "manual": "added",
+        "remove": "Remove",
+        "restore": "Restore {count} removed lines",
+        "addLabel": "Add an accessory from the catalog",
+        "addPlaceholder": "Add accessory…",
+        "add": "Add",
+        "total": "Estimated total: {total} VND",
+        "totalMissing": "Prices incomplete — {count} lines missing",
+        "assumptionsTitle": "Assumptions & Exclusions",
+        "assumptionsIntro": "This quotation relies on the following assumptions. If reality differs, configuration and price will change:",
+        "noAssumptions": "No field currently uses an assumed value.",
+        "exclusionsTitle": "NOT included:",
+        "exclusions": {
+          "frame": "Overall mechanical fixture and frame",
+          "climateControl": "Ambient temperature control",
+          "sampleTesting": "Sample testing and on-site tuning",
+          "training": "Operator training"
+        },
+        "feasibilityAt": "Feasibility status at this time:",
+        "yes": "Yes",
+        "no": "No"
       }
     }
   },

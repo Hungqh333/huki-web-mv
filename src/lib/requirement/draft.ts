@@ -10,6 +10,7 @@
 import { APPLICATION_TYPES, type ApplicationType } from '../visionEntry';
 import { MATERIALS, emptyRequirement, fieldsFor, readField, type ParsedField } from './fields';
 import type { Requirement } from './types';
+import { isBomSelection, type BomSelection } from '../vision/bomSelection';
 
 export const REQUIREMENT_ROUTE = '/thiet-ke-he-thong/yeu-cau';
 
@@ -49,6 +50,8 @@ export type RequirementDraft = {
   project?: DraftProjectLink;
   /** Kết quả lượt đọc mô tả gần nhất (hạng mục 3). Không có = chưa đọc. */
   parse?: DraftParse;
+  /** Phương án + chỉnh sửa BOM đã chọn (V1c C5). Không có = chưa chọn phương án. */
+  bom?: BomSelection;
 };
 
 // 'cancelled' = người dùng bấm "Bỏ chờ, tôi tự điền" trong lúc bộ đọc đang chạy.
@@ -221,5 +224,7 @@ export function parseDraft(raw: string | null): RequirementDraft | null {
   if ('project' in result && !isProjectLink(result.project)) delete result.project;
   // Trạng thái đọc hỏng thì bỏ: tệ nhất là trang đọc lại mô tả một lần nữa.
   if ('parse' in result && !isDraftParse(result.parse)) delete result.parse;
+  // Lựa chọn BOM hỏng thì bỏ: tệ nhất là người dùng chọn lại phương án.
+  if ('bom' in result && !isBomSelection(result.bom)) delete result.bom;
   return result;
 }

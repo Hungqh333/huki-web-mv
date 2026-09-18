@@ -11,7 +11,9 @@ import {
   normalizeProjectName,
   type RevisionPayload,
 } from '@/lib/projects/model';
+import type { Component } from '@/lib/components/specs';
 import { createClient } from '@/lib/supabase/server';
+import { RULESET_VERSION, bomForRequirement, type BomSnapshot } from '@/lib/vision/bom';
 
 /**
  * Lưu bảng tóm tắt yêu cầu thành dự án (V1a hạng mục 7).
@@ -37,7 +39,7 @@ type Translate = Awaited<ReturnType<typeof getTranslations<'projects.errors'>>>;
 
 type Prepared =
   | { ok: false; error: string }
-  | { ok: true; t: Translate; supabase: Supabase; draft: RequirementDraft; payload: RevisionPayload; name: string };
+  | { ok: true; t: Translate; supabase: Supabase; draft: RequirementDraft; payload: RevisionPayload; name: string; bom: BomSnapshot | null };
 
 async function prepare(input: ProjectActionInput): Promise<Prepared> {
   const t = await getTranslations('projects.errors');
@@ -55,7 +57,21 @@ async function prepare(input: ProjectActionInput): Promise<Prepared> {
   const name = normalizeProjectName(input.name);
   if (!name) return { ok: false, error: t('nameRequired', { max: PROJECT_NAME_MAX }) };
 
-  return { ok: true, t, supabase: await createClient(), draft, payload, name };
+  const supabase = await createClient();
+
+  /* BOM (V1c C5): dựng lại ở server từ kho thật theo LỰA CHỌN trong bản nháp —
+     giá, thời gian giao, nhà cung cấp chụp lại tại lúc lưu. RLS chỉ trả kho
+     cho Member+, đúng quyền của hành động này. */
+  let bom: BomSnapshot | null = null;
+  if (draft.bom && draft.requirement) {
+    const { data: catalog } = await supabase
+      .from('components')
+      .select('id, code, kind, brand, model, spec, price_vnd, lead_time_days, supplier, used_in_projects, datasheet_url, source, notes_vi, notes_en, is_active, sort_order')
+      .eq('is_active', true);
+    bom = bomForRequirement(draft.requirement, (catalog ?? []) as Component[], draft.bom);
+  }
+
+  return { ok: true, t, supabase, draft, payload, name, bom };
 }
 
 /** Mã lỗi Postgres → câu dễ hiểu. Chi tiết kỹ thuật chỉ ghi log phía server. */
@@ -79,6 +95,8 @@ async function saveOpenRevision(
     p_assumptions: payload.assumptions,
     p_raw_text: payload.rawText,
     p_schema_version: payload.schemaVersion,
+    p_bom: prepared.bom,
+    p_rule_version: RULESET_VERSION,
   });
   return error;
 }
@@ -111,6 +129,8 @@ export async function saveProjectAction(input: ProjectActionInput): Promise<Proj
       p_assumptions: payload.assumptions,
       p_raw_text: payload.rawText,
       p_schema_version: payload.schemaVersion,
+      p_bom: prepared.bom,
+      p_rule_version: RULESET_VERSION,
     })
     .single<{ new_project_id: string; new_revision_id: string; new_rev_label: string }>();
 

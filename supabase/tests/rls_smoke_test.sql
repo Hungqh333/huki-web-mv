@@ -328,7 +328,12 @@ begin
     'Dự án mới có Rev A đang sửa');
 
   perform public.save_revision(v_rev_a, 'Dự án RLS (đã sửa)', 'AppearanceInspection',
-    '{"id":"draft","applicationType":"AppearanceInspection"}'::jsonb, '[]'::jsonb, null, 2);
+    '{"id":"draft","applicationType":"AppearanceInspection"}'::jsonb, '[]'::jsonb, null, 2,
+    '{"version":1,"level":"recommended"}'::jsonb, 'v1c-test');
+  perform pg_temp.assert_eq(
+    (select count(*) from public.project_revisions
+      where id = v_rev_a and bom ->> 'level' = 'recommended' and rule_version = 'v1c-test'), 1,
+    'Lưu revision ghi được BOM + phiên bản bộ luật (V1c C5)');
   perform pg_temp.assert_eq(
     (select count(*) from public.projects
       where id = v_project and name = 'Dự án RLS (đã sửa)' and application_type = 'AppearanceInspection'), 1,
@@ -346,9 +351,13 @@ begin
     (select count(*) from public.project_revisions
       where project_id = v_project and rev_label = 'B' and requirement ->> 'applicationType' = 'AppearanceInspection'), 1,
     'Rev B chép nội dung đã lưu của Rev A');
+  perform pg_temp.assert_eq(
+    (select count(*) from public.project_revisions
+      where project_id = v_project and rev_label = 'B' and bom ->> 'level' = 'recommended' and rule_version = 'v1c-test'), 1,
+    'Rev B chép cả BOM và phiên bản bộ luật của Rev A');
 
   -- RLS lọc revision đã khoá: UPDATE khớp 0 dòng, không lỗi.
-  update public.project_revisions set requirement = '{}'::jsonb where id = v_rev_a;
+  update public.project_revisions set requirement = '{}'::jsonb, bom = '{}'::jsonb where id = v_rev_a;
   if found then
     raise exception 'FAIL: Member sửa được revision đã khoá';
   end if;

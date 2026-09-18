@@ -3,7 +3,7 @@
 import { useTranslations, useFormatter } from 'next-intl';
 import type { Candidate } from '@/lib/vision/equipmentFilter';
 import type { RuleResult } from '@/lib/vision/rules';
-import type { SolutionLevel, Solutions } from '@/lib/vision/solutionLevels';
+import type { SolutionLevel, SolutionLevelKey, Solutions } from '@/lib/vision/solutionLevels';
 import { nameOf, summarise } from './EquipmentPanel';
 
 /**
@@ -21,8 +21,14 @@ export function SolutionPanel({
   solutions,
   requirementLine,
   ready,
+  selectedLevel,
+  onSelect,
 }: {
   solutions: Solutions;
+  /** Mức đang chọn làm BOM (C5). */
+  selectedLevel: SolutionLevelKey | null;
+  /** null = chỉ xem (revision đã khoá). */
+  onSelect: ((level: SolutionLevelKey) => void) | null;
   /** "sai số ±0,1 mm · lỗi 0,5 mm · vật 380 × 280 mm" — dựng ở DesignPanels. */
   requirementLine: string;
   ready: boolean;
@@ -52,7 +58,14 @@ export function SolutionPanel({
 
             <div className="grid gap-4 lg:grid-cols-3">
               {solutions.levels.map((level) => (
-                <LevelCard key={level.key} level={level} noteOf={noteOf} />
+                <LevelCard
+                  key={level.key}
+                  level={level}
+                  noteOf={noteOf}
+                  selected={selectedLevel === level.key}
+                  highlighted={selectedLevel ? selectedLevel === level.key : level.key === 'recommended'}
+                  onSelect={onSelect}
+                />
               ))}
             </div>
 
@@ -65,11 +78,23 @@ export function SolutionPanel({
   );
 }
 
-function LevelCard({ level, noteOf }: { level: SolutionLevel; noteOf: NoteOf }) {
+function LevelCard({
+  level,
+  noteOf,
+  selected,
+  highlighted,
+  onSelect,
+}: {
+  level: SolutionLevel;
+  noteOf: NoteOf;
+  selected: boolean;
+  /** Viền nổi: mức đang chọn; chưa chọn gì thì mức Đề xuất. */
+  highlighted: boolean;
+  onSelect: ((level: SolutionLevelKey) => void) | null;
+}) {
   const t = useTranslations('designer.requirement.solutions');
   const format = useFormatter();
   const range = Number.isFinite(level.max) ? `${level.min}–${level.max}×` : `≥ ${level.min}×`;
-  const highlighted = level.key === 'recommended';
 
   return (
     <article
@@ -140,6 +165,22 @@ function LevelCard({ level, noteOf }: { level: SolutionLevel; noteOf: NoteOf }) 
               </details>
             ) : null}
           </div>
+
+          {onSelect || selected ? (
+            <div className="mt-3 border-t border-slate-100 pt-3 dark:border-slate-800">
+              {selected ? (
+                <p className="text-xs font-semibold text-sky-700 dark:text-sky-400">✓ {t('selected')}</p>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => onSelect?.(level.key)}
+                  className="rounded-md bg-sky-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-sky-700"
+                >
+                  {t('select')}
+                </button>
+              )}
+            </div>
+          ) : null}
 
           {level.risks.length > 0 ? (
             <div className="mt-3 border-t border-slate-100 pt-3 dark:border-slate-800">

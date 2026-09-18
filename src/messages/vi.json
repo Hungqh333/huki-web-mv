@@ -1865,7 +1865,7 @@
         "light": "Chiếu sáng",
         "pc": "Máy tính",
         "software": "Phần mềm",
-        "softwareLater": "Chọn ở bước danh mục vật tư (BOM).",
+        "softwareLater": "Xem trong danh mục vật tư khi chọn phương án.",
         "noLight": "Chưa có đèn đạt trong kho.",
         "noPc": "Chưa có máy tính đạt trong kho.",
         "unverified": "Chưa kiểm chứng",
@@ -1888,7 +1888,59 @@
           "defect": "lỗi nhỏ nhất {value} mm",
           "object": "vật {width} × {height} mm",
           "resolution": "{value} mm/px"
-        }
+        },
+        "select": "Chọn phương án này",
+        "selected": "Đang dùng làm danh mục vật tư"
+      },
+      "bom": {
+        "title": "Danh mục vật tư — phương án {level}",
+        "subtitle": "Mỗi dòng ghi mã luật biện luận. Lưu dự án để chụp lại giá, thời gian giao và nhà cung cấp tại thời điểm này.",
+        "clear": "Bỏ chọn phương án",
+        "unavailable": "Phương án đã chọn không còn khả dụng với bảng Yêu cầu hiện tại (bị chặn hoặc kho không còn cấu hình ở mức này). Hãy chọn lại phương án.",
+        "colItem": "Hạng mục",
+        "colQty": "SL",
+        "colPrice": "Đơn giá (₫)",
+        "colLeadTime": "Giao hàng",
+        "colRule": "Luật",
+        "categories": {
+          "vision": "Thu ảnh",
+          "lighting": "Chiếu sáng",
+          "cabling": "Cáp",
+          "computing": "Máy tính & giao tiếp",
+          "software": "Phần mềm",
+          "accessory": "Phụ kiện",
+          "mechanical": "Cơ khí & hiệu chuẩn"
+        },
+        "placeholders": {
+          "calibrationTarget": "Vật chuẩn hiệu chuẩn",
+          "cameraBracket": "Gá camera cứng, điều chỉnh được"
+        },
+        "needsQuote": "Kho chưa có — cần báo giá riêng",
+        "unverified": "Chưa kiểm chứng",
+        "qtyFor": "Số lượng {item}",
+        "suggested": "máy đề xuất {qty}",
+        "days": "{days} ngày",
+        "manual": "tự thêm",
+        "remove": "Bỏ",
+        "restore": "Khôi phục {count} dòng đã bỏ",
+        "addLabel": "Thêm phụ kiện từ kho",
+        "addPlaceholder": "Thêm phụ kiện…",
+        "add": "Thêm",
+        "total": "Tổng ước tính: {total} ₫",
+        "totalMissing": "Chưa đủ giá để cộng tổng — thiếu {count} dòng",
+        "assumptionsTitle": "Giả định & Loại trừ",
+        "assumptionsIntro": "Báo giá này dựa trên các giả định sau. Nếu thực tế khác, cấu hình và giá sẽ thay đổi:",
+        "noAssumptions": "Không có ô nào đang dùng giá trị giả định.",
+        "exclusionsTitle": "KHÔNG bao gồm:",
+        "exclusions": {
+          "frame": "Gá cơ khí tổng thể và kết cấu khung",
+          "climateControl": "Kiểm soát nhiệt độ môi trường",
+          "sampleTesting": "Thử nghiệm mẫu và hiệu chỉnh tại hiện trường",
+          "training": "Đào tạo vận hành"
+        },
+        "feasibilityAt": "Trạng thái khả thi tại thời điểm này:",
+        "yes": "Có",
+        "no": "Không"
       }
     }
   },

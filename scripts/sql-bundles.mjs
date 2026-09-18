@@ -39,6 +39,12 @@ export const BUNDLES = {
       ['PHAN 1/1: MIGRATION — them thoi gian giao hang, nha cung cap, so du an da dung cho linh kien', 'supabase/migrations/20260917000001_component_sourcing.sql'],
     ],
   },
+  'revision-bom': {
+    out: 'CHAY-BUOC-NAY-BOM-DUAN.sql',
+    parts: [
+      ['PHAN 1/1: MIGRATION — them cot BOM vao revision du an, ham luu / mo revision nhan BOM', 'supabase/migrations/20260918000001_revision_bom.sql'],
+    ],
+  },
   projects: {
     out: 'CHAY-BUOC-NAY-DUAN.sql',
     parts: [

@@ -50,7 +50,7 @@ export default async function ProjectPage({ params }: PageProps<'/du-an/[id]'>) 
 
   const { data: revisionData } = await supabase
     .from('project_revisions')
-    .select('id, rev_label, requirement, raw_text, schema_version, locked_at, created_at, updated_at')
+    .select('id, rev_label, requirement, raw_text, schema_version, locked_at, bom, created_at, updated_at')
     .eq('project_id', project.id)
     .order('created_at', { ascending: false });
   const revisions = (revisionData ?? []) as RevisionListRow[];

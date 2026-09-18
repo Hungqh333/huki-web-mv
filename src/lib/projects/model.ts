@@ -39,6 +39,8 @@ export type RevisionRow = {
   raw_text: string | null;
   schema_version: number;
   locked_at: string | null;
+  /** Ảnh chụp BOM (V1c C5); cũ hơn C5 thì không có / null. */
+  bom?: unknown;
 };
 
 export function normalizeProjectName(value: unknown): string | null {
@@ -76,8 +78,9 @@ function stableStringify(value: unknown): string {
 }
 
 /** Nội dung lưu được của bản nháp. Không tính liên kết dự án hay bộ đếm vẽ lại. */
-export function draftFingerprint(draft: Pick<RequirementDraft, 'rawText' | 'requirement'>): string {
-  return stableStringify({ rawText: draft.rawText, requirement: draft.requirement });
+export function draftFingerprint(draft: Pick<RequirementDraft, 'rawText' | 'requirement' | 'bom'>): string {
+  // BOM (V1c C5) cũng là nội dung lưu được: đổi phương án / số lượng = chưa lưu.
+  return stableStringify({ rawText: draft.rawText, requirement: draft.requirement, bom: draft.bom ?? null });
 }
 
 /** Có ô nào đã được hỏi (có giá trị hoặc "Chưa rõ") — tức người dùng đã nhập gì đó. */
@@ -114,6 +117,8 @@ export function revisionToDraft(project: { id: string; name: string }, row: Revi
       rawText: row.raw_text,
       requirement: row.requirement,
       revision: 0,
+      // Mở lại revision: khôi phục LỰA CHỌN; BOM dựng lại từ kho, ảnh chụp giữ nguyên trong database.
+      bom: (row.bom as { selection?: unknown } | null | undefined)?.selection,
     })
   );
   if (!draft?.requirement) return null;

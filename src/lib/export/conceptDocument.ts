@@ -3,6 +3,7 @@ import type { Requirement } from '@/lib/requirement/types';
 import { buildArchitecture, type ArchitectureNodeId } from '@/lib/vision/architecture';
 import { BOM_EXCLUSIONS, RULESET_VERSION, type BomSnapshot } from '@/lib/vision/bom';
 import { assessFeasibility } from '@/lib/vision/feasibility';
+import { renderFormula } from '@/lib/vision/formulaTerms';
 import { analyseRequirement } from '@/lib/vision/requirementAnalysis';
 import { FEASIBILITY_DIMENSIONS, noteMessageKey, type RuleResult } from '@/lib/vision/rules';
 
@@ -192,7 +193,7 @@ export function buildConceptDocument(input: {
           ruleId: r.ruleId,
           check: t(`selector.vision.checks.${r.key}`),
           status: t(`selector.vision.status.${r.status}`),
-          formula: r.formula === '—' ? '' : r.formula,
+          formula: r.formula === '—' ? '' : renderFormula(r.formula, (key) => t(`selector.vision.formulaTerms.${key}`)),
           note: noteOf(r),
         })),
     })).filter((group) => group.rows.length > 0),

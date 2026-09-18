@@ -718,6 +718,8 @@
         "dofDiffractionTradeoff": "Stopping down to F/{f} is needed for {dof} mm depth, beyond F#max F/{fMax}: slight diffraction blur — confirm with sample images.",
         "dofConflict": "Conflict a lens cannot solve: F/{f} is needed for {dof} mm depth, {ratio}× F#max. Options: reduce height variation mechanically, increase working distance with a longer focal length, use telecentric optics, or capture multiple focus planes.",
         "dofConflictTilt": "Conflict a standard lens cannot solve: F/{f} is needed for {dof} mm depth, {ratio}× F#max, mostly because of the camera tilt. Consider a Scheimpflug lens (sensor tilted to the part plane) or a smaller tilt angle.",
+        "dofConflictDetection": "F/{f} is needed for {dof} mm depth, {ratio}× F#max: areas away from the focal plane will blur. This is detection only (no measurement), so the lens is not excluded — confirm with samples that the smallest defect is still visible in the blurred areas. If not: reduce height variation with fixturing, raise the working distance, or focus-stack.",
+        "dofConflictTiltDetection": "F/{f} is needed for {dof} mm depth, {ratio}× F#max, mostly because the camera is tilted: areas away from the focal plane will blur. This is detection only (no measurement), so the lens is not excluded — confirm with samples that defects stay visible. If not: reduce the tilt or use a Scheimpflug lens.",
         "dofBeyondLensAperture": "F/{f} is needed for {dof} mm depth, but the lens only stops down to F/{fLens}.",
         "cycleWithin": "{margin}% headroom on the {takt} ms cycle. Values marked * are ASSUMED ({process} ms processing per image) — re-measure with the real algorithm.",
         "cycleTight": "Only {margin}% headroom (below 30%). Values marked * are ASSUMED ({process} ms processing per image) — measure the real algorithm before committing.",
@@ -757,7 +759,25 @@
         "surfaceTransparent": "A transparent surface overrides the defect type: it must be lit through first.",
         "surfaceReflective": "A mirror-like surface overrides the defect type: ordinary dark field only shows glare. Use a diffuse dome, or a large flat panel light (backlight) placed at the specular reflection angle so the surface mirrors a uniform bright field into the camera — defects show as dark spots."
       },
-      "checkCount": "Show {count} verification steps"
+      "checkCount": "Show {count} verification steps",
+      "formulaTerms": {
+        "takt": "takt",
+        "min": "min",
+        "recommended": "recommended",
+        "ports": "ports",
+        "fovDiagonal": "field diagonal",
+        "fovLongSide": "field long side",
+        "maxDeltaT": "max temperature swing",
+        "seams": "seams",
+        "thermal": "thermal",
+        "ifStandardLens": "with a standard lens",
+        "tileSide": "one-camera field side",
+        "frontDiameter": "front diameter",
+        "grid": "grid",
+        "perCamera": "per camera",
+        "overlap": "overlap",
+        "framesPerSecond": "frames/s"
+      }
     },
     "fovPreview": {
       "title": "Field of view, drawn from your numbers",

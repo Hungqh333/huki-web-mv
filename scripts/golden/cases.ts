@@ -110,7 +110,8 @@ export const GOLDEN_CASES: GoldenCase[] = [
       'Độ phân giải: engine đòi tối thiểu 0,075 mm/px (0,90 MP kể cả nghiêng 30°, V1c); thực tế dùng 0,019 mm/px (20 MP) và Hưng xác nhận camera thấp hơn đã thử KHÔNG thấy bụi. ' +
         'Hệ số nghiêng chỉ là 1/cos 30° = 1,155 (bản ghi trước ghi ×2 là sai), nên chênh lệch vẫn khoảng 20 lần về MP → số px/lỗi cho bụi trên bề mặt mạ bóng có thể phải cao hơn bảng 3/4/5. Chờ thêm dự án trước khi sửa luật; cần biết camera thấp hơn đã thử là bao nhiêu MP.',
       'Độ sâu trường ảnh (OPT-005, V1c): nghiêng 30° trên cạnh 80 mm → sâu thêm 40 mm; cộng Δh giả định 2 mm → cần khoảng F/78, gấp ~22× F#max F/3,6 → engine báo xung đột. Dự án thật vẫn đạt. ' +
-        'Nguyên nhân khả dĩ: spec lấy vòng mờ c = 2 × pixel pitch, nhưng camera 20 MP dư ~4 lần so với 0,065 mm/px cần — mờ cho phép thật tính trên vật lớn hơn nhiều. Hưng chốt 2026-09-17: để sau, chưa đổi công thức.',
+        'Nguyên nhân khả dĩ: spec lấy vòng mờ c = 2 × pixel pitch, nhưng camera 20 MP dư ~4 lần so với 0,065 mm/px cần — mờ cho phép thật tính trên vật lớn hơn nhiều. Hưng chốt 2026-09-17: để sau, chưa đổi công thức. ' +
+        'C9 (2026-09-18, chốt Q3): bài chỉ phát hiện lỗi thì xung đột này thành CẢNH BÁO + chụp mẫu (không loại ống) → GT-002 có phương án; bài có đo vẫn FAIL. Công thức vòng mờ vẫn chưa đổi.',
       'Chiếu sáng: engine gợi ý dome; thực tế dùng đèn phẳng ở góc phản xạ. Đã thêm "backlight" làm phương án thay thế cho bề mặt bóng (2026-09-17), chưa đổi gợi ý chính.',
     ],
   },

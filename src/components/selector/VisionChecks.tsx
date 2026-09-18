@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { renderFormula } from '@/lib/vision/formulaTerms';
 import { worstStatus, type AppearanceAnalysis, type Check, type CheckStatus } from '@/lib/vision';
 
 /**
@@ -125,7 +126,7 @@ function CheckRow({ check }: { check: Check }) {
       </div>
 
       <code className="mt-1 block overflow-x-auto rounded bg-slate-50 px-2 py-1 text-xs text-slate-700 dark:bg-slate-900 dark:text-slate-300">
-        {check.formula}
+        {renderFormula(check.formula, (key) => t(`formulaTerms.${key}`))}
       </code>
 
       {check.noteKey ? (

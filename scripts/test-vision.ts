@@ -62,6 +62,12 @@ import {
   SPEC_FIELDS,
 } from '../src/lib/components/specs';
 import { appearanceInputFromForm } from '../src/lib/vision/fromInput';
+import { renderFormula } from '../src/lib/vision/formulaTerms';
+
+/** Công thức engine ghi thẻ ⟦…⟧ (C9 Q4) — dịch bằng bảng từ tiếng Việt trước khi so chữ. */
+const VI_TERMS = JSON.parse(readFileSync('src/messages/vi.json', 'utf8')).selector.vision.formulaTerms as Record<string, string>;
+const vi = (formula: string) => renderFormula(formula, (key) => VI_TERMS[key]);
+
 
 // ------------------------------------------------------------ ĐỘ PHÂN GIẢI --
 
@@ -947,7 +953,7 @@ test('GT-001: giãn nở nhiệt vượt ngân sách đo ~4,4 lần → FAIL, k�
     halfDeltaT: 1.14,
   });
   assert.ok(check.formula.includes('= 87.4 µm > U 20 µm'), check.formula);
-  assert.ok(check.formula.includes('dao động nhiệt tối đa 2.29 K'), check.formula);
+  assert.ok(vi(check.formula).includes('dao động nhiệt tối đa 2.29 K'), check.formula);
 });
 
 test('giãn nở nhiệt: quá nửa ngân sách → WARN, dưới nửa → PASS (ngưỡng chung với phối cảnh)', () => {
@@ -1026,7 +1032,7 @@ test('GT-001: ghép ảnh 0,03 mm + nhiệt 0,087 mm = 0,117 mm, gấp ~5,9 lầ
     ratio: 5.9,
     share: 587,
   });
-  assert.ok(check.formula.includes('1 đường ghép × 0.5 × 0.06 mm/px = 0.03 mm + nhiệt 0.0874 mm = 0.1174 mm > U 0.02 mm'), check.formula);
+  assert.ok(vi(check.formula).includes('1 đường ghép × 0.5 × 0.06 mm/px = 0.03 mm + nhiệt 0.0874 mm = 0.1174 mm > U 0.02 mm'), check.formula);
 });
 
 test('ghép ảnh: quá nửa ngân sách → WARN, dưới nửa → PASS; không có nhiệt thì chỉ tính phần ghép', () => {

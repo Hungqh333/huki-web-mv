@@ -1,5 +1,6 @@
 import { V1A_FIELDS } from '@/lib/requirement/fields';
 import { assessFeasibility } from './feasibility';
+import { renderFormula } from './formulaTerms';
 import type { Candidate } from './equipmentFilter';
 import type { RequirementAnalysis } from './requirementAnalysis';
 import { noteMessageKey, type RuleResult } from './rules';
@@ -52,7 +53,7 @@ export function buildWhyFacts(input: {
     ruleId: result.ruleId,
     status: result.status,
     label: t(`selector.vision.checks.${result.key}`),
-    detail: result.formula === '—' ? '' : result.formula,
+    detail: result.formula === '—' ? '' : renderFormula(result.formula, (key) => t(`selector.vision.formulaTerms.${key}`)),
     note: result.noteKey ? t(`selector.vision.${noteMessageKey(result.noteKey)}`, result.noteValues ?? {}) : null,
   });
   const nameOf = (candidate: Candidate) => `${candidate.component.brand} ${candidate.component.model}`;

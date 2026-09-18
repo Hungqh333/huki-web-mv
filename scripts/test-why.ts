@@ -104,16 +104,27 @@ test('dữ kiện tiếng Anh đủ câu chữ', () => {
   assert.deepEqual(missing, [], missing.join('\n'));
 });
 
-test('GT-002 (dự án thật, nghiêng 30°) trên seed thật: chưa có phương án → không có dữ kiện gửi AI', () => {
-  // Mâu thuẫn độ sâu trường ảnh (OPT-005 cần ~F/78, knownGaps của GT-002 — Hưng chốt "để sau")
-  // loại mọi ống kính. Khi sửa công thức vòng tròn nhoè, test này đỏ: đổi sang kiểm khối dữ kiện đủ phần.
+test('GT-002 (dự án thật, nghiêng 30°) trên seed thật: có phương án, xung đột độ sâu nằm trong rủi ro', () => {
+  // OPT-005 cần ~F/78 (knownGaps của GT-002). Trước C9 xung đột này loại mọi ống kính → không có
+  // phương án. Chốt C9 Q3: bài chỉ phát hiện lỗi thì cảnh báo + chụp mẫu, không loại.
   const gt = GOLDEN_CASES.find((c) => c.id === 'GT-002')!;
   const sql = readFileSync('supabase/seed_components.sql', 'utf8');
   const text = "'((?:[^']|'')*)'";
   const row = new RegExp(`\\(${text},\\s*${text},\\s*${text},\\s*${text},\\s*${text}::jsonb,\\s*${text}`, 'g');
   const seed = [...sql.matchAll(row)].map((m) => make(m[2] as ComponentKind, m[4], JSON.parse(m[5].replace(/''/g, "'")), { source: m[6] as Component['source'] }));
   assert.ok(seed.length >= 70);
-  assert.deepEqual(factsFor(requirementOf(gt.applicationType, gt.input), seed), [null, null, null]);
+  const facts = factsFor(requirementOf(gt.applicationType, gt.input), seed);
+  assert.equal(facts[0], null, 'Tiet kiem bi chan / trong: xung dot do sau la MARGINAL');
+  const shown = facts.filter((f) => f !== null);
+  assert.ok(shown.length > 0, 'phai co it nhat mot phuong an');
+  for (const f of shown) {
+    for (const required of ['requirement', 'camera', 'lens', 'assumptions', 'limits']) {
+      assert.ok(f.sections.some((s) => s.id === required), `${f.level} thieu ${required}`);
+    }
+    const dof = f.sections.find((s) => s.id === 'limits')!.rows.find((r) => r.ruleId === 'OPT-005');
+    assert.ok(dof && dof.status === 'warn' && /chụp mẫu/.test(dof.note ?? ''), `${f.level}: OPT-005 phai nam trong rui ro`);
+  }
+  assert.deepEqual(missing, [], missing.join('\n'));
 });
 
 // ─────────────────────────────── Bộ kiểm số ───────────────────────────────

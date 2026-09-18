@@ -10,6 +10,7 @@ import { GRR_DIVISOR, K_SUBPIXEL, measurementBudget } from './resolution';
 import { completeness, toRuleResult, type Evidence, type RuleAssumedInput, type RuleInput, type RuleResult } from './rules';
 import { cameraTile, type CameraTile } from './tiling';
 import { fmt, round, type Check } from './types';
+import { term } from './formulaTerms';
 
 /**
  * Engine V1b chạy thẳng trên bảng Yêu cầu (spec V1.1 §4–§6).
@@ -216,8 +217,8 @@ export function analyseRequirement(draft: Requirement): RequirementAnalysis {
               key: 'cameraTiling',
               status: 'info',
               formula:
-                `lưới ${tile.grid.cols}×${tile.grid.rows} · mỗi camera ${fmt(tile.widthMm, 1)} × ${fmt(tile.heightMm, 1)} mm ` +
-                `(chồng lấn ${fmt(tile.overlapXMm, 1)} / ${fmt(tile.overlapYMm, 1)} mm)`,
+                `${term('grid')} ${tile.grid.cols}×${tile.grid.rows} · ${term('perCamera')} ${fmt(tile.widthMm, 1)} × ${fmt(tile.heightMm, 1)} mm ` +
+                `(${term('overlap')} ${fmt(tile.overlapXMm, 1)} / ${fmt(tile.overlapYMm, 1)} mm)`,
             },
             'calculated',
             sizePaths
@@ -384,7 +385,7 @@ export function analyseRequirement(draft: Requirement): RequirementAnalysis {
       {
         key: 'dataRate',
         status: 'info',
-        formula: `${fmt(megapixels, 2)} MP × ${BYTES_PER_PX} byte × ${fmt(fps, 2)} ảnh/s = ${fmt(perCamera, 1)} MB/s/camera · ×${cameraCount} = ${fmt(total, 1)} MB/s`,
+        formula: `${fmt(megapixels, 2)} MP × ${BYTES_PER_PX} byte × ${fmt(fps, 2)} ${term('framesPerSecond')} = ${fmt(perCamera, 1)} MB/s/camera · ×${cameraCount} = ${fmt(total, 1)} MB/s`,
         noteKey: 'dataRateAssumesMono8',
       },
       'calculated',

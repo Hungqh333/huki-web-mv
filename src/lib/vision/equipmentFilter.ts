@@ -10,6 +10,7 @@ import {
 import { INTERFACE_MAX_SHARE, type RequirementAnalysis } from './requirementAnalysis';
 import { toRuleResult, type Evidence, type RuleResult } from './rules';
 import { fmt, round, type Check } from './types';
+import { term } from './formulaTerms';
 
 /**
  * Lọc cứng thiết bị — V1c mục C3 (spec V1.1 §8.1).
@@ -246,7 +247,7 @@ export function lightChecks(analysis: RequirementAnalysis, component: Component)
           {
             key: 'lightFit',
             status: ok ? 'pass' : 'fail',
-            formula: `${fmt(size)} mm ${ok ? '≥' : '<'} ${fmt(needMm, 1)} mm (${diagonal ? 'đường chéo' : 'cạnh dài'} vùng nhìn)`,
+            formula: `${fmt(size)} mm ${ok ? '≥' : '<'} ${fmt(needMm, 1)} mm (${term(diagonal ? 'fovDiagonal' : 'fovLongSide')})`,
             noteKey: ok ? undefined : 'lightTooSmall',
             noteValues: { need: round(needMm, 0), have: size },
           },

@@ -187,11 +187,16 @@ test('OPT-005: độ sâu ↔ nhiễu xạ — ≤ F#max đạt, ≤ 1,5× cản
 
   // Δh 12 → F = 12 × 0,0909² ÷ (2 × 0,0069 × 1,0909) = 6,59 → 1,28 × F#max
   assert.equal(find(run({ analysis: { 'object.heightVariation': 12 } }), 'OPT-005').status, 'warn');
-  // Δh 20 → F 10,98 → 2,13 × F#max
-  const conflict = find(run({ analysis: { 'object.heightVariation': 20 } }), 'OPT-005');
+  // Δh 20 → F 10,98 → 2,13 × F#max. Bài CÓ đo (dung sai) → xung đột, loại ống.
+  const measured = { 'object.heightVariation': 20, 'measurement.0.tolerance': 0.5 };
+  const conflict = find(run({ analysis: measured }), 'OPT-005');
   assert.deepEqual([conflict.status, conflict.noteKey], ['fail', 'dofConflict']);
   // Xung đột nhiễu xạ báo trước giới hạn khẩu của ống: đổi ống không giải được
-  assert.equal(find(run({ analysis: { 'object.heightVariation': 20 }, lens: { fNumberMax: 8 } }), 'OPT-005').noteKey, 'dofConflict');
+  assert.equal(find(run({ analysis: measured, lens: { fNumberMax: 8 } }), 'OPT-005').noteKey, 'dofConflict');
+  // Bài CHỈ phát hiện lỗi (chốt C9 Q3, GT-002 thật): cảnh báo + phải chụp mẫu, không loại ống.
+  const detection = find(run({ analysis: { 'object.heightVariation': 20 } }), 'OPT-005');
+  assert.deepEqual([detection.status, detection.noteKey, detection.evidence], ['warn', 'dofConflictDetection', 'calculated']);
+  assert.equal(scoreResult(detection).status, 'MARGINAL', 'chan muc Tiet kiem, hien trong rui ro');
   // Δh 12 cần F/6,6 (trong dung sai nhiễu xạ) mà ống chỉ khép tới F/5,6 → không đạt vì ống
   assert.equal(find(run({ analysis: { 'object.heightVariation': 12 }, lens: { fNumberMax: 5.6 } }), 'OPT-005').noteKey, 'dofBeyondLensAperture');
 });
@@ -213,7 +218,9 @@ test('OPT-009 + OPT-005: camera nghiêng 30° — độ sâu 60 × sin 30° = 30
   assert.equal(tilt.noteValues?.factor, 1.155);
 
   const results = run({ analysis: { 'system.cameraTiltDeg': 30 } });
-  assert.equal(find(results, 'OPT-005').noteKey, 'dofConflictTilt', 'F can (2+30) → 17,6 = 3,4 × F#max');
+  assert.equal(find(results, 'OPT-005').noteKey, 'dofConflictTiltDetection', 'F can (2+30) → 17,6 = 3,4 × F#max; bai phat hien loi → canh bao');
+  const measuredTilt = run({ analysis: { 'system.cameraTiltDeg': 30, 'measurement.0.tolerance': 0.5 } });
+  assert.deepEqual([find(measuredTilt, 'OPT-005').status, find(measuredTilt, 'OPT-005').noteKey], ['fail', 'dofConflictTilt']);
   // Mục tiêu mm/px cạnh dài × cos 30° = 0,0577; ống 25 mm vẫn đạt 0,038
   assert.equal(find(results, 'OPT-001').status, 'pass');
 });
@@ -316,6 +323,8 @@ test('mọi khoá tên bước và câu diễn giải của tầng Cấu hình c
     run({ analysis: { 'object.heightVariation': 20, 'production.partsPerMinute': 200, 'detection.0.variability': 'high' }, pc: { cpuCores: 3, ramGb: 8, lanPorts: 1 } }),
     run({ analysis: { 'object.heightVariation': 12 }, lens: { fNumberMax: 5.6 }, pc: { cpuCores: 2, pcieSlots: 0 }, cards: 1 }),
     run({ analysis: { 'system.cameraTiltDeg': 30 }, pc: { cpuCores: null } }),
+    run({ analysis: { 'object.heightVariation': 20, 'measurement.0.tolerance': 0.5 } }),
+    run({ analysis: { 'system.cameraTiltDeg': 30, 'measurement.0.tolerance': 0.5 } }),
   ].flat();
   const tiltResults = [analysisOf({ 'system.cameraTiltDeg': 30 }).results, analyseRequirement(
     Object.entries({ 'object.sizeX': 60, 'object.sizeY': 50, 'measurement.0.tolerance': 0.05, 'system.cameraCount': 1, 'system.cameraTiltDeg': 20 }).reduce(
@@ -326,7 +335,7 @@ test('mọi khoá tên bước và câu diễn giải của tầng Cấu hình c
   const all = [...scenarios, ...tiltResults];
 
   const noteKeys = new Set(all.map((r) => r.noteKey).filter(Boolean));
-  for (const expected of ['lensFovTooSmall', 'lensTooCoarse', 'cameraTooFewPixels', 'lensBelowMinFocus', 'telecentricWdMismatch', 'mountCsSpacer', 'mountMismatch', 'dofConflict', 'dofBeyondLensAperture', 'dofConflictTilt', 'cycleOver', 'cycleTight', 'ipcCoresShort', 'ipcRamShort', 'ipcLanShort', 'ipcPcieShort', 'ipcGpuMissing', 'ipcSpecsIncomplete', 'cameraTiltMeasurement']) {
+  for (const expected of ['lensFovTooSmall', 'lensTooCoarse', 'cameraTooFewPixels', 'lensBelowMinFocus', 'telecentricWdMismatch', 'mountCsSpacer', 'mountMismatch', 'dofConflict', 'dofBeyondLensAperture', 'dofConflictTilt', 'dofConflictDetection', 'dofConflictTiltDetection', 'dofAnyAperture', 'cycleOver', 'cycleTight', 'ipcCoresShort', 'ipcRamShort', 'ipcLanShort', 'ipcPcieShort', 'ipcGpuMissing', 'ipcSpecsIncomplete', 'cameraTiltMeasurement']) {
     assert.ok(noteKeys.has(expected), `kich ban chua phu ${expected}`);
   }
 

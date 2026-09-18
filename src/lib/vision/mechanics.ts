@@ -1,6 +1,7 @@
 import { ERROR_WARN_SHARE } from './resolution';
 import type { CameraTile } from './tiling';
 import { fmt, round, type Check } from './types';
+import { term } from './formulaTerms';
 
 /**
  * Cơ khí & nhiệt — nhóm MEC của spec V1.1 §6.
@@ -69,7 +70,7 @@ export function thermalCheck(input: {
   const formula =
     `${fmt(alphaUmPerMK)} µm/(m·K) × ${fmt(lengthMm / 1000, 4)} m × ${fmt(deltaTK)} K = ${fmt(errorUm, 1)} µm ` +
     `${ratio > 1 ? '>' : '≤'} U ${fmt(uncertaintyBudgetMm * 1000, 1)} µm` +
-    (allowed !== null ? ` · dao động nhiệt tối đa ${fmt(allowed, 2)} K` : '');
+    (allowed !== null ? ` · ${term('maxDeltaT')} ${fmt(allowed, 2)} K` : '');
 
   return {
     key: 'thermalError',
@@ -151,8 +152,8 @@ export function stitchCheck(input: {
   const status = ratio > 1 ? 'fail' : ratio > ERROR_WARN_SHARE ? 'warn' : 'pass';
 
   const formula =
-    `${seams} đường ghép × ${fmt(K_STITCH, 2)} × ${fmt(mmPerPx, 5)} mm/px = ${fmt(stitchMm, 4)} mm` +
-    (thermalMm > 0 ? ` + nhiệt ${fmt(thermalMm, 4)} mm = ${fmt(totalMm, 4)} mm` : '') +
+    `${seams} ${term('seams')} × ${fmt(K_STITCH, 2)} × ${fmt(mmPerPx, 5)} mm/px = ${fmt(stitchMm, 4)} mm` +
+    (thermalMm > 0 ? ` + ${term('thermal')} ${fmt(thermalMm, 4)} mm = ${fmt(totalMm, 4)} mm` : '') +
     ` ${ratio > 1 ? '>' : '≤'} U ${fmt(uncertaintyBudgetMm, 4)} mm`;
 
   return {

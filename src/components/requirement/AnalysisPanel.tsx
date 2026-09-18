@@ -7,6 +7,7 @@ import type { Requirement } from '@/lib/requirement/types';
 import { buildArchitecture } from '@/lib/vision/architecture';
 import { assessFeasibility, type DimensionStatus, type FeasibilityStatus } from '@/lib/vision/feasibility';
 import { analyseRequirement } from '@/lib/vision/requirementAnalysis';
+import { renderFormula } from '@/lib/vision/formulaTerms';
 import { FEASIBILITY_DIMENSIONS, type RuleResult } from '@/lib/vision/rules';
 import type { CheckStatus } from '@/lib/vision/types';
 import { ArchitectureDiagram } from './ArchitectureDiagram';
@@ -241,7 +242,7 @@ function ResultRow({
       </div>
       {result.formula && result.formula !== '—' ? (
         <code className="mt-1 block overflow-x-auto rounded bg-slate-50 px-2 py-1 text-xs text-slate-700 dark:bg-slate-900 dark:text-slate-300">
-          {result.formula}
+          {renderFormula(result.formula, (key) => tv(`formulaTerms.${key}`))}
         </code>
       ) : null}
       {note ? <p className="mt-1 text-xs leading-relaxed text-slate-600 dark:text-slate-400">{note}</p> : null}

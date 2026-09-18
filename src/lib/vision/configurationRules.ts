@@ -10,6 +10,7 @@ import {
   type Component,
 } from '@/lib/components/specs';
 import { DEFAULT_CIRCLE_OF_CONFUSION_PX, WAVELENGTH_UM, requiredLpPerMm } from './optics';
+import { term } from './formulaTerms';
 import type { RequirementAnalysis } from './requirementAnalysis';
 import { toRuleResult, type Evidence, type RuleAssumedInput, type RuleInput, type RuleResult } from './rules';
 import { fmt, round, type Check } from './types';
@@ -454,8 +455,21 @@ export function evaluateConfiguration(input: ConfigurationInput): RuleResult[] {
       if (ratio > DOF_DIFFRACTION_TOLERANCE) {
         // Độ sâu do nghiêng lớn hơn Δh → gợi ý Scheimpflug.
         const tiltDominates = analysis.tiltDepthMm > heightVariation;
-        check = { key: 'depthOfFieldConflict', status: 'fail', formula, noteKey: tiltDominates ? 'dofConflictTilt' : 'dofConflict', noteValues: values };
-        margin = fMax / fNeed;
+        if (analysis.uncertaintyBudgetMm === null) {
+          /* Bài chỉ phát hiện lỗi (không có dung sai đo): mờ ở phần xa mặt nét chưa chắc
+             làm mất lỗi — GT-002 thật cần ~F/78 theo công thức mà vẫn chạy đạt. Cảnh báo
+             (MARGINAL: chặn mức Tiết kiệm, hiện trong rủi ro), không loại ống. Chốt C9 Q3. */
+          check = {
+            key: 'depthOfFieldConflict',
+            status: 'warn',
+            formula,
+            noteKey: tiltDominates ? 'dofConflictTiltDetection' : 'dofConflictDetection',
+            noteValues: values,
+          };
+        } else {
+          check = { key: 'depthOfFieldConflict', status: 'fail', formula, noteKey: tiltDominates ? 'dofConflictTilt' : 'dofConflict', noteValues: values };
+          margin = fMax / fNeed;
+        }
       } else if (lens.fNumberMax !== null && fNeed > lens.fNumberMax) {
         check = { key: 'depthOfFieldConflict', status: 'fail', formula, noteKey: 'dofBeyondLensAperture', noteValues: values };
       } else if (ratio <= 1) {
@@ -493,7 +507,7 @@ export function evaluateConfiguration(input: ConfigurationInput): RuleResult[] {
         status,
         formula:
           `${CYCLE_DEFAULTS.triggerMs} + ${fmt(frameMs, 1)}${camera.maxFps ? '' : '*'} + ${fmt(transferMs, 1)} + ${fmt(processMs, 0)}${measured === null ? '*' : ''} + ${CYCLE_DEFAULTS.ioMs} ` +
-          `= ${fmt(total, 0)} ms vs nhịp ${fmt(takt, 0)} ms`,
+          `= ${fmt(total, 0)} ms vs ${term('takt')} ${fmt(takt, 0)} ms`,
         noteKey: status === 'fail' ? 'cycleOver' : status === 'warn' ? 'cycleTight' : 'cycleWithin',
         noteValues: { margin: Math.round(margin * 100), process: Math.round(processMs), total: Math.round(total), takt: Math.round(takt) },
       },
@@ -539,7 +553,7 @@ export function evaluateConfiguration(input: ConfigurationInput): RuleResult[] {
         {
           key: 'ipcCores',
           status,
-          formula: `${pc.cpuCores} core · tối thiểu ${n} + 2 = ${min} · khuyên dùng 2 × ${n} + 2 = ${rec}`,
+          formula: `${pc.cpuCores} core · ${term('min')} ${n} + 2 = ${min} · ${term('recommended')} 2 × ${n} + 2 = ${rec}`,
           noteKey: status === 'fail' ? 'ipcCoresShort' : status === 'warn' ? 'ipcCoresTight' : undefined,
           noteValues: { min, rec, n, have: pc.cpuCores },
         },
@@ -577,7 +591,7 @@ export function evaluateConfiguration(input: ConfigurationInput): RuleResult[] {
         const ok = pc.lanPorts >= need;
         push(
           'THR-004',
-          { key: 'ipcLan', status: ok ? 'pass' : 'fail', formula: `${pc.lanPorts} ${ok ? '≥' : '<'} ${n} + 1 = ${need} cổng`, noteKey: ok ? undefined : 'ipcLanShort', noteValues: { need, n, have: pc.lanPorts } },
+          { key: 'ipcLan', status: ok ? 'pass' : 'fail', formula: `${pc.lanPorts} ${ok ? '≥' : '<'} ${n} + 1 = ${need} ${term('ports')}`, noteKey: ok ? undefined : 'ipcLanShort', noteValues: { need, n, have: pc.lanPorts } },
           'calculated',
           paths,
           eq('lan_ports', pc.lanPorts),

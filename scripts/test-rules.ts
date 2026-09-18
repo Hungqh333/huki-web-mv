@@ -14,6 +14,12 @@ import { analyseRequirement, K_BLUR, STROBE_EXPOSURE_LIMIT_US } from '../src/lib
 import { completeness, FEASIBILITY_DIMENSIONS, knowledgeSlugFor, RULES, type RuleResult } from '../src/lib/vision/rules';
 import { assessFeasibility, scoreResult } from '../src/lib/vision/feasibility';
 import { ARCHITECTURE_NODES, buildArchitecture } from '../src/lib/vision/architecture';
+import { renderFormula } from '../src/lib/vision/formulaTerms';
+
+/** Công thức engine ghi thẻ ⟦…⟧ (C9 Q4) — dịch bằng bảng từ tiếng Việt trước khi so chữ. */
+const VI_TERMS = JSON.parse(readFileSync('src/messages/vi.json', 'utf8')).selector.vision.formulaTerms as Record<string, string>;
+const vi = (formula: string) => renderFormula(formula, (key) => VI_TERMS[key]);
+
 
 function filled(type: Requirement['applicationType'], values: Record<string, unknown>): Requirement {
   return Object.entries(values).reduce((req, [path, value]) => withFieldValue(req, path, value), emptyRequirement(type));
@@ -67,7 +73,8 @@ test('GT-001: hai nhánh độ phân giải, nhánh đo quyết định, lưới
   assert.equal(analysis.uncertaintyBudgetMm, 0.02);
 
   assert.deepEqual(analysis.tile!.grid, { cols: 2, rows: 2 });
-  assert.ok(one(results, 'RES-005').formula.includes('lưới 2×2'));
+  assert.ok(vi(one(results, 'RES-005').formula).includes('lưới 2×2'));
+  assert.ok(!one(results, 'RES-005').formula.includes('lưới'), 'engine ghi the, khong ghi chu Viet');
   // Spec §4.1 ghi ~8,3 MP với ô ~200×150 mm; engine cộng chồng lấn 10% (chốt B2) → 209×154 mm.
   assert.equal(Math.round(analysis.megapixelsPerCamera! * 100) / 100, 8.94);
 });
@@ -135,7 +142,7 @@ test('nhoè chuyển động: phơi sáng tối đa = k_blur × mm/px ÷ tốc �
 
 test('băng thông: MP × 1 byte × ảnh/s, chọn giao tiếp nhỏ nhất còn biên 30%', () => {
   const { results } = analyseRequirement(filled('AppearanceInspection', { ...GT001_INPUT, 'production.partsPerMinute': 60 }));
-  assert.ok(one(results, 'THR-001').formula.includes('8.94 MP × 1 byte × 1 ảnh/s = 8.9 MB/s/camera · ×4 = 35.8 MB/s'), one(results, 'THR-001').formula);
+  assert.ok(vi(one(results, 'THR-001').formula).includes('8.94 MP × 1 byte × 1 ảnh/s = 8.9 MB/s/camera · ×4 = 35.8 MB/s'), one(results, 'THR-001').formula);
   const iface = one(results, 'THR-002');
   assert.equal(iface.status, 'info');
   assert.ok(iface.formula.startsWith('GigE:'), iface.formula);

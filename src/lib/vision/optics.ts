@@ -2,6 +2,7 @@ import { SENSOR_FORMATS, sensorDiagonalMm } from '@/lib/components/specs';
 import { ERROR_WARN_SHARE } from './resolution';
 import { TILE_OVERLAP_RATIO, type CameraTile } from './tiling';
 import { fmt, round, type Check } from './types';
+import { term } from './formulaTerms';
 
 /**
  * Quang học: tiêu cự, vòng ảnh, và ba phép kiểm tính khả thi.
@@ -137,7 +138,7 @@ export function perspectiveCheck(input: {
     return {
       key: 'perspectiveError',
       status: 'warn',
-      formula: `${base} (nếu dùng ống kính thường)`,
+      formula: `${base} (${term('ifStandardLens')})`,
       noteKey: 'perspectiveNeedsTelecentric',
       noteValues: values,
     };
@@ -245,7 +246,7 @@ export function telecentricCheck(input: {
   return {
     key: 'telecentricFeasibility',
     status,
-    formula: `cạnh vùng nhìn một camera ${fmt(sizeMm, 1)} mm ${limit} mm · đường kính đầu ≈ ${fmt(sizeMm, 1)} × ${TELECENTRIC_FRONT_DIAMETER_FACTOR} = ${fmt(diameterMm, 0)} mm`,
+    formula: `${term('tileSide')} ${fmt(sizeMm, 1)} mm ${limit} mm · ${term('frontDiameter')} ≈ ${fmt(sizeMm, 1)} × ${TELECENTRIC_FRONT_DIAMETER_FACTOR} = ${fmt(diameterMm, 0)} mm`,
     noteKey: status === 'fail' ? 'telecentricInfeasible' : status === 'warn' ? 'telecentricExpensive' : 'telecentricCostNote',
     noteValues: {
       size: round(sizeMm, 1),

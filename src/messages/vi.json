@@ -718,6 +718,8 @@
         "dofDiffractionTradeoff": "Cần khép tới F/{f} để đủ độ sâu {dof} mm, quá F#max F/{fMax}: ảnh sẽ mờ nhẹ do nhiễu xạ — cần chụp mẫu để xác nhận.",
         "dofConflict": "Xung đột không giải được bằng ống kính: cần F/{f} cho độ sâu {dof} mm, gấp {ratio}× F#max. Hướng xử lý: giảm dao động chiều cao bằng cơ khí, tăng khoảng cách làm việc kèm tiêu cự dài hơn, dùng telecentric, hoặc chụp nhiều mặt nét.",
         "dofConflictTilt": "Xung đột không giải được bằng ống kính thường: cần F/{f} cho độ sâu {dof} mm, gấp {ratio}× F#max, phần lớn do camera nghiêng. Cân nhắc ống Scheimpflug (nghiêng mặt cảm biến theo mặt vật) hoặc giảm góc nghiêng.",
+        "dofConflictDetection": "Cần F/{f} cho độ sâu {dof} mm, gấp {ratio}× F#max: phần xa mặt nét sẽ mờ. Bài chỉ phát hiện lỗi (không đo) nên chưa loại ống — phải chụp mẫu xác nhận lỗi nhỏ nhất vẫn thấy được ở cả vùng mờ. Nếu không thấy: giảm dao động chiều cao bằng đồ gá, tăng khoảng cách làm việc, hoặc chụp nhiều mặt nét.",
+        "dofConflictTiltDetection": "Cần F/{f} cho độ sâu {dof} mm, gấp {ratio}× F#max, phần lớn do camera nghiêng: phần xa mặt nét sẽ mờ. Bài chỉ phát hiện lỗi (không đo) nên chưa loại ống — phải chụp mẫu xác nhận lỗi vẫn thấy được. Nếu không thấy: giảm góc nghiêng hoặc dùng ống Scheimpflug.",
         "dofBeyondLensAperture": "Cần khép tới F/{f} cho độ sâu {dof} mm nhưng ống kính chỉ khép được tới F/{fLens}.",
         "cycleWithin": "Dư {margin}% so với nhịp {takt} ms. Số có dấu * là GIẢ ĐỊNH (xử lý {process} ms/ảnh) — đo lại với thuật toán thật.",
         "cycleTight": "Chỉ dư {margin}% nhịp (dưới 30%). Số có dấu * là GIẢ ĐỊNH (xử lý {process} ms/ảnh) — đo thuật toán thật trước khi chốt.",
@@ -757,7 +759,25 @@
         "surfaceTransparent": "Bề mặt trong suốt lấn át loại lỗi: phải soi xuyên trước đã.",
         "surfaceReflective": "Bề mặt bóng như gương lấn át loại lỗi: dark field thông thường chỉ thấy loá. Dùng dome khuếch tán, hoặc tấm đèn phẳng diện rộng (backlight) đặt đúng góc phản xạ gương để bề mặt phản chiếu nền sáng đều vào camera — lỗi hiện thành chấm tối."
       },
-      "checkCount": "Xem {count} bước kiểm chứng"
+      "checkCount": "Xem {count} bước kiểm chứng",
+      "formulaTerms": {
+        "takt": "nhịp",
+        "min": "tối thiểu",
+        "recommended": "khuyên dùng",
+        "ports": "cổng",
+        "fovDiagonal": "đường chéo vùng nhìn",
+        "fovLongSide": "cạnh dài vùng nhìn",
+        "maxDeltaT": "dao động nhiệt tối đa",
+        "seams": "đường ghép",
+        "thermal": "nhiệt",
+        "ifStandardLens": "nếu dùng ống kính thường",
+        "tileSide": "cạnh vùng nhìn một camera",
+        "frontDiameter": "đường kính đầu",
+        "grid": "lưới",
+        "perCamera": "mỗi camera",
+        "overlap": "chồng lấn",
+        "framesPerSecond": "ảnh/s"
+      }
     },
     "fovPreview": {
       "title": "Khung hình theo số bạn vừa nhập",

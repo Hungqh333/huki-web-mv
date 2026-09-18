@@ -67,6 +67,11 @@ const DIAGONAL_LIGHTS = ['ring', 'dome', 'darkfield'];
 /** Chuẩn cần frame grabber — mỗi card coi như 4 kênh khi tính khe PCIe cho máy tính. */
 const GRABBER_INTERFACES = ['CXP-6', 'CXP-12', 'CameraLink-Base', 'CameraLink-Medium', 'CameraLink-Full', 'CameraLink-Deca'];
 
+/** Số card giao tiếp máy tính cần cho n camera cùng chuẩn: grabber 4 kênh; GigE/USB3 cắm thẳng bo mạch = 0. */
+export function interfaceCardsFor(interfaceName: string | null, cameraCount: number): number {
+  return interfaceName && GRABBER_INTERFACES.includes(interfaceName) ? Math.ceil(Math.max(1, cameraCount) / 4) : 0;
+}
+
 const make = (ruleId: string, check: Check, evidence: Evidence, equipment: Record<string, unknown>, marginRatio: number | null = null): RuleResult =>
   toRuleResult(ruleId, check, {
     evidence,
@@ -108,7 +113,6 @@ export function cameraRequirementChecks(analysis: RequirementAnalysis, component
   if (need) {
     const { widthPx: w, heightPx: h } = camera;
     const fits = (w >= need.nx && h >= need.ny) || (w >= need.ny && h >= need.nx);
-    const margin = Math.min(Math.max(w, h) / Math.max(need.nx, need.ny), Math.min(w, h) / Math.min(need.nx, need.ny));
     results.push(
       make(
         'RES-004',
@@ -121,7 +125,8 @@ export function cameraRequirementChecks(analysis: RequirementAnalysis, component
         },
         'calculated',
         { 'camera.resolution_w_px': w, 'camera.resolution_h_px': h },
-        fits ? margin : null
+        // Biên thật của độ phân giải nằm ở OPT-001 (theo ống kính); ở đây chỉ đạt / không đạt.
+        null
       )
     );
   }
@@ -159,8 +164,7 @@ export function cameraRequirementChecks(analysis: RequirementAnalysis, component
     const capacity = INTERFACE_BANDWIDTH[camera.interfaceName];
     const rate = ((camera.widthPx * camera.heightPx * camera.bytesPerPx) / 1e6) * (ppm / 60);
     if (capacity !== undefined) {
-      const usable = capacity * INTERFACE_MAX_SHARE;
-      const ok = rate <= usable;
+      const ok = rate <= capacity * INTERFACE_MAX_SHARE;
       results.push(
         make(
           'THR-002',
@@ -173,7 +177,7 @@ export function cameraRequirementChecks(analysis: RequirementAnalysis, component
           },
           'calculated',
           { 'camera.interface': camera.interfaceName },
-          ok && rate > 0 ? usable / rate : null
+          null
         )
       );
     }
@@ -248,7 +252,7 @@ export function lightChecks(analysis: RequirementAnalysis, component: Component)
           },
           'calculated',
           { 'light.size_mm': size },
-          ok ? size / needMm : null
+          null
         )
       );
     }
@@ -307,7 +311,7 @@ export function filterEquipment(analysis: RequirementAnalysis, catalog: readonly
   let pcGroup: EquipmentGroup = { accepted: [], excluded: [] };
   if (reference) {
     const config = cameraFromComponent(reference);
-    const cards = config.interfaceName && GRABBER_INTERFACES.includes(config.interfaceName) ? Math.ceil(n / 4) : 0;
+    const cards = interfaceCardsFor(config.interfaceName, n);
     pcGroup = split(
       active('controller').map((component) =>
         candidate(

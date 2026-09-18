@@ -743,7 +743,8 @@
         "lightSizeUnknown": "Đèn chưa khai kích thước — cần tối thiểu {need} mm để phủ vùng nhìn.",
         "lightTooSmall": "Đèn {have} mm nhỏ hơn mức cần {need} mm để phủ đều vùng nhìn.",
         "lightNoStrobe": "Bài cần đèn chạy xung (phơi sáng rất ngắn) mà đèn này không chạy xung được.",
-        "lightStrobeUnknown": "Đèn chưa khai khả năng chạy xung — bài này cần strobe."
+        "lightStrobeUnknown": "Đèn chưa khai khả năng chạy xung — bài này cần strobe.",
+        "dofSetApertureTight": "Đạt nhưng sát giới hạn: cần khép tới F/{f} cho độ sâu {dof} mm, gần F#max F/{fMax} — ít dư nếu chiều cao thực tế dao động nhiều hơn."
       },
       "lightingReason": {
         "scratch": "Xước và nứt nông chỉ nổi lên khi chiếu góc rất thấp, nền tối hẳn.",
@@ -1840,6 +1841,54 @@
         "lensMargin": "dư độ phân giải {margin}×",
         "noLens": "Không ống kính nào trong kho ghép được với camera này.",
         "lensesExcluded": "Ống kính đã loại ({count}) — lý do"
+      },
+      "solutions": {
+        "title": "Phương án",
+        "subtitle": "Ba mức dựng từ thiết bị đã qua lọc cứng, khác nhau ở hệ số an toàn, chi phí và rủi ro — không khác nhau ở độ chính xác.",
+        "notReady": "Chưa dựng được phương án: cần kho thiết bị và đủ thông số để lọc (kích thước vật, lỗi nhỏ nhất hoặc dung sai, số camera).",
+        "mandatory": "Yêu cầu bắt buộc: {line}",
+        "mandatoryNote": "Cả ba phương án dưới đây đều phải đạt các mức này. Chênh nhau ở hệ số an toàn, tốc độ và dư địa nâng cấp.",
+        "marginNote": "Dư độ phân giải tính trên mm/px (mm/px cần ÷ mm/px thực), không tính trên MP — dư 61% về MP chỉ bằng dư 27% về mm/px. Cặp dư dưới 1,1× không vào mức nào.",
+        "unplaced": "{count} cặp camera + ống kính đạt nhưng chưa tính được dư độ phân giải (thiếu tiêu cự / pitch) nên chưa xếp vào mức nào.",
+        "levels": {
+          "economy": "Tiết kiệm",
+          "recommended": "Đề xuất",
+          "highPerformance": "Hiệu năng cao"
+        },
+        "marginRange": "Dư độ phân giải {range}",
+        "blocked": "KHÔNG KHẢ DỤNG",
+        "blockedNote": "Hệ thống không đề xuất cấu hình có rủi ro kỹ thuật đã biết:",
+        "whatToRelax": "Xem cần nới gì →",
+        "empty": "Kho chưa có cặp camera + ống kính nào trong khoảng dư độ phân giải này.",
+        "camera": "Camera",
+        "lens": "Ống kính",
+        "light": "Chiếu sáng",
+        "pc": "Máy tính",
+        "software": "Phần mềm",
+        "softwareLater": "Chọn ở bước danh mục vật tư (BOM).",
+        "noLight": "Chưa có đèn đạt trong kho.",
+        "noPc": "Chưa có máy tính đạt trong kho.",
+        "unverified": "Chưa kiểm chứng",
+        "margin": "Dư độ phân giải {margin}×",
+        "cost": "Chi phí ước tính: {total} ₫",
+        "costMissing": "Chưa đủ giá — thiếu {count} món",
+        "score": "Điểm xếp hạng {score}/100 — chi tiết",
+        "noData": "chưa có dữ liệu",
+        "criteria": {
+          "resolutionMargin": "Dư độ phân giải",
+          "availability": "Có sẵn / thời gian giao",
+          "price": "Giá",
+          "priorProjectUse": "Đã dùng ở dự án",
+          "localSupport": "Hỗ trợ tại chỗ",
+          "roadmap": "Dư địa nâng cấp"
+        },
+        "risks": "Rủi ro kỹ thuật ({count})",
+        "line": {
+          "tolerance": "sai số ±{value} mm",
+          "defect": "lỗi nhỏ nhất {value} mm",
+          "object": "vật {width} × {height} mm",
+          "resolution": "{value} mm/px"
+        }
       }
     }
   },

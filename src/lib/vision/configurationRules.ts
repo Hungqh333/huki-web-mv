@@ -28,6 +28,13 @@ import { fmt, round, type Check } from './types';
  * luật trả status 'info' với evidence 'unknown' — "chưa kiểm được".
  *
  * Hàm thuần, không đụng database. Ngưỡng chốt 2026-09-17 là hằng có tên.
+ *
+ * marginRatio CHỈ cho phép kiểm có biên thật: vùng nhìn / mm/px (OPT-001), độ
+ * sâu trường ảnh (OPT-005), thời gian chu kỳ (THR-003). Phép kiểm đạt / không
+ * đạt (ngàm, vòng ảnh, lp/mm, F nhỏ nhất, khe / core / RAM / cổng) để null:
+ * feasibility.ts chấm tỉ lệ 1,0–1,2 là MARGINAL, nên một ống vòng ảnh vừa khít
+ * cảm biến hay máy vừa đủ cổng LAN sẽ bị coi là rủi ro và chặn nhầm mức Tiết
+ * kiệm (C4) — phát hiện khi viết test-solutions.ts.
  */
 
 /** OPT-005: F cần tới mức này × F#max thì còn chấp nhận được (mờ nhẹ, phải chụp thử). */
@@ -349,8 +356,8 @@ export function evaluateConfiguration(input: ConfigurationInput): RuleResult[] {
       evidence,
       [],
       eq,
-      // Tỉ lệ < 1 trong dung sai làm tròn vẫn là đạt — không đưa vào marginRatio kẻo bị chấm FAIL.
-      status === 'pass' && !unknown && cameraDiag !== null && lensDiag !== null && lensDiag >= cameraDiag ? lensDiag / cameraDiag : null
+      // Phép kiểm đạt / không đạt: không có "biên" (xem BINARY_NOTE ở đầu file).
+      null
     );
   }
 
@@ -372,7 +379,7 @@ export function evaluateConfiguration(input: ConfigurationInput): RuleResult[] {
         'calculated',
         [],
         eq,
-        ok ? lens.resolutionLpMm / need : null
+        null
       );
     } else {
       const small = pitch < 3;
@@ -411,7 +418,7 @@ export function evaluateConfiguration(input: ConfigurationInput): RuleResult[] {
         'calculated',
         [],
         eq,
-        fMax / lens.fNumberMin
+        null
       );
     } else {
       push(
@@ -450,7 +457,8 @@ export function evaluateConfiguration(input: ConfigurationInput): RuleResult[] {
       } else if (lens.fNumberMax !== null && fNeed > lens.fNumberMax) {
         check = { key: 'depthOfFieldConflict', status: 'fail', formula, noteKey: 'dofBeyondLensAperture', noteValues: values };
       } else if (ratio <= 1) {
-        check = { key: 'depthOfFieldConflict', status: 'pass', formula, noteKey: 'dofSetAperture', noteValues: values };
+        // Đạt nhưng F cần sát F#max (dư < 1,2 — MARGINAL theo feasibility.ts): nói rõ là sát, không nói "đủ".
+        check = { key: 'depthOfFieldConflict', status: 'pass', formula, noteKey: fMax / fNeed < 1.2 ? 'dofSetApertureTight' : 'dofSetAperture', noteValues: values };
         margin = fMax / fNeed;
       } else {
         check = { key: 'depthOfFieldConflict', status: 'warn', formula, noteKey: 'dofDiffractionTradeoff', noteValues: values };
@@ -510,7 +518,7 @@ export function evaluateConfiguration(input: ConfigurationInput): RuleResult[] {
           'calculated',
           paths,
           eq('pcie_slots', pc.pcieSlots),
-          ok ? pc.pcieSlots / slotsNeed : null
+          null
         );
       }
     }
@@ -532,7 +540,7 @@ export function evaluateConfiguration(input: ConfigurationInput): RuleResult[] {
         'rule-of-thumb',
         paths,
         eq('cpu_cores', pc.cpuCores),
-        status === 'pass' ? pc.cpuCores / rec : null
+        null
       );
     }
 
@@ -552,7 +560,7 @@ export function evaluateConfiguration(input: ConfigurationInput): RuleResult[] {
         'rule-of-thumb',
         paths,
         eq('ram_gb', pc.ramGb),
-        ok ? pc.ramGb / need : null
+        null
       );
     }
 
@@ -567,7 +575,7 @@ export function evaluateConfiguration(input: ConfigurationInput): RuleResult[] {
           'calculated',
           paths,
           eq('lan_ports', pc.lanPorts),
-          ok ? pc.lanPorts / need : null
+          null
         );
       }
     }

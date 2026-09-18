@@ -1,11 +1,9 @@
 'use client';
 
-import { useMemo, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
 import { SPEC_FIELDS, SUMMARY_KEYS, type Component } from '@/lib/components/specs';
-import type { Requirement } from '@/lib/requirement/types';
-import { filterEquipment, type Candidate, type CameraCandidate } from '@/lib/vision/equipmentFilter';
-import { analyseRequirement } from '@/lib/vision/requirementAnalysis';
+import type { Candidate, CameraCandidate, EquipmentFilter } from '@/lib/vision/equipmentFilter';
 import type { RuleResult } from '@/lib/vision/rules';
 
 /**
@@ -14,11 +12,10 @@ import type { RuleResult } from '@/lib/vision/rules';
  * Chỉ LỌC và LIỆT KÊ: thiết bị đạt (kèm cờ chưa kiểm được / chưa kiểm chứng) và
  * mục "Đã loại — lý do" có mã luật. Xếp hạng và ba mức giải pháp là C4.
  *
- * Chạy ngay trên trình duyệt như AnalysisPanel: catalog đã tải một lần từ server
- * (RLS Member+), mỗi lần bảng đổi chỉ chạy lại hàm thuần.
+ * Kết quả lọc tính ở DesignPanels (dùng chung với khối Phương án — C4).
  */
 
-function summarise(component: Component): string {
+export function summarise(component: Component): string {
   const keys = SUMMARY_KEYS[component.kind] ?? [];
   return (SPEC_FIELDS[component.kind] ?? [])
     .filter((field) => keys.includes(field.key))
@@ -31,22 +28,19 @@ function summarise(component: Component): string {
     .join(' · ');
 }
 
-const nameOf = (component: Component) => `${component.brand} ${component.model}`;
+export const nameOf = (component: Component) => `${component.brand} ${component.model}`;
 
 type NoteOf = (result: RuleResult) => string;
 
-export function EquipmentPanel({ requirement, catalog }: { requirement: Requirement; catalog: readonly Component[] }) {
+export function EquipmentPanel({ filter, catalogEmpty }: { filter: EquipmentFilter; catalogEmpty: boolean }) {
   const t = useTranslations('designer.requirement.equipment');
   const tv = useTranslations('selector.vision');
-
-  const analysis = useMemo(() => analyseRequirement(requirement), [requirement]);
-  const filter = useMemo(() => filterEquipment(analysis, catalog), [analysis, catalog]);
 
   const noteOf: NoteOf = (result) =>
     result.noteKey ? tv(`notes.${result.noteKey}`, result.noteValues ?? {}) : tv(`checks.${result.key}`);
 
   const body = () => {
-    if (catalog.length === 0) return <p className="text-sm text-slate-600 dark:text-slate-400">{t('noCatalog')}</p>;
+    if (catalogEmpty) return <p className="text-sm text-slate-600 dark:text-slate-400">{t('noCatalog')}</p>;
     if (!filter.ready) return <p className="text-sm text-slate-600 dark:text-slate-400">{t('notReady')}</p>;
 
     return (

@@ -175,7 +175,7 @@ test('OPT-003: cần 1000 ÷ (2 × pitch) lp/mm; ống thiếu số liệu chỉ
 test('OPT-004: khẩu mở lớn nhất của ống phải ≤ F#max', () => {
   const ok = find(run(), 'OPT-004');
   assert.equal(ok.status, 'pass');
-  assert.ok(Math.abs(ok.marginRatio! - 5.1416 / 1.4) < 1e-3);
+  assert.equal(ok.marginRatio, null, 'dat / khong dat, khong co bien');
   assert.equal(find(run({ lens: { fNumberMin: 8 } }), 'OPT-004').status, 'fail');
   assert.equal(find(run({ lens: { fNumberMin: null } }), 'OPT-004').evidence, 'unknown');
 });

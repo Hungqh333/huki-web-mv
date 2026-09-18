@@ -743,7 +743,8 @@
         "lightSizeUnknown": "Light size not specified — at least {need} mm is needed to cover the field of view.",
         "lightTooSmall": "The {have} mm light is smaller than the {need} mm needed to cover the field of view evenly.",
         "lightNoStrobe": "The task needs a strobed light (very short exposure) but this light cannot be strobed.",
-        "lightStrobeUnknown": "Strobe capability not specified — this task needs strobe."
+        "lightStrobeUnknown": "Strobe capability not specified — this task needs strobe.",
+        "dofSetApertureTight": "Passes but tight: F/{f} is needed for {dof} mm depth, close to F#max F/{fMax} — little headroom if real height variation is larger."
       },
       "lightingReason": {
         "scratch": "Scratches and shallow cracks only stand out under a very low angle against a dark background.",
@@ -1840,6 +1841,54 @@
         "lensMargin": "resolution headroom {margin}×",
         "noLens": "No catalog lens works with this camera.",
         "lensesExcluded": "Excluded lenses ({count}) — reasons"
+      },
+      "solutions": {
+        "title": "Solutions",
+        "subtitle": "Three levels built from equipment that passed the hard filter. They differ in safety margin, cost and risk — not in accuracy.",
+        "notReady": "No solutions yet: an equipment catalog and enough inputs to filter are needed (part size, smallest defect or tolerance, camera count).",
+        "mandatory": "Mandatory requirements: {line}",
+        "mandatoryNote": "All three solutions below must meet these. They differ in safety margin, speed and upgrade headroom.",
+        "marginNote": "Resolution headroom is measured in mm/px (required ÷ actual), not MP — 61% more MP is only 27% more mm/px. Pairs below 1.1× are not placed in any level.",
+        "unplaced": "{count} camera + lens pairs pass but their resolution headroom cannot be computed (missing focal length / pitch), so they are not placed in a level.",
+        "levels": {
+          "economy": "Economy",
+          "recommended": "Recommended",
+          "highPerformance": "High performance"
+        },
+        "marginRange": "Resolution headroom {range}",
+        "blocked": "NOT AVAILABLE",
+        "blockedNote": "The system does not propose a configuration with known technical risks:",
+        "whatToRelax": "See what to relax →",
+        "empty": "The catalog has no camera + lens pair in this headroom range.",
+        "camera": "Camera",
+        "lens": "Lens",
+        "light": "Lighting",
+        "pc": "Computer",
+        "software": "Software",
+        "softwareLater": "Chosen in the bill of materials step.",
+        "noLight": "No passing light in the catalog.",
+        "noPc": "No passing computer in the catalog.",
+        "unverified": "Unverified",
+        "margin": "Resolution headroom {margin}×",
+        "cost": "Estimated cost: {total} VND",
+        "costMissing": "Prices incomplete — {count} items missing",
+        "score": "Ranking score {score}/100 — details",
+        "noData": "no data yet",
+        "criteria": {
+          "resolutionMargin": "Resolution headroom",
+          "availability": "Availability / lead time",
+          "price": "Price",
+          "priorProjectUse": "Used in past projects",
+          "localSupport": "Local support",
+          "roadmap": "Upgrade roadmap"
+        },
+        "risks": "Technical risks ({count})",
+        "line": {
+          "tolerance": "tolerance ±{value} mm",
+          "defect": "smallest defect {value} mm",
+          "object": "part {width} × {height} mm",
+          "resolution": "{value} mm/px"
+        }
       }
     }
   },

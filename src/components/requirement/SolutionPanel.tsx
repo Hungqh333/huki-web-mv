@@ -2,7 +2,7 @@
 
 import { useTranslations, useFormatter } from 'next-intl';
 import type { Candidate } from '@/lib/vision/equipmentFilter';
-import type { RuleResult } from '@/lib/vision/rules';
+import { noteMessageKey, type RuleResult } from '@/lib/vision/rules';
 import type { SolutionLevel, SolutionLevelKey, Solutions } from '@/lib/vision/solutionLevels';
 import { nameOf, summarise } from './EquipmentPanel';
 
@@ -35,7 +35,7 @@ export function SolutionPanel({
 }) {
   const t = useTranslations('designer.requirement.solutions');
   const tv = useTranslations('selector.vision');
-  const noteOf: NoteOf = (result) => (result.noteKey ? tv(`notes.${result.noteKey}`, result.noteValues ?? {}) : tv(`checks.${result.key}`));
+  const noteOf: NoteOf = (result) => (result.noteKey ? tv(noteMessageKey(result.noteKey), result.noteValues ?? {}) : tv(`checks.${result.key}`));
 
   return (
     <section aria-labelledby="solutions-title" className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">

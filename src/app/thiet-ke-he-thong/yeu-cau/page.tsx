@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { ProjectSaveBar } from '@/components/requirement/ProjectSaveBar';
 import { RequirementSummary } from '@/components/requirement/RequirementSummary';
-import { canUseSelector, getSessionContext } from '@/lib/auth';
+import { canUseSelector, getSessionContext, hasAdvancedFeatures } from '@/lib/auth';
 import { isApplicationType } from '@/lib/requirement/draft';
 import type { Component } from '@/lib/components/specs';
 import { hasSupabaseEnv } from '@/lib/supabase/env';
@@ -50,7 +50,7 @@ export default async function RequirementPage({ searchParams }: PageProps<'/thie
       <p className="mt-3 max-w-2xl text-slate-600 dark:text-slate-400">{t('subtitle')}</p>
 
       <div className="mt-8 space-y-6">
-        <ProjectSaveBar />
+        <ProjectSaveBar canExportPdf={hasAdvancedFeatures(session?.profile?.role ?? null)} />
         <RequirementSummary initialApp={isApplicationType(appParam) ? appParam : null} catalog={(catalog ?? []) as Component[]} />
       </div>
     </section>

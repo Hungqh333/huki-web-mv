@@ -1,9 +1,10 @@
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { getFormatter, getTranslations } from 'next-intl/server';
+import { ExportLinks } from '@/components/projects/ExportLinks';
 import { OpenRevisionButton } from '@/components/projects/OpenRevisionButton';
 import { SupabaseNotConfigured } from '@/components/auth/SupabaseNotConfigured';
-import { canUseSelector, getSessionContext } from '@/lib/auth';
+import { canUseSelector, getSessionContext, hasAdvancedFeatures } from '@/lib/auth';
 import { PROJECTS_ROUTE, revisionToDraft, type ProjectStatus, type RevisionRow } from '@/lib/projects/model';
 import { isApplicationType } from '@/lib/requirement/draft';
 import { hasSupabaseEnv } from '@/lib/supabase/env';
@@ -114,6 +115,17 @@ export default async function ProjectPage({ params }: PageProps<'/du-an/[id]'>) 
               ) : (
                 <p className="text-xs text-red-600 dark:text-red-400">{t('detail.unreadable')}</p>
               )}
+              {draft ? (
+                <div className="w-full">
+                  <ExportLinks
+                    projectId={project.id}
+                    revisionId={revision.id}
+                    canPdf={hasAdvancedFeatures(session.profile?.role ?? null)}
+                    unsaved={false}
+                    hasBom={revision.bom != null}
+                  />
+                </div>
+              ) : null}
             </li>
           );
         })}

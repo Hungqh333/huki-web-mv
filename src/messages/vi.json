@@ -2010,5 +2010,64 @@
       "notEditable": "Revision này đã khoá hoặc không còn tồn tại.",
       "saveFailed": "Không lưu được. Thử lại sau."
     }
+  },
+  "export": {
+    "yes": "Có",
+    "no": "Không",
+    "meta": "Lưu lúc {saved} · bộ luật {ruleset} · {author}",
+    "generatedAt": "Xuất lúc {at}",
+    "noBom": "Revision này chưa chọn phương án — chưa có danh mục vật tư.",
+    "unverifiedNote": "* Thông số chưa đối chiếu datasheet của hãng — kiểm lại trước khi đặt hàng.",
+    "draftRevision": "Revision đang sửa (chưa khoá) — nội dung có thể còn thay đổi.",
+    "rulesetChanged": "Phân tích tính lại với bộ luật {now}; lúc lưu là {saved}. Danh mục vật tư giữ nguyên như lúc lưu.",
+    "validation": {
+      "sample": "Chụp mẫu thật để xác nhận: {check} ({rule})",
+      "datasheet": "Đối chiếu datasheet trước khi đặt hàng: {items}",
+      "quote": "Lấy báo giá riêng cho: {items}"
+    },
+    "excel": {
+      "sheetBom": "BOM",
+      "sheetAssumptions": "Giả định & Loại trừ",
+      "title": "Danh mục vật tư — {project} — Rev {rev}",
+      "level": "Phương án: {level} · dư độ phân giải {margin}×",
+      "columns": {
+        "category": "Nhóm",
+        "code": "Mã hàng",
+        "description": "Mô tả",
+        "qty": "SL",
+        "unitPrice": "Đơn giá (₫)",
+        "amount": "Thành tiền (₫)",
+        "leadTime": "Giao hàng",
+        "supplier": "Nhà cung cấp",
+        "rules": "Luật biện luận"
+      },
+      "total": "Tổng",
+      "missingPrices": "Thiếu giá {count} dòng — tổng chưa đầy đủ"
+    },
+    "pdf": {
+      "title": "Concept Report — Hệ thống Machine Vision",
+      "overall": "Điểm khả thi {score}/100",
+      "limiting": "yếu tố giới hạn: {factors}",
+      "requirement": "Yêu cầu",
+      "assumedLegend": "Chữ màu cam: giá trị GIẢ ĐỊNH, chưa được khách xác nhận.",
+      "analysis": "Phân tích kỹ thuật",
+      "architecture": "Kiến trúc hệ thống",
+      "bom": "Danh mục thiết bị",
+      "noPrices": "Tài liệu kỹ thuật, không kèm giá — báo giá gửi riêng.",
+      "feasibility": "Đánh giá khả thi",
+      "warnings": "Cảnh báo",
+      "noWarnings": "Không có cảnh báo.",
+      "validation": "Kế hoạch xác nhận",
+      "noValidation": "Không có hạng mục cần xác nhận thêm."
+    },
+    "ui": {
+      "title": "Xuất tài liệu",
+      "excel": "Tải BOM (Excel)",
+      "pdf": "Tải Concept Report (PDF)",
+      "pdfVip": "PDF dành cho tài khoản VIP",
+      "saveFirst": "Lưu dự án trước khi xuất — file lấy từ revision đã lưu.",
+      "noBomHint": "Chưa chọn phương án: file sẽ không có danh mục vật tư."
+    },
+    "footer": "{project} — Rev {rev} · Machine Vision Hub"
   }
 }

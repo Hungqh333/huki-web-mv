@@ -7,6 +7,7 @@ import { saveProjectAction, startNextRevisionAction, type ProjectActionResult } 
 import { parseDraft, type RequirementDraft } from '@/lib/requirement/draft';
 import { readDraftRaw, subscribeDraft, writeDraft } from '@/lib/requirement/draftStore';
 import { PROJECTS_ROUTE, PROJECT_NAME_MAX, draftFingerprint } from '@/lib/projects/model';
+import { ExportLinks } from '@/components/projects/ExportLinks';
 
 /**
  * Thanh "Lưu dự án" trên bước Yêu cầu (V1a hạng mục 7).
@@ -24,7 +25,7 @@ const INPUT_CLASS =
 
 type Message = { tone: 'ok' | 'error'; text: string };
 
-export function ProjectSaveBar() {
+export function ProjectSaveBar({ canExportPdf = false }: { canExportPdf?: boolean }) {
   const t = useTranslations('projects.save');
   const raw = useSyncExternalStore(subscribeDraft, readDraftRaw, () => null);
   const draft = useMemo(() => parseDraft(raw), [raw]);
@@ -169,6 +170,12 @@ export function ProjectSaveBar() {
 
       {confirmNext && link && !link.locked ? (
         <p className="mt-2 text-xs text-amber-700 dark:text-amber-400">{t('confirmHint', { label: link.revLabel })}</p>
+      ) : null}
+
+      {link ? (
+        <div className="mt-3 border-t border-slate-100 pt-3 dark:border-slate-800">
+          <ExportLinks projectId={link.id} revisionId={link.revisionId} canPdf={canExportPdf} unsaved={dirty} hasBom={Boolean(draft?.bom)} />
+        </div>
       ) : null}
 
       {message ? (

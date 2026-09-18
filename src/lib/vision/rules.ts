@@ -113,6 +113,13 @@ export function ruleDefinition(id: string): RuleDefinition {
   return rule;
 }
 
+/**
+ * Khoá câu diễn giải, tính từ gốc selector.vision. Khoá có dấu chấm ('lightingReason.scratch')
+ * nằm ngoài nhóm notes; còn lại nằm trong notes. Dùng chung để mọi nơi hiện câu giống nhau —
+ * trước đây ba khối C3/C4/C6 tra thẳng notes.<khoá> và mất câu giải thích chiếu sáng.
+ */
+export const noteMessageKey = (noteKey: string) => (noteKey.includes('.') ? noteKey : `notes.${noteKey}`);
+
 /** Slug bài cẩm nang loại ruleNote cho một luật — quy ước cố định, chưa cần bài viết. */
 export const knowledgeSlugFor = (ruleId: string) => `rule-${ruleId.toLowerCase()}`;
 

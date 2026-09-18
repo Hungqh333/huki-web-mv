@@ -3,7 +3,9 @@ import 'server-only';
 import { join } from 'node:path';
 import { Font } from '@react-pdf/renderer';
 
-export const PDF_FONT_FAMILY = 'BeVietnamPro';
+import { PDF_FONT_FAMILY } from './family';
+
+export { PDF_FONT_FAMILY };
 
 let registered = false;
 

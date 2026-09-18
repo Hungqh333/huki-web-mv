@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
 import { SPEC_FIELDS, SUMMARY_KEYS, type Component } from '@/lib/components/specs';
 import type { Candidate, CameraCandidate, EquipmentFilter } from '@/lib/vision/equipmentFilter';
-import type { RuleResult } from '@/lib/vision/rules';
+import { noteMessageKey, type RuleResult } from '@/lib/vision/rules';
 
 /**
  * Thiết bị phù hợp — V1c mục C3 (spec V1.1 §8.1 lọc cứng).
@@ -37,7 +37,7 @@ export function EquipmentPanel({ filter, catalogEmpty }: { filter: EquipmentFilt
   const tv = useTranslations('selector.vision');
 
   const noteOf: NoteOf = (result) =>
-    result.noteKey ? tv(`notes.${result.noteKey}`, result.noteValues ?? {}) : tv(`checks.${result.key}`);
+    result.noteKey ? tv(noteMessageKey(result.noteKey), result.noteValues ?? {}) : tv(`checks.${result.key}`);
 
   const body = () => {
     if (catalogEmpty) return <p className="text-sm text-slate-600 dark:text-slate-400">{t('noCatalog')}</p>;

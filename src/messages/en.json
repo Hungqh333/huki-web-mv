@@ -2010,5 +2010,64 @@
       "notEditable": "This revision is locked or no longer exists.",
       "saveFailed": "Could not save. Please try again later."
     }
+  },
+  "export": {
+    "yes": "Yes",
+    "no": "No",
+    "meta": "Saved {saved} · ruleset {ruleset} · {author}",
+    "generatedAt": "Exported {at}",
+    "noBom": "No solution chosen in this revision — no bill of materials yet.",
+    "unverifiedNote": "* Specs not yet checked against the manufacturer datasheet — verify before ordering.",
+    "draftRevision": "Open revision (not locked) — content may still change.",
+    "rulesetChanged": "Analysis recomputed with ruleset {now}; saved with {saved}. The bill of materials is kept as saved.",
+    "validation": {
+      "sample": "Confirm with real samples: {check} ({rule})",
+      "datasheet": "Check datasheets before ordering: {items}",
+      "quote": "Get separate quotes for: {items}"
+    },
+    "excel": {
+      "sheetBom": "BOM",
+      "sheetAssumptions": "Assumptions & Exclusions",
+      "title": "Bill of materials — {project} — Rev {rev}",
+      "level": "Solution: {level} · resolution headroom {margin}×",
+      "columns": {
+        "category": "Category",
+        "code": "Part number",
+        "description": "Description",
+        "qty": "Qty",
+        "unitPrice": "Unit price (VND)",
+        "amount": "Amount (VND)",
+        "leadTime": "Lead time",
+        "supplier": "Supplier",
+        "rules": "Justifying rules"
+      },
+      "total": "Total",
+      "missingPrices": "{count} lines without price — total incomplete"
+    },
+    "pdf": {
+      "title": "Concept Report — Machine Vision System",
+      "overall": "Feasibility score {score}/100",
+      "limiting": "limiting factors: {factors}",
+      "requirement": "Requirements",
+      "assumedLegend": "Orange text: ASSUMED values, not yet confirmed by the customer.",
+      "analysis": "Engineering analysis",
+      "architecture": "System architecture",
+      "bom": "Equipment list",
+      "noPrices": "Technical document without prices — quotation sent separately.",
+      "feasibility": "Feasibility",
+      "warnings": "Warnings",
+      "noWarnings": "No warnings.",
+      "validation": "Validation plan",
+      "noValidation": "Nothing further to validate."
+    },
+    "ui": {
+      "title": "Export",
+      "excel": "Download BOM (Excel)",
+      "pdf": "Download Concept Report (PDF)",
+      "pdfVip": "PDF is for VIP accounts",
+      "saveFirst": "Save the project before exporting — files come from the saved revision.",
+      "noBomHint": "No solution chosen: the file will have no bill of materials."
+    },
+    "footer": "{project} — Rev {rev} · Machine Vision Hub"
   }
 }

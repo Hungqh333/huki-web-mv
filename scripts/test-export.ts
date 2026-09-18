@@ -17,6 +17,7 @@ import { buildBomWorkbook } from '../src/lib/export/bomWorkbook';
 import { buildConceptDocument, type Translate } from '../src/lib/export/conceptDocument';
 import { emptyRequirement, withFieldValue } from '../src/lib/requirement/fields';
 import { RULESET_VERSION, bomForRequirement } from '../src/lib/vision/bom';
+import { analyseRequirement } from '../src/lib/vision/requirementAnalysis';
 import { emptySelection } from '../src/lib/vision/bomSelection';
 
 const messages = (locale: string) => JSON.parse(readFileSync(join(process.cwd(), 'src', 'messages', `${locale}.json`), 'utf8'));
@@ -77,6 +78,10 @@ test('mô hình tài liệu: đủ phần theo spec §11.1, BOM lấy nguyên �
   assert.ok(doc.requirement.some((r) => r.label === 'Lỗi nhỏ nhất' && !r.assumed));
   assert.ok(doc.requirement.some((r) => r.assumed), 'o gia dinh duoc danh dau');
   assert.ok(doc.assumptions.length > 0);
+  // Đủ MỌI giả định engine (chạy thử C9): trước chỉ có ô trên bảng Yêu cầu, thiếu Gage R&R, px/lỗi…
+  assert.equal(doc.assumptions.length, analyseRequirement(requirement).assumptions.length);
+  assert.ok(doc.assumptions.some((a) => a.label.includes('Gage R&R') && a.value === '10' && a.rules === 'RES-002'));
+  assert.ok(doc.assumptions.every((a) => a.label && a.note), 'moi gia dinh co nhan + cau giai thich');
   assert.ok(doc.analysis.length > 0 && doc.analysis.every((g) => g.rows.length > 0));
   assert.equal(doc.bom?.lines.length, bom!.lines.length);
   assert.equal(doc.bom?.lines.find((l) => l.code === 'CAM')?.unverified, true);

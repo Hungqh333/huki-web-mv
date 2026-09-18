@@ -26,6 +26,8 @@ import { FEASIBILITY_DIMENSIONS, noteMessageKey, type RuleResult } from '@/lib/v
 export type Translate = (key: string, values?: Record<string, string | number>) => string;
 
 export type ExportRow = { label: string; value: string };
+/** Giả định: kèm câu giải thích (vì sao giả định, sai thì sao) và mã luật đọc nó. */
+export type AssumptionRow = ExportRow & { note: string; rules: string };
 
 export type ConceptDocument = {
   projectName: string;
@@ -40,7 +42,7 @@ export type ConceptDocument = {
   /** Phiên bản luật lúc lưu khác bây giờ → báo cáo ghi rõ phân tích tính lại. */
   rulesetChanged: boolean;
   requirement: (ExportRow & { assumed: boolean })[];
-  assumptions: ExportRow[];
+  assumptions: AssumptionRow[];
   analysis: { dimension: string; rows: { ruleId: string; check: string; status: string; formula: string; note: string | null }[] }[];
   feasibility: { status: string; overall: number | null; limiting: string; blockers: { ruleId: string; text: string }[] };
   warnings: { ruleId: string; status: string; text: string }[];
@@ -96,6 +98,8 @@ export function buildConceptDocument(input: {
   now: Date;
   formatDate: (date: Date) => string;
   t: Translate;
+  /** Câu giải thích giả định có sẵn hai thứ tiếng trong engine. Mặc định 'vi'. */
+  locale?: string;
 }): ConceptDocument {
   const { revision, t } = input;
   const requirement = revision.requirement;
@@ -133,8 +137,23 @@ export function buildConceptDocument(input: {
     })
     .filter((row): row is ExportRow & { assumed: boolean } => row !== null);
 
-  // Giả định: ưu tiên ảnh chụp trong BOM (đúng lúc lưu); chưa có BOM thì tính lại.
-  const assumed = bom?.assumptions ?? Object.entries(analysis.fieldInputs).filter(([, v]) => v.assumptionId).map(([path, v]) => ({ path, value: v.value }));
+  /* Giả định: MỌI giả định engine đang dùng — ô trên bảng Yêu cầu lẫn tham số (vùng
+     nhìn = kích thước vật, px/lỗi, Gage R&R, subpixel…), đúng như panel Giả định và
+     khối "Vì sao chọn?". Trước đây chỉ lấy ô trên bảng (ảnh chụp trong BOM) nên trang
+     "Báo giá này dựa trên các giả định sau" thiếu phần lớn giả định — phát hiện khi
+     chạy thử C9. Phân tích tính lại từ bảng Yêu cầu đã lưu, như mọi phần khác của
+     báo cáo; lệch bộ luật thì đã có dòng rulesetChanged. */
+  const english = input.locale === 'en';
+  const assumptionRows: AssumptionRow[] = analysis.assumptions.map((a) => {
+    const def = a.path ? V1A_FIELDS.find((item) => item.path === a.path) : undefined;
+    const label = def ? fieldLabel(def.path) : (a.title?.[english ? 'en' : 'vi'] ?? (english ? a.en : a.vi));
+    return {
+      label,
+      value: a.value === undefined ? '' : a.path ? valueText(a.path, a.value) : `${String(a.value)}${a.unit ? ` ${a.unit}` : ''}`,
+      note: english ? a.en : a.vi,
+      rules: a.ruleIds.join(', '),
+    };
+  });
 
   const bomDoc: ConceptDocument['bom'] = bom
     ? {
@@ -184,7 +203,7 @@ export function buildConceptDocument(input: {
     rulesetNow: RULESET_VERSION,
     rulesetChanged: revision.rule_version !== null && revision.rule_version !== RULESET_VERSION,
     requirement: requirementRows,
-    assumptions: assumed.map((a) => ({ label: fieldLabel(a.path), value: valueText(a.path, a.value) })),
+    assumptions: assumptionRows,
     analysis: FEASIBILITY_DIMENSIONS.map((dimension) => ({
       dimension: t(`designer.requirement.analysis.dimensions.${dimension}`),
       rows: analysis.results

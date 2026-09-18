@@ -1859,7 +1859,7 @@
           "cameraUnknown": "Chưa có số camera",
           "cameraCountOnly": "{count} camera",
           "cameraSpec": "{count} × camera, cần khoảng {mp} MP mỗi camera",
-          "interfaceSpec": "{name} · tổng {total} MB/s",
+          "interfaceSpec": "Tối thiểu {name} · tổng {total} MB/s",
           "softwareTraditional": "Xử lý ảnh truyền thống",
           "softwareDeepLearning": "Học sâu — cần tập ảnh mẫu thật",
           "softwareUndecided": "Chưa chọn được truyền thống hay học sâu"

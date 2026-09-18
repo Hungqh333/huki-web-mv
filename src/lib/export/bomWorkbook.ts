@@ -90,7 +90,7 @@ export async function buildBomWorkbook(doc: ConceptDocument, t: Translate): Prom
 
   // ─── Sheet 2: Giả định & Loại trừ ───
   const notes = workbook.addWorksheet(t('export.excel.sheetAssumptions'));
-  notes.columns = [{ width: 40 }, { width: 50 }];
+  notes.columns = [{ width: 36 }, { width: 22 }, { width: 70 }, { width: 18 }];
   let r = 1;
   const heading = (text: string) => {
     notes.getCell(r, 1).value = text;
@@ -105,7 +105,8 @@ export async function buildBomWorkbook(doc: ConceptDocument, t: Translate): Prom
     r += 1;
   }
   for (const item of doc.assumptions) {
-    notes.getRow(r).values = [item.label, item.value];
+    notes.getRow(r).values = [item.label, item.value, item.note, item.rules];
+    notes.getCell(r, 3).alignment = { wrapText: true, vertical: 'top' };
     r += 1;
   }
   r += 1;

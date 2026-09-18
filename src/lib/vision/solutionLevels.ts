@@ -152,7 +152,16 @@ function best<T>(items: T[], scores: SoftScore[]): { item: T; score: SoftScore }
   return pick;
 }
 
+/**
+ * Rủi ro của một cấu hình: FAIL / MARGINAL theo bảng điểm spec §7.2.
+ *
+ * Trừ OPT-001 ĐẠT: hệ số dư của nó (mm/px cần ÷ thực) chính là thứ xếp cặp vào
+ * mức. Bảng điểm coi dư 1,0–1,2 là MARGINAL, nên mọi cặp Tiết kiệm (1,1–1,3) dư
+ * dưới 1,2 từng tự chặn chính nó — màn hình hiện "KHÔNG KHẢ DỤNG — OPT-001 Đạt".
+ * Phát hiện khi chạy thử C9 (S-11), chốt sửa 2026-09-18. OPT-001 KHÔNG ĐẠT vẫn là rủi ro.
+ */
 const isMarginalOrFail = (result: RuleResult) => {
+  if (result.ruleId === 'OPT-001' && result.status === 'pass') return false;
   const status = scoreResult(result).status;
   return status === 'FAIL' || status === 'MARGINAL';
 };

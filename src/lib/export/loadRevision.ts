@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { getFormatter, getTranslations } from 'next-intl/server';
+import { getFormatter, getLocale, getTranslations } from 'next-intl/server';
 import { canUseSelector, getSessionContext, hasAdvancedFeatures } from '@/lib/auth';
 import { revisionToDraft } from '@/lib/projects/model';
 import { createClient } from '@/lib/supabase/server';
@@ -78,6 +78,7 @@ export async function loadRevisionForExport(projectId: string, revisionId: strin
     now: new Date(),
     formatDate: (date) => formatter.dateTime(date, { dateStyle: 'medium', timeStyle: 'short' }),
     t,
+    locale: await getLocale(),
   });
 
   // Tên file chỉ ký tự an toàn: tên dự án có dấu tiếng Việt, khoảng trắng.

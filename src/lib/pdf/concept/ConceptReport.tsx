@@ -52,7 +52,18 @@ function pdfSafe<T>(value: T): T {
 }
 
 const styles = StyleSheet.create({
-  page: { fontFamily: PDF_FONT_FAMILY, fontSize: 9.5, lineHeight: 1.45, paddingTop: 40, paddingBottom: 56, paddingHorizontal: 44, color: '#0f172a' },
+  /* fontFeatureSettings liga tắt: chữ ghép "fi" của Be Vietnam Pro chỉ ghi "f" vào lớp chữ
+     của PDF — copy ra thành "dark feld", "fxed" (chạy thử C9). Tách glyph thì copy đúng. */
+  page: {
+    fontFamily: PDF_FONT_FAMILY,
+    fontFeatureSettings: { liga: false },
+    fontSize: 9.5,
+    lineHeight: 1.45,
+    paddingTop: 40,
+    paddingBottom: 56,
+    paddingHorizontal: 44,
+    color: '#0f172a',
+  },
   header: { borderBottomWidth: 2, borderBottomColor: '#0284c7', paddingBottom: 10, marginBottom: 14 },
   // lineHeight riêng: kế thừa 1,45 của trang thì dòng 18 pt có dấu đè lên dòng dưới.
   title: { fontSize: 18, fontWeight: 700, lineHeight: 1.3 },
@@ -81,7 +92,9 @@ const styles = StyleSheet.create({
   cQty: { width: '8%', textAlign: 'right', paddingRight: 6 },
   cRule: { width: '22%' },
   footnote: { marginTop: 6, fontSize: 8, color: '#b45309' },
-  disclaimer: { marginTop: 18, paddingTop: 6, borderTopWidth: 1, borderTopColor: '#e2e8f0', fontSize: 7.5, color: '#64748b' },
+  disclaimer: { marginTop: 4, fontSize: 7.5, color: '#64748b' },
+  assumptionNote: { fontSize: 7.5, color: '#64748b', marginTop: 1 },
+  assumptionRules: { fontSize: 7, color: '#94a3b8', marginTop: 1 },
   pageNumber: { position: 'absolute', bottom: 28, left: 44, right: 44, textAlign: 'center', fontSize: 7.5, color: '#94a3b8' },
 });
 
@@ -103,6 +116,26 @@ function Rows({ rows }: { rows: { label: string; value: string; assumed?: boolea
         <View key={`${row.label}-${index}`} style={index % 2 ? styles.rowAlt : styles.row} wrap={false}>
           <Text style={styles.label}>{row.label}</Text>
           <Text style={row.assumed ? [styles.value, styles.assumed] : styles.value}>{row.value}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+/** Giả định: nhãn + giá trị, dưới là câu giải thích và mã luật đọc giả định đó. */
+function AssumptionRows({ rows }: { rows: { label: string; value: string; note: string; rules: string }[] }) {
+  return (
+    <View>
+      {rows.map((row, index) => (
+        <View key={`${row.label}-${index}`} style={index % 2 ? styles.rowAlt : styles.row} wrap={false}>
+          <View style={styles.label}>
+            <Text>{row.label}</Text>
+            {row.rules ? <Text style={styles.assumptionRules}>{row.rules}</Text> : null}
+          </View>
+          <View style={styles.value}>
+            {row.value ? <Text>{row.value}</Text> : null}
+            <Text style={styles.assumptionNote}>{row.note}</Text>
+          </View>
         </View>
       ))}
     </View>
@@ -164,7 +197,7 @@ export function ConceptReport({ doc: raw, t: translate }: { doc: ConceptDocument
         </Section>
 
         <Section title={`2. ${t('designer.requirement.bom.assumptionsTitle')}`}>
-          {doc.assumptions.length > 0 ? <Rows rows={doc.assumptions} /> : <Text>{t('designer.requirement.bom.noAssumptions')}</Text>}
+          {doc.assumptions.length > 0 ? <AssumptionRows rows={doc.assumptions} /> : <Text>{t('designer.requirement.bom.noAssumptions')}</Text>}
         </Section>
 
         <Section title={`3. ${t('export.pdf.analysis')}`}>
@@ -238,6 +271,8 @@ export function ConceptReport({ doc: raw, t: translate }: { doc: ConceptDocument
               <RuleItems items={doc.feasibility.blockers} />
             </View>
           ) : null}
+          {/* Nằm trong mục 6 thay vì cuối trang: đứng riêng thì hay rơi sang một trang trống (chạy thử C9). */}
+          <Text style={styles.disclaimer}>{t('designer.requirement.analysis.disclaimer')}</Text>
         </Section>
 
         <Section title={`7. ${t('export.pdf.warnings')}`}>
@@ -261,7 +296,6 @@ export function ConceptReport({ doc: raw, t: translate }: { doc: ConceptDocument
           )}
         </Section>
 
-        <Text style={styles.disclaimer}>{t('designer.requirement.analysis.disclaimer')}</Text>
         {footer}
       </Page>
 
@@ -275,7 +309,7 @@ export function ConceptReport({ doc: raw, t: translate }: { doc: ConceptDocument
         </View>
         <Text>{t('designer.requirement.bom.assumptionsIntro')}</Text>
         <View style={{ marginTop: 6 }}>
-          {doc.assumptions.length > 0 ? <Rows rows={doc.assumptions} /> : <Text>{t('designer.requirement.bom.noAssumptions')}</Text>}
+          {doc.assumptions.length > 0 ? <AssumptionRows rows={doc.assumptions} /> : <Text>{t('designer.requirement.bom.noAssumptions')}</Text>}
         </View>
         <Section title={t('designer.requirement.bom.exclusionsTitle')}>
           {doc.exclusions.map((item) => (

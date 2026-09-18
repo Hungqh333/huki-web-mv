@@ -105,6 +105,9 @@ test('PDF: dựng được cả vi/en, 2 trang trở lên, không kèm giá, ch�
         assert.ok(new RegExp(`<${hex}>`, 'i').test(decoded), `thieu glyph ${ch} U+${hex}`);
       }
     }
+    // Chữ ghép "fi" tắt (chạy thử C9): glyph ghép ghi một mã hai ký tự <0066 0069> vào ToUnicode
+    // và trình đọc PDF chỉ copy được "f" ("dark feld"). Tách glyph thì bảng không có cặp này.
+    assert.ok(!/<0066 ?006[9c]>/i.test(decoded), `${locale}: con chu ghep fi/fl trong lop chu PDF`);
     // Có Helvetica → liệt kê luôn ký tự font không có, để biết phải thêm gì vào PDF_REPLACEMENTS.
     const font = createRequire(import.meta.url)('fontkit').openSync(join(dir, 'BeVietnamPro-Regular.ttf'));
     const text = pdfSafeText(JSON.stringify(doc));

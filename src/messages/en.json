@@ -1859,7 +1859,7 @@
           "cameraUnknown": "No camera count yet",
           "cameraCountOnly": "{count} camera(s)",
           "cameraSpec": "{count} × camera, about {mp} MP each",
-          "interfaceSpec": "{name} · {total} MB/s total",
+          "interfaceSpec": "At least {name} · {total} MB/s total",
           "softwareTraditional": "Traditional image processing",
           "softwareDeepLearning": "Deep learning — needs real sample images",
           "softwareUndecided": "Traditional vs deep learning not decided yet"

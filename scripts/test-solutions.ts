@@ -114,6 +114,17 @@ test('Tiết kiệm bị chặn khi cấu hình có MARGINAL (ống lp/mm thấp
   assert.equal(level(s, 'recommended').status, 'ok', 'muc khac van hien');
 });
 
+test('Tiết kiệm dư 1,1–1,2: KHÔNG tự chặn bởi chính hệ số dư OPT-001 (lỗi tìm ra khi chạy thử C9)', () => {
+  // f17 ở 300 mm: β = 17 ÷ 283 → 0,00345 ÷ 0,0601 = 0,0574 mm/px → dư 0,0667 ÷ 0,0574 ≈ 1,16.
+  // Bảng điểm coi 1,0–1,2 là MARGINAL; trước khi sửa, Tiết kiệm hiện "KHÔNG KHẢ DỤNG — OPT-001 Đạt".
+  const catalog = catalogOf().map((c) => (c.model === 'f18' ? lens(17, { price_vnd: 3_000_000, lead_time_days: 0 }) : c));
+  const economy = level(solve({}, catalog), 'economy');
+  assert.ok(Math.abs(economy.margin! - 1.16) < 0.01, String(economy.margin));
+  assert.equal(economy.status, 'ok');
+  assert.equal(economy.lens?.component.model, 'f17');
+  assert.ok(!economy.risks.some((r) => r.ruleId === 'OPT-001'), 'OPT-001 dat khong phai rui ro');
+});
+
 test('bảng Yêu cầu có FAIL → Tiết kiệm bị chặn; mức khác mang FAIL đó trong rủi ro', () => {
   // Δh 2 mm, WD 300, dung sai ±0,05 → phối cảnh 0,26 mm > U 0,01 → OPT-008 FAIL
   const s = solve({ 'object.heightVariation': 2, 'measurement.0.tolerance': 0.05 });

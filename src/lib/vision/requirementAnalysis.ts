@@ -48,6 +48,10 @@ export type RequirementAnalysis = {
   uncertaintyBudgetMm: number | null;
   tile: CameraTile | null;
   megapixelsPerCamera: number | null;
+  /** Số pixel cần trên mỗi trục vùng nhìn một camera (RES-004, đã tính nghiêng) — bộ lọc camera (C3). */
+  pixelsPerCamera: { nx: number; ny: number } | null;
+  /** Loại đèn engine gợi ý (LGT-001..004) và luật đã gợi ý — bộ lọc đèn (C3). */
+  lighting: { ruleId: string; types: string[] } | null;
   /** Cho sơ đồ kiến trúc (architecture.ts). */
   fovWidthMm: number | null;
   fovHeightMm: number | null;
@@ -191,6 +195,7 @@ export function analyseRequirement(draft: Requirement): RequirementAnalysis {
   const sizePaths = ['object.sizeX', 'object.sizeY', 'system.cameraCount'];
   let tile: CameraTile | null = null;
   let megapixels: number | null = null;
+  let pixels: { nx: number; ny: number } | null = null;
   if (fovW !== null && fovH !== null && governing !== null) {
     if (cameraCount === null) {
       // Không tự đoán số camera (chốt 2026-09-16) — chỉ cho biết nếu dùng 1 camera.
@@ -224,6 +229,7 @@ export function analyseRequirement(draft: Requirement): RequirementAnalysis {
         const nx = Math.ceil(tile.widthMm / pitchX);
         const ny = Math.ceil(tile.heightMm / pitchY);
         megapixels = (nx * ny) / 1e6;
+        pixels = { nx, ny };
         const tiltPart = (onThisAxis: boolean) => (tiltCos < 1 && onThisAxis ? ` × cos ${fmt(tilt!, 1)}°` : '');
         push(
           'RES-004',
@@ -408,6 +414,7 @@ export function analyseRequirement(draft: Requirement): RequirementAnalysis {
   const defectType = req.detection[0]?.defectType.value ?? null;
   const surfaceKey = surface === 'glossy' || surface === 'metallic' ? 'reflective' : surface === 'transparent' ? 'transparent' : null;
   const lighting = suggestLighting({ defectType, surface: surfaceKey });
+  let lightingOut: RequirementAnalysis['lighting'] = null;
   if (lighting) {
     const ruleId =
       surfaceKey === 'reflective'
@@ -419,6 +426,7 @@ export function analyseRequirement(draft: Requirement): RequirementAnalysis {
             : lighting.reasonKey === 'scratch' || lighting.reasonKey === 'shallow_dent'
               ? 'LGT-002'
               : 'LGT-001';
+    lightingOut = { ruleId, types: lighting.alternativeType ? [lighting.lightType, lighting.alternativeType] : [lighting.lightType] };
     push(
       ruleId,
       {
@@ -462,6 +470,8 @@ export function analyseRequirement(draft: Requirement): RequirementAnalysis {
     uncertaintyBudgetMm: U,
     tile,
     megapixelsPerCamera: megapixels,
+    pixelsPerCamera: pixels,
+    lighting: lightingOut,
     fovWidthMm: fovW,
     fovHeightMm: fovH,
     cameraCount,

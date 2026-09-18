@@ -643,7 +643,9 @@
         "ipcRam": "RAM máy tính",
         "ipcLan": "Cổng LAN máy tính",
         "ipcGpu": "GPU máy tính",
-        "ipcUnknown": "Thông số máy tính chưa khai"
+        "ipcUnknown": "Thông số máy tính chưa khai",
+        "cameraFit": "Camera khớp yêu cầu",
+        "lightFit": "Đèn khớp yêu cầu"
       },
       "notes": {
         "sensorTooSmall": "Cảm biến thiếu pixel trên ít nhất một trục — đổi camera hoặc thu hẹp FOV.",
@@ -725,7 +727,23 @@
         "ipcRamShort": "Cần ít nhất {need} GB RAM, máy chỉ có {have} GB.",
         "ipcLanShort": "Camera cắm thẳng cần {need} cổng LAN ({n} camera + 1 cổng về PLC), máy chỉ có {have} — thêm card mạng.",
         "ipcGpuMissing": "Bài có khả năng dùng học sâu nhưng máy không có GPU rời.",
-        "ipcSpecsIncomplete": "Máy tính chưa khai đủ thông số — các mục này chưa kiểm được."
+        "ipcSpecsIncomplete": "Máy tính chưa khai đủ thông số — các mục này chưa kiểm được.",
+        "lineScanNotSupported": "Camera line scan — V1c chưa hỗ trợ, chỉ xét camera area scan.",
+        "cameraPixelsShort": "Thiếu pixel: cần {need} px cho mỗi camera, camera có {have} px (đã thử xoay 90°).",
+        "cameraNeedsColor": "Bài cần kiểm màu mà camera đơn sắc.",
+        "cameraRollingShutter": "Sản phẩm chạy liên tục mà camera rolling shutter — ảnh sẽ méo; cần global shutter.",
+        "cameraShutterUnknown": "Camera chưa khai kiểu màn trập — sản phẩm chạy liên tục cần global shutter.",
+        "cameraNoTrigger": "Cần trigger phần cứng (đồng bộ strobe / vật chạy) mà camera không có chân trigger.",
+        "cameraTriggerUnknown": "Camera chưa khai chân trigger — bài này cần trigger phần cứng.",
+        "cameraInterfaceSlow": "Camera sinh {rate} MB/s, quá 70% băng thông {name} ({capacity} MB/s).",
+        "cameraNeedsHousing": "Cấp IP của camera thấp hơn yêu cầu {need} — cần thêm vỏ bảo vệ vào danh mục vật tư.",
+        "cameraTempUnknown": "Camera chưa khai nhiệt độ hoạt động tối đa — môi trường có nhiệt độ cao.",
+        "cameraTempLow": "Camera chỉ chịu tới {temp} °C trong môi trường nhiệt độ cao — cần làm mát hoặc vỏ tản nhiệt.",
+        "lightWrongType": "Không đúng loại đèn engine gợi ý ({wanted}).",
+        "lightSizeUnknown": "Đèn chưa khai kích thước — cần tối thiểu {need} mm để phủ vùng nhìn.",
+        "lightTooSmall": "Đèn {have} mm nhỏ hơn mức cần {need} mm để phủ đều vùng nhìn.",
+        "lightNoStrobe": "Bài cần đèn chạy xung (phơi sáng rất ngắn) mà đèn này không chạy xung được.",
+        "lightStrobeUnknown": "Đèn chưa khai khả năng chạy xung — bài này cần strobe."
       },
       "lightingReason": {
         "scratch": "Xước và nứt nông chỉ nổi lên khi chiếu góc rất thấp, nền tối hẳn.",
@@ -1798,6 +1816,30 @@
         "pendingDetail": "Khối này cần thiết bị cụ thể (cấu hình máy tính, giao thức với PLC) — sẽ tính khi chọn thiết bị.",
         "noData": "Chưa đủ dữ liệu",
         "noRules": "Chưa có luật nào quyết định khối này."
+      },
+      "equipment": {
+        "title": "Thiết bị phù hợp",
+        "subtitle": "Lọc cứng theo luật: thiết bị vi phạm ràng buộc vật lý bị loại kèm lý do. Xếp hạng và ba mức giải pháp ở bước sau.",
+        "noCatalog": "Kho thiết bị đang trống, hoặc tài khoản chưa đủ quyền xem.",
+        "notReady": "Điền kích thước vật, lỗi nhỏ nhất hoặc dung sai đo, và số camera để bắt đầu lọc thiết bị.",
+        "cameras": "Camera",
+        "lights": "Đèn",
+        "pcs": "Máy tính",
+        "counts": "{accepted} đạt · {excluded} đã loại",
+        "noneAccepted": "Không có thiết bị nào trong kho đạt yêu cầu — xem lý do ở mục đã loại.",
+        "excludedTitle": "Đã loại ({count}) — lý do",
+        "unverified": "Chưa kiểm chứng",
+        "conditions": "Có điều kiện: {rules}",
+        "unchecked": "Chưa kiểm được: {rules}",
+        "lightsWanted": "Loại đèn gợi ý: {types}",
+        "lightsAny": "Chưa có gợi ý loại đèn (cần bề mặt / loại lỗi) — chỉ lọc theo kích thước.",
+        "pcsReference": "Tính theo camera đạt nhỏ nhất: {camera}. Sẽ tính lại khi chốt phương án.",
+        "pcsNoCamera": "Chưa có camera nào đạt nên chưa kiểm được máy tính.",
+        "lensesAccepted": "{count} ống kính phù hợp",
+        "bestLens": "khớp nhất: {lens}",
+        "lensMargin": "dư độ phân giải {margin}×",
+        "noLens": "Không ống kính nào trong kho ghép được với camera này.",
+        "lensesExcluded": "Ống kính đã loại ({count}) — lý do"
       }
     }
   },

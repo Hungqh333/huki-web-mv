@@ -41,6 +41,8 @@ import {
 } from '@/lib/requirement/questions';
 import type { Assumption, Confidence, Requirement } from '@/lib/requirement/types';
 import { AnalysisPanel } from './AnalysisPanel';
+import { EquipmentPanel } from './EquipmentPanel';
+import type { Component } from '@/lib/components/specs';
 
 /**
  * Bảng tóm tắt yêu cầu — spec V1.1 §10.2 "Tôi hiểu bài toán của bạn".
@@ -112,7 +114,17 @@ function focusField(path: string) {
   element.focus({ preventScroll: true });
 }
 
-export function RequirementSummary({ initialApp }: { initialApp: ApplicationType | null }) {
+/** Rỗng mặc định: khối Thiết bị phù hợp báo kho trống thay vì lỗi. */
+const NO_CATALOG: readonly Component[] = [];
+
+export function RequirementSummary({
+  initialApp,
+  catalog = NO_CATALOG,
+}: {
+  initialApp: ApplicationType | null;
+  /** Catalog linh kiện tải ở server (RLS Member+) — V1c C3. */
+  catalog?: readonly Component[];
+}) {
   const t = useTranslations('designer.requirement');
   const tApps = useTranslations('home.entry.apps');
 
@@ -433,6 +445,7 @@ export function RequirementSummary({ initialApp }: { initialApp: ApplicationType
 
         {/* V1b: phân tích kỹ thuật chạy trên chính bảng này (engine + đánh giá khả thi). */}
         {requirement ? <AnalysisPanel requirement={requirement} onFocusField={focusField} /> : null}
+        {requirement ? <EquipmentPanel requirement={requirement} catalog={catalog} /> : null}
 
         {requirement && missingOnly && shownDefs.length === 0 ? (
           <p className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">

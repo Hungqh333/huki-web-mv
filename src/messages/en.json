@@ -643,7 +643,9 @@
         "ipcRam": "PC RAM",
         "ipcLan": "PC LAN ports",
         "ipcGpu": "PC GPU",
-        "ipcUnknown": "Missing PC specs"
+        "ipcUnknown": "Missing PC specs",
+        "cameraFit": "Camera fit",
+        "lightFit": "Light fit"
       },
       "notes": {
         "sensorTooSmall": "The sensor lacks pixels on at least one axis — change camera or narrow the field of view.",
@@ -725,7 +727,23 @@
         "ipcRamShort": "At least {need} GB RAM needed, the PC has {have} GB.",
         "ipcLanShort": "Direct-connected cameras need {need} LAN ports ({n} cameras + 1 to the PLC), the PC has {have} — add a network card.",
         "ipcGpuMissing": "The task is a deep learning candidate but the PC has no discrete GPU.",
-        "ipcSpecsIncomplete": "PC specs are incomplete — these items could not be checked."
+        "ipcSpecsIncomplete": "PC specs are incomplete — these items could not be checked.",
+        "lineScanNotSupported": "Line scan camera — not supported in V1c; only area scan cameras are considered.",
+        "cameraPixelsShort": "Not enough pixels: {need} px needed per camera, the camera has {have} px (90° rotation tried).",
+        "cameraNeedsColor": "Colour inspection is required but the camera is monochrome.",
+        "cameraRollingShutter": "Parts move continuously but the camera has a rolling shutter — images will skew; a global shutter is needed.",
+        "cameraShutterUnknown": "Shutter type not specified — continuously moving parts need a global shutter.",
+        "cameraNoTrigger": "A hardware trigger is needed (strobe sync / moving parts) but the camera has no trigger input.",
+        "cameraTriggerUnknown": "Trigger input not specified — this task needs a hardware trigger.",
+        "cameraInterfaceSlow": "The camera produces {rate} MB/s, over 70% of {name} bandwidth ({capacity} MB/s).",
+        "cameraNeedsHousing": "The camera IP rating is below the required {need} — add a protective housing to the bill of materials.",
+        "cameraTempUnknown": "Maximum operating temperature not specified — the environment is hot.",
+        "cameraTempLow": "The camera is rated only to {temp} °C in a hot environment — cooling or a thermal housing is needed.",
+        "lightWrongType": "Not the light type the engine suggests ({wanted}).",
+        "lightSizeUnknown": "Light size not specified — at least {need} mm is needed to cover the field of view.",
+        "lightTooSmall": "The {have} mm light is smaller than the {need} mm needed to cover the field of view evenly.",
+        "lightNoStrobe": "The task needs a strobed light (very short exposure) but this light cannot be strobed.",
+        "lightStrobeUnknown": "Strobe capability not specified — this task needs strobe."
       },
       "lightingReason": {
         "scratch": "Scratches and shallow cracks only stand out under a very low angle against a dark background.",
@@ -1798,6 +1816,30 @@
         "pendingDetail": "This block needs specific equipment (PC configuration, PLC protocol) — it is computed when equipment is chosen.",
         "noData": "Not enough data",
         "noRules": "No rule decides this block yet."
+      },
+      "equipment": {
+        "title": "Matching equipment",
+        "subtitle": "Hard filter by rules: equipment that violates a physical constraint is excluded with the reason. Ranking and the three solution levels come next.",
+        "noCatalog": "The equipment catalog is empty, or this account cannot view it.",
+        "notReady": "Enter part size, smallest defect or measurement tolerance, and camera count to start filtering equipment.",
+        "cameras": "Cameras",
+        "lights": "Lights",
+        "pcs": "Computers",
+        "counts": "{accepted} pass · {excluded} excluded",
+        "noneAccepted": "No catalog item meets the requirement — see the reasons under excluded.",
+        "excludedTitle": "Excluded ({count}) — reasons",
+        "unverified": "Unverified",
+        "conditions": "Conditional: {rules}",
+        "unchecked": "Not checked: {rules}",
+        "lightsWanted": "Suggested light types: {types}",
+        "lightsAny": "No light type suggested yet (needs surface / defect type) — filtered by size only.",
+        "pcsReference": "Checked against the smallest passing camera: {camera}. Recalculated when a solution is chosen.",
+        "pcsNoCamera": "No camera passes yet, so computers cannot be checked.",
+        "lensesAccepted": "{count} matching lenses",
+        "bestLens": "best fit: {lens}",
+        "lensMargin": "resolution headroom {margin}×",
+        "noLens": "No catalog lens works with this camera.",
+        "lensesExcluded": "Excluded lenses ({count}) — reasons"
       }
     }
   },

@@ -365,4 +365,42 @@ export const GOLDEN_CASES: GoldenCase[] = [
     },
     note: 'Tay: RES-005 báo cần số camera (UNKNOWN). Chiều dài đo suy = 380, α giả định 23, ΔT giả định 10 → 87,4 µm = 4,4× U → FAIL. Không có phối cảnh / ghép ảnh vì không đoán số camera.',
   },
+  {
+    id: 'S-11',
+    name: 'Mẫu soạn C9 — nắp nhôm phay 120 × 80 mm: đo khoảng cách lỗ ±0,1 + xước 0,3 mm, 1 camera',
+    source: 'synthetic',
+    applicationType: 'AppearanceInspection',
+    input: {
+      'object.sizeX': 120,
+      'object.sizeY': 80,
+      'object.surface': 'metallic',
+      'object.material': 'aluminium',
+      'object.heightVariation': 0.05,
+      'detection.0.defectType': 'scratch',
+      'detection.0.minSize': 0.3,
+      'detection.0.contrast': 'medium',
+      'detection.0.variability': 'low',
+      'measurement.0.tolerance': 0.1,
+      'measurement.0.spanLength': 100,
+      'production.partsPerMinute': 40,
+      'production.motion': 'indexed',
+      'system.cameraCount': 1,
+      'system.workingDistance': 400,
+      'environment.ambientTempRange': 5,
+    },
+    expect: {
+      rulesFired: ['RES-001', 'RES-002', 'RES-003', 'RES-004', 'OPT-008', 'MEC-001', 'THR-001', 'THR-002', 'LGT-001', 'AI-001'],
+      failingRules: [],
+      status: 'FEASIBLE_WITH_VALIDATION',
+      overall: 60,
+      limitingFactors: ['Lighting'],
+      governingMmPerPx: 0.06,
+      megapixelsPerCamera: [2.668, 0.001],
+    },
+    note:
+      'Dự án MẪU SOẠN cho chạy thử C9 (2026-09-18) — Hưng giao tự tạo vì chưa có dự án thật thứ hai; KHÔNG phải dự án thật, không chứng minh công thức đúng thực tế. ' +
+      'Tay: lỗi 0,3/4 (tương phản TB) = 0,075; ±0,1 → T 0,2 → U 0,02 → 0,06 mm/px (đo chặt hơn 1,25×) → 120/0,06 = 2000 × 80/0,06 = 1334 px = 2,668 MP. ' +
+      'Phối cảnh 0,05/400 × 72,1 = 0,009 mm = 45% U → PASS. Nhiệt 23 × 0,1 × 5 = 11,5 µm = 57% U → WARN. Dữ liệu 2,668 × 1 × 0,667 = 1,8 MB/s → GigE. ' +
+      'Bề mặt kim loại lấn át vết xước → LGT-001 dome/backlight, cần chụp mẫu (UNKNOWN 60) → yếu tố giới hạn: Chiếu sáng.',
+  },
 ];

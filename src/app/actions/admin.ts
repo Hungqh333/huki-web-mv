@@ -5,6 +5,8 @@ import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { getSessionContext, isAdmin, type UserRole } from '@/lib/auth';
 import { sanitizeArticleHtml } from '@/lib/html';
+import { parseKnowledgeFields } from '@/lib/knowledge';
+import { FEASIBILITY_DIMENSIONS, RULES } from '@/lib/vision/rules';
 import { validateCondition } from '@/lib/selector/conditions';
 import { dbError } from '@/lib/db-error';
 import { createClient } from '@/lib/supabase/server';
@@ -83,12 +85,28 @@ export async function saveArticleAction(
   const categoryId = nullable(formData, 'category_id');
   const coverImage = nullable(formData, 'cover_image');
   const publish = formData.get('publish') === 'on';
+  const reviewed = formData.get('reviewed') === 'on';
 
   const fieldErrors: Record<string, string> = {};
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) fieldErrors.slug = t('invalidSlug');
   if (!titleVi) fieldErrors.title_vi = t('required');
   if (!titleEn) fieldErrors.title_en = t('required');
   if (!TIERS.includes(accessTier)) fieldErrors.access_tier = t('invalidTier');
+
+  // Ô tri thức (V1c C8): loại bài, nhóm khả thi, luật liên quan, nguồn, đã duyệt.
+  const knowledge = parseKnowledgeFields(
+    {
+      slug,
+      mediaType: str(formData, 'media_type'),
+      dimension: str(formData, 'dimension'),
+      relatedRules: str(formData, 'related_rules'),
+      sources: str(formData, 'source_references'),
+      reviewed,
+      publish,
+    },
+    { ruleIds: RULES.map((rule) => rule.id), dimensions: FEASIBILITY_DIMENSIONS }
+  );
+  for (const [field, code] of Object.entries(knowledge.errors)) fieldErrors[field] ??= t(`knowledge.${code}`);
 
   if (Object.keys(fieldErrors).length > 0) return { fieldErrors };
 
@@ -107,6 +125,10 @@ export async function saveArticleAction(
     category_id: categoryId,
     access_tier: accessTier,
     cover_image: coverImage,
+    ...knowledge.fields,
+    // Tick "Đã duyệt" = người đang lưu nhận duyệt, ghi tên + ngày hôm nay. Bỏ tick = xoá dấu duyệt.
+    reviewed_by: reviewed ? session.profile?.name || session.profile?.email || session.user.email || 'admin' : null,
+    reviewed_at: reviewed ? new Date().toISOString().slice(0, 10) : null,
   };
 
   if (id) {

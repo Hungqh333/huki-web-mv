@@ -714,6 +714,7 @@
         "diffractionLensTooSlow": "Khẩu mở lớn nhất của ống là F/{fMin}, đã vượt F#max F/{fMax} theo nhiễu xạ — ống không bao giờ nét tới cỡ pixel.",
         "diffractionUnknown": "Ống kính chưa khai dải khẩu. Với pixel này không nên khép quá F/{fMax}.",
         "dofSetAperture": "Đặt khẩu khoảng F/{f} là đủ độ sâu {dof} mm.",
+        "dofAnyAperture": "Độ sâu {dof} mm dễ đạt: mở khẩu tới đâu cũng đủ, miễn không khép quá F#max F/{fMax}.",
         "dofDiffractionTradeoff": "Cần khép tới F/{f} để đủ độ sâu {dof} mm, quá F#max F/{fMax}: ảnh sẽ mờ nhẹ do nhiễu xạ — cần chụp mẫu để xác nhận.",
         "dofConflict": "Xung đột không giải được bằng ống kính: cần F/{f} cho độ sâu {dof} mm, gấp {ratio}× F#max. Hướng xử lý: giảm dao động chiều cao bằng cơ khí, tăng khoảng cách làm việc kèm tiêu cự dài hơn, dùng telecentric, hoặc chụp nhiều mặt nét.",
         "dofConflictTilt": "Xung đột không giải được bằng ống kính thường: cần F/{f} cho độ sâu {dof} mm, gấp {ratio}× F#max, phần lớn do camera nghiêng. Cân nhắc ống Scheimpflug (nghiêng mặt cảm biến theo mặt vật) hoặc giảm góc nghiêng.",
@@ -872,7 +873,29 @@
       "publishLabel": "Đăng bài (bỏ chọn để lưu thành bản nháp)",
       "save": "Lưu bài viết",
       "saving": "Đang lưu...",
-      "cancel": "Huỷ"
+      "cancel": "Huỷ",
+      "knowledge": {
+        "legend": "Tri thức gắn luật",
+        "hint": "Bài \"Ghi chú luật\" phải có slug rule-<mã luật> (vd rule-mec-001), mã luật có thật, và phải tick \"Đã duyệt\" mới đăng được.",
+        "mediaType": "Loại bài",
+        "mediaTypes": {
+          "principle": "Nguyên lý",
+          "formula": "Công thức",
+          "ruleNote": "Ghi chú luật",
+          "pitfall": "Lỗi thường gặp",
+          "projectCase": "Case dự án",
+          "glossary": "Thuật ngữ",
+          "checklist": "Checklist nghiệm thu"
+        },
+        "dimension": "Nhóm khả thi",
+        "relatedRules": "Luật liên quan",
+        "relatedRulesHint": "Mã luật, cách nhau bằng dấu phẩy. Vd: MEC-001, MEC-003",
+        "sources": "Nguồn công thức",
+        "sourcesHint": "Mỗi dòng một nguồn.",
+        "reviewedLabel": "Tôi đã duyệt nội dung bài này — ghi tên tôi và ngày hôm nay khi lưu",
+        "reviewedBy": "Đang ghi: duyệt bởi {name} ngày {date}. Bỏ tick để xoá dấu duyệt.",
+        "notReviewed": "Chưa ai duyệt."
+      }
     },
     "rules": {
       "title": "Bảng luật gợi ý thiết bị",
@@ -941,7 +964,15 @@
       "invalidPriority": "Số ưu tiên phải là số nguyên không âm.",
       "invalidJson": "JSON sai cú pháp.",
       "cannotChangeOwnRole": "Không thể tự đổi quyền của chính mình. Nhờ admin khác thực hiện, hoặc dùng SQL Editor.",
-      "roleUpdated": "Đã cập nhật cấp quyền."
+      "roleUpdated": "Đã cập nhật cấp quyền.",
+      "knowledge": {
+        "invalidMediaType": "Loại bài không hợp lệ.",
+        "invalidDimension": "Nhóm khả thi không hợp lệ.",
+        "unknownRule": "Có mã luật không tồn tại trong engine.",
+        "ruleNoteNeedsRule": "Ghi chú luật phải có mã luật.",
+        "ruleNoteSlug": "Slug ghi chú luật phải là rule-<mã luật>, vd rule-mec-001.",
+        "ruleNoteNeedsReview": "Ghi chú luật phải tick \"Đã duyệt\" trước khi đăng."
+      }
     },
     "kpi": {
       "nav": {
@@ -2103,5 +2134,20 @@
       "noBomHint": "Chưa chọn phương án: file sẽ không có danh mục vật tư."
     },
     "footer": "{project} — Rev {rev} · Machine Vision Hub"
+  },
+  "knowledge": {
+    "doc": "Tài liệu",
+    "docTitle": "Bài giải thích luật {rule}",
+    "draft": "Bản nháp",
+    "editDraft": "Sửa nháp",
+    "missing": "Chưa có tài liệu",
+    "write": "Viết bài",
+    "article": {
+      "relatedRules": "Luật liên quan",
+      "relatedRulesNote": "Bài này giải thích luật mà engine thiết kế hệ thống đang dùng — mã luật hiện cạnh kết quả phân tích.",
+      "reviewed": "Duyệt nội dung",
+      "reviewedBy": "{name} · {date}",
+      "sources": "Nguồn"
+    }
   }
 }

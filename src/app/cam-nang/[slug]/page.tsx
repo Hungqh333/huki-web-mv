@@ -11,6 +11,7 @@ import { contactMailto } from '@/lib/contact';
 export default async function ArticlePage({ params }: PageProps<'/cam-nang/[slug]'>) {
   const { slug } = await params;
   const t = await getTranslations('handbook');
+  const tk = await getTranslations('knowledge.article');
   const locale = await getLocale();
   const format = await getFormatter();
 
@@ -24,7 +25,7 @@ export default async function ArticlePage({ params }: PageProps<'/cam-nang/[slug
   const { data: article } = await supabase
     .from('articles')
     .select(
-      'id, slug, title_vi, title_en, content_vi, content_en, category_id, access_tier, cover_image, published_at'
+      'id, slug, title_vi, title_en, content_vi, content_en, category_id, access_tier, cover_image, published_at, media_type, related_rules, source_references, reviewed_by, reviewed_at'
     )
     .eq('slug', slug)
     .maybeSingle<ArticleFull>();
@@ -59,6 +60,38 @@ export default async function ArticlePage({ params }: PageProps<'/cam-nang/[slug
         ) : (
           <p className="mt-8 text-slate-500 dark:text-slate-400">{t('noContentInLocale')}</p>
         )}
+
+        {/* Tri thức gắn luật (V1c C8, spec §12.4–12.5): luật liên quan, ai duyệt, nguồn. */}
+        {article.related_rules?.length || article.reviewed_by || article.source_references?.length ? (
+          <aside className="mt-10 space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm dark:border-slate-800 dark:bg-slate-900/60">
+            {article.related_rules?.length ? (
+              <p>
+                <span className="font-semibold">{tk('relatedRules')}: </span>
+                <span className="font-mono">{article.related_rules.join(', ')}</span>
+                <span className="block text-xs text-slate-500 dark:text-slate-400">{tk('relatedRulesNote')}</span>
+              </p>
+            ) : null}
+            {article.reviewed_by && article.reviewed_at ? (
+              <p>
+                <span className="font-semibold">{tk('reviewed')}: </span>
+                {tk('reviewedBy', {
+                  name: article.reviewed_by,
+                  date: format.dateTime(new Date(article.reviewed_at), { dateStyle: 'long' }),
+                })}
+              </p>
+            ) : null}
+            {article.source_references?.length ? (
+              <div>
+                <p className="font-semibold">{tk('sources')}</p>
+                <ul className="mt-1 list-disc space-y-0.5 pl-5 text-slate-600 dark:text-slate-400">
+                  {article.source_references.map((source) => (
+                    <li key={source}>{source}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+          </aside>
+        ) : null}
       </article>
     );
   }

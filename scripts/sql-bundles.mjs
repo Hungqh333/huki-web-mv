@@ -45,6 +45,13 @@ export const BUNDLES = {
       ['PHAN 1/1: MIGRATION — them cot BOM vao revision du an, ham luu / mo revision nhan BOM', 'supabase/migrations/20260918000001_revision_bom.sql'],
     ],
   },
+  'article-knowledge': {
+    out: 'CHAY-BUOC-NAY-GHICHULUAT.sql',
+    parts: [
+      ['PHAN 1/2: MIGRATION — them cot loai bai, nhom kha thi, luat lien quan, nguoi duyet, nguon cho bai cam nang', 'supabase/migrations/20260919000001_article_knowledge.sql'],
+      ['PHAN 2/2: SEED — nap 15 bai Ghi chu luat dang NHAP (chi Admin thay, duyet roi moi dang)', 'supabase/seed_rule_notes.sql'],
+    ],
+  },
   projects: {
     out: 'CHAY-BUOC-NAY-DUAN.sql',
     parts: [

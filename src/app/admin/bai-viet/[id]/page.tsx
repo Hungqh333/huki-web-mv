@@ -15,6 +15,12 @@ type Row = {
   access_tier: AccessTier;
   cover_image: string | null;
   published_at: string | null;
+  media_type: string | null;
+  dimension: string | null;
+  related_rules: string[] | null;
+  source_references: string[] | null;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
 };
 
 export default async function EditArticlePage({ params }: PageProps<'/admin/bai-viet/[id]'>) {
@@ -26,7 +32,7 @@ export default async function EditArticlePage({ params }: PageProps<'/admin/bai-
     supabase
       .from('articles')
       .select(
-        'id, slug, title_vi, title_en, content_vi, content_en, category_id, access_tier, cover_image, published_at'
+        'id, slug, title_vi, title_en, content_vi, content_en, category_id, access_tier, cover_image, published_at, media_type, dimension, related_rules, source_references, reviewed_by, reviewed_at'
       )
       .eq('id', id)
       .maybeSingle<Row>(),
@@ -52,6 +58,12 @@ export default async function EditArticlePage({ params }: PageProps<'/admin/bai-
             access_tier: article.access_tier,
             cover_image: article.cover_image,
             published: article.published_at !== null,
+            media_type: article.media_type ?? '',
+            dimension: article.dimension ?? '',
+            related_rules: article.related_rules ?? [],
+            source_references: article.source_references ?? [],
+            reviewed_by: article.reviewed_by,
+            reviewed_at: article.reviewed_at,
           }}
         />
       </div>

@@ -74,7 +74,7 @@ for (const file of migrations) {
 }
 
 console.log('\nNạp dữ liệu tham chiếu');
-for (const seed of ['seed.sql', 'seed_kpi.sql', 'seed_components.sql']) {
+for (const seed of ['seed.sql', 'seed_kpi.sql', 'seed_components.sql', 'seed_rule_notes.sql']) {
   ok = (await step(db, seed, read(seed))) && ok;
   ok = (await step(db, `${seed} (lần 2 — phải idempotent)`, read(seed))) && ok;
 }

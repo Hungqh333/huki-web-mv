@@ -27,6 +27,12 @@ export type ArticleFull = {
   access_tier: AccessTier;
   cover_image: string | null;
   published_at: string;
+  /** Ô tri thức — V1c C8. */
+  media_type?: string | null;
+  related_rules?: string[] | null;
+  source_references?: string[] | null;
+  reviewed_by?: string | null;
+  reviewed_at?: string | null;
 };
 
 export type Category = {

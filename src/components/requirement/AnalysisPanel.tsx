@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
+import { KnowledgeLink } from '@/components/knowledge/KnowledgeLink';
 import type { Requirement } from '@/lib/requirement/types';
 import { buildArchitecture } from '@/lib/vision/architecture';
 import { assessFeasibility, type DimensionStatus, type FeasibilityStatus } from '@/lib/vision/feasibility';
@@ -245,6 +246,7 @@ function ResultRow({
       ) : null}
       {note ? <p className="mt-1 text-xs leading-relaxed text-slate-600 dark:text-slate-400">{note}</p> : null}
       <div className="mt-1 flex flex-wrap items-center gap-3">
+        <KnowledgeLink ruleId={result.ruleId} />
         {result.inputsAssumed.length > 0 ? (
           <span className="text-xs text-amber-700 dark:text-amber-400">{t('assumedInputs', { count: result.inputsAssumed.length })}</span>
         ) : null}

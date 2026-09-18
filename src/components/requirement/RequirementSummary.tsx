@@ -42,6 +42,8 @@ import {
 import type { Assumption, Confidence, Requirement } from '@/lib/requirement/types';
 import { AnalysisPanel } from './AnalysisPanel';
 import { DesignPanels } from './DesignPanels';
+import { KnowledgeProvider } from '@/components/knowledge/KnowledgeLink';
+import type { KnowledgeIndex } from '@/lib/knowledge';
 import type { Component } from '@/lib/components/specs';
 import type { BomSelection } from '@/lib/vision/bomSelection';
 
@@ -122,12 +124,15 @@ export function RequirementSummary({
   initialApp,
   catalog = NO_CATALOG,
   explainAvailable = false,
+  knowledge = null,
 }: {
   initialApp: ApplicationType | null;
   /** Catalog linh kiện tải ở server (RLS Member+) — V1c C3. */
   catalog?: readonly Component[];
   /** Server có key AI → nút "Diễn giải bằng lời" ở khối Vì sao chọn? (C7). */
   explainAvailable?: boolean;
+  /** Bài ghi chú luật đã có (C8) — null thì không hiện liên kết tài liệu. */
+  knowledge?: KnowledgeIndex | null;
 }) {
   const t = useTranslations('designer.requirement');
   const tApps = useTranslations('home.entry.apps');
@@ -245,6 +250,7 @@ export function RequirementSummary({
   const canReread = Boolean(base.parse) && base.parse?.status !== 'unavailable' && base.parse?.status !== 'denied';
 
   return (
+    <KnowledgeProvider index={knowledge}>
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
       <div className="min-w-0 space-y-6">
         {reading ? (
@@ -493,6 +499,7 @@ export function RequirementSummary({
         </aside>
       ) : null}
     </div>
+    </KnowledgeProvider>
   );
 }
 

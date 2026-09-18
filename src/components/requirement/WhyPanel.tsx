@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 import { useTranslations } from 'next-intl';
 import type { ExplainResult } from '@/app/actions/explainSolution';
+import { KnowledgeLink } from '@/components/knowledge/KnowledgeLink';
 import type { CheckStatus } from '@/lib/vision/types';
 import type { WhyFacts } from '@/lib/vision/whyFacts';
 
@@ -64,6 +65,12 @@ export function WhyPanel({ facts, explainer, onClose }: { facts: WhyFacts; expla
                   <span className={row.status ? '' : 'font-medium'}>{row.label}</span>
                   {row.detail ? <span className="ml-1.5 font-mono text-[11px] text-slate-600 dark:text-slate-300">{row.detail}</span> : null}
                   {row.note ? <span className="block text-slate-600 dark:text-slate-400">{row.note}</span> : null}
+                  {/* Dòng kết quả luật (có trạng thái) — không phải dòng giả định gom nhiều mã. */}
+                  {row.ruleId && row.status ? (
+                    <span className="block">
+                      <KnowledgeLink ruleId={row.ruleId} />
+                    </span>
+                  ) : null}
                 </li>
               ))}
             </ul>

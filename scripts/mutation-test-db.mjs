@@ -154,6 +154,10 @@ const MUTATIONS = [
     name: 'Revision: start_next_revision chay quyen chu ham (bo qua RLS)',
     sql: `alter function public.start_next_revision(uuid) security definer;`,
   },
+  {
+    name: 'Ghi chu luat: bo rang buoc phai duyet truoc khi dang',
+    sql: `alter table public.articles drop constraint articles_rule_note_reviewed_check;`,
+  },
 ];
 
 let caught = 0;

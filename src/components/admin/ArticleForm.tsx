@@ -7,6 +7,8 @@ import { AdminField } from './AdminField';
 import { saveArticleAction, type AdminState } from '@/app/actions/admin';
 import { RichTextEditor } from './RichTextEditor';
 import type { AccessTier } from '@/lib/auth';
+import { MEDIA_TYPES } from '@/lib/knowledge';
+import { FEASIBILITY_DIMENSIONS } from '@/lib/vision/rules';
 
 const TIERS: AccessTier[] = ['public', 'registered', 'member', 'vip'];
 
@@ -21,6 +23,13 @@ export type ArticleDraft = {
   access_tier: AccessTier;
   cover_image: string | null;
   published: boolean;
+  /** Ô tri thức — V1c C8 (spec §12.4). '' = chưa phân loại. */
+  media_type: string;
+  dimension: string;
+  related_rules: string[];
+  source_references: string[];
+  reviewed_by: string | null;
+  reviewed_at: string | null;
 };
 
 const inputClass =
@@ -35,6 +44,8 @@ export function ArticleForm({
 }) {
   const t = useTranslations('admin.articles');
   const tTiers = useTranslations('handbook.tiers');
+  const tk = useTranslations('admin.articles.knowledge');
+  const tDim = useTranslations('designer.requirement.analysis.dimensions');
   const [state, formAction, pending] = useActionState<AdminState, FormData>(saveArticleAction, {});
 
   const err = (key: string) => state.fieldErrors?.[key];
@@ -87,6 +98,58 @@ export function ArticleForm({
           <input name="cover_image" defaultValue={draft.cover_image ?? ''} className={inputClass} />
         </AdminField>
       </div>
+
+      <fieldset className="rounded-lg border border-slate-200 p-4 dark:border-slate-800">
+        <legend className="px-1 text-sm font-semibold">{tk('legend')}</legend>
+        <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">{tk('hint')}</p>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <AdminField label={tk('mediaType')} error={err('media_type')}>
+            <select name="media_type" defaultValue={draft.media_type} className={inputClass}>
+              <option value="">—</option>
+              {MEDIA_TYPES.map((type) => (
+                <option key={type} value={type}>
+                  {tk(`mediaTypes.${type}`)}
+                </option>
+              ))}
+            </select>
+          </AdminField>
+
+          <AdminField label={tk('dimension')} error={err('dimension')}>
+            <select name="dimension" defaultValue={draft.dimension} className={inputClass}>
+              <option value="">—</option>
+              {FEASIBILITY_DIMENSIONS.map((dimension) => (
+                <option key={dimension} value={dimension}>
+                  {tDim(dimension)}
+                </option>
+              ))}
+            </select>
+          </AdminField>
+
+          <AdminField label={tk('relatedRules')} error={err('related_rules')} hint={tk('relatedRulesHint')}>
+            <input name="related_rules" defaultValue={draft.related_rules.join(', ')} className={inputClass} />
+          </AdminField>
+
+          <AdminField label={tk('sources')} hint={tk('sourcesHint')}>
+            <textarea name="source_references" defaultValue={draft.source_references.join('\n')} rows={3} className={inputClass} />
+          </AdminField>
+        </div>
+
+        <label className="mt-4 flex items-start gap-2 text-sm">
+          <input
+            type="checkbox"
+            name="reviewed"
+            defaultChecked={draft.reviewed_by !== null}
+            className="mt-0.5 size-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500 dark:border-slate-600"
+          />
+          <span>
+            {tk('reviewedLabel')}
+            <span className="block text-xs text-slate-500 dark:text-slate-400">
+              {draft.reviewed_by && draft.reviewed_at ? tk('reviewedBy', { name: draft.reviewed_by, date: draft.reviewed_at }) : tk('notReviewed')}
+            </span>
+            {err('reviewed') ? <span className="block text-xs text-red-600 dark:text-red-400">{err('reviewed')}</span> : null}
+          </span>
+        </label>
+      </fieldset>
 
       <RichTextEditor name="content_vi" label={t('fieldContentVi')} defaultValue={draft.content_vi} />
       <RichTextEditor name="content_en" label={t('fieldContentEn')} defaultValue={draft.content_en} />

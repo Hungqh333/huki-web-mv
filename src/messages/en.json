@@ -714,6 +714,7 @@
         "diffractionLensTooSlow": "The widest lens aperture is F/{fMin}, already beyond the diffraction limit F/{fMax} — the lens can never be sharp to the pixel.",
         "diffractionUnknown": "Lens aperture range not specified. With this pixel, do not stop down beyond F/{fMax}.",
         "dofSetAperture": "Setting about F/{f} gives the required {dof} mm depth.",
+        "dofAnyAperture": "The {dof} mm depth is easy to reach: any aperture works, as long as you do not stop down past F#max F/{fMax}.",
         "dofDiffractionTradeoff": "Stopping down to F/{f} is needed for {dof} mm depth, beyond F#max F/{fMax}: slight diffraction blur — confirm with sample images.",
         "dofConflict": "Conflict a lens cannot solve: F/{f} is needed for {dof} mm depth, {ratio}× F#max. Options: reduce height variation mechanically, increase working distance with a longer focal length, use telecentric optics, or capture multiple focus planes.",
         "dofConflictTilt": "Conflict a standard lens cannot solve: F/{f} is needed for {dof} mm depth, {ratio}× F#max, mostly because of the camera tilt. Consider a Scheimpflug lens (sensor tilted to the part plane) or a smaller tilt angle.",
@@ -872,7 +873,29 @@
       "publishLabel": "Publish (uncheck to save as a draft)",
       "save": "Save article",
       "saving": "Saving...",
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "knowledge": {
+        "legend": "Rule-linked knowledge",
+        "hint": "A \"Rule note\" needs slug rule-<rule id> (e.g. rule-mec-001), an existing rule ID, and the \"Reviewed\" tick before it can be published.",
+        "mediaType": "Article type",
+        "mediaTypes": {
+          "principle": "Principle",
+          "formula": "Formula",
+          "ruleNote": "Rule note",
+          "pitfall": "Pitfall",
+          "projectCase": "Project case",
+          "glossary": "Glossary",
+          "checklist": "Acceptance checklist"
+        },
+        "dimension": "Feasibility dimension",
+        "relatedRules": "Related rules",
+        "relatedRulesHint": "Rule IDs separated by commas. E.g. MEC-001, MEC-003",
+        "sources": "Formula sources",
+        "sourcesHint": "One source per line.",
+        "reviewedLabel": "I have reviewed this article — record my name and today’s date on save",
+        "reviewedBy": "Currently: reviewed by {name} on {date}. Untick to clear the review.",
+        "notReviewed": "Not reviewed yet."
+      }
     },
     "rules": {
       "title": "Equipment recommendation rules",
@@ -941,7 +964,15 @@
       "invalidPriority": "Priority must be a non-negative integer.",
       "invalidJson": "Malformed JSON.",
       "cannotChangeOwnRole": "You cannot change your own access level. Ask another admin, or use the SQL Editor.",
-      "roleUpdated": "Access level updated."
+      "roleUpdated": "Access level updated.",
+      "knowledge": {
+        "invalidMediaType": "Invalid article type.",
+        "invalidDimension": "Invalid feasibility dimension.",
+        "unknownRule": "A rule ID does not exist in the engine.",
+        "ruleNoteNeedsRule": "A rule note needs a rule ID.",
+        "ruleNoteSlug": "A rule note slug must be rule-<rule id>, e.g. rule-mec-001.",
+        "ruleNoteNeedsReview": "Tick \"Reviewed\" before publishing a rule note."
+      }
     },
     "kpi": {
       "nav": {
@@ -2103,5 +2134,20 @@
       "noBomHint": "No solution chosen: the file will have no bill of materials."
     },
     "footer": "{project} — Rev {rev} · Machine Vision Hub"
+  },
+  "knowledge": {
+    "doc": "Docs",
+    "docTitle": "Article explaining rule {rule}",
+    "draft": "Draft",
+    "editDraft": "Edit draft",
+    "missing": "No docs yet",
+    "write": "Write article",
+    "article": {
+      "relatedRules": "Related rules",
+      "relatedRulesNote": "This article explains a rule used by the system design engine — the rule ID appears next to analysis results.",
+      "reviewed": "Content review",
+      "reviewedBy": "{name} · {date}",
+      "sources": "Sources"
+    }
   }
 }

@@ -196,6 +196,15 @@ test('OPT-005: độ sâu ↔ nhiễu xạ — ≤ F#max đạt, ≤ 1,5× cản
   assert.equal(find(run({ analysis: { 'object.heightVariation': 12 }, lens: { fNumberMax: 5.6 } }), 'OPT-005').noteKey, 'dofBeyondLensAperture');
 });
 
+test('OPT-005: F cần nhỏ hơn khẩu mở nhất (hoặc F/1 khi ống chưa khai) → "khẩu nào cũng đủ", không in F/0.3', () => {
+  // Δh 0,3 → F ≈ 0,3: không ống nào có khẩu này. Trước C8 ghi "Đặt khẩu khoảng F/0.3".
+  const tiny = find(run({ analysis: { 'object.heightVariation': 0.3 }, lens: { fNumberMin: null } }), 'OPT-005');
+  assert.deepEqual([tiny.status, tiny.noteKey], ['pass', 'dofAnyAperture']);
+  assert.equal(find(run({ analysis: { 'object.heightVariation': 0.3 } }), 'OPT-005').noteKey, 'dofAnyAperture', 'F can < F/1,4 cua ong');
+  // F cần 1,1 < F nhỏ nhất 1,4 của ống → cũng là "khẩu nào cũng đủ"; Δh 6 → F ≈ 3,3 → đặt khẩu cụ thể.
+  assert.equal(find(run({ analysis: { 'object.heightVariation': 6 } }), 'OPT-005').noteKey, 'dofSetAperture');
+});
+
 test('OPT-009 + OPT-005: camera nghiêng 30° — độ sâu 60 × sin 30° = 30 mm dồn vào DOF, gợi ý Scheimpflug', () => {
   const analysis = analysisOf({ 'system.cameraTiltDeg': 30 });
   assert.ok(Math.abs(analysis.tiltDepthMm - 30) < 1e-9);

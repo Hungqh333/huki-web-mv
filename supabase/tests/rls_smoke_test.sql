@@ -200,6 +200,11 @@ begin
   end if;
   raise notice 'PASS: Member bị chặn sửa bài viết';
 
+  -- Ghi chú luật nháp (C8, seed_rule_notes.sql) chỉ Admin thấy — chưa duyệt thì không lộ ra.
+  perform pg_temp.assert_eq(
+    (select count(*) from public.articles where media_type = 'ruleNote' and published_at is null), 0,
+    'Member không thấy ghi chú luật đang nháp');
+
   begin
     insert into public.articles (slug, title_vi, title_en, access_tier, published_at)
     values ('rls-test-member-hack', 'x', 'x', 'public', now());
@@ -277,6 +282,22 @@ begin
     (select count(*) from public.selector_rules
      where task_type_id = 'bbbbbbbb-0000-4000-8000-000000000001' and recommended_camera = 'Area scan 12MP'), 1,
     'Admin sửa được selector_rules (chỉ luật của bài toán test)');
+
+  -- Ghi chú luật (V1c C8): nháp thì được, đăng khi chưa có người + ngày duyệt thì không.
+  insert into public.articles (slug, title_vi, title_en, access_tier, media_type, related_rules)
+  values ('rls-test-rule-note', 'x', 'x', 'member', 'ruleNote', '{MEC-001}');
+  begin
+    update public.articles set published_at = now() where slug = 'rls-test-rule-note';
+    raise exception 'FAIL: đăng được ghi chú luật chưa ai duyệt';
+  exception when check_violation then
+    raise notice 'PASS: ghi chú luật chưa duyệt không đăng được';
+  end;
+  update public.articles set published_at = now(), reviewed_by = 'Admin RLS', reviewed_at = current_date
+  where slug = 'rls-test-rule-note';
+  perform pg_temp.assert_eq(
+    (select count(*) from public.articles where slug = 'rls-test-rule-note' and published_at is not null), 1,
+    'Ghi chú luật đã duyệt thì đăng được');
+  delete from public.articles where slug = 'rls-test-rule-note';
 end $$;
 
 reset role;

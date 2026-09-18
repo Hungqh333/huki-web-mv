@@ -39,6 +39,8 @@ import { fmt, round, type Check } from './types';
 
 /** OPT-005: F cần tới mức này × F#max thì còn chấp nhận được (mờ nhẹ, phải chụp thử). */
 export const DOF_DIFFRACTION_TOLERANCE = 1.5;
+/** OPT-005: ống kính chưa khai khẩu mở nhất thì coi mở được tới F/1 (ống machine vision nhanh nhất thường F/0.95–1.4). */
+export const DOF_FASTEST_PRACTICAL_F = 1;
 /** OPT-002: dung sai so vòng ảnh với đường chéo — số danh nghĩa trên datasheet làm tròn. */
 export const IMAGE_CIRCLE_TOLERANCE = 0.02;
 /** THR-003: dư dưới tỉ lệ này của nhịp là mỏng. */
@@ -458,7 +460,11 @@ export function evaluateConfiguration(input: ConfigurationInput): RuleResult[] {
         check = { key: 'depthOfFieldConflict', status: 'fail', formula, noteKey: 'dofBeyondLensAperture', noteValues: values };
       } else if (ratio <= 1) {
         // Đạt nhưng F cần sát F#max (dư < 1,2 — MARGINAL theo feasibility.ts): nói rõ là sát, không nói "đủ".
-        check = { key: 'depthOfFieldConflict', status: 'pass', formula, noteKey: fMax / fNeed < 1.2 ? 'dofSetApertureTight' : 'dofSetAperture', noteValues: values };
+        // F cần nhỏ hơn khẩu mở nhất của ống (chưa khai thì coi F/1): nói "khẩu nào cũng đủ" chứ
+        // không in "F/0.3" — con số không tồn tại trên ống kính thật (phát hiện ở C7).
+        const anyAperture = fNeed < (lens.fNumberMin ?? DOF_FASTEST_PRACTICAL_F);
+        const noteKey = fMax / fNeed < 1.2 ? 'dofSetApertureTight' : anyAperture ? 'dofAnyAperture' : 'dofSetAperture';
+        check = { key: 'depthOfFieldConflict', status: 'pass', formula, noteKey, noteValues: values };
         margin = fMax / fNeed;
       } else {
         check = { key: 'depthOfFieldConflict', status: 'warn', formula, noteKey: 'dofDiffractionTradeoff', noteValues: values };

@@ -2,7 +2,8 @@ import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { ProjectSaveBar } from '@/components/requirement/ProjectSaveBar';
 import { RequirementSummary } from '@/components/requirement/RequirementSummary';
-import { canUseSelector, getSessionContext, hasAdvancedFeatures } from '@/lib/auth';
+import { canUseSelector, getSessionContext, hasAdvancedFeatures, isAdmin } from '@/lib/auth';
+import { loadKnowledgeIndex } from '@/lib/knowledgeLoad';
 import { explainerConfigured } from '@/lib/ai/explainer';
 import { isApplicationType } from '@/lib/requirement/draft';
 import type { Component } from '@/lib/components/specs';
@@ -44,6 +45,8 @@ export default async function RequirementPage({ searchParams }: PageProps<'/thie
     .order('kind')
     .order('sort_order');
   const appParam = Array.isArray(app) ? app[0] : app;
+  // Bài ghi chú luật đã có (C8) — liên kết "📄 Tài liệu" cạnh từng mã luật.
+  const knowledge = await loadKnowledgeIndex(supabase, isAdmin(session?.profile?.role ?? null));
 
   return (
     <section className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6">
@@ -55,6 +58,7 @@ export default async function RequirementPage({ searchParams }: PageProps<'/thie
         <ProjectSaveBar canExportPdf={hasAdvancedFeatures(session?.profile?.role ?? null)} />
         <RequirementSummary initialApp={isApplicationType(appParam) ? appParam : null} catalog={(catalog ?? []) as Component[]}
           explainAvailable={explainerConfigured()}
+          knowledge={knowledge}
         />
       </div>
     </section>

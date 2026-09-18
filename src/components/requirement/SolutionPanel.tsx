@@ -1,10 +1,13 @@
 'use client';
 
+import { useState } from 'react';
 import { useTranslations, useFormatter } from 'next-intl';
 import type { Candidate } from '@/lib/vision/equipmentFilter';
 import { noteMessageKey, type RuleResult } from '@/lib/vision/rules';
 import type { SolutionLevel, SolutionLevelKey, Solutions } from '@/lib/vision/solutionLevels';
+import type { WhyFacts } from '@/lib/vision/whyFacts';
 import { nameOf, summarise } from './EquipmentPanel';
+import { WhyPanel, type Explainer } from './WhyPanel';
 
 /**
  * Ba mức giải pháp — V1c mục C4 (spec V1.1 §8.3, UI_CONTENT màn 5).
@@ -23,8 +26,14 @@ export function SolutionPanel({
   ready,
   selectedLevel,
   onSelect,
+  why,
+  explainer,
 }: {
   solutions: Solutions;
+  /** Khối "Vì sao chọn?" từng mức (C7) — dựng ở DesignPanels. */
+  why: Partial<Record<SolutionLevelKey, WhyFacts>>;
+  /** null = server chưa có key AI: chỉ hiện dữ kiện, không có nút diễn giải. */
+  explainer: Explainer | null;
   /** Mức đang chọn làm BOM (C5). */
   selectedLevel: SolutionLevelKey | null;
   /** null = chỉ xem (revision đã khoá). */
@@ -36,6 +45,8 @@ export function SolutionPanel({
   const t = useTranslations('designer.requirement.solutions');
   const tv = useTranslations('selector.vision');
   const noteOf: NoteOf = (result) => (result.noteKey ? tv(noteMessageKey(result.noteKey), result.noteValues ?? {}) : tv(`checks.${result.key}`));
+  const [whyLevel, setWhyLevel] = useState<SolutionLevelKey | null>(null);
+  const whyFacts = whyLevel ? why[whyLevel] : undefined;
 
   return (
     <section aria-labelledby="solutions-title" className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
@@ -65,9 +76,13 @@ export function SolutionPanel({
                   selected={selectedLevel === level.key}
                   highlighted={selectedLevel ? selectedLevel === level.key : level.key === 'recommended'}
                   onSelect={onSelect}
+                  whyOpen={whyLevel === level.key}
+                  onWhy={why[level.key] ? () => setWhyLevel(whyLevel === level.key ? null : level.key) : null}
                 />
               ))}
             </div>
+
+            {whyFacts ? <WhyPanel facts={whyFacts} explainer={explainer} onClose={() => setWhyLevel(null)} /> : null}
 
             {solutions.unplacedPairs > 0 ? <p className="text-xs text-slate-500 dark:text-slate-400">{t('unplaced', { count: solutions.unplacedPairs })}</p> : null}
             <p className="text-xs text-slate-500 dark:text-slate-400">{t('marginNote')}</p>
@@ -84,8 +99,13 @@ function LevelCard({
   selected,
   highlighted,
   onSelect,
+  whyOpen,
+  onWhy,
 }: {
   level: SolutionLevel;
+  whyOpen: boolean;
+  /** null = mức này chưa có phương án để giải thích. */
+  onWhy: (() => void) | null;
   noteOf: NoteOf;
   selected: boolean;
   /** Viền nổi: mức đang chọn; chưa chọn gì thì mức Đề xuất. */
@@ -163,6 +183,16 @@ function LevelCard({
                   </tbody>
                 </table>
               </details>
+            ) : null}
+            {onWhy ? (
+              <button
+                type="button"
+                onClick={onWhy}
+                aria-expanded={whyOpen}
+                className="font-medium text-sky-700 hover:underline dark:text-sky-400"
+              >
+                {whyOpen ? t('why.hide') : t('why.button')}
+              </button>
             ) : null}
           </div>
 

@@ -1890,7 +1890,41 @@
           "resolution": "{value} mm/px"
         },
         "select": "Chọn phương án này",
-        "selected": "Đang dùng làm danh mục vật tư"
+        "selected": "Đang dùng làm danh mục vật tư",
+        "why": {
+          "button": "Vì sao chọn?",
+          "hide": "Ẩn giải thích",
+          "title": "Vì sao chọn phương án {level}?",
+          "source": "Mọi con số trong khối này do engine tính, kèm mã luật — không có AI.",
+          "sections": {
+            "requirement": "Yêu cầu tính được",
+            "camera": "Camera đã chọn",
+            "lens": "Ống kính",
+            "light": "Đèn",
+            "pc": "Máy tính",
+            "assumptions": "Giả định đã dùng",
+            "limits": "Yếu tố giới hạn & rủi ro",
+            "ranking": "Điểm xếp hạng trong mức"
+          },
+          "cameraHead": "{w} × {h} px → {mmPerPx} mm/px thực, dư {margin}× so với mục tiêu {target} mm/px",
+          "limiting": "Yếu tố giới hạn của hệ thống",
+          "scoreTotal": "Tổng điểm",
+          "scoreValue": "{score}/100",
+          "scorePart": "{value} × trọng số {weight}",
+          "scoreNoData": "chưa có dữ liệu (trọng số {weight})",
+          "explain": "Diễn giải bằng lời",
+          "explaining": "Đang diễn giải…",
+          "retry": "Thử lại",
+          "aiNote": "Do AI viết lại từ đúng các dữ kiện bên trên; server đã đối chiếu mọi con số và mã luật. Có chỗ nào khác, tin bảng dữ kiện.",
+          "errors": {
+            "failed": "Chưa diễn giải được lúc này — bảng dữ kiện bên trên vẫn đầy đủ. Mã: {detail}",
+            "stray": "AI đưa ra con số hoặc mã luật không có trong dữ kiện nên đoạn văn đã bị bỏ. Mã: {detail}",
+            "unavailable": "Máy chủ chưa cấu hình AI — bảng dữ kiện bên trên vẫn đầy đủ.",
+            "denied": "Phiên đăng nhập đã hết hoặc tài khoản chưa đủ quyền.",
+            "invalid": "Bảng yêu cầu không hợp lệ — tải lại trang rồi thử lại.",
+            "noSolution": "Máy chủ không dựng lại được phương án này (kho thiết bị vừa đổi?) — tải lại trang rồi thử lại."
+          }
+        }
       },
       "bom": {
         "title": "Danh mục vật tư — phương án {level}",

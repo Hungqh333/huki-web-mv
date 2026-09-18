@@ -3,6 +3,7 @@ import { getTranslations } from 'next-intl/server';
 import { ProjectSaveBar } from '@/components/requirement/ProjectSaveBar';
 import { RequirementSummary } from '@/components/requirement/RequirementSummary';
 import { canUseSelector, getSessionContext, hasAdvancedFeatures } from '@/lib/auth';
+import { explainerConfigured } from '@/lib/ai/explainer';
 import { isApplicationType } from '@/lib/requirement/draft';
 import type { Component } from '@/lib/components/specs';
 import { hasSupabaseEnv } from '@/lib/supabase/env';
@@ -18,7 +19,8 @@ import { createClient } from '@/lib/supabase/server';
  * KHÔNG đi qua URL — nằm trong sessionStorage (xem lib/requirement/draft.ts).
  */
 /**
- * Server action của trang này gồm cả lượt đọc mô tả bằng LLM (V1a hạng mục 3), có
+ * Server action của trang này gồm cả lượt đọc mô tả bằng LLM (V1a hạng mục 3) và
+ * lượt diễn giải "Vì sao chọn?" (V1c C7), có
  * thể mất vài chục giây. Gói Vercel đang dùng là Hobby: đặt 60 giây. SDK tự dừng ở
  * 45 giây và không thử lại (lib/ai/parser.ts) để luôn kết thúc trước giới hạn này.
  */
@@ -51,7 +53,9 @@ export default async function RequirementPage({ searchParams }: PageProps<'/thie
 
       <div className="mt-8 space-y-6">
         <ProjectSaveBar canExportPdf={hasAdvancedFeatures(session?.profile?.role ?? null)} />
-        <RequirementSummary initialApp={isApplicationType(appParam) ? appParam : null} catalog={(catalog ?? []) as Component[]} />
+        <RequirementSummary initialApp={isApplicationType(appParam) ? appParam : null} catalog={(catalog ?? []) as Component[]}
+          explainAvailable={explainerConfigured()}
+        />
       </div>
     </section>
   );

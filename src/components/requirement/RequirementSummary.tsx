@@ -121,10 +121,13 @@ const NO_CATALOG: readonly Component[] = [];
 export function RequirementSummary({
   initialApp,
   catalog = NO_CATALOG,
+  explainAvailable = false,
 }: {
   initialApp: ApplicationType | null;
   /** Catalog linh kiện tải ở server (RLS Member+) — V1c C3. */
   catalog?: readonly Component[];
+  /** Server có key AI → nút "Diễn giải bằng lời" ở khối Vì sao chọn? (C7). */
+  explainAvailable?: boolean;
 }) {
   const t = useTranslations('designer.requirement');
   const tApps = useTranslations('home.entry.apps');
@@ -460,6 +463,7 @@ export function RequirementSummary({
             selection={base.bom ?? null}
             onSelectionChange={onBomChange}
             readOnly={base.project?.locked === true}
+            explainAvailable={explainAvailable}
           />
         ) : null}
 

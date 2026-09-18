@@ -1890,7 +1890,41 @@
           "resolution": "{value} mm/px"
         },
         "select": "Choose this solution",
-        "selected": "Used for the bill of materials"
+        "selected": "Used for the bill of materials",
+        "why": {
+          "button": "Why this?",
+          "hide": "Hide explanation",
+          "title": "Why the {level} solution?",
+          "source": "Every number here is computed by the engine and tagged with its rule ID — no AI.",
+          "sections": {
+            "requirement": "Computed requirement",
+            "camera": "Chosen camera",
+            "lens": "Lens",
+            "light": "Light",
+            "pc": "Computer",
+            "assumptions": "Assumptions used",
+            "limits": "Limiting factors & risks",
+            "ranking": "Ranking score within the level"
+          },
+          "cameraHead": "{w} × {h} px → {mmPerPx} mm/px actual, {margin}× headroom over the {target} mm/px target",
+          "limiting": "System limiting factors",
+          "scoreTotal": "Total score",
+          "scoreValue": "{score}/100",
+          "scorePart": "{value} × weight {weight}",
+          "scoreNoData": "no data (weight {weight})",
+          "explain": "Explain in words",
+          "explaining": "Explaining…",
+          "retry": "Try again",
+          "aiNote": "Written by AI from exactly the facts above; the server checked every number and rule ID. If anything differs, trust the facts table.",
+          "errors": {
+            "failed": "Could not explain right now — the facts table above is complete. Code: {detail}",
+            "stray": "The AI produced a number or rule ID not in the facts, so the text was discarded. Code: {detail}",
+            "unavailable": "AI is not configured on the server — the facts table above is complete.",
+            "denied": "Your session has expired or your account lacks access.",
+            "invalid": "The requirement table is invalid — reload the page and try again.",
+            "noSolution": "The server could not rebuild this solution (equipment catalog just changed?) — reload the page and try again."
+          }
+        }
       },
       "bom": {
         "title": "Bill of materials — {level} solution",

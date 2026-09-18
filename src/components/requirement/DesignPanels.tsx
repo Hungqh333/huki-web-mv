@@ -1,7 +1,8 @@
 'use client';
 
 import { useMemo } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import { explainSolutionAction, type ExplainResult } from '@/app/actions/explainSolution';
 import { listAccessories } from '@/lib/components/match';
 import type { Component } from '@/lib/components/specs';
 import type { Requirement } from '@/lib/requirement/types';
@@ -11,9 +12,11 @@ import { filterEquipment } from '@/lib/vision/equipmentFilter';
 import { analyseRequirement } from '@/lib/vision/requirementAnalysis';
 import { buildSolutionLevels, type SolutionLevelKey } from '@/lib/vision/solutionLevels';
 import { fmt } from '@/lib/vision/types';
+import { buildWhyFacts, type WhyFacts } from '@/lib/vision/whyFacts';
 import { BomPanel } from './BomPanel';
 import { EquipmentPanel } from './EquipmentPanel';
 import { SolutionPanel } from './SolutionPanel';
+import type { Explainer } from './WhyPanel';
 
 /**
  * Phương án (C4) → BOM (C5) → Thiết bị phù hợp (C3), dưới Phân tích kỹ thuật.
@@ -28,8 +31,11 @@ export function DesignPanels({
   selection,
   onSelectionChange,
   readOnly,
+  explainAvailable = false,
 }: {
   requirement: Requirement;
+  /** Server có key AI → hiện nút "Diễn giải bằng lời" (C7). */
+  explainAvailable?: boolean;
   catalog: readonly Component[];
   selection: BomSelection | null;
   onSelectionChange: (next: BomSelection | undefined) => void;
@@ -40,6 +46,34 @@ export function DesignPanels({
   const filter = useMemo(() => filterEquipment(analysis, catalog), [analysis, catalog]);
   const solutions = useMemo(() => buildSolutionLevels(analysis, filter, catalog), [analysis, filter, catalog]);
   const bom = useMemo(() => (selection ? buildBom(analysis, solutions, catalog, selection) : null), [analysis, solutions, catalog, selection]);
+  // Khối "Vì sao chọn?" (C7): cùng hàm dựng với dữ kiện server gửi cho bộ diễn giải.
+  const locale = useLocale();
+  const translate = useTranslations();
+  const why = useMemo(() => {
+    const t = (key: string, values?: Record<string, string | number>) => translate(key as never, values as never);
+    const out: Partial<Record<SolutionLevelKey, WhyFacts>> = {};
+    for (const level of solutions.levels) {
+      const facts = buildWhyFacts({ analysis, level, locale, t });
+      if (facts) out[level.key] = facts;
+    }
+    return out;
+  }, [analysis, solutions, locale, translate]);
+  // Đoạn diễn giải giữ tạm theo bảng Yêu cầu (chốt Q7): bảng đổi thì bỏ. Chỉ giữ kết quả thành công.
+  const explainer = useMemo<Explainer | null>(() => {
+    if (!explainAvailable) return null;
+    const requirementJson = JSON.stringify(requirement);
+    const cache = new Map<SolutionLevelKey, ExplainResult>();
+    return {
+      cached: (level) => cache.get(level),
+      run: async (level) => {
+        const hit = cache.get(level);
+        if (hit) return hit;
+        const result = await explainSolutionAction(requirementJson, level).catch((): ExplainResult => ({ status: 'failed', detail: 'network' }));
+        if (result.status === 'ok') cache.set(level, result);
+        return result;
+      },
+    };
+  }, [explainAvailable, requirement]);
   const accessories = useMemo(() => listAccessories(catalog.filter((c) => c.is_active) as Component[]), [catalog]);
 
   const t = useTranslations('designer.requirement.solutions.line');
@@ -68,6 +102,8 @@ export function DesignPanels({
         ready={ready}
         selectedLevel={selection?.level ?? null}
         onSelect={readOnly ? null : select}
+        why={why}
+        explainer={explainer}
       />
       {selection && ready ? (
         <BomPanel

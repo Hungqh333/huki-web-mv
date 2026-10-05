@@ -14,6 +14,7 @@
     "eval:explainer": "tsx scripts/eval-explainer.ts",
     "build:rule-notes": "tsx scripts/build-rule-notes.ts",
     "dryrun:c9": "tsx scripts/c9-dry-run.mts",
+    "build:demo-sql": "tsx scripts/build-demo-sql.ts",
     "check:env": "node scripts/check-env.mjs",
     "test:all": "npm run check:env && npm run lint && npm run test:unit && npm run test:pdf && npm run test:db && npm run test:db:mutate",
     "probe:rls": "node scripts/probe-rls.mjs",

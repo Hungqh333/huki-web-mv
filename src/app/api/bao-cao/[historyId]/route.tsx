@@ -4,6 +4,7 @@ import { renderToBuffer } from '@react-pdf/renderer';
 import { getSessionContext, hasAdvancedFeatures } from '@/lib/auth';
 import { registerPdfFonts } from '@/lib/pdf/fonts';
 import { SelectorReport, type ReportData } from '@/lib/pdf/SelectorReport';
+import { renderFormula } from '@/lib/vision/formulaTerms';
 import { FIELD_CATALOG } from '@/lib/selector/fields';
 import type { SelectorInput, SelectorResult } from '@/lib/selector/types';
 import { createClient } from '@/lib/supabase/server';
@@ -98,6 +99,14 @@ export async function GET(
     metricLabels[metric.key] = tResult(`metrics.${metric.key}`);
   }
 
+  /* Công thức engine ghi thẻ ⟦…⟧ (C9) — dịch trước khi vào PDF, vì SelectorReport
+     chỉ nhận chữ đã dựng sẵn. Lịch sử lưu trước C9 không có thẻ nên không đổi gì. */
+  const tTerms = await getTranslations('selector.vision.formulaTerms');
+  const derived = (history.result_json?.derived ?? []).map((metric) => ({
+    ...metric,
+    formula: renderFormula(metric.formula, (key) => tTerms(key)),
+  }));
+
   const reportData: ReportData = {
     taskName:
       (locale === 'en' ? history.task_types?.name_en : history.task_types?.name_vi) ??
@@ -108,7 +117,7 @@ export async function GET(
       timeStyle: 'short',
     }),
     inputs,
-    result: history.result_json,
+    result: { ...history.result_json, derived },
     approachLabel: tApproach(history.result_json?.approach ?? 'rule_based'),
     metricLabels,
     locale,

@@ -37,6 +37,8 @@ export type ReportData = {
 const styles = StyleSheet.create({
   page: {
     fontFamily: PDF_FONT_FAMILY,
+    // Tắt chữ ghép fi/fl: để bật thì copy chữ từ PDF ra "dark feld", "fxed" (xem ConceptReport).
+    fontFeatureSettings: { liga: false },
     fontSize: 10,
     lineHeight: 1.5,
     paddingTop: 40,

@@ -306,7 +306,7 @@ export function opticsChecks(input: {
     checks.push({
       key: 'imageCircle',
       status: ok ? 'pass' : 'fail',
-      formula: `vòng ảnh ${fmt(lensDiag, 2)} mm ${ok ? '≥' : '<'} đường chéo cảm biến ${fmt(sensorDiag, 2)} mm`,
+      formula: `${term('imageCircle')} ${fmt(lensDiag, 2)} mm ${ok ? '≥' : '<'} ${term('sensorDiagonal')} ${fmt(sensorDiag, 2)} mm`,
       noteKey: ok ? undefined : 'imageCircleTooSmall',
     });
   }
@@ -350,7 +350,7 @@ export function opticsChecks(input: {
         status: enough === null ? 'info' : enough ? 'pass' : 'warn',
         formula:
           `2 × F/${fmt(input.fNumber, 1)} × ${fmt(cMm, 5)} mm × (1 + ${fmt(beta, 4)}) ÷ ${fmt(beta, 4)}² = ${fmt(dof, 2)} mm` +
-          (tolerance !== null ? ` ${enough ? '≥' : '<'} dung sai ${fmt(tolerance)} mm` : ''),
+          (tolerance !== null ? ` ${enough ? '≥' : '<'} ${term('tolerance')} ${fmt(tolerance)} mm` : ''),
         noteKey: enough === false ? 'dofTooShallow' : undefined,
         noteValues: { dof },
       });

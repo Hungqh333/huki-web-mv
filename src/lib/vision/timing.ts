@@ -1,5 +1,6 @@
 import { INTERFACE_BANDWIDTH, PIXEL_FORMAT_BYTES } from '@/lib/components/specs';
 import { fmt, round, type Check } from './types';
+import { term } from './formulaTerms';
 
 /**
  * Nhịp sản xuất, nhoè do chuyển động, và băng thông.
@@ -225,13 +226,13 @@ export function timingChecks(input: {
       checks.push({
         key: 'frameSize',
         status: 'info',
-        formula: `${input.widthPx} × ${input.heightPx} × ${transfer.bytesPerPixel} byte/px = ${fmt(megabytes, 2)} MB (${input.pixelFormat})`,
+        formula: `${input.widthPx} × ${input.heightPx} × ${transfer.bytesPerPixel} ${term('bytesPerPx')} = ${fmt(megabytes, 2)} MB (${input.pixelFormat})`,
       });
 
       checks.push({
         key: 'transferTime',
         status: 'info',
-        formula: `${fmt(megabytes, 2)} MB ÷ ${transfer.usableMbytesS} MB/s = ${fmt(transfer.transferMs, 2)} ms/ảnh`,
+        formula: `${fmt(megabytes, 2)} MB ÷ ${transfer.usableMbytesS} MB/s = ${fmt(transfer.transferMs, 2)} ${term('msPerImage')}`,
       });
 
       if (input.cameraCount > 1) {
@@ -265,7 +266,7 @@ export function timingChecks(input: {
       checks.push({
         key: 'cycleTime',
         status: 'info',
-        formula: `60000 ÷ ${fmt(input.throughputPpm)} sp/phút = ${fmt(budget.cycleMs, 1)} ms/sp`,
+        formula: `60000 ÷ ${fmt(input.throughputPpm)} ${term('partsPerMinute')} = ${fmt(budget.cycleMs, 1)} ${term('msPerPart')}`,
       });
 
       checks.push({
@@ -279,7 +280,7 @@ export function timingChecks(input: {
         status: budget.fits ? 'pass' : 'fail',
         formula:
           `${input.nView} × (${fmt(input.triggerMs, 2)} + ${fmt(exposureMs, 3)} + ${fmt(input.readoutMs, 2)} + ${fmt(transferMs, 2)}) ` +
-          `+ ${fmt(input.processMs, 2)}${settleMs > 0 ? ` + ${fmt(settleMs, 1)} (chờ hết rung)` : ''} + ${fmt(input.outputMs, 2)} = ${fmt(budget.consumedMs, 1)} ms ` +
+          `+ ${fmt(input.processMs, 2)}${settleMs > 0 ? ` + ${fmt(settleMs, 1)} (${term('settling')})` : ''} + ${fmt(input.outputMs, 2)} = ${fmt(budget.consumedMs, 1)} ms ` +
           `${budget.fits ? '≤' : '>'} ${fmt(budget.availableMs, 1)} ms`,
         noteKey: budget.fits ? undefined : 'overTimeBudget',
         noteValues: { consumed: budget.consumedMs, available: budget.availableMs },

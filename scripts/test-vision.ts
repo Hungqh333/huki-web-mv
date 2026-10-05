@@ -786,7 +786,7 @@ test('camera thật được kiểm theo ngân sách đo, trên trục THÔ hơn
   const good = resolutionChecks(input, { widthPx: 4096, heightPx: 3000 });
   const pass = good.find((c) => c.key === 'measurementResolution')!;
   assert.equal(pass.status, 'pass');
-  assert.ok(pass.formula.includes('biên 1.2×'), pass.formula);
+  assert.ok(vi(pass.formula).includes('biên 1.2×'), pass.formula);
   assert.ok(good.some((c) => c.key === 'detectionBudget'));
   assert.ok(good.some((c) => c.key === 'measurementBudget'));
   assert.equal(good.find((c) => c.key === 'governingResolution')!.noteKey, 'governedByMeasurement');

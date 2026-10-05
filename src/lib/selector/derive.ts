@@ -10,6 +10,7 @@ import {
   type MeasurementBudget,
 } from '@/lib/vision/resolution';
 import type { DerivedAssumption, DerivedMetric, EvalContext, SelectorInput } from './types';
+import { term } from '@/lib/vision/formulaTerms';
 
 /**
  * Tỉ lệ cao/rộng giả định khi thiếu một cạnh FOV: 4:3.
@@ -42,10 +43,10 @@ export const DEFAULT_SAFETY_FACTOR = 3;
  * Thứ tự trong mảng là thứ tự ưu tiên khi có nhiều trường cùng được điền.
  */
 const FEATURE_SOURCES: { key: string; pxPerFeature?: number; labelVi: string }[] = [
-  { key: 'tolerance_mm', labelVi: 'dung sai' },
-  { key: 'defect_min_size_mm', labelVi: 'lỗi nhỏ nhất' },
-  { key: 'module_size_mm', labelVi: 'ô module mã' },
-  { key: 'character_height_mm', pxPerFeature: 20, labelVi: 'chiều cao ký tự' },
+  { key: 'tolerance_mm', labelVi: term('tolerance') },
+  { key: 'defect_min_size_mm', labelVi: term('smallestDefect') },
+  { key: 'module_size_mm', labelVi: term('codeModule') },
+  { key: 'character_height_mm', pxPerFeature: 20, labelVi: term('charHeight') },
 ];
 
 /*
@@ -150,7 +151,7 @@ function resolutionTarget(
         feature,
         mmPerPx: gage.mmPerPx,
         pxPerFeature: round(feature / gage.mmPerPx),
-        label: 'dung sai đo',
+        label: term('measurementTolerance'),
         explain: `${gageExplain(gage)}]`,
       };
     } else {
@@ -172,16 +173,16 @@ function resolutionTarget(
   if (primary && primary.mmPerPx <= measurement.mmPerPx) {
     return {
       ...primary,
-      explain: `${primary.explain} [chặt hơn ngân sách đo ±${measurement.toleranceMm} mm = ${round4(measurement.mmPerPx)} mm/px]`,
+      explain: `${primary.explain} [${term('tighterThan')} ${term('measurementBudgetOf')} ±${measurement.toleranceMm} mm = ${round4(measurement.mmPerPx)} mm/px]`,
     };
   }
 
   return {
     mmPerPx: measurement.mmPerPx,
     pxPerFeature: round((primary?.feature ?? measurement.toleranceMm) / measurement.mmPerPx),
-    label: 'sai số đo',
+    label: term('measurementError'),
     explain: primary
-      ? `${gageExplain(measurement, 'đo ')}; chặt hơn ${primary.explain} = ${round4(primary.mmPerPx)} mm/px của ${primary.label}]`
+      ? `${gageExplain(measurement, `${term('measurementTolerance')} `)}; ${term('tighterThan')} ${primary.explain} = ${round4(primary.mmPerPx)} mm/px ${term('of')} ${primary.label}]`
       : `${gageExplain(measurement)}]`,
   };
 }
@@ -276,7 +277,7 @@ export function deriveMetrics(
     metrics.push({
       key: 'required_resolution_px',
       value: requiredPxCeil,
-      formula: `${longFov} mm ÷ ${target.explain} = ${requiredPxCeil} px trên trục dài (${target.label})`,
+      formula: `${longFov} mm ÷ ${target.explain} = ${requiredPxCeil} px ${term('onLongAxis')} (${target.label})`,
     });
 
     const pxPerMm = requiredPx / longFov;
@@ -330,7 +331,7 @@ export function deriveMetrics(
     metrics.push({
       key: 'fps_required',
       value: round(fps),
-      formula: `${throughput} sp/phút ÷ 60 = ${round(fps)} ảnh/giây`,
+      formula: `${throughput} ${term('partsPerMinute')} ÷ 60 = ${round(fps)} ${term('framesPerSecond')}`,
     });
 
     /* Ưu tiên định dạng người dùng đã khai ở form (trường `pixel_format` vốn
@@ -356,7 +357,7 @@ export function deriveMetrics(
       value: round(dataRate),
       // Hiện cả tên định dạng: 1 byte/px cho ảnh màu trông như lỗi nếu không
       // nói rõ đang tính theo Bayer.
-      formula: `${sensorMp} MP × ${bytesPerPixel} byte/px (${pixelFormat}) × ${round(fps)} fps ≈ ${round(dataRate)} MB/s`,
+      formula: `${sensorMp} MP × ${bytesPerPixel} ${term('bytesPerPx')} (${pixelFormat}) × ${round(fps)} fps ≈ ${round(dataRate)} MB/s`,
     });
   }
 

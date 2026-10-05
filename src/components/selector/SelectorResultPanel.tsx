@@ -1,6 +1,7 @@
 'use client';
 
 import { useLocale, useTranslations } from 'next-intl';
+import { renderFormula } from '@/lib/vision/formulaTerms';
 import { IconBadge, type BadgeTone, type IconName } from '@/components/ui/Icon';
 import type { Component } from '@/lib/components/specs';
 import type { SelectorInput, SelectorResult } from '@/lib/selector/types';
@@ -51,6 +52,8 @@ export function SelectorResultPanel({
 }) {
   const t = useTranslations('selector.result');
   const tApproach = useTranslations('selector.approach');
+  // Công thức engine ghi thẻ ⟦…⟧ (C9) — thay bằng từ theo ngôn ngữ đang xem.
+  const tTerms = useTranslations('selector.vision.formulaTerms');
   const locale = useLocale();
   const pickNote = (note: { vi: string; en: string }) => (locale === 'en' ? note.en : note.vi);
 
@@ -183,7 +186,7 @@ export function SelectorResultPanel({
                   {t(`metrics.${metric.key}`)}
                 </span>
                 <code className="mt-0.5 block overflow-x-auto rounded bg-slate-50 px-2 py-1 text-xs text-slate-700 dark:bg-slate-900 dark:text-slate-300">
-                  {metric.formula}
+                  {renderFormula(metric.formula, (key) => tTerms(key))}
                 </code>
               </li>
             ))}

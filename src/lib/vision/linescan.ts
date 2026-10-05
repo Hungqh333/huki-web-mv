@@ -1,6 +1,7 @@
 import { INTERFACE_BANDWIDTH } from '@/lib/components/specs';
 import { PIXEL_FORMAT_BYTES } from './timing';
 import { fmt, round, type Check } from './types';
+import { term } from './formulaTerms';
 
 /**
  * Bộ tính riêng cho camera quét dòng (line scan).
@@ -92,7 +93,7 @@ export function lineScanChecks(input: {
   checks.push({
     key: 'lineRateRequired',
     status: 'info',
-    formula: `${fmt(input.speedMmS)} mm/s ÷ ${fmt(input.mmPerPxCross, 5)} mm/px = ${fmt(need.lineRateHz, 0)} dòng/s`,
+    formula: `${fmt(input.speedMmS)} mm/s ÷ ${fmt(input.mmPerPxCross, 5)} mm/px = ${fmt(need.lineRateHz, 0)} ${term('linesPerSecond')}`,
     noteKey: 'lineRateSquarePixel',
   });
 
@@ -102,7 +103,7 @@ export function lineScanChecks(input: {
     checks.push({
       key: 'lineRateFits',
       status: fits ? 'pass' : 'fail',
-      formula: `${fmt(need.lineRateHz, 0)} dòng/s ${fits ? '≤' : '>'} ${fmt(maxHz, 0)} dòng/s của camera`,
+      formula: `${fmt(need.lineRateHz, 0)} ${term('linesPerSecond')} ${fits ? '≤' : '>'} ${fmt(maxHz, 0)} ${term('linesPerSecond')} ${term('ofCamera')}`,
       noteKey: fits ? undefined : 'lineRateTooHigh',
     });
   }
@@ -110,7 +111,7 @@ export function lineScanChecks(input: {
   checks.push({
     key: 'lineExposure',
     status: need.maxExposureMs < 0.1 ? 'warn' : 'pass',
-    formula: `1000 ÷ ${fmt(need.lineRateHz, 0)} = ${fmt(need.maxExposureMs, 4)} ms mỗi dòng`,
+    formula: `1000 ÷ ${fmt(need.lineRateHz, 0)} = ${fmt(need.maxExposureMs, 4)} ms ${term('perLine')}`,
     noteKey: 'lineNeedsBrightLight',
   });
 
@@ -120,7 +121,7 @@ export function lineScanChecks(input: {
     key: 'lineDataRate',
     status: capacity === undefined ? 'info' : carries ? 'pass' : 'fail',
     formula:
-      `${input.lineWidthPx} px × ${fmt(need.lineRateHz, 0)} dòng/s × ${bytes} byte = ` +
+      `${input.lineWidthPx} px × ${fmt(need.lineRateHz, 0)} ${term('linesPerSecond')} × ${bytes} byte = ` +
       `${fmt(need.dataRateMbytesS, 1)} MB/s` +
       (capacity !== undefined ? ` ${carries ? '≤' : '>'} ${capacity} MB/s` : ''),
     noteKey: capacity !== undefined && !carries ? 'lineBandwidthTooHigh' : undefined,
@@ -131,7 +132,7 @@ export function lineScanChecks(input: {
     checks.push({
       key: 'encoder',
       status: fine ? 'pass' : 'warn',
-      formula: `${fmt(input.encoderResolutionUm)} µm/xung ${fine ? '≤' : '>'} ${fmt(input.mmPerPxCross * 1000, 1)} µm/px`,
+      formula: `${fmt(input.encoderResolutionUm)} ${term('umPerPulse')} ${fine ? '≤' : '>'} ${fmt(input.mmPerPxCross * 1000, 1)} µm/px`,
       noteKey: fine ? undefined : 'encoderTooCoarse',
     });
   } else {

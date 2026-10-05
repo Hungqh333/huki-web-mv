@@ -75,6 +75,8 @@ const RESULT: SelectorResult = {
   derived: [
     { key: 'fov_long_mm', value: 100, formula: 'max(100 mm, 75 mm) = 100 mm' },
     { key: 'required_sensor_mp', value: 1.8, formula: '1500 px × 1200 px ≈ 1.8 MP' },
+    // Thẻ ⟦…⟧ đúng như engine sinh ra (C9): trang này là chỗ xem bộ chọn cũ đã dịch thẻ chưa.
+    { key: 'fps_required', value: 1, formula: '60 ⟦partsPerMinute⟧ ÷ 60 = 1 ⟦framesPerSecond⟧' },
   ],
   matchedRuleCodes: ['APPEAR-BASE'],
   noRuleMatched: false,

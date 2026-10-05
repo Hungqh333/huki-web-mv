@@ -1,4 +1,5 @@
 import { fmt, round, type CameraLike, type Check } from './types';
+import { term } from './formulaTerms';
 
 /**
  * Độ phân giải: cần bao nhiêu pixel, và camera THẬT có đạt không.
@@ -212,7 +213,7 @@ function measurementCheck(actualMmPerPx: number, budgetMmPerPx: number, axisNote
     status: ok ? 'pass' : 'fail',
     formula:
       `${fmt(actualMmPerPx, 5)} mm/px${axisNote} ${ok ? '≤' : '>'} ${fmt(budgetMmPerPx, 5)} mm/px ` +
-      `(biên ${fmt(budgetMmPerPx / actualMmPerPx, 2)}×)`,
+      `(${term('headroom')} ${fmt(budgetMmPerPx / actualMmPerPx, 2)}×)`,
     noteKey: ok ? undefined : 'measurementTooCoarse',
     noteValues: ok ? undefined : { actual: round(actualMmPerPx, 5), target: round(budgetMmPerPx, 5) },
   };
@@ -295,7 +296,7 @@ export function resolutionChecks(
     checks.push({
       key: 'sensorFits',
       status: fits ? 'pass' : 'fail',
-      formula: `${lineWidth} px một hàng ≥ ${need.nx} px cần theo bề ngang`,
+      formula: `${lineWidth} px ${term('perRow')} ≥ ${need.nx} px ${term('neededAcross')}`,
       noteKey: fits ? undefined : 'sensorTooSmall',
     });
 
@@ -306,19 +307,19 @@ export function resolutionChecks(
     checks.push({
       key: 'actualMmPerPx',
       status: 'info',
-      formula: `${fmt(input.fovWidthMm)} ÷ ${lineWidth} = ${fmt(mmPerPx, 5)} mm/px theo bề ngang`,
+      formula: `${fmt(input.fovWidthMm)} ÷ ${lineWidth} = ${fmt(mmPerPx, 5)} mm/px ${term('acrossWidth')}`,
     });
     checks.push({
       key: 'actualPxPerDefect',
       status: ok ? 'pass' : 'fail',
-      formula: `${fmt(input.defectMinSizeMm)} ÷ ${fmt(mmPerPx, 5)} = ${fmt(pxPerDefect, 2)} px (mục tiêu ${input.pxPerDefect} px)`,
+      formula: `${fmt(input.defectMinSizeMm)} ÷ ${fmt(mmPerPx, 5)} = ${fmt(pxPerDefect, 2)} px (${term('target')} ${input.pxPerDefect} px)`,
       noteKey: ok ? undefined : 'belowTarget',
       noteValues: { actual: round(pxPerDefect, 2), target: input.pxPerDefect },
     });
 
     // Quét dòng chỉ kiểm được bề ngang; chiều dọc do encoder quyết định.
     if (need.mmPerPxMeasurement !== null) {
-      checks.push(measurementCheck(mmPerPx, need.mmPerPxMeasurement, ' theo bề ngang'));
+      checks.push(measurementCheck(mmPerPx, need.mmPerPxMeasurement, ` ${term('acrossWidth')}`));
     }
   } else if (camera) {
     const fits = cameraCoversNeed(camera, need);
@@ -345,7 +346,7 @@ export function resolutionChecks(
         formula:
           `${fmt(input.defectMinSizeMm)} ÷ ${fmt(verdict.mmPerPxX, 5)} = ${fmt(verdict.pxPerDefectX, 2)} px · ` +
           `${fmt(input.defectMinSizeMm)} ÷ ${fmt(verdict.mmPerPxY, 5)} = ${fmt(verdict.pxPerDefectY, 2)} px ` +
-          `(trục xấu hơn ${fmt(verdict.worstPxPerDefect, 2)} px so với mục tiêu ${input.pxPerDefect} px)`,
+          `(${term('worseAxis')} ${fmt(verdict.worstPxPerDefect, 2)} px ${term('comparedToTarget')} ${input.pxPerDefect} px)`,
         noteKey: verdict.meetsTarget ? undefined : 'belowTarget',
         noteValues: { actual: verdict.worstPxPerDefect, target: input.pxPerDefect },
       });

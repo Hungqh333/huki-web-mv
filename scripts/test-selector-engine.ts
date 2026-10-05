@@ -18,6 +18,13 @@ import { PIXEL_FORMAT_BYTES } from '../src/lib/components/specs';
 import { requiredPixels } from '../src/lib/vision/resolution';
 import { getFieldDefs, visibleFieldDefs } from '../src/lib/selector/fields';
 import { FALLBACK_FOV_ASPECT } from '../src/lib/selector/derive';
+import { readFileSync } from 'node:fs';
+import { renderFormula } from '../src/lib/vision/formulaTerms';
+
+/** Công thức engine ghi thẻ ⟦…⟧ (C9) — dịch bằng bảng từ tiếng Việt trước khi so chữ. */
+const VI_TERMS = JSON.parse(readFileSync('src/messages/vi.json', 'utf8')).selector.vision.formulaTerms as Record<string, string>;
+const vi = (formula: string) => renderFormula(formula, (key) => VI_TERMS[key]);
+
 
 function rule(partial: Partial<SelectorRule> & { code: string }): SelectorRule {
   return {
@@ -437,7 +444,7 @@ test('ngoại quan có dung sai đo: derive ra đúng số pixel như bộ chọ
     'cung ~29,6 MP'
   );
   const formula = withMeasurement.metrics.find((m) => m.key === 'required_resolution_px')!.formula;
-  assert.ok(formula.includes('sai số đo'), formula);
+  assert.ok(vi(formula).includes('sai số đo'), formula);
 
   // Không có nhánh đo: 380 ÷ 0,1 = 3800 px, 10,64 MP.
   const detectionOnly = deriveMetrics(base, 3, 'appearance-inspection').context;

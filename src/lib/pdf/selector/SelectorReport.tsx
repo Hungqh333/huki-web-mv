@@ -1,5 +1,5 @@
 import { Document, Page, StyleSheet, Text, View } from '@react-pdf/renderer';
-import { PDF_FONT_FAMILY } from './fonts';
+import { PDF_FONT_FAMILY } from '../family';
 import type { SelectorResult } from '@/lib/selector/types';
 
 export type ReportLabels = {

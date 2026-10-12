@@ -206,6 +206,18 @@ test('GT-002 trên seed thật: 20 MP của dự án không có trong seed nhưn
   assert.ok(filter.cameras.accepted.every((c) => c.reasons.length === 0));
 });
 
+test('camera màu cho bài không cần màu: cảnh báo, không loại; bài cần màu thì không cảnh báo', () => {
+  const rgb = camera('rgb', { color: 'color' });
+  const warn = cameraRequirementChecks(analysisOf(), rgb).find((r) => r.noteKey === 'cameraColorNotNeeded');
+  assert.deepEqual([warn?.ruleId, warn?.status], ['RES-004', 'warn']);
+  const filter = filterEquipment(analysisOf(), [rgb]);
+  assert.equal(filter.cameras.accepted.length, 1, 'chi canh bao, khong loai');
+  assert.equal(filter.cameras.accepted[0].warnings.length, 1);
+  const colour = analysisOf({ 'object.colorInspection': true });
+  assert.ok(!cameraRequirementChecks(colour, rgb).some((r) => r.noteKey === 'cameraColorNotNeeded'));
+  assert.ok(!cameraRequirementChecks(analysisOf(), camera('mono')).some((r) => r.noteKey === 'cameraColorNotNeeded'));
+});
+
 test('mọi câu diễn giải của bộ lọc có đủ vi/en', () => {
   const moving = analysisOf({ 'production.motion': 'continuous', 'production.conveyorSpeed': 1000, 'object.colorInspection': true, 'environment.ipRequirement': 'ip67', 'environment.conditions': ['highTemp'], 'production.partsPerMinute': 600 });
   const results = [
@@ -213,13 +225,14 @@ test('mọi câu diễn giải của bộ lọc có đủ vi/en', () => {
     ...cameraRequirementChecks(analysisOf(), camera('small', { resolution_w_px: 640, resolution_h_px: 480 })),
     ...cameraRequirementChecks(moving, camera('bad', { shutter: 'rolling', trigger_io: 'no', ip_rating: 'IP30', temp_max_c: 40, resolution_w_px: 5472, resolution_h_px: 3648 })),
     ...cameraRequirementChecks(moving, camera('blank', { shutter: undefined, trigger_io: undefined })),
+    ...cameraRequirementChecks(analysisOf(), camera('rgb', { color: 'color' })),
     ...lightChecks(analysisOf(), make('light', 'r', { light_type: 'ring' })),
     ...lightChecks(analysisOf(), make('light', 'd', { light_type: 'dome', size_mm: 10 })),
     ...lightChecks(moving, make('light', 'd2', { light_type: 'dome' })),
     ...lightChecks(moving, make('light', 'd3', { light_type: 'dome', size_mm: 500, strobe: 'no' })),
   ];
   const noteKeys = new Set(results.map((r) => r.noteKey).filter(Boolean));
-  for (const key of ['lineScanNotSupported', 'cameraPixelsShort', 'cameraNeedsColor', 'cameraRollingShutter', 'cameraNoTrigger', 'cameraInterfaceSlow', 'cameraNeedsHousing', 'cameraTempLow', 'cameraShutterUnknown', 'cameraTriggerUnknown', 'cameraTempUnknown', 'lightWrongType', 'lightTooSmall', 'lightSizeUnknown', 'lightStrobeUnknown', 'lightNoStrobe']) {
+  for (const key of ['lineScanNotSupported', 'cameraPixelsShort', 'cameraNeedsColor', 'cameraColorNotNeeded', 'cameraRollingShutter', 'cameraNoTrigger', 'cameraInterfaceSlow', 'cameraNeedsHousing', 'cameraTempLow', 'cameraShutterUnknown', 'cameraTriggerUnknown', 'cameraTempUnknown', 'lightWrongType', 'lightTooSmall', 'lightSizeUnknown', 'lightStrobeUnknown', 'lightNoStrobe']) {
     assert.ok(noteKeys.has(key), `kich ban chua phu ${key}`);
   }
   for (const locale of ['vi', 'en']) {

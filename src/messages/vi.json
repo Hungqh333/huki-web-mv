@@ -734,6 +734,7 @@
         "lineScanNotSupported": "Camera line scan — V1c chưa hỗ trợ, chỉ xét camera area scan.",
         "cameraPixelsShort": "Thiếu pixel: cần {need} px cho mỗi camera, camera có {have} px (đã thử xoay 90°).",
         "cameraNeedsColor": "Bài cần kiểm màu mà camera đơn sắc.",
+        "cameraColorNotNeeded": "Camera màu (Bayer) cho bài không cần phân biệt màu: chi tiết thực còn khoảng một nửa số pixel ghi trên datasheet. Ưu tiên bản đơn sắc cùng dòng; nếu dùng bản màu thì chụp mẫu xác nhận lỗi nhỏ nhất / biên đo vẫn đủ rõ.",
         "cameraRollingShutter": "Sản phẩm chạy liên tục mà camera rolling shutter — ảnh sẽ méo; cần global shutter.",
         "cameraShutterUnknown": "Camera chưa khai kiểu màn trập — sản phẩm chạy liên tục cần global shutter.",
         "cameraNoTrigger": "Cần trigger phần cứng (đồng bộ strobe / vật chạy) mà camera không có chân trigger.",

@@ -137,6 +137,15 @@ export function cameraRequirementChecks(analysis: RequirementAnalysis, component
     results.push(make('LGT-006', { key: 'cameraFit', status: 'fail', formula: 'mono', noteKey: 'cameraNeedsColor' }, 'calculated', { 'camera.color': 'mono' }));
   }
 
+  /* RES-004: camera MÀU cho bài không cần phân biệt màu. Cảm biến Bayer nội suy màu
+     từ lưới 2×2, nên chi tiết thực mỗi kênh còn khoảng nửa số pixel ghi trên datasheet —
+     số pixel "đủ" ở trên có thể không đủ thật. Cảnh báo (không loại): vẫn dùng được nếu
+     chụp mẫu xác nhận, hoặc đổi sang bản đơn sắc cùng dòng. Chạy thử C9 (S-11) chọn
+     camera màu 20 MP cho bài đo mà không có cảnh báo nào — luật này lấp chỗ đó. */
+  if (analysis.fieldInputs['object.colorInspection']?.value !== true && specString(spec, 'color') === 'color') {
+    results.push(make('RES-004', { key: 'cameraFit', status: 'warn', formula: 'color (Bayer)', noteKey: 'cameraColorNotNeeded' }, 'rule-of-thumb', { 'camera.color': 'color' }));
+  }
+
   // THR-005: sản phẩm chạy liên tục → global shutter.
   const moving = analysis.fieldInputs['production.motion']?.value === 'continuous';
   const shutter = specString(spec, 'shutter');

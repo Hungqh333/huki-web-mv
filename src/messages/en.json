@@ -734,6 +734,7 @@
         "lineScanNotSupported": "Line scan camera — not supported in V1c; only area scan cameras are considered.",
         "cameraPixelsShort": "Not enough pixels: {need} px needed per camera, the camera has {have} px (90° rotation tried).",
         "cameraNeedsColor": "Colour inspection is required but the camera is monochrome.",
+        "cameraColorNotNeeded": "Colour (Bayer) camera for a task that needs no colour: real detail is about half the datasheet pixel count. Prefer the mono version of the same model; if using the colour one, confirm with samples that the smallest defect / measured edge is still sharp enough.",
         "cameraRollingShutter": "Parts move continuously but the camera has a rolling shutter — images will skew; a global shutter is needed.",
         "cameraShutterUnknown": "Shutter type not specified — continuously moving parts need a global shutter.",
         "cameraNoTrigger": "A hardware trigger is needed (strobe sync / moving parts) but the camera has no trigger input.",

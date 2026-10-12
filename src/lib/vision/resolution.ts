@@ -20,11 +20,9 @@ export const PX_PER_DEFECT_GUIDE: { min: number; max: number | null; goalKey: st
 ];
 
 /*
- * Cố định 3 = nhánh contrast CAO của RES-001. Contrast chưa rõ phải dùng 5, nên
- * số MP yêu cầu hiện có thể bị tính THIẾU — panel Assumptions đang ghi rõ điều
- * này (src/lib/requirement/assumptions.ts).
- * TODO(V1b): đổi 3 → N theo contrast (N_DET_BY_CONTRAST trong
- * src/lib/requirement/defaults.ts); cần test hồi quy toàn bộ bài ngoại quan.
+ * Cố định 3 = nhánh contrast CAO của RES-001 — CHỈ còn là mặc định ô "px/lỗi" của bộ
+ * chọn thiết bị CŨ (người dùng sửa được trên form). Engine mới (requirementAnalysis,
+ * V1b) đã lấy N theo độ tương phản (N_DET_BY_CONTRAST: 3 / 4 / 5) từ 2026-09-17.
  */
 export const DEFAULT_PX_PER_DEFECT = 3;
 

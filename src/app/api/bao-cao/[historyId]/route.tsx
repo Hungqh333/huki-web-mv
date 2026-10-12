@@ -3,7 +3,7 @@ import { getFormatter, getLocale, getTranslations } from 'next-intl/server';
 import { renderToBuffer } from '@react-pdf/renderer';
 import { getSessionContext, hasAdvancedFeatures } from '@/lib/auth';
 import { registerPdfFonts } from '@/lib/pdf/fonts';
-import { SelectorReport, type ReportData } from '@/lib/pdf/SelectorReport';
+import { SelectorReport, type ReportData } from '@/lib/pdf/selector/SelectorReport';
 import { renderFormula } from '@/lib/vision/formulaTerms';
 import { FIELD_CATALOG } from '@/lib/selector/fields';
 import type { SelectorInput, SelectorResult } from '@/lib/selector/types';

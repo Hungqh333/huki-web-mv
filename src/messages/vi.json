@@ -879,7 +879,8 @@
       "articles": "Bài viết",
       "rules": "Bảng luật gợi ý",
       "kpi": "Bộ tính chỉ tiêu",
-      "components": "Linh kiện"
+      "components": "Linh kiện",
+      "engine": "Ngưỡng engine"
     },
     "users": {
       "title": "Quản lý người dùng",
@@ -1297,6 +1298,67 @@
         "invalidKind": "Loại linh kiện không hợp lệ.",
         "invalidSource": "Nguồn thông số không hợp lệ.",
         "invalidNumber": "Giá trị phải là số."
+      }
+    },
+    "engine": {
+      "title": "Ngưỡng engine Vision Engineer",
+      "subtitle": "Các ngưỡng phán đoán của phòng kỹ thuật. Hằng số vật lý và quy ước đo (bước sóng, Gage R&R ÷ 10, subpixel 1/3, số pixel phủ lỗi 3/4/5) cố ý KHÔNG mở ở đây.",
+      "version": "Phiên bản bộ luật đang dùng: {version}",
+      "versionNote": "Sửa bất kỳ ngưỡng nào thì phiên bản bộ luật đổi: revision lưu trước đó, khi xuất Concept Report, sẽ ghi rõ \"phân tích tính lại với bộ luật mới\". Để trống một ô = dùng mặc định.",
+      "rejected": "Bảng đang có bộ giá trị vi phạm giới hạn — engine đang chạy bằng MẶC ĐỊNH. Sửa lại các ô báo lỗi rồi lưu.",
+      "changed": "đã sửa",
+      "range": "Mặc định {def}{unit} · cho phép {min}–{max}",
+      "updatedBy": "sửa bởi {name}",
+      "save": "Lưu ngưỡng",
+      "saving": "Đang lưu...",
+      "groups": {
+        "levels": {
+          "title": "Ba mức phương án",
+          "hint": "Cận dưới của hệ số dư độ phân giải (mm/px cần ÷ mm/px thực) cho từng mức. Phải tăng dần."
+        },
+        "ranking": {
+          "title": "Trọng số xếp hạng",
+          "hint": "Xếp hạng các cặp thiết bị trong cùng một mức (spec §8.2). Sáu trọng số cộng lại phải bằng 1."
+        },
+        "optics": {
+          "title": "Quang học",
+          "hint": "Trần telecentric theo cạnh vùng nhìn một camera (OPT-007) và độ khép khẩu còn chấp nhận được so với giới hạn nhiễu xạ (OPT-005)."
+        },
+        "throughput": {
+          "title": "Thời gian chu kỳ",
+          "hint": "THR-003: dư tối thiểu so với nhịp, và thời gian xử lý giả định khi chưa đo thuật toán thật."
+        },
+        "budget": {
+          "title": "Ngân sách sai số đo",
+          "hint": "Một nguồn sai số (phối cảnh, nhiệt, ghép ảnh) chiếm quá tỉ lệ này của ngân sách đo thì cảnh báo."
+        }
+      },
+      "params": {
+        "levelEconomyMin": "Mức Tiết kiệm — dư tối thiểu",
+        "levelRecommendedMin": "Mức Đề xuất — dư tối thiểu",
+        "levelHighMin": "Mức Hiệu năng cao — dư tối thiểu",
+        "weightResolutionMargin": "Dư độ phân giải",
+        "weightAvailability": "Có sẵn / thời gian giao",
+        "weightPrice": "Giá",
+        "weightPriorUse": "Đã dùng ở dự án",
+        "weightLocalSupport": "Hỗ trợ tại chỗ",
+        "weightRoadmap": "Dư địa nâng cấp",
+        "telecentricPracticalMaxMm": "Telecentric — cạnh vùng nhìn còn mua được giá hợp lý",
+        "telecentricFeasibleMaxMm": "Telecentric — cạnh vùng nhìn tối đa còn khả thi",
+        "dofDiffractionTolerance": "Độ sâu trường ảnh — F cần tối đa bằng mấy lần F#max",
+        "cycleMinMargin": "Dư tối thiểu so với nhịp (tỉ lệ)",
+        "processMs": "Thời gian xử lý giả định — xử lý truyền thống",
+        "processDeepLearningMs": "Thời gian xử lý giả định — deep learning",
+        "errorWarnShare": "Ngưỡng cảnh báo — tỉ lệ ngân sách đo của một nguồn sai số"
+      },
+      "errors": {
+        "fix": "Có ô chưa hợp lệ — xem dòng báo đỏ.",
+        "notNumber": "Không phải số.",
+        "outOfRange": "Ngoài giới hạn {min}–{max}.",
+        "levelOrder": "Phải lớn hơn mức liền dưới.",
+        "telecentricOrder": "Phải lớn hơn ngưỡng \"giá hợp lý\".",
+        "weightsSum": "Sáu trọng số đang cộng lại bằng {sum}, phải bằng 1.",
+        "saved": "Đã lưu ngưỡng. Trang Yêu cầu dùng ngay từ lần tải sau."
       }
     }
   },

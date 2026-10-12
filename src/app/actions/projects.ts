@@ -14,6 +14,8 @@ import {
 import type { Component } from '@/lib/components/specs';
 import { createClient } from '@/lib/supabase/server';
 import { RULESET_VERSION, bomForRequirement, type BomSnapshot } from '@/lib/vision/bom';
+import { loadEngineParams } from '@/lib/engineParamsLoad';
+import { rulesetVersionFor } from '@/lib/vision/engineParams';
 
 /**
  * Lưu bảng tóm tắt yêu cầu thành dự án (V1a hạng mục 7).
@@ -39,7 +41,7 @@ type Translate = Awaited<ReturnType<typeof getTranslations<'projects.errors'>>>;
 
 type Prepared =
   | { ok: false; error: string }
-  | { ok: true; t: Translate; supabase: Supabase; draft: RequirementDraft; payload: RevisionPayload; name: string; bom: BomSnapshot | null };
+  | { ok: true; t: Translate; supabase: Supabase; draft: RequirementDraft; payload: RevisionPayload; name: string; bom: BomSnapshot | null; ruleVersion: string };
 
 async function prepare(input: ProjectActionInput): Promise<Prepared> {
   const t = await getTranslations('projects.errors');
@@ -62,16 +64,18 @@ async function prepare(input: ProjectActionInput): Promise<Prepared> {
   /* BOM (V1c C5): dựng lại ở server từ kho thật theo LỰA CHỌN trong bản nháp —
      giá, thời gian giao, nhà cung cấp chụp lại tại lúc lưu. RLS chỉ trả kho
      cho Member+, đúng quyền của hành động này. */
+  // Ngưỡng engine đang dùng (admin) — cùng bộ với trang Yêu cầu; phiên bản bộ luật ghi vào revision.
+  const { params } = await loadEngineParams(supabase);
   let bom: BomSnapshot | null = null;
   if (draft.bom && draft.requirement) {
     const { data: catalog } = await supabase
       .from('components')
       .select('id, code, kind, brand, model, spec, price_vnd, lead_time_days, supplier, used_in_projects, datasheet_url, source, notes_vi, notes_en, is_active, sort_order')
       .eq('is_active', true);
-    bom = bomForRequirement(draft.requirement, (catalog ?? []) as Component[], draft.bom);
+    bom = bomForRequirement(draft.requirement, (catalog ?? []) as Component[], draft.bom, params);
   }
 
-  return { ok: true, t, supabase, draft, payload, name, bom };
+  return { ok: true, t, supabase, draft, payload, name, bom, ruleVersion: rulesetVersionFor(RULESET_VERSION, params) };
 }
 
 /** Mã lỗi Postgres → câu dễ hiểu. Chi tiết kỹ thuật chỉ ghi log phía server. */
@@ -96,7 +100,7 @@ async function saveOpenRevision(
     p_raw_text: payload.rawText,
     p_schema_version: payload.schemaVersion,
     p_bom: prepared.bom,
-    p_rule_version: RULESET_VERSION,
+    p_rule_version: prepared.ruleVersion,
   });
   return error;
 }
@@ -130,7 +134,7 @@ export async function saveProjectAction(input: ProjectActionInput): Promise<Proj
       p_raw_text: payload.rawText,
       p_schema_version: payload.schemaVersion,
       p_bom: prepared.bom,
-      p_rule_version: RULESET_VERSION,
+      p_rule_version: prepared.ruleVersion,
     })
     .single<{ new_project_id: string; new_revision_id: string; new_rev_label: string }>();
 

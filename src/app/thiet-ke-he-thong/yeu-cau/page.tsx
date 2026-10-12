@@ -9,6 +9,7 @@ import { isApplicationType } from '@/lib/requirement/draft';
 import type { Component } from '@/lib/components/specs';
 import { hasSupabaseEnv } from '@/lib/supabase/env';
 import { createClient } from '@/lib/supabase/server';
+import { loadEngineParams } from '@/lib/engineParamsLoad';
 
 /**
  * Bước 1 của Vision Engineer — bảng tóm tắt yêu cầu (spec V1.1 §10.2).
@@ -47,6 +48,8 @@ export default async function RequirementPage({ searchParams }: PageProps<'/thie
   const appParam = Array.isArray(app) ? app[0] : app;
   // Bài ghi chú luật đã có (C8) — liên kết "📄 Tài liệu" cạnh từng mã luật.
   const knowledge = await loadKnowledgeIndex(supabase, isAdmin(session?.profile?.role ?? null));
+  // Ngưỡng engine sửa qua admin — cùng bộ server dùng khi lưu dự án / xuất file.
+  const { params: engineParams } = await loadEngineParams(supabase);
 
   return (
     <section className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6">
@@ -59,6 +62,7 @@ export default async function RequirementPage({ searchParams }: PageProps<'/thie
         <RequirementSummary initialApp={isApplicationType(appParam) ? appParam : null} catalog={(catalog ?? []) as Component[]}
           explainAvailable={explainerConfigured()}
           knowledge={knowledge}
+          engineParams={engineParams}
         />
       </div>
     </section>

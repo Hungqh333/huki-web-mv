@@ -9,6 +9,7 @@ import { analyseRequirement, type RequirementAnalysis } from './requirementAnaly
 import type { Requirement } from '@/lib/requirement/types';
 import type { BomSelection } from './bomSelection';
 import { buildSolutionLevels, type SolutionLevelKey, type Solutions } from './solutionLevels';
+import { DEFAULT_ENGINE_PARAMS, rulesetVersionFor, type EngineParams } from './engineParams';
 
 export { emptySelection, isBomSelection, type BomSelection } from './bomSelection';
 
@@ -265,7 +266,7 @@ export function buildBom(
 
   return {
     version: 1,
-    rulesetVersion: RULESET_VERSION,
+    rulesetVersion: rulesetVersionFor(RULESET_VERSION, analysis.params),
     selection,
     level: level.key,
     margin: level.margin,
@@ -284,8 +285,13 @@ export function buildBom(
  * Cả chuỗi Yêu cầu → phân tích → lọc → 3 mức → BOM, cho phía server: lưu revision
  * dựng lại BOM từ kho thật, không tin BOM trình duyệt gửi lên (chốt Q4).
  */
-export function bomForRequirement(requirement: Requirement, catalog: readonly Component[], selection: BomSelection): BomSnapshot | null {
-  const analysis = analyseRequirement(requirement);
+export function bomForRequirement(
+  requirement: Requirement,
+  catalog: readonly Component[],
+  selection: BomSelection,
+  params: EngineParams = DEFAULT_ENGINE_PARAMS
+): BomSnapshot | null {
+  const analysis = analyseRequirement(requirement, params);
   const solutions = buildSolutionLevels(analysis, filterEquipment(analysis, catalog), catalog);
   return buildBom(analysis, solutions, catalog, selection);
 }

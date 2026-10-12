@@ -6,6 +6,7 @@ import { assessFeasibility } from '@/lib/vision/feasibility';
 import { renderFormula } from '@/lib/vision/formulaTerms';
 import { analyseRequirement } from '@/lib/vision/requirementAnalysis';
 import { FEASIBILITY_DIMENSIONS, noteMessageKey, type RuleResult } from '@/lib/vision/rules';
+import { DEFAULT_ENGINE_PARAMS, rulesetVersionFor, type EngineParams } from '@/lib/vision/engineParams';
 
 /**
  * Nội dung xuất của MỘT revision đã lưu — V1c mục C6 (spec V1.1 §11.1, §11.2).
@@ -100,10 +101,14 @@ export function buildConceptDocument(input: {
   t: Translate;
   /** Câu giải thích giả định có sẵn hai thứ tiếng trong engine. Mặc định 'vi'. */
   locale?: string;
+  /** Ngưỡng engine đang dùng (admin). Mặc định = giá trị gốc. */
+  params?: EngineParams;
 }): ConceptDocument {
   const { revision, t } = input;
   const requirement = revision.requirement;
-  const analysis = analyseRequirement(requirement);
+  const params = input.params ?? DEFAULT_ENGINE_PARAMS;
+  const analysis = analyseRequirement(requirement, params);
+  const rulesetNow = rulesetVersionFor(RULESET_VERSION, params);
   const feasibility = assessFeasibility(analysis.results);
   const architecture = buildArchitecture(analysis);
   const bom = revision.bom;
@@ -200,8 +205,8 @@ export function buildConceptDocument(input: {
     author: input.author,
     applicationLabel: t(`home.entry.apps.${requirement.applicationType}.title`),
     rulesetSaved: revision.rule_version,
-    rulesetNow: RULESET_VERSION,
-    rulesetChanged: revision.rule_version !== null && revision.rule_version !== RULESET_VERSION,
+    rulesetNow,
+    rulesetChanged: revision.rule_version !== null && revision.rule_version !== rulesetNow,
     requirement: requirementRows,
     assumptions: assumptionRows,
     analysis: FEASIBILITY_DIMENSIONS.map((dimension) => ({

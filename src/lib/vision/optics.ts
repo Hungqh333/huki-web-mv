@@ -117,6 +117,8 @@ export function perspectiveCheck(input: {
   tile: CameraTile | null;
   uncertaintyBudgetMm: number | null;
   perspectiveFree: boolean;
+  /** Ngưỡng cảnh báo sửa được qua admin (engineParams.errorWarnShare). */
+  warnShare?: number;
 }): Check | null {
   const { heightVariationMm, workingDistanceMm, tile, uncertaintyBudgetMm } = input;
   if (uncertaintyBudgetMm === null || !(uncertaintyBudgetMm > 0)) return null;
@@ -144,7 +146,7 @@ export function perspectiveCheck(input: {
     };
   }
 
-  const status = ratio > 1 ? 'fail' : ratio > ERROR_WARN_SHARE ? 'warn' : 'pass';
+  const status = ratio > 1 ? 'fail' : ratio > (input.warnShare ?? ERROR_WARN_SHARE) ? 'warn' : 'pass';
   return {
     key: 'perspectiveError',
     status,
@@ -187,15 +189,16 @@ export function telecentricFrontDiameterMm(fovMaxMm: number): number | null {
  * Phương án thay thế ①: lưới camera để mỗi camera ≤ 100 mm, tính cả chồng lấn
  * 10% như tiling.ts. Trục vừa một camera thì không cần chồng lấn.
  */
-export function camerasForTelecentric(input: { fovWidthMm: number; fovHeightMm: number }): {
+export function camerasForTelecentric(input: { fovWidthMm: number; fovHeightMm: number; practicalMaxMm?: number }): {
   cols: number;
   rows: number;
   count: number;
 } | null {
   const { fovWidthMm, fovHeightMm } = input;
   if (!(fovWidthMm > 0) || !(fovHeightMm > 0)) return null;
-  const maxBase = TELECENTRIC_PRACTICAL_MAX_MM / (1 + TILE_OVERLAP_RATIO);
-  const axis = (totalMm: number) => (totalMm <= TELECENTRIC_PRACTICAL_MAX_MM ? 1 : Math.ceil(totalMm / maxBase));
+  const practical = input.practicalMaxMm ?? TELECENTRIC_PRACTICAL_MAX_MM;
+  const maxBase = practical / (1 + TILE_OVERLAP_RATIO);
+  const axis = (totalMm: number) => (totalMm <= practical ? 1 : Math.ceil(totalMm / maxBase));
   const cols = axis(fovWidthMm);
   const rows = axis(fovHeightMm);
   return { cols, rows, count: cols * rows };
@@ -223,16 +226,21 @@ export function telecentricCheck(input: {
   fovHeightMm: number;
   uncertaintyBudgetMm: number | null;
   workingDistanceMm: number | null;
+  /** Ngưỡng sửa được qua admin (engineParams) — mặc định là hằng số ở trên. */
+  practicalMaxMm?: number;
+  feasibleMaxMm?: number;
 }): Check | null {
   const { tile } = input;
+  const practical = input.practicalMaxMm ?? TELECENTRIC_PRACTICAL_MAX_MM;
+  const feasible = input.feasibleMaxMm ?? TELECENTRIC_FEASIBLE_MAX_MM;
   if (!input.needed || !tile) return null;
 
   const sizeMm = Math.max(tile.widthMm, tile.heightMm);
   const diameterMm = telecentricFrontDiameterMm(sizeMm);
   if (diameterMm === null) return null;
 
-  const status = sizeMm <= TELECENTRIC_PRACTICAL_MAX_MM ? 'pass' : sizeMm <= TELECENTRIC_FEASIBLE_MAX_MM ? 'warn' : 'fail';
-  const grid = camerasForTelecentric({ fovWidthMm: input.fovWidthMm, fovHeightMm: input.fovHeightMm });
+  const status = sizeMm <= practical ? 'pass' : sizeMm <= feasible ? 'warn' : 'fail';
+  const grid = camerasForTelecentric({ fovWidthMm: input.fovWidthMm, fovHeightMm: input.fovHeightMm, practicalMaxMm: practical });
   const maxHeight =
     input.uncertaintyBudgetMm !== null && input.workingDistanceMm !== null
       ? maxHeightVariationMm({
@@ -242,7 +250,7 @@ export function telecentricCheck(input: {
         })
       : null;
 
-  const limit = status === 'fail' ? `> ${TELECENTRIC_FEASIBLE_MAX_MM}` : status === 'warn' ? `> ${TELECENTRIC_PRACTICAL_MAX_MM}` : `≤ ${TELECENTRIC_PRACTICAL_MAX_MM}`;
+  const limit = status === 'fail' ? `> ${feasible}` : status === 'warn' ? `> ${practical}` : `≤ ${practical}`;
   return {
     key: 'telecentricFeasibility',
     status,

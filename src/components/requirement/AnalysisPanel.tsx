@@ -11,6 +11,7 @@ import { renderFormula } from '@/lib/vision/formulaTerms';
 import { FEASIBILITY_DIMENSIONS, type RuleResult } from '@/lib/vision/rules';
 import type { CheckStatus } from '@/lib/vision/types';
 import { ArchitectureDiagram } from './ArchitectureDiagram';
+import { DEFAULT_ENGINE_PARAMS, type EngineParams } from '@/lib/vision/engineParams';
 
 /**
  * Phân tích kỹ thuật dưới bảng Yêu cầu — V1b B8 (spec V1.1 §7, §10.3, §10.4).
@@ -54,14 +55,17 @@ const DIMENSION_TEXT: Record<DimensionStatus, string> = {
 export function AnalysisPanel({
   requirement,
   onFocusField,
+  engineParams = DEFAULT_ENGINE_PARAMS,
 }: {
   requirement: Requirement;
   onFocusField: (path: string) => void;
+  /** Ngưỡng engine đang dùng (admin) — nạp ở server, trang /dev dùng mặc định. */
+  engineParams?: EngineParams;
 }) {
   const t = useTranslations('designer.requirement.analysis');
   const tv = useTranslations('selector.vision');
 
-  const analysis = useMemo(() => analyseRequirement(requirement), [requirement]);
+  const analysis = useMemo(() => analyseRequirement(requirement, engineParams), [requirement, engineParams]);
   const feasibility = useMemo(() => assessFeasibility(analysis.results), [analysis]);
   const architecture = useMemo(() => buildArchitecture(analysis), [analysis]);
 

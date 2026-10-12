@@ -54,6 +54,8 @@ export function thermalCheck(input: {
   lengthMm: number | null;
   deltaTK: number | null;
   uncertaintyBudgetMm: number | null;
+  /** Ngưỡng cảnh báo sửa được qua admin (engineParams.errorWarnShare). */
+  warnShare?: number;
 }): Check | null {
   const { alphaUmPerMK, lengthMm, deltaTK, uncertaintyBudgetMm } = input;
   if (uncertaintyBudgetMm === null || !(uncertaintyBudgetMm > 0)) return null;
@@ -65,7 +67,7 @@ export function thermalCheck(input: {
   const errorMm = errorUm / 1000;
   const ratio = errorMm / uncertaintyBudgetMm;
   const allowed = maxDeltaTK({ uncertaintyBudgetMm, alphaUmPerMK, lengthMm });
-  const status = ratio > 1 ? 'fail' : ratio > ERROR_WARN_SHARE ? 'warn' : 'pass';
+  const status = ratio > 1 ? 'fail' : ratio > (input.warnShare ?? ERROR_WARN_SHARE) ? 'warn' : 'pass';
 
   const formula =
     `${fmt(alphaUmPerMK)} µm/(m·K) × ${fmt(lengthMm / 1000, 4)} m × ${fmt(deltaTK)} K = ${fmt(errorUm, 1)} µm ` +
@@ -137,6 +139,8 @@ export function stitchCheck(input: {
   mmPerPx: number | null;
   thermalErrorMm: number | null;
   uncertaintyBudgetMm: number | null;
+  /** Ngưỡng cảnh báo sửa được qua admin (engineParams.errorWarnShare). */
+  warnShare?: number;
 }): Check | null {
   const { tile, mmPerPx, uncertaintyBudgetMm } = input;
   if (uncertaintyBudgetMm === null || !(uncertaintyBudgetMm > 0)) return null;
@@ -149,7 +153,7 @@ export function stitchCheck(input: {
   const thermalMm = input.thermalErrorMm !== null && input.thermalErrorMm > 0 ? input.thermalErrorMm : 0;
   const totalMm = stitchMm + thermalMm;
   const ratio = totalMm / uncertaintyBudgetMm;
-  const status = ratio > 1 ? 'fail' : ratio > ERROR_WARN_SHARE ? 'warn' : 'pass';
+  const status = ratio > 1 ? 'fail' : ratio > (input.warnShare ?? ERROR_WARN_SHARE) ? 'warn' : 'pass';
 
   const formula =
     `${seams} ${term('seams')} × ${fmt(K_STITCH, 2)} × ${fmt(mmPerPx, 5)} mm/px = ${fmt(stitchMm, 4)} mm` +

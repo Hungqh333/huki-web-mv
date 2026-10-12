@@ -46,6 +46,7 @@ import { KnowledgeProvider } from '@/components/knowledge/KnowledgeLink';
 import type { KnowledgeIndex } from '@/lib/knowledge';
 import type { Component } from '@/lib/components/specs';
 import type { BomSelection } from '@/lib/vision/bomSelection';
+import { DEFAULT_ENGINE_PARAMS, type EngineParams } from '@/lib/vision/engineParams';
 
 /**
  * Bảng tóm tắt yêu cầu — spec V1.1 §10.2 "Tôi hiểu bài toán của bạn".
@@ -125,7 +126,10 @@ export function RequirementSummary({
   catalog = NO_CATALOG,
   explainAvailable = false,
   knowledge = null,
+  engineParams = DEFAULT_ENGINE_PARAMS,
 }: {
+  /** Ngưỡng engine đang dùng (admin, V1c 2026-10-12) — nạp ở server. */
+  engineParams?: EngineParams;
   initialApp: ApplicationType | null;
   /** Catalog linh kiện tải ở server (RLS Member+) — V1c C3. */
   catalog?: readonly Component[];
@@ -461,7 +465,7 @@ export function RequirementSummary({
           : null}
 
         {/* V1b: phân tích kỹ thuật chạy trên chính bảng này (engine + đánh giá khả thi). */}
-        {requirement ? <AnalysisPanel requirement={requirement} onFocusField={focusField} /> : null}
+        {requirement ? <AnalysisPanel requirement={requirement} onFocusField={focusField} engineParams={engineParams} /> : null}
         {requirement ? (
           <DesignPanels
             requirement={requirement}
@@ -470,6 +474,7 @@ export function RequirementSummary({
             onSelectionChange={onBomChange}
             readOnly={base.project?.locked === true}
             explainAvailable={explainAvailable}
+            engineParams={engineParams}
           />
         ) : null}
 

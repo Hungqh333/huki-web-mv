@@ -52,6 +52,12 @@ export const BUNDLES = {
       ['PHAN 2/2: SEED — nap 15 bai Ghi chu luat dang NHAP (chi Admin thay, duyet roi moi dang)', 'supabase/seed_rule_notes.sql'],
     ],
   },
+  'engine-parameters': {
+    out: 'CHAY-BUOC-NAY-NGUONG-ENGINE.sql',
+    parts: [
+      ['PHAN 1/1: MIGRATION — bang nguong engine sua qua admin (chi Admin ghi, nguoi dang nhap doc)', 'supabase/migrations/20261012000001_engine_parameters.sql'],
+    ],
+  },
   projects: {
     out: 'CHAY-BUOC-NAY-DUAN.sql',
     parts: [

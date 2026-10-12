@@ -6,6 +6,7 @@ import { getTranslations } from 'next-intl/server';
 import { getSessionContext, isAdmin, type UserRole } from '@/lib/auth';
 import { sanitizeArticleHtml } from '@/lib/html';
 import { parseKnowledgeFields } from '@/lib/knowledge';
+import { parseEngineParamsForm } from '@/lib/vision/engineParams';
 import { FEASIBILITY_DIMENSIONS, RULES } from '@/lib/vision/rules';
 import { validateCondition } from '@/lib/selector/conditions';
 import { dbError } from '@/lib/db-error';
@@ -256,4 +257,53 @@ export async function deleteRuleAction(formData: FormData) {
 
   revalidatePath('/admin/luat-goi-y');
   redirect('/admin/luat-goi-y?deleted=1');
+}
+
+// ------------------------------------------------------------ NGƯỠNG ENGINE --
+
+export type EngineParamsState = AdminState & { saved?: boolean };
+
+/**
+ * Lưu ngưỡng engine (V1c, chốt 2026-10-12 Q1). Kiểm giới hạn + ràng buộc chéo bằng
+ * parseEngineParamsForm (cùng hàm engine dùng để từ chối bộ hỏng); bảng chỉ giữ
+ * giá trị khác mặc định. RLS chỉ cho Admin ghi — requireAdmin là lớp thân thiện.
+ */
+export async function saveEngineParamsAction(_prev: EngineParamsState, formData: FormData): Promise<EngineParamsState> {
+  const t = await getTranslations('admin.errors');
+  const te = await getTranslations('admin.engine.errors');
+  const session = await requireAdmin();
+  if (!session) return { error: t('notAdmin') };
+
+  const parsed = parseEngineParamsForm((key) => {
+    const value = formData.get(key);
+    return typeof value === 'string' ? value : null;
+  });
+  const fieldErrors: Record<string, string> = {};
+  for (const key of parsed.invalidNumber) fieldErrors[key] = te('notNumber');
+  for (const error of parsed.errors ?? []) {
+    fieldErrors[error.key] ??=
+      error.code === 'outOfRange'
+        ? te('outOfRange', { min: error.min, max: error.max })
+        : error.code === 'weightsSum'
+          ? te('weightsSum', { sum: error.sum })
+          : te(error.code);
+  }
+  if (Object.keys(fieldErrors).length > 0) return { fieldErrors, error: te('fix') };
+
+  const supabase = await createClient();
+  const by = session.profile?.email ?? session.user.email ?? 'admin';
+  if (parsed.upserts.length > 0) {
+    const { error } = await supabase
+      .from('engine_parameters')
+      .upsert(parsed.upserts.map((row) => ({ ...row, updated_by: by })), { onConflict: 'key' });
+    if (error) return { error: await dbError(error, 'saveEngineParams:upsert') };
+  }
+  if (parsed.deletes.length > 0) {
+    const { error } = await supabase.from('engine_parameters').delete().in('key', parsed.deletes);
+    if (error) return { error: await dbError(error, 'saveEngineParams:delete') };
+  }
+
+  revalidatePath('/admin/nguong-engine');
+  revalidatePath('/thiet-ke-he-thong/yeu-cau');
+  return { notice: te('saved'), saved: true };
 }

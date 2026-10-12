@@ -11,6 +11,7 @@ import { filterEquipment } from '@/lib/vision/equipmentFilter';
 import { analyseRequirement } from '@/lib/vision/requirementAnalysis';
 import { SOLUTION_LEVELS, buildSolutionLevels, type SolutionLevelKey } from '@/lib/vision/solutionLevels';
 import { buildWhyFacts, whyFactsToText } from '@/lib/vision/whyFacts';
+import { loadEngineParams } from '@/lib/engineParamsLoad';
 
 export type ExplainResult =
   | { status: 'ok'; paragraphs: string[] }
@@ -42,7 +43,8 @@ export async function explainSolutionAction(requirementJson: string, level: Solu
     .order('sort_order');
   const components = (catalog ?? []) as Component[];
 
-  const analysis = analyseRequirement(draft.requirement);
+  const { params } = await loadEngineParams(supabase);
+  const analysis = analyseRequirement(draft.requirement, params);
   const solutions = buildSolutionLevels(analysis, filterEquipment(analysis, components), components);
   const chosen = solutions.levels.find((l) => l.key === level);
 

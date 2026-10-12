@@ -6,6 +6,7 @@ import { revisionToDraft } from '@/lib/projects/model';
 import { createClient } from '@/lib/supabase/server';
 import type { BomSnapshot } from '@/lib/vision/bom';
 import { buildConceptDocument, type ConceptDocument, type Translate } from './conceptDocument';
+import { loadEngineParams } from '@/lib/engineParamsLoad';
 
 /**
  * Đọc MỘT revision đã lưu để xuất (V1c C6) — dùng chung cho route Excel và PDF.
@@ -79,6 +80,7 @@ export async function loadRevisionForExport(projectId: string, revisionId: strin
     formatDate: (date) => formatter.dateTime(date, { dateStyle: 'medium', timeStyle: 'short' }),
     t,
     locale: await getLocale(),
+    params: (await loadEngineParams(supabase)).params,
   });
 
   // Tên file chỉ ký tự an toàn: tên dự án có dấu tiếng Việt, khoảng trắng.

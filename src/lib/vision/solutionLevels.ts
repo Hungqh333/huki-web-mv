@@ -4,6 +4,7 @@ import { interfaceCardsFor, type Candidate, type CameraCandidate, type Equipment
 import { scoreResult } from './feasibility';
 import type { RequirementAnalysis } from './requirementAnalysis';
 import type { RuleResult } from './rules';
+import { DEFAULT_ENGINE_PARAMS, rankingWeightsFor, solutionLevelsFor } from './engineParams';
 
 /**
  * Xếp hạng mềm + ba mức giải pháp — V1c mục C4 (spec V1.1 §8.2, §8.3; UI_CONTENT màn 5).
@@ -22,23 +23,14 @@ import type { RuleResult } from './rules';
  * - Chi phí: giá × số lượng; thiếu giá món nào thì không cộng tổng.
  */
 
-export const SOLUTION_LEVELS = [
-  { key: 'economy', min: 1.1, max: 1.3 },
-  { key: 'recommended', min: 1.3, max: 1.8 },
-  { key: 'highPerformance', min: 1.8, max: Infinity },
-] as const;
+/** Ba mức với ngưỡng MẶC ĐỊNH. Ngưỡng đang dùng: solutionLevelsFor(analysis.params) — sửa qua admin. */
+export const SOLUTION_LEVELS = solutionLevelsFor(DEFAULT_ENGINE_PARAMS);
 export type SolutionLevelKey = (typeof SOLUTION_LEVELS)[number]['key'];
 
-/** Spec §8.2. Sửa qua admin để sau (chốt Q4). */
-export const RANKING_WEIGHTS = {
-  resolutionMargin: 0.25,
-  availability: 0.2,
-  price: 0.2,
-  priorProjectUse: 0.15,
-  localSupport: 0.1,
-  roadmap: 0.1,
-} as const;
+/** Spec §8.2 — trọng số MẶC ĐỊNH. Trọng số đang dùng: rankingWeightsFor(analysis.params). */
+export const RANKING_WEIGHTS = rankingWeightsFor(DEFAULT_ENGINE_PARAMS);
 export type RankingCriterion = keyof typeof RANKING_WEIGHTS;
+type RankingWeights = Record<RankingCriterion, number>;
 
 /** Dư độ phân giải đạt điểm tối đa ở mức này. */
 export const MARGIN_FULL_SCORE = 2;
@@ -105,7 +97,7 @@ const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
  * Điểm mềm cho một nhóm ứng viên cùng loại. Giá chuẩn hoá TRONG nhóm (rẻ nhất 1,
  * đắt nhất 0), nên phải tính cả nhóm một lượt.
  */
-export function softScores(items: { sourcing: Sourcing; margin: number | null }[]): SoftScore[] {
+export function softScores(items: { sourcing: Sourcing; margin: number | null }[], weights: RankingWeights = RANKING_WEIGHTS): SoftScore[] {
   const prices = items.map((i) => i.sourcing.price).filter((p): p is number => p !== null);
   const min = Math.min(...prices);
   const max = Math.max(...prices);
@@ -114,30 +106,30 @@ export function softScores(items: { sourcing: Sourcing; margin: number | null }[
     const parts: ScorePart[] = [
       {
         criterion: 'resolutionMargin',
-        weight: RANKING_WEIGHTS.resolutionMargin,
+        weight: weights.resolutionMargin,
         value: margin === null ? 0 : clamp01((margin - 1) / (MARGIN_FULL_SCORE - 1)),
         hasData: margin !== null,
       },
       {
         criterion: 'availability',
-        weight: RANKING_WEIGHTS.availability,
+        weight: weights.availability,
         value: s.leadTime === null ? 0 : clamp01(1 - s.leadTime / LEAD_TIME_ZERO_DAYS),
         hasData: s.leadTime !== null,
       },
       {
         criterion: 'price',
-        weight: RANKING_WEIGHTS.price,
+        weight: weights.price,
         value: s.price === null ? 0 : max === min ? 1 : (max - s.price) / (max - min),
         hasData: s.price !== null,
       },
       {
         criterion: 'priorProjectUse',
-        weight: RANKING_WEIGHTS.priorProjectUse,
+        weight: weights.priorProjectUse,
         value: clamp01(s.used / PRIOR_USE_FULL),
         hasData: true,
       },
-      { criterion: 'localSupport', weight: RANKING_WEIGHTS.localSupport, value: 0, hasData: false },
-      { criterion: 'roadmap', weight: RANKING_WEIGHTS.roadmap, value: 0, hasData: false },
+      { criterion: 'localSupport', weight: weights.localSupport, value: 0, hasData: false },
+      { criterion: 'roadmap', weight: weights.roadmap, value: 0, hasData: false },
     ];
     return { total: Math.round(parts.reduce((sum, p) => sum + p.weight * p.value, 0) * 100), parts };
   });
@@ -179,15 +171,16 @@ export function buildSolutionLevels(analysis: RequirementAnalysis, filter: Equip
     })
   );
   const placed = pairs.filter((p) => p.margin !== null);
-  const pairScores = softScores(placed);
+  const weights = rankingWeightsFor(analysis.params);
+  const pairScores = softScores(placed, weights);
 
   // Đèn: một đèn cho cả ba mức (chốt Q5).
   const lights = filter.lights.accepted;
-  const light = best(lights, softScores(lights.map((l) => ({ sourcing: sourcing([l.component]), margin: null }))))?.item ?? null;
+  const light = best(lights, softScores(lights.map((l) => ({ sourcing: sourcing([l.component]), margin: null })), weights))?.item ?? null;
 
   const controllers = catalog.filter((c) => c.is_active && c.kind === 'controller');
 
-  const levels = SOLUTION_LEVELS.map((level): SolutionLevel => {
+  const levels = solutionLevelsFor(analysis.params).map((level): SolutionLevel => {
     const inRange = placed.map((p, i) => ({ p, score: pairScores[i] })).filter(({ p }) => p.margin! >= level.min && p.margin! < level.max);
     const empty: SolutionLevel = {
       ...level,
@@ -227,7 +220,7 @@ export function buildSolutionLevels(analysis: RequirementAnalysis, filter: Equip
       } satisfies Candidate;
     });
     const okPcs = pcCandidates.filter((c) => c.reasons.length === 0);
-    const pc = best(okPcs, softScores(okPcs.map((c) => ({ sourcing: sourcing([c.component]), margin: null }))))?.item ?? null;
+    const pc = best(okPcs, softScores(okPcs.map((c) => ({ sourcing: sourcing([c.component]), margin: null })), weights))?.item ?? null;
 
     const configResults = [...camera.results, ...lens.results, ...(pc?.results ?? [])];
     const risks = [...configResults.filter((r) => isMarginalOrFail(r) || r.evidence === 'unknown'), ...requirementBlockers];

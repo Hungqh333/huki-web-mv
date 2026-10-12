@@ -10,6 +10,7 @@ import {
   type Component,
 } from '@/lib/components/specs';
 import { DEFAULT_CIRCLE_OF_CONFUSION_PX, WAVELENGTH_UM, requiredLpPerMm } from './optics';
+import { DEFAULT_ENGINE_PARAMS } from './engineParams';
 import { term } from './formulaTerms';
 import type { RequirementAnalysis } from './requirementAnalysis';
 import { toRuleResult, type Evidence, type RuleAssumedInput, type RuleInput, type RuleResult } from './rules';
@@ -38,20 +39,21 @@ import { fmt, round, type Check } from './types';
  * kiệm (C4) — phát hiện khi viết test-solutions.ts.
  */
 
-/** OPT-005: F cần tới mức này × F#max thì còn chấp nhận được (mờ nhẹ, phải chụp thử). */
-export const DOF_DIFFRACTION_TOLERANCE = 1.5;
+/** OPT-005: F cần tới mức này × F#max thì còn chấp nhận được (mờ nhẹ, phải chụp thử). Mặc định — sửa qua admin (engineParams). */
+export const DOF_DIFFRACTION_TOLERANCE = DEFAULT_ENGINE_PARAMS.dofDiffractionTolerance;
 /** OPT-005: ống kính chưa khai khẩu mở nhất thì coi mở được tới F/1 (ống machine vision nhanh nhất thường F/0.95–1.4). */
 export const DOF_FASTEST_PRACTICAL_F = 1;
 /** OPT-002: dung sai so vòng ảnh với đường chéo — số danh nghĩa trên datasheet làm tròn. */
 export const IMAGE_CIRCLE_TOLERANCE = 0.02;
-/** THR-003: dư dưới tỉ lệ này của nhịp là mỏng. */
-export const CYCLE_MIN_MARGIN = 0.3;
+/** THR-003: dư dưới tỉ lệ này của nhịp là mỏng. Mặc định — sửa qua admin (engineParams). */
+export const CYCLE_MIN_MARGIN = DEFAULT_ENGINE_PARAMS.cycleMinMargin;
 /** THR-003: giả định khi chưa đo thuật toán thật. */
 export const CYCLE_DEFAULTS = {
   triggerMs: 1,
   ioMs: 10,
-  processMs: 300,
-  processDeepLearningMs: 800,
+  // Hai số xử lý là MẶC ĐỊNH; THR-003 đọc giá trị đang dùng từ analysis.params (sửa qua admin).
+  processMs: DEFAULT_ENGINE_PARAMS.processMs,
+  processDeepLearningMs: DEFAULT_ENGINE_PARAMS.processDeepLearningMs,
   /** Camera không khai fps → giả định một ảnh (phơi sáng + đọc) mất chừng này. */
   frameIntervalMs: 100,
 } as const;
@@ -452,7 +454,7 @@ export function evaluateConfiguration(input: ConfigurationInput): RuleResult[] {
       let check: Check;
       let margin: number | null = null;
       // Thứ tự: xung đột với nhiễu xạ trước — không ống nào giải được; rồi mới tới giới hạn khẩu của ống này.
-      if (ratio > DOF_DIFFRACTION_TOLERANCE) {
+      if (ratio > analysis.params.dofDiffractionTolerance) {
         // Độ sâu do nghiêng lớn hơn Δh → gợi ý Scheimpflug.
         const tiltDominates = analysis.tiltDepthMm > heightVariation;
         if (analysis.uncertaintyBudgetMm === null) {
@@ -496,10 +498,10 @@ export function evaluateConfiguration(input: ConfigurationInput): RuleResult[] {
     const bandwidth = camera.interfaceName ? INTERFACE_BANDWIDTH[camera.interfaceName] : undefined;
     const transferMs = bandwidth ? (frameMb / bandwidth) * 1000 : 0;
     const measured = input.processMsPerImage ?? null;
-    const processMs = measured ?? (analysis.usesDeepLearning ? CYCLE_DEFAULTS.processDeepLearningMs : CYCLE_DEFAULTS.processMs);
+    const processMs = measured ?? (analysis.usesDeepLearning ? analysis.params.processDeepLearningMs : analysis.params.processMs);
     const total = CYCLE_DEFAULTS.triggerMs + frameMs + transferMs + processMs + CYCLE_DEFAULTS.ioMs;
     const margin = (takt - total) / takt;
-    const status: Check['status'] = margin < 0 ? 'fail' : margin < CYCLE_MIN_MARGIN ? 'warn' : 'pass';
+    const status: Check['status'] = margin < 0 ? 'fail' : margin < analysis.params.cycleMinMargin ? 'warn' : 'pass';
     push(
       'THR-003',
       {

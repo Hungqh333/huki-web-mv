@@ -5,7 +5,8 @@ import { fieldsFor, readField } from '@/lib/requirement/fields';
 import type { Assumption, DefectContrast, Requirement } from '@/lib/requirement/types';
 import { CYCLE_DEFAULTS } from './configurationRules';
 import { suggestLighting } from './lighting';
-import { perspectiveCheck, perspectiveErrorMm, telecentricCheck, TELECENTRIC_FEASIBLE_MAX_MM, TELECENTRIC_PRACTICAL_MAX_MM } from './optics';
+import { DEFAULT_ENGINE_PARAMS, type EngineParams } from './engineParams';
+import { perspectiveCheck, perspectiveErrorMm, telecentricCheck } from './optics';
 import { stitchCheck, thermalCheck, thermalErrorUm } from './mechanics';
 import { GRR_DIVISOR, K_SUBPIXEL, measurementBudget } from './resolution';
 import { completeness, toRuleResult, type Evidence, type RuleAssumedInput, type RuleInput, type RuleResult } from './rules';
@@ -48,6 +49,8 @@ export const RESULT_INTERFACE_LABEL: Readonly<Record<string, string>> = {
 
 export type RequirementAnalysis = {
   results: RuleResult[];
+  /** Ngưỡng phán đoán đã dùng (sửa qua admin) — các tầng sau (Cấu hình, phương án, BOM) đọc từ đây. */
+  params: EngineParams;
   /** Giả định đã áp — cùng danh sách với panel trên trang Yêu cầu. */
   assumptions: Assumption[];
   /** Ô thật ÷ (ô thật + ô giả định) trên các ô engine đã dùng. */
@@ -90,7 +93,7 @@ export type RequirementAnalysis = {
 const CONTRASTS: readonly DefectContrast[] = ['high', 'medium', 'low', 'unknown'];
 const isContrast = (value: unknown): value is DefectContrast => CONTRASTS.includes(value as DefectContrast);
 
-export function analyseRequirement(draft: Requirement): RequirementAnalysis {
+export function analyseRequirement(draft: Requirement, params: EngineParams = DEFAULT_ENGINE_PARAMS): RequirementAnalysis {
   const { requirement: req, assumptions } = resolveAssumptions(draft);
   const results: RuleResult[] = [];
 
@@ -290,6 +293,7 @@ export function analyseRequirement(draft: Requirement): RequirementAnalysis {
     tile,
     uncertaintyBudgetMm: U,
     perspectiveFree,
+    warnShare: params.errorWarnShare,
   });
   const opticsPaths = ['object.heightVariation', 'system.workingDistance', 'measurement.0.tolerance', ...sizePaths];
   if (perspective && tile && U !== null && heightVariation !== null && workingDistance !== null) {
@@ -309,10 +313,12 @@ export function analyseRequirement(draft: Requirement): RequirementAnalysis {
     fovHeightMm: fovH ?? 0,
     uncertaintyBudgetMm: U,
     workingDistanceMm: workingDistance,
+    practicalMaxMm: params.telecentricPracticalMaxMm,
+    feasibleMaxMm: params.telecentricFeasibleMaxMm,
   });
   if (telecentric && tile) {
     const size = Math.max(tile.widthMm, tile.heightMm);
-    const limit = telecentric.status === 'fail' ? TELECENTRIC_FEASIBLE_MAX_MM : TELECENTRIC_PRACTICAL_MAX_MM;
+    const limit = telecentric.status === 'fail' ? params.telecentricFeasibleMaxMm : params.telecentricPracticalMaxMm;
     push('OPT-007', telecentric, 'rule-of-thumb', opticsPaths, limit / size);
   }
 
@@ -321,7 +327,7 @@ export function analyseRequirement(draft: Requirement): RequirementAnalysis {
   const span = num('measurement.0.spanLength');
   const deltaT = num('environment.ambientTempRange');
   const thermalPaths = ['object.thermalExpansionCoeff', 'object.material', 'measurement.0.spanLength', 'environment.ambientTempRange', 'measurement.0.tolerance'];
-  const thermal = thermalCheck({ alphaUmPerMK: alpha, lengthMm: span, deltaTK: deltaT, uncertaintyBudgetMm: U });
+  const thermal = thermalCheck({ alphaUmPerMK: alpha, lengthMm: span, deltaTK: deltaT, uncertaintyBudgetMm: U, warnShare: params.errorWarnShare });
   const thermalMm =
     alpha !== null && span !== null && deltaT !== null ? (thermalErrorUm({ alphaUmPerMK: alpha, lengthMm: span, deltaTK: deltaT }) ?? 0) / 1000 : null;
   if (thermal && U !== null) push('MEC-001', thermal, 'calculated', thermalPaths, thermalMm ? U / thermalMm : null);
@@ -333,6 +339,7 @@ export function analyseRequirement(draft: Requirement): RequirementAnalysis {
     mmPerPx: governing,
     thermalErrorMm: thermalMm,
     uncertaintyBudgetMm: U,
+    warnShare: params.errorWarnShare,
   });
   if (stitch && U !== null) {
     const total = Number(stitch.noteValues?.total ?? 0);
@@ -495,6 +502,7 @@ export function analyseRequirement(draft: Requirement): RequirementAnalysis {
 
   return {
     results,
+    params,
     assumptions,
     completeness: completeness(results),
     governingMmPerPx: governing,

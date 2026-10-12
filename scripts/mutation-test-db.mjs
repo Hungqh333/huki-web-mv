@@ -158,6 +158,17 @@ const MUTATIONS = [
     name: 'Ghi chu luat: bo rang buoc phai duyet truoc khi dang',
     sql: `alter table public.articles drop constraint articles_rule_note_reviewed_check;`,
   },
+  {
+    name: 'Nguong engine: cho moi tai khoan ghi',
+    sql: `drop policy "engine_parameters_write_admin" on public.engine_parameters;
+          create policy "engine_parameters_write_admin" on public.engine_parameters
+            for all to authenticated using (true) with check (true);`,
+  },
+  {
+    name: 'Nguong engine: cho khach doc',
+    sql: `grant select on public.engine_parameters to anon;
+          create policy "engine_parameters_select_anon" on public.engine_parameters for select to anon using (true);`,
+  },
 ];
 
 let caught = 0;

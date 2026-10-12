@@ -879,7 +879,8 @@
       "articles": "Articles",
       "rules": "Recommendation rules",
       "kpi": "KPI calculator",
-      "components": "Components"
+      "components": "Components",
+      "engine": "Engine thresholds"
     },
     "users": {
       "title": "User management",
@@ -1297,6 +1298,67 @@
         "invalidKind": "Invalid component kind.",
         "invalidSource": "Invalid spec source.",
         "invalidNumber": "The value must be a number."
+      }
+    },
+    "engine": {
+      "title": "Vision Engineer engine thresholds",
+      "subtitle": "Judgement thresholds owned by the engineering team. Physical constants and measurement conventions (wavelength, Gage R&R ÷ 10, 1/3 subpixel, 3/4/5 px per defect) are deliberately NOT editable here.",
+      "version": "Ruleset version in use: {version}",
+      "versionNote": "Changing any threshold changes the ruleset version: revisions saved earlier will state \"analysis recomputed with a newer ruleset\" when their Concept Report is exported. Leave a field empty to use the default.",
+      "rejected": "The stored values break a limit — the engine is running on DEFAULTS. Fix the flagged fields and save.",
+      "changed": "changed",
+      "range": "Default {def}{unit} · allowed {min}–{max}",
+      "updatedBy": "changed by {name}",
+      "save": "Save thresholds",
+      "saving": "Saving...",
+      "groups": {
+        "levels": {
+          "title": "Three solution levels",
+          "hint": "Lower bound of the resolution headroom (required ÷ actual mm/px) for each level. Must increase."
+        },
+        "ranking": {
+          "title": "Ranking weights",
+          "hint": "Ranks equipment pairs within one level (spec §8.2). The six weights must add up to 1."
+        },
+        "optics": {
+          "title": "Optics",
+          "hint": "Telecentric ceiling by one-camera field side (OPT-007) and how far past the diffraction limit stopping down is still acceptable (OPT-005)."
+        },
+        "throughput": {
+          "title": "Cycle time",
+          "hint": "THR-003: minimum headroom versus takt, and assumed processing time before the real algorithm is measured."
+        },
+        "budget": {
+          "title": "Measurement error budget",
+          "hint": "Warn when a single error source (perspective, thermal, stitching) takes more than this share of the budget."
+        }
+      },
+      "params": {
+        "levelEconomyMin": "Economy — minimum headroom",
+        "levelRecommendedMin": "Recommended — minimum headroom",
+        "levelHighMin": "High performance — minimum headroom",
+        "weightResolutionMargin": "Resolution headroom",
+        "weightAvailability": "Availability / lead time",
+        "weightPrice": "Price",
+        "weightPriorUse": "Used in past projects",
+        "weightLocalSupport": "Local support",
+        "weightRoadmap": "Upgrade path",
+        "telecentricPracticalMaxMm": "Telecentric — field side still reasonably priced",
+        "telecentricFeasibleMaxMm": "Telecentric — largest feasible field side",
+        "dofDiffractionTolerance": "Depth of field — F needed at most this × F#max",
+        "cycleMinMargin": "Minimum headroom versus takt (ratio)",
+        "processMs": "Assumed processing time — traditional",
+        "processDeepLearningMs": "Assumed processing time — deep learning",
+        "errorWarnShare": "Warning threshold — share of the measurement budget per error source"
+      },
+      "errors": {
+        "fix": "Some fields are invalid — see the red lines.",
+        "notNumber": "Not a number.",
+        "outOfRange": "Outside {min}–{max}.",
+        "levelOrder": "Must be greater than the level below.",
+        "telecentricOrder": "Must be greater than the \"reasonably priced\" threshold.",
+        "weightsSum": "The six weights add up to {sum}; they must add up to 1.",
+        "saved": "Thresholds saved. The Requirements page uses them from the next load."
       }
     }
   },

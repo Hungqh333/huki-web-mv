@@ -93,6 +93,14 @@ begin
   perform pg_temp.assert_eq(
     (select count(*) from public.article_previews where slug like 'rls-test-%' and is_locked), 3,
     'Guest thấy 3 bài ở trạng thái khoá');
+
+  -- Ngưỡng engine (2026-10-12): khách không đọc.
+  begin
+    perform count(*) from public.engine_parameters;
+    raise exception 'FAIL: Guest đọc được engine_parameters';
+  exception when insufficient_privilege then
+    raise notice 'PASS: Guest bị chặn đọc engine_parameters';
+  end;
 end $$;
 
 reset role;
@@ -200,6 +208,16 @@ begin
   end if;
   raise notice 'PASS: Member bị chặn sửa bài viết';
 
+  -- Ngưỡng engine (2026-10-12): member đọc được (trang Yêu cầu cần), không ghi được.
+  perform count(*) from public.engine_parameters;
+  raise notice 'PASS: Member đọc được engine_parameters';
+  begin
+    insert into public.engine_parameters (key, value) values ('rlsTestKey', 1);
+    raise exception 'FAIL: Member ghi được engine_parameters';
+  exception when insufficient_privilege then
+    raise notice 'PASS: Member bị chặn ghi engine_parameters';
+  end;
+
   -- Ghi chú luật nháp (C8, seed_rule_notes.sql) chỉ Admin thấy — chưa duyệt thì không lộ ra.
   perform pg_temp.assert_eq(
     (select count(*) from public.articles where media_type = 'ruleNote' and published_at is null), 0,
@@ -298,6 +316,13 @@ begin
     (select count(*) from public.articles where slug = 'rls-test-rule-note' and published_at is not null), 1,
     'Ghi chú luật đã duyệt thì đăng được');
   delete from public.articles where slug = 'rls-test-rule-note';
+
+  -- Ngưỡng engine (2026-10-12): Admin ghi / xoá được.
+  insert into public.engine_parameters (key, value, updated_by) values ('rlsTestKey', 1.25, 'Admin RLS');
+  perform pg_temp.assert_eq(
+    (select count(*) from public.engine_parameters where key = 'rlsTestKey'), 1,
+    'Admin ghi được engine_parameters');
+  delete from public.engine_parameters where key = 'rlsTestKey';
 end $$;
 
 reset role;

@@ -12,6 +12,7 @@ const NAV: { href: string; key: string; icon: IconName; tone: BadgeTone }[] = [
   { href: '/admin/luat-goi-y', key: 'rules', icon: 'rules', tone: 'emerald' },
   { href: '/admin/chi-tieu', key: 'kpi', icon: 'kpi', tone: 'amber' },
   { href: '/admin/linh-kien', key: 'components', icon: 'camera', tone: 'slate' },
+  { href: '/admin/nguong-engine', key: 'engine', icon: 'ruler', tone: 'sky' },
 ];
 
 export default async function AdminLayout({ children }: LayoutProps<'/admin'>) {

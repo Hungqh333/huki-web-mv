@@ -103,6 +103,7 @@ export const RULES: readonly RuleDefinition[] = [
   { id: 'ENV-002', version: '1.0.0', category: 'ENV', dimension: 'Mechanical' },
   { id: 'AI-001', version: '1.0.0', category: 'AI', dimension: 'Algorithm' },
   { id: 'AI-002', version: '1.0.0', category: 'AI', dimension: 'Algorithm' },
+  { id: 'INT-001', version: '1.0.0', category: 'INT', dimension: 'Integration' },
 ];
 
 const BY_ID = new Map(RULES.map((rule) => [rule.id, rule]));

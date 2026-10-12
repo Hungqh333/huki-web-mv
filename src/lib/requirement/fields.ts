@@ -16,7 +16,8 @@ export type RequirementSection =
   | 'measurement'
   | 'production'
   | 'system'
-  | 'environment';
+  | 'environment'
+  | 'integration';
 
 export const REQUIREMENT_SECTIONS: readonly RequirementSection[] = [
   'object',
@@ -25,6 +26,7 @@ export const REQUIREMENT_SECTIONS: readonly RequirementSection[] = [
   'production',
   'system',
   'environment',
+  'integration',
 ];
 
 export type RequirementFieldKind = 'number' | 'select' | 'boolean' | 'multiselect' | 'text';
@@ -64,6 +66,8 @@ export const FEATURES = ['dimension', 'diameter', 'angle', 'position'] as const;
 export const MOTIONS = ['static', 'indexed', 'continuous'] as const;
 export const CONDITIONS = ['clean', 'dust', 'oil', 'vibration', 'variableLight', 'highTemp'] as const;
 export const IP_REQUIREMENTS = ['none', 'ip54', 'ip65', 'ip67'] as const;
+/** Giao tiếp trả kết quả cho PLC / robot — INT-001 (V1c, 2026-10-12). */
+export const RESULT_INTERFACES = ['digitalIO', 'ethernetIP', 'profinet', 'modbus', 'tcp'] as const;
 /** Vật liệu để suy α (MATERIAL_ALPHA trong defaults.ts). 'other' → nhập α tay. */
 export const MATERIALS = ['aluminium', 'steel', 'stainless', 'plastic', 'other'] as const;
 
@@ -102,6 +106,9 @@ export const V1A_FIELDS: readonly RequirementFieldDef[] = [
   { path: 'environment.conditions', section: 'environment', key: 'conditions', kind: 'multiselect', options: CONDITIONS, optionsKey: 'conditions' },
   { path: 'environment.ambientTempRange', section: 'environment', key: 'ambientTempRange', kind: 'number', unit: 'K', min: 0 },
   { path: 'environment.ipRequirement', section: 'environment', key: 'ipRequirement', kind: 'select', options: IP_REQUIREMENTS, optionsKey: 'ipRequirement' },
+
+  // Có từ V1a trong kiểu dữ liệu nhưng chưa từng lên bảng — INT-001 cần nó (2026-10-12).
+  { path: 'integration.resultInterface', section: 'integration', key: 'resultInterface', kind: 'multiselect', options: RESULT_INTERFACES, optionsKey: 'resultInterface' },
 ];
 
 const hasDetection = (type: ApplicationType) => type === 'AppearanceInspection';

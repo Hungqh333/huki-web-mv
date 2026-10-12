@@ -49,6 +49,7 @@ const OWNER: Array<[ArchitectureNodeId, (ruleId: string) => boolean]> = [
   ['camera', (id) => id.startsWith('RES-') || id === 'THR-005'],
   ['interface', (id) => id === 'THR-001' || id === 'THR-002'],
   ['software', (id) => id.startsWith('AI-')],
+  ['plc', (id) => id.startsWith('INT-')],
 ];
 
 export function buildArchitecture(analysis: RequirementAnalysis): Architecture {
@@ -93,6 +94,10 @@ export function buildArchitecture(analysis: RequirementAnalysis): Architecture {
         if (traditional) return { key: traditional.status === 'pass' ? 'softwareTraditional' : 'softwareUndecided' };
         return analysis.uncertaintyBudgetMm !== null ? { key: 'softwareTraditional' } : null;
       }
+      case 'plc': {
+        const integration = find('INT-001');
+        return integration ? { key: 'plcInterface', values: { list: integration.formula } } : { key: 'plcUnknown' };
+      }
       default:
         return null;
     }
@@ -100,7 +105,7 @@ export function buildArchitecture(analysis: RequirementAnalysis): Architecture {
 
   const nodes = ARCHITECTURE_NODES.map((id): ArchitectureNode => {
     const results = own(id);
-    return { id, detail: detailOf(id), results, status: worst(results), pending: id === 'ipc' || id === 'plc' };
+    return { id, detail: detailOf(id), results, status: worst(results), pending: id === 'ipc' || (id === 'plc' && results.length === 0) };
   });
 
   return { nodes, cameraCount: analysis.cameraCount };

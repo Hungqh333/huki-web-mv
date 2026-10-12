@@ -347,3 +347,24 @@ test('nhãn sơ đồ đủ ở cả hai ngôn ngữ: mọi khối, mọi dạng
     for (const key of details) assert.ok(arch.details[key], `${locale}: details.${key}`);
   }
 });
+
+test('INT-001: chưa chọn giao tiếp → không có kết quả, điểm khả thi không đổi; đã chọn → ghi nhận + nhắc IO của THR-003', () => {
+  const base = { 'object.sizeX': 60, 'object.sizeY': 50, 'detection.0.minSize': 0.2, 'detection.0.contrast': 'high', 'detection.0.variability': 'low', 'system.cameraCount': 1 };
+  const without = analyseRequirement(filled('AppearanceInspection', base));
+  assert.equal(byRule(without.results, 'INT-001').length, 0, 'chot 2026-10-12: chua chon thi khong cham diem');
+  const plcUnknown = buildArchitecture(without).nodes.find((n) => n.id === 'plc')!;
+  assert.deepEqual([plcUnknown.detail?.key, plcUnknown.pending], ['plcUnknown', true]);
+
+  const withInterface = analyseRequirement(filled('AppearanceInspection', { ...base, 'integration.resultInterface': ['profinet', 'digitalIO'] }));
+  const int = one(withInterface.results, 'INT-001');
+  assert.deepEqual([int.status, int.dimension, int.formula, int.noteValues?.ioMs], ['info', 'Integration', 'PROFINET · Digital I/O', 10]);
+  assert.equal(assessFeasibility(withInterface.results).overall, assessFeasibility(without.results).overall, 'khong lam tut diem kha thi');
+  const plc = buildArchitecture(withInterface).nodes.find((n) => n.id === 'plc')!;
+  assert.deepEqual([plc.detail?.key, plc.detail?.values?.list, plc.pending], ['plcInterface', 'PROFINET · Digital I/O', false]);
+  for (const locale of ['vi', 'en']) {
+    const m = JSON.parse(readFileSync(`src/messages/${locale}.json`, 'utf8'));
+    assert.ok(m.selector.vision.checks.resultInterface && m.selector.vision.notes.intResultInterface, locale);
+    assert.ok(m.designer.requirement.architecture.details.plcInterface && m.designer.requirement.architecture.details.plcUnknown, locale);
+    assert.ok(m.designer.requirement.fields.integration.resultInterface && m.designer.requirement.sections.integration, locale);
+  }
+});

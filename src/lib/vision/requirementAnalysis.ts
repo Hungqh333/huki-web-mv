@@ -3,6 +3,7 @@ import { resolveAssumptions } from '@/lib/requirement/assumptions';
 import { N_DET_BY_CONTRAST } from '@/lib/requirement/defaults';
 import { fieldsFor, readField } from '@/lib/requirement/fields';
 import type { Assumption, DefectContrast, Requirement } from '@/lib/requirement/types';
+import { CYCLE_DEFAULTS } from './configurationRules';
 import { suggestLighting } from './lighting';
 import { perspectiveCheck, perspectiveErrorMm, telecentricCheck, TELECENTRIC_FEASIBLE_MAX_MM, TELECENTRIC_PRACTICAL_MAX_MM } from './optics';
 import { stitchCheck, thermalCheck, thermalErrorUm } from './mechanics';
@@ -36,6 +37,14 @@ export const STROBE_EXPOSURE_LIMIT_US = 50;
 export const INTERFACE_MAX_SHARE = 0.7;
 /** THR-001: ảnh đơn sắc 8 bit (Bayer 8 bit cũng 1 byte/px) khi chưa chọn camera. */
 export const BYTES_PER_PX = 1;
+/** Tên chuẩn giao tiếp — danh từ riêng, giống nhau mọi ngôn ngữ. */
+export const RESULT_INTERFACE_LABEL: Readonly<Record<string, string>> = {
+  digitalIO: 'Digital I/O',
+  ethernetIP: 'EtherNet/IP',
+  profinet: 'PROFINET',
+  modbus: 'Modbus TCP',
+  tcp: 'TCP/IP socket',
+};
 
 export type RequirementAnalysis = {
   results: RuleResult[];
@@ -461,6 +470,27 @@ export function analyseRequirement(draft: Requirement): RequirementAnalysis {
     } else {
       push('AI-001', { key: 'algorithmChoice', status: 'warn', formula: '—', noteKey: 'variabilityUnknown' }, 'unknown', paths);
     }
+  }
+
+  /* ─── INT-001: giao tiếp trả kết quả (chốt 2026-10-12: chỉ hiển thị) ───
+     Chưa chọn thì KHÔNG đẩy kết quả nào: nhóm Tích hợp hiện "chưa đánh giá" và điểm khả
+     thi không tụt — thiếu giao tiếp ở giai đoạn concept không phải rủi ro kỹ thuật. Đã
+     chọn thì ghi nhận, kèm nhắc THR-003 đang giả định IO bao nhiêu ms. */
+  const resultInterface = raw('integration.resultInterface');
+  const interfaces = Array.isArray(resultInterface) ? resultInterface.filter((v): v is string => typeof v === 'string') : [];
+  if (interfaces.length > 0) {
+    push(
+      'INT-001',
+      {
+        key: 'resultInterface',
+        status: 'info',
+        formula: interfaces.map((v) => RESULT_INTERFACE_LABEL[v] ?? v).join(' · '),
+        noteKey: 'intResultInterface',
+        noteValues: { ioMs: CYCLE_DEFAULTS.ioMs },
+      },
+      'rule-of-thumb',
+      ['integration.resultInterface']
+    );
   }
 
   return {

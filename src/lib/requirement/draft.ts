@@ -162,7 +162,7 @@ function migrateMaterialV1(requirement: Requirement): void {
  * điền khi nhánh cha còn nguyên; nhánh cha hỏng thì vẫn để phép kiểm bên dưới
  * loại bản nháp.
  */
-export const FIELDS_ADDED_AFTER_V2: readonly string[] = ['system.cameraTiltDeg'];
+export const FIELDS_ADDED_AFTER_V2: readonly string[] = ['system.cameraTiltDeg', 'integration.resultInterface'];
 
 function backfillAddedFields(requirement: Requirement): void {
   if (!isApplicationType(requirement.applicationType)) return;

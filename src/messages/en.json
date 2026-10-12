@@ -645,7 +645,8 @@
         "ipcGpu": "PC GPU",
         "ipcUnknown": "Missing PC specs",
         "cameraFit": "Camera fit",
-        "lightFit": "Light fit"
+        "lightFit": "Light fit",
+        "resultInterface": "Result interface"
       },
       "notes": {
         "sensorTooSmall": "The sensor lacks pixels on at least one axis — change camera or narrow the field of view.",
@@ -748,7 +749,8 @@
         "lightTooSmall": "The {have} mm light is smaller than the {need} mm needed to cover the field of view evenly.",
         "lightNoStrobe": "The task needs a strobed light (very short exposure) but this light cannot be strobed.",
         "lightStrobeUnknown": "Strobe capability not specified — this task needs strobe.",
-        "dofSetApertureTight": "Passes but tight: F/{f} is needed for {dof} mm depth, close to F#max F/{fMax} — little headroom if real height variation is larger."
+        "dofSetApertureTight": "Passes but tight: F/{f} is needed for {dof} mm depth, close to F#max F/{fMax} — little headroom if real height variation is larger.",
+        "intResultInterface": "Results are sent over the chosen interface. The cycle time budget (THR-003) assumes {ioMs} ms for sending the result — re-measure with the real PLC during trials."
       },
       "lightingReason": {
         "scratch": "Scratches and shallow cracks only stand out under a very low angle against a dark background.",
@@ -1627,7 +1629,8 @@
         "measurement": "Measurement",
         "production": "Production",
         "system": "System",
-        "environment": "Environment"
+        "environment": "Environment",
+        "integration": "Integration"
       },
       "fields": {
         "object": {
@@ -1666,6 +1669,9 @@
           "conditions": "Environment conditions",
           "ambientTempRange": "Temperature swing (ΔT)",
           "ipRequirement": "IP requirement"
+        },
+        "integration": {
+          "resultInterface": "Result interface"
         }
       },
       "options": {
@@ -1728,6 +1734,13 @@
           "stainless": "Stainless steel",
           "plastic": "Plastic",
           "other": "Other — enter α"
+        },
+        "resultInterface": {
+          "digitalIO": "Digital I/O",
+          "ethernetIP": "EtherNet/IP",
+          "profinet": "PROFINET",
+          "modbus": "Modbus TCP",
+          "tcp": "TCP/IP socket"
         }
       },
       "assumedOption": "Assumed: {value}",
@@ -1754,7 +1767,8 @@
         "thermal": "to check thermal expansion",
         "stitching": "to check stitching error between cameras",
         "algorithm": "to decide between rule-based vision and deep learning",
-        "motionBlur": "to check motion blur"
+        "motionBlur": "to check motion blur",
+        "integration": "to know how results reach the PLC / robot"
       },
       "questions": {
         "title": "Missing information",
@@ -1891,7 +1905,9 @@
           "interfaceSpec": "At least {name} · {total} MB/s total",
           "softwareTraditional": "Traditional image processing",
           "softwareDeepLearning": "Deep learning — needs real sample images",
-          "softwareUndecided": "Traditional vs deep learning not decided yet"
+          "softwareUndecided": "Traditional vs deep learning not decided yet",
+          "plcInterface": "Results via {list}",
+          "plcUnknown": "No result interface chosen yet"
         },
         "pending": "Chosen in the equipment step",
         "pendingDetail": "This block needs specific equipment (PC configuration, PLC protocol) — it is computed when equipment is chosen.",

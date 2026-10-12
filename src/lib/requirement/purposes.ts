@@ -24,12 +24,14 @@ export const PURPOSES = [
   'stitching',
   'algorithm',
   'motionBlur',
+  'integration',
 ] as const;
 
 export type Purpose = (typeof PURPOSES)[number];
 
 /** Mọi mã luật dùng trong cấu hình V1a phải có ở đây — test kiểm. */
 export const RULE_PURPOSE: Readonly<Record<string, Purpose>> = {
+  'INT-001': 'integration',
   'RES-001': 'detectionResolution',
   'RES-002': 'measurementResolution',
   'RES-004': 'pixelCount',

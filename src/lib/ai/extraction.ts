@@ -18,6 +18,7 @@ import { z } from 'zod';
 import { APPLICATION_TYPES, type ApplicationType } from '../visionEntry';
 import {
   CONDITIONS,
+  RESULT_INTERFACES,
   CONTRASTS,
   DEFECT_TYPES,
   FEATURES,
@@ -104,7 +105,14 @@ export const EXTRACTION_SCHEMA = z.object({
     .describe('Các điều kiện môi trường được nêu; không nêu thì mảng rỗng.'),
   ambientTempRange: measured(TEMP_DELTA_UNITS, 'Mức dao động nhiệt độ môi trường (ΔT).'),
   ipRequirement: choice(IP_REQUIREMENTS, 'Yêu cầu cấp bảo vệ IP, chỉ khi mô tả nêu.'),
+
+  resultInterface: z
+    .array(z.object({ value: z.enum(RESULT_INTERFACES), sourceSpan }))
+    .describe('Chuẩn giao tiếp trả kết quả cho PLC / robot được nêu; không nêu thì mảng rỗng.'),
 });
+
+/** Khoá dạng danh sách (chọn nhiều) — mặc định mảng rỗng, không phải null. */
+const LIST_KEYS = ['environmentConditions', 'resultInterface'] as const;
 
 export type Extraction = z.infer<typeof EXTRACTION_SCHEMA>;
 
@@ -113,7 +121,7 @@ export function blankExtraction(): Extraction {
   // Dựng từ chính các khoá của schema: thêm khoá mới vào schema thì hàm này tự theo.
   // Ép qua unknown vì Object.fromEntries không giữ được kiểu từng khoá.
   return Object.fromEntries(
-    Object.keys(EXTRACTION_SCHEMA.shape).map((key) => [key, key === 'environmentConditions' ? [] : null])
+    Object.keys(EXTRACTION_SCHEMA.shape).map((key) => [key, (LIST_KEYS as readonly string[]).includes(key) ? [] : null])
   ) as unknown as Extraction;
 }
 
@@ -146,7 +154,8 @@ Nghĩa các giá trị lựa chọn:
 - measuredFeature: dimension = kích thước / khoảng cách; diameter = đường kính; angle = góc; position = vị trí tương đối.
 - motion: static = đứng yên; indexed = dừng từng bước để chụp; continuous = chạy liên tục khi chụp.
 - environmentConditions: clean = sạch; dust = bụi; oil = dầu; vibration = rung; variableLight = ánh sáng môi trường thay đổi; highTemp = nhiệt độ cao.
-- ipRequirement: none = không yêu cầu; ip54 / ip65 / ip67 = cấp tương ứng.`;
+- ipRequirement: none = không yêu cầu; ip54 / ip65 / ip67 = cấp tương ứng.
+- resultInterface: digitalIO = tín hiệu I/O số (OK/NG); ethernetIP = EtherNet/IP; profinet = PROFINET; modbus = Modbus TCP; tcp = TCP/IP socket.`;
 
 /** Mô tả khách gõ, bọc trong thẻ dữ liệu (quy tắc 8 của prompt). */
 export function buildUserMessage(rawText: string): string {
@@ -155,7 +164,7 @@ export function buildUserMessage(rawText: string): string {
 
 // ─────────────────────────────── Đầu ra LLM → ô trên bảng ───────────────────────────────
 
-type ValueKind = 'length' | 'speed' | 'rate' | 'tempDelta' | 'alpha' | 'angle' | 'count' | 'choice' | 'flag' | 'tolerance' | 'conditions';
+type ValueKind = 'length' | 'speed' | 'rate' | 'tempDelta' | 'alpha' | 'angle' | 'count' | 'choice' | 'flag' | 'tolerance' | 'list';
 type FieldKey = Exclude<keyof Extraction, 'applicationType'>;
 
 /** Mỗi ô trên bảng V1a có đúng một khoá trong schema — test kiểm. */
@@ -182,9 +191,10 @@ export const EXTRACTION_FIELD_MAP: readonly { key: FieldKey; path: string; kind:
   { key: 'cameraCount', path: 'system.cameraCount', kind: 'count' },
   { key: 'workingDistance', path: 'system.workingDistance', kind: 'length' },
   { key: 'cameraTilt', path: 'system.cameraTiltDeg', kind: 'angle' },
-  { key: 'environmentConditions', path: 'environment.conditions', kind: 'conditions' },
+  { key: 'environmentConditions', path: 'environment.conditions', kind: 'list' },
   { key: 'ambientTempRange', path: 'environment.ambientTempRange', kind: 'tempDelta' },
   { key: 'ipRequirement', path: 'environment.ipRequirement', kind: 'choice' },
+  { key: 'resultInterface', path: 'integration.resultInterface', kind: 'list' },
 ];
 
 /** Bảng đổi đơn vị cố định. Đơn vị đích là đơn vị của ô trên bảng. */
@@ -232,10 +242,10 @@ export function extractionToFields(extraction: Extraction, rawText: string): Ext
   }
 
   for (const { key, path, kind } of EXTRACTION_FIELD_MAP) {
-    if (kind === 'conditions') {
+    if (kind === 'list') {
       const values: string[] = [];
       const spans: string[] = [];
-      for (const item of extraction.environmentConditions) {
+      for (const item of extraction[key as (typeof LIST_KEYS)[number]]) {
         if (!inText(item.sourceSpan)) {
           dropped.push({ key, reason: 'spanNotInText' });
           continue;

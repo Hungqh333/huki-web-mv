@@ -645,7 +645,8 @@
         "ipcGpu": "GPU máy tính",
         "ipcUnknown": "Thông số máy tính chưa khai",
         "cameraFit": "Camera khớp yêu cầu",
-        "lightFit": "Đèn khớp yêu cầu"
+        "lightFit": "Đèn khớp yêu cầu",
+        "resultInterface": "Giao tiếp trả kết quả"
       },
       "notes": {
         "sensorTooSmall": "Cảm biến thiếu pixel trên ít nhất một trục — đổi camera hoặc thu hẹp FOV.",
@@ -748,7 +749,8 @@
         "lightTooSmall": "Đèn {have} mm nhỏ hơn mức cần {need} mm để phủ đều vùng nhìn.",
         "lightNoStrobe": "Bài cần đèn chạy xung (phơi sáng rất ngắn) mà đèn này không chạy xung được.",
         "lightStrobeUnknown": "Đèn chưa khai khả năng chạy xung — bài này cần strobe.",
-        "dofSetApertureTight": "Đạt nhưng sát giới hạn: cần khép tới F/{f} cho độ sâu {dof} mm, gần F#max F/{fMax} — ít dư nếu chiều cao thực tế dao động nhiều hơn."
+        "dofSetApertureTight": "Đạt nhưng sát giới hạn: cần khép tới F/{f} cho độ sâu {dof} mm, gần F#max F/{fMax} — ít dư nếu chiều cao thực tế dao động nhiều hơn.",
+        "intResultInterface": "Trả kết quả qua chuẩn đã chọn. Ngân sách thời gian chu kỳ (THR-003) đang tính {ioMs} ms cho bước gửi kết quả — đo lại với PLC thật khi chạy thử."
       },
       "lightingReason": {
         "scratch": "Xước và nứt nông chỉ nổi lên khi chiếu góc rất thấp, nền tối hẳn.",
@@ -1627,7 +1629,8 @@
         "measurement": "Đo lường",
         "production": "Sản xuất",
         "system": "Hệ thống",
-        "environment": "Môi trường"
+        "environment": "Môi trường",
+        "integration": "Tích hợp"
       },
       "fields": {
         "object": {
@@ -1666,6 +1669,9 @@
           "conditions": "Điều kiện môi trường",
           "ambientTempRange": "Dao động nhiệt độ (ΔT)",
           "ipRequirement": "Yêu cầu IP"
+        },
+        "integration": {
+          "resultInterface": "Giao tiếp trả kết quả"
         }
       },
       "options": {
@@ -1728,6 +1734,13 @@
           "stainless": "Inox",
           "plastic": "Nhựa",
           "other": "Khác — nhập α"
+        },
+        "resultInterface": {
+          "digitalIO": "Digital I/O",
+          "ethernetIP": "EtherNet/IP",
+          "profinet": "PROFINET",
+          "modbus": "Modbus TCP",
+          "tcp": "TCP/IP socket"
         }
       },
       "assumedOption": "Giả định: {value}",
@@ -1754,7 +1767,8 @@
         "thermal": "để kiểm giãn nở nhiệt",
         "stitching": "để kiểm sai số ghép ảnh giữa các camera",
         "algorithm": "để quyết định dùng xử lý ảnh truyền thống hay Deep Learning",
-        "motionBlur": "để kiểm nhoè chuyển động"
+        "motionBlur": "để kiểm nhoè chuyển động",
+        "integration": "để biết cách trả kết quả cho PLC / robot"
       },
       "questions": {
         "title": "Thông tin còn thiếu",
@@ -1891,7 +1905,9 @@
           "interfaceSpec": "Tối thiểu {name} · tổng {total} MB/s",
           "softwareTraditional": "Xử lý ảnh truyền thống",
           "softwareDeepLearning": "Học sâu — cần tập ảnh mẫu thật",
-          "softwareUndecided": "Chưa chọn được truyền thống hay học sâu"
+          "softwareUndecided": "Chưa chọn được truyền thống hay học sâu",
+          "plcInterface": "Trả kết quả qua {list}",
+          "plcUnknown": "Chưa chọn giao tiếp trả kết quả"
         },
         "pending": "Chọn ở bước thiết bị",
         "pendingDetail": "Khối này cần thiết bị cụ thể (cấu hình máy tính, giao thức với PLC) — sẽ tính khi chọn thiết bị.",

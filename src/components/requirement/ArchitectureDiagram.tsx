@@ -86,10 +86,11 @@ export function ArchitectureDiagram({
                   </span>
                 ) : null}
                 <span className="mt-1 block text-xs text-slate-600 dark:text-slate-400">
-                  {node.pending
-                    ? t('pending')
-                    : node.detail
-                      ? t(`details.${node.detail.key}`, node.detail.values ?? {})
+                  {/* Khối chờ (PLC chưa chọn giao tiếp) vẫn có câu riêng thì hiện câu đó. */}
+                  {node.detail
+                    ? t(`details.${node.detail.key}`, node.detail.values ?? {})
+                    : node.pending
+                      ? t('pending')
                       : t('noData')}
                 </span>
               </button>

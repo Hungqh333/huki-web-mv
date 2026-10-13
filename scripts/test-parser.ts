@@ -18,7 +18,7 @@ import {
   extractionToFields,
   type Extraction,
 } from '../src/lib/ai/extraction';
-import { GEMINI_RESPONSE_SCHEMA, PARSER_FALLBACK_MODEL, PARSER_MODEL, runParser, type ParserClient } from '../src/lib/ai/parserCore';
+import { AI_MIN_FALLBACK_MS, AI_TOTAL_BUDGET_MS, GEMINI_RESPONSE_SCHEMA, PARSER_FALLBACK_MODEL, PARSER_MODEL, fallbackBudgetMs, runParser, type ParserClient } from '../src/lib/ai/parserCore';
 import { parseDraft, startDraftFromText } from '../src/lib/requirement/draft';
 import {
   V1A_FIELDS,
@@ -441,8 +441,8 @@ test('dự phòng: model mặc định 3.5-flash-lite, dự phòng 3.6-flash', (
   assert.equal(PARSER_FALLBACK_MODEL, 'gemini-3.6-flash');
 });
 
-test('dự phòng: lượt đầu hỏng nhanh vì 503 / 429 → đọc lại một lần bằng model dự phòng', async () => {
-  for (const status of [503, 429]) {
+test('dự phòng: lượt đầu hỏng vì 503 / 429 / 504 → đọc lại một lần bằng model dự phòng', async () => {
+  for (const status of [503, 429, 504]) {
     const { client, models } = sequenceClient([apiError(status), reply({ modelVersion: 'gemini-3.6-flash' })]);
     const outcome = await runParser(client, 'x', { fallbackModel: PARSER_FALLBACK_MODEL });
     assert.equal(outcome.ok, true, `${status}`);
@@ -464,14 +464,38 @@ test('dự phòng: KHÔNG đọc lại khi lỗi khác, bị chặn, không khai
   };
   const withFallback = { fallbackModel: PARSER_FALLBACK_MODEL };
   assert.equal(await callsFor(apiError(400), withFallback), 1, 'loi 400');
-  assert.equal(await callsFor(apiError(504), withFallback), 1, 'het gio 504 da ton thoi gian');
   assert.equal(await callsFor(reply({ candidates: [{ finishReason: 'SAFETY' }] }), withFallback), 1, 'bi chan');
   assert.equal(await callsFor(apiError(503), {}), 1, 'khong khai du phong');
   assert.equal(await callsFor(apiError(503), { model: 'gemini-3.6-flash', fallbackModel: 'gemini-3.6-flash' }), 1, 'trung model');
 
+  // Lỗi đến ở giây 41 → còn 14 giây < 15 → không thử dự phòng, tránh vượt maxDuration 60 giây.
+  for (const status of [503, 504]) {
+    let tick = 0;
+    const slowClock = () => (tick++ === 0 ? 0 : 41_000);
+    assert.equal(await callsFor(apiError(status), { ...withFallback, now: slowClock }), 1, `luot dau hong cham ${status}`);
+  }
+});
+
+test('dự phòng: lượt dự phòng bị cắt đúng bằng thời gian còn lại của ngân sách', async () => {
+  const configs: unknown[] = [];
+  const queue: unknown[] = [apiError(504), reply({ modelVersion: 'gemini-3.6-flash' })];
+  const client: ParserClient = {
+    models: {
+      async generateContent(params) {
+        configs.push((params.config as { httpOptions?: unknown }).httpOptions);
+        const next = queue.shift();
+        if (next instanceof Error) throw next;
+        return next as GenerateContentResponse;
+      },
+    },
+  };
   let tick = 0;
-  const slowClock = () => (tick++ === 0 ? 0 : 20_000);
-  assert.equal(await callsFor(apiError(503), { ...withFallback, now: slowClock }), 1, 'luot dau hong cham');
+  const clock = () => (tick++ === 0 ? 0 : 30_000);
+  const outcome = await runParser(client, 'x', { fallbackModel: PARSER_FALLBACK_MODEL, now: clock });
+  assert.equal(outcome.ok, true);
+  assert.deepEqual(configs, [undefined, { timeout: AI_TOTAL_BUDGET_MS - 30_000 }], 'luot dau dung timeout client 45 s; du phong con 25 s');
+  assert.equal(fallbackBudgetMs({ ok: false, reason: 'apiError', detail: 'ApiError 504' }, 'a', 'b', 40_000), AI_MIN_FALLBACK_MS);
+  assert.equal(fallbackBudgetMs({ ok: false, reason: 'apiError', detail: 'ApiError 504' }, 'a', 'b', 40_001), null);
 });
 
 // ─────────────────────────────── Prompt & nhãn ───────────────────────────────

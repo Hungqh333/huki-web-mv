@@ -24,10 +24,32 @@ import { EXTRACTION_SCHEMA, PARSER_SYSTEM_PROMPT, buildUserMessage, type Extract
 export const PARSER_MODEL = 'gemini-3.5-flash-lite';
 export const PARSER_FALLBACK_MODEL = 'gemini-3.6-flash';
 
-/** Lỗi đáng thử model dự phòng: quá tải (503) hoặc hết hạn mức riêng của model (429). */
-const FALLBACK_STATUSES = [' 503', ' 429'];
-/** Chỉ thử dự phòng khi lượt đầu hỏng nhanh, để cả hai lượt vẫn nằm trong maxDuration 60 giây. */
-const FALLBACK_WITHIN_MS = 10_000;
+/**
+ * Lỗi đáng thử model dự phòng: quá tải (503), hết hạn mức riêng của model (429),
+ * Google xử lý không kịp (504 — thêm 2026-10-13 sau lần 3.5-flash-lite quá tải).
+ */
+const FALLBACK_STATUSES = [' 503', ' 429', ' 504'];
+/** Cả hai lượt phải xong trong maxDuration 60 giây của trang, chừa 5 giây cho phần còn lại. */
+export const AI_TOTAL_BUDGET_MS = 55_000;
+/** Còn ít hơn chừng này thì không thử dự phòng — model dự phòng cần ~10–15 giây. */
+export const AI_MIN_FALLBACK_MS = 15_000;
+
+/**
+ * Thời gian dành cho lượt dự phòng (ms), hoặc `null` nếu không thử. Lượt dự phòng
+ * bị cắt đúng bằng phần ngân sách còn lại, nên một lỗi 504 đến muộn vẫn không làm
+ * cả lời gọi vượt maxDuration. Dùng chung cho bộ đọc và bộ diễn giải.
+ */
+export function fallbackBudgetMs(
+  first: { ok: boolean; reason?: string; detail?: string },
+  model: string,
+  fallbackModel: string | undefined,
+  elapsedMs: number
+): number | null {
+  if (first.ok || first.reason !== 'apiError' || !fallbackModel || fallbackModel === model) return null;
+  if (!FALLBACK_STATUSES.some((status) => first.detail?.endsWith(status))) return null;
+  const remaining = AI_TOTAL_BUDGET_MS - elapsedMs;
+  return remaining >= AI_MIN_FALLBACK_MS ? remaining : null;
+}
 
 /** Chỉ phần client bộ đọc cần — test truyền object giả có đúng hàm này. */
 export type ParserClient = {
@@ -39,7 +61,7 @@ export type ParserOptions = {
   /** `null` = không gửi thinkingConfig (dùng mặc định của model). */
   thinking?: 'MINIMAL' | 'LOW' | 'MEDIUM' | 'HIGH' | null;
   /**
-   * Model đọc lại khi lượt đầu hỏng nhanh vì 503 / 429. Bỏ trống = không dự phòng
+   * Model đọc lại khi lượt đầu hỏng vì 503 / 429 / 504 mà còn đủ thời gian. Bỏ trống = không dự phòng
    * (script đo dùng cách này để đo đúng một model).
    */
   fallbackModel?: string;
@@ -106,24 +128,17 @@ export async function runParser(client: ParserClient, rawText: string, options: 
   const first = await callModel(client, rawText, model, options.thinking);
 
   const { fallbackModel } = options;
-  if (
-    first.ok ||
-    first.reason !== 'apiError' ||
-    !fallbackModel ||
-    fallbackModel === model ||
-    !FALLBACK_STATUSES.some((status) => first.detail?.endsWith(status)) ||
-    now() - started > FALLBACK_WITHIN_MS
-  ) {
-    return first;
-  }
-  return callModel(client, rawText, fallbackModel, options.thinking);
+  const budget = fallbackBudgetMs(first, model, fallbackModel, now() - started);
+  if (budget === null || !fallbackModel) return first;
+  return callModel(client, rawText, fallbackModel, options.thinking, budget);
 }
 
 async function callModel(
   client: ParserClient,
   rawText: string,
   requested: string,
-  thinkingOption: ParserOptions['thinking']
+  thinkingOption: ParserOptions['thinking'],
+  timeoutMs?: number
 ): Promise<ParserOutcome> {
   const thinking = thinkingOption === undefined ? 'LOW' : thinkingOption;
 
@@ -137,6 +152,7 @@ async function callModel(
         responseJsonSchema: GEMINI_RESPONSE_SCHEMA,
         maxOutputTokens: 16000,
         ...(thinking ? { thinkingConfig: { thinkingLevel: thinking } } : {}),
+        ...(timeoutMs ? { httpOptions: { timeout: timeoutMs } } : {}),
       } as GenerateContentParameters['config'],
     });
 

@@ -10,7 +10,7 @@
  */
 import { z } from 'zod';
 import type { GenerateContentParameters, GenerateContentResponse } from '@google/genai';
-import { PARSER_FALLBACK_MODEL, PARSER_MODEL, type ParserClient, type ParserUsage } from './parserCore';
+import { PARSER_FALLBACK_MODEL, PARSER_MODEL, fallbackBudgetMs, type ParserClient, type ParserUsage } from './parserCore';
 
 export const EXPLAINER_MODEL = PARSER_MODEL;
 export const EXPLAINER_FALLBACK_MODEL = PARSER_FALLBACK_MODEL;
@@ -118,8 +118,6 @@ export type ExplainerOutcome =
     };
 
 const BLOCKED_FINISH = new Set(['SAFETY', 'RECITATION', 'BLOCKLIST', 'PROHIBITED_CONTENT', 'SPII', 'LANGUAGE']);
-const FALLBACK_STATUSES = [' 503', ' 429'];
-const FALLBACK_WITHIN_MS = 10_000;
 
 export type ExplainerOptions = { model?: string; fallbackModel?: string; now?: () => number };
 
@@ -134,17 +132,9 @@ export async function runExplainer(
   const started = now();
   const first = await callModel(client, factsText, locale, model);
   const { fallbackModel } = options;
-  if (
-    first.ok ||
-    first.reason !== 'apiError' ||
-    !fallbackModel ||
-    fallbackModel === model ||
-    !FALLBACK_STATUSES.some((status) => first.detail?.endsWith(status)) ||
-    now() - started > FALLBACK_WITHIN_MS
-  ) {
-    return first;
-  }
-  return callModel(client, factsText, locale, fallbackModel);
+  const budget = fallbackBudgetMs(first, model, fallbackModel, now() - started);
+  if (budget === null || !fallbackModel) return first;
+  return callModel(client, factsText, locale, fallbackModel, budget);
 }
 
 function usageOf(response: GenerateContentResponse): ParserUsage | undefined {
@@ -158,7 +148,7 @@ function usageOf(response: GenerateContentResponse): ParserUsage | undefined {
   };
 }
 
-async function callModel(client: ParserClient, factsText: string, locale: string, requested: string): Promise<ExplainerOutcome> {
+async function callModel(client: ParserClient, factsText: string, locale: string, requested: string, timeoutMs?: number): Promise<ExplainerOutcome> {
   try {
     const response = await client.models.generateContent({
       model: requested,
@@ -169,6 +159,7 @@ async function callModel(client: ParserClient, factsText: string, locale: string
         responseJsonSchema: EXPLAINER_RESPONSE_SCHEMA,
         maxOutputTokens: 4000,
         thinkingConfig: { thinkingLevel: 'LOW' },
+        ...(timeoutMs ? { httpOptions: { timeout: timeoutMs } } : {}),
       } as GenerateContentParameters['config'],
     });
 

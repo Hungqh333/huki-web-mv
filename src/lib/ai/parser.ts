@@ -15,8 +15,9 @@ let client: GoogleGenAI | null = null;
 
 /*
  * Trang Yêu cầu đặt maxDuration = 60 giây (gói Vercel Hobby). Mỗi lượt dừng ở 45
- * giây, SDK không tự thử lại (attempts: 1). Lượt đầu hỏng nhanh vì 503 / 429 thì
- * runParser đọc lại một lần bằng model dự phòng. Vẫn thất bại thì người dùng có
+ * giây, SDK không tự thử lại (attempts: 1). Lượt đầu hỏng vì 503 / 429 / 504 mà còn
+ * ≥ 15 giây trong ngân sách 55 giây thì runParser đọc lại một lần bằng model dự
+ * phòng, cắt đúng bằng thời gian còn lại (parserCore.fallbackBudgetMs). Vẫn thất bại thì người dùng có
  * bảng trống và nút "Đọc lại".
  *
  * Truyền key tường minh: SDK tự đọc cả GOOGLE_API_KEY và ưu tiên biến đó, dễ lẫn key.

@@ -2134,6 +2134,13 @@
         "feasibilityAt": "Feasibility status at this time:",
         "yes": "Yes",
         "no": "No"
+      },
+      "mode": {
+        "title": "Form mode",
+        "basic": "Basic",
+        "advanced": "Advanced",
+        "basicHint": "{count, plural, =0 {All parameters are shown.} one {# advanced parameter hidden — the system uses an assumption for it (see Assumptions).} other {# advanced parameters hidden — the system uses assumptions for them (see Assumptions).}}",
+        "advancedHint": "All parameters are shown."
       }
     }
   },

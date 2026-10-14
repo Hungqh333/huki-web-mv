@@ -2134,6 +2134,13 @@
         "feasibilityAt": "Trạng thái khả thi tại thời điểm này:",
         "yes": "Có",
         "no": "Không"
+      },
+      "mode": {
+        "title": "Chế độ bảng",
+        "basic": "Cơ bản",
+        "advanced": "Nâng cao",
+        "basicHint": "{count, plural, =0 {Đang hiện mọi thông số.} other {Đang ẩn # thông số nâng cao — hệ thống dùng giả định cho các ô này (xem cột Giả định).}}",
+        "advancedHint": "Hiện đầy đủ mọi thông số."
       }
     }
   },

@@ -301,8 +301,11 @@ export function changeApplicationType(previous: Requirement | null, type: Applic
 }
 
 /** Bao nhiêu ô trên bảng đã có giá trị. */
-export function countFilled(requirement: Requirement): { filled: number; total: number } {
-  const defs = fieldsFor(requirement.applicationType);
+/** `defs` = các ô đang hiện (chế độ Cơ bản chỉ đếm ô cơ bản); mặc định mọi ô của loại. */
+export function countFilled(
+  requirement: Requirement,
+  defs: readonly RequirementFieldDef[] = fieldsFor(requirement.applicationType)
+): { filled: number; total: number } {
   const filled = defs.filter((def) => readField(requirement, def.path)?.value != null).length;
   return { filled, total: defs.length };
 }

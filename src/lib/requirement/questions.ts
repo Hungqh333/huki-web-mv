@@ -261,13 +261,16 @@ export function needsFor(type: ApplicationType): ReadonlyMap<string, FieldNeed> 
 }
 
 /** Đếm ô đã có giá trị theo từng mức — dòng tiến độ trên bảng. */
-export function countByNeed(requirement: Requirement): Record<FieldNeed, { filled: number; total: number }> {
+export function countByNeed(
+  requirement: Requirement,
+  defs: readonly RequirementFieldDef[] = fieldsFor(requirement.applicationType)
+): Record<FieldNeed, { filled: number; total: number }> {
   const needs = needsFor(requirement.applicationType);
   const counts = Object.fromEntries(NEED_LEVELS.map((level) => [level, { filled: 0, total: 0 }])) as Record<
     FieldNeed,
     { filled: number; total: number }
   >;
-  for (const def of fieldsFor(requirement.applicationType)) {
+  for (const def of defs) {
     const entry = counts[needs.get(def.path) ?? 'optional'];
     entry.total++;
     if (readField(requirement, def.path)?.value != null) entry.filled++;

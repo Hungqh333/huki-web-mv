@@ -28,6 +28,16 @@ import { resolveAssumptions } from '@/lib/requirement/assumptions';
 import { PARSE_TEXT_MAX, applyParseResult, pickApplicationType } from '@/lib/requirement/parseResult';
 import { purposesOf } from '@/lib/requirement/purposes';
 import {
+  DEFAULT_FORM_MODE,
+  FORM_MODES,
+  FORM_MODE_STORAGE_KEY,
+  hiddenFieldCount,
+  isFormMode,
+  questionsForMode,
+  visibleFieldDefs,
+  type FormMode,
+} from '@/lib/requirement/formMode';
+import {
   MAX_VISIBLE_QUESTIONS,
   NEED_LEVELS,
   answerUnknown,
@@ -109,6 +119,36 @@ const EMPTY_DRAFT: RequirementDraft = {
 
 const inputId = (path: string) => `req-${path.replace(/\./g, '-')}`;
 const fieldDef = (path: string) => V1A_FIELDS.find((def) => def.path === path);
+
+/*
+ * Chế độ bảng Cơ bản / Nâng cao (2026-10-14) — nhớ theo trình duyệt. Cùng cách với
+ * ThemeToggle: useSyncExternalStore, server luôn trả mặc định, không lệch hydrate.
+ */
+const FORM_MODE_EVENT = 'formmodechange';
+function subscribeFormMode(callback: () => void) {
+  window.addEventListener('storage', callback);
+  window.addEventListener(FORM_MODE_EVENT, callback);
+  return () => {
+    window.removeEventListener('storage', callback);
+    window.removeEventListener(FORM_MODE_EVENT, callback);
+  };
+}
+function readFormMode(): FormMode {
+  try {
+    const value = localStorage.getItem(FORM_MODE_STORAGE_KEY);
+    return isFormMode(value) ? value : DEFAULT_FORM_MODE;
+  } catch {
+    return DEFAULT_FORM_MODE;
+  }
+}
+function writeFormMode(mode: FormMode) {
+  try {
+    localStorage.setItem(FORM_MODE_STORAGE_KEY, mode);
+  } catch {
+    // Không lưu được (chế độ riêng tư): vẫn đổi cho lần xem này qua sự kiện dưới.
+  }
+  window.dispatchEvent(new Event(FORM_MODE_EVENT));
+}
 
 /** Panel bấm "Sửa trong bảng" → cuộn tới ô đó và đặt con trỏ vào. */
 function focusField(path: string) {
@@ -231,6 +271,14 @@ export function RequirementSummary({
     writeDraft(next);
   };
   const [missingOnly, setMissingOnly] = useState(false);
+  const storedMode = useSyncExternalStore(subscribeFormMode, readFormMode, () => DEFAULT_FORM_MODE);
+  /* localStorage bị chặn thì giá trị lưu không đổi được — giữ lựa chọn trong phiên ở state. */
+  const [sessionMode, setSessionMode] = useState<FormMode | null>(null);
+  const mode = sessionMode ?? storedMode;
+  const chooseMode = (next: FormMode) => {
+    setSessionMode(next);
+    writeFormMode(next);
+  };
   const onReset = () => {
     if (!requirement) return;
     writeDraft({
@@ -240,11 +288,22 @@ export function RequirementSummary({
     });
   };
 
-  const defs = requirement ? fieldsFor(requirement.applicationType) : [];
-  const progress = requirement ? countFilled(requirement) : null;
+  const defs = useMemo(() => (requirement ? visibleFieldDefs(requirement, mode) : []), [requirement, mode]);
+  const visiblePaths = useMemo(() => new Set(defs.map((def) => def.path)), [defs]);
+  const hiddenCount = requirement ? hiddenFieldCount(requirement, mode) : 0;
+  const progress = requirement ? countFilled(requirement, defs) : null;
   const applicationType = requirement?.applicationType ?? null;
   const needs = useMemo(() => (applicationType ? needsFor(applicationType) : null), [applicationType]);
-  const needCounts = useMemo(() => (requirement ? countByNeed(requirement) : null), [requirement]);
+  const needCounts = useMemo(() => (requirement ? countByNeed(requirement, defs) : null), [requirement, defs]);
+  /* "Sửa trong bảng" tới ô đang ẩn ở chế độ Cơ bản → chuyển Nâng cao, đợi bảng vẽ lại rồi mới cuộn. */
+  const focusAnyField = (path: string) => {
+    if (visiblePaths.has(path) || !requirement || !fieldsFor(requirement.applicationType).some((def) => def.path === path)) {
+      focusField(path);
+      return;
+    }
+    chooseMode('advanced');
+    requestAnimationFrame(() => requestAnimationFrame(() => focusField(path)));
+  };
   const isEmptyField = (path: string) => (requirement ? readField(requirement, path)?.value == null : true);
   const shownDefs = missingOnly ? defs.filter((def) => isEmptyField(def.path)) : defs;
   const inferredType =
@@ -335,6 +394,36 @@ export function RequirementSummary({
             </p>
           ) : null}
 
+          {requirement ? (
+            <div className="mt-4">
+              <div
+                role="radiogroup"
+                aria-label={t('mode.title')}
+                className="inline-flex rounded-xl border border-slate-200 bg-slate-50 p-1 dark:border-slate-700 dark:bg-slate-800/60"
+              >
+                {FORM_MODES.map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    role="radio"
+                    aria-checked={mode === option}
+                    onClick={() => chooseMode(option)}
+                    className={`min-h-9 rounded-lg px-4 text-sm font-medium transition ${
+                      mode === option
+                        ? 'bg-sky-600 text-white shadow-sm dark:bg-sky-500 dark:text-slate-950'
+                        : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100'
+                    }`}
+                  >
+                    {t(`mode.${option}`)}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                {mode === 'basic' ? t('mode.basicHint', { count: hiddenCount }) : t('mode.advancedHint')}
+              </p>
+            </div>
+          ) : null}
+
           {requirement && !V1A_FULL_SUPPORT.includes(requirement.applicationType) ? (
             <p className="mt-3 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
               {t('partialSupport')}
@@ -370,7 +459,7 @@ export function RequirementSummary({
         </div>
 
         {requirement ? (
-          <RequirementQuestions requirement={requirement} revision={base.revision} onAnswer={onAnswer} />
+          <RequirementQuestions requirement={requirement} revision={base.revision} onAnswer={onAnswer} visiblePaths={visiblePaths} />
         ) : null}
 
         {requirement && resolved
@@ -467,7 +556,7 @@ export function RequirementSummary({
           : null}
 
         {/* V1b: phân tích kỹ thuật chạy trên chính bảng này (engine + đánh giá khả thi). */}
-        {requirement ? <AnalysisPanel requirement={requirement} onFocusField={focusField} engineParams={engineParams} /> : null}
+        {requirement ? <AnalysisPanel requirement={requirement} onFocusField={focusAnyField} engineParams={engineParams} /> : null}
         {requirement ? (
           <DesignPanels
             requirement={requirement}
@@ -502,7 +591,7 @@ export function RequirementSummary({
 
       {resolved ? (
         <aside className="min-w-0 lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:self-start lg:overflow-y-auto">
-          <AssumptionsPanel assumptions={resolved.assumptions} />
+          <AssumptionsPanel assumptions={resolved.assumptions} onFocusField={focusAnyField} />
         </aside>
       ) : null}
     </div>
@@ -580,13 +669,19 @@ function RequirementQuestions({
   requirement,
   revision,
   onAnswer,
+  visiblePaths,
 }: {
   requirement: Requirement;
   revision: number;
   onAnswer: (next: Requirement) => void;
+  /** Ô đang hiện theo chế độ — Cơ bản chỉ hỏi câu về ô cơ bản (Q4). */
+  visiblePaths: ReadonlySet<string>;
 }) {
   const t = useTranslations('designer.requirement.questions');
-  const { open, unknown } = useMemo(() => pendingQuestions(requirement), [requirement]);
+  const { open, unknown } = useMemo(() => {
+    const all = pendingQuestions(requirement);
+    return { open: questionsForMode(all.open, visiblePaths), unknown: questionsForMode(all.unknown, visiblePaths) };
+  }, [requirement, visiblePaths]);
   const visible = open.slice(0, MAX_VISIBLE_QUESTIONS);
   const more = open.length - visible.length;
 
@@ -792,7 +887,7 @@ function QuestionItem({
 
 // ─────────────────────────────── Panel giả định ───────────────────────────────
 
-function AssumptionsPanel({ assumptions }: { assumptions: Assumption[] }) {
+function AssumptionsPanel({ assumptions, onFocusField }: { assumptions: Assumption[]; onFocusField: (path: string) => void }) {
   const t = useTranslations('designer.requirement');
   const locale = useLocale();
   const pick = (text: { vi: string; en: string }) => (locale === 'en' ? text.en : text.vi);
@@ -839,7 +934,7 @@ function AssumptionsPanel({ assumptions }: { assumptions: Assumption[] }) {
           {assumption.path ? (
             <button
               type="button"
-              onClick={() => focusField(assumption.path!)}
+              onClick={() => onFocusField(assumption.path!)}
               className="shrink-0 text-xs font-medium text-sky-700 hover:underline dark:text-sky-400"
             >
               {t('assumptions.editInTable')}

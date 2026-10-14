@@ -45,6 +45,8 @@ import type { Requirement } from '../src/lib/requirement/types';
 import { FIELD_CATALOG } from '../src/lib/selector/fields';
 import { GRR_DIVISOR, K_SUBPIXEL } from '../src/lib/vision/resolution';
 import { APPLICATION_TYPES } from '../src/lib/visionEntry';
+import { DEFAULT_FORM_MODE, hiddenFieldCount, isBasicField, questionsForMode, visibleFieldDefs } from '../src/lib/requirement/formMode';
+import { pendingQuestions as pendingQuestionsForMode } from '../src/lib/requirement/questions';
 
 function loadMessages(locale: 'vi' | 'en') {
   return JSON.parse(readFileSync(new URL(`../src/messages/${locale}.json`, import.meta.url), 'utf8'));
@@ -749,4 +751,42 @@ test('nhiều camera + có dung sai + chưa trả lời vắt qua đường ghé
   const { 'measurement.0.tolerance': _tol, ...noTolerance } = base;
   void _tol;
   assert.equal(readField(applyDefaults(filled('Measurement', noTolerance)).requirement, SEAM)!.value, null, 'khong do');
+});
+
+test('chế độ Cơ bản / Nâng cao (2026-10-14): đúng bộ ô cơ bản, ô đã có giá trị vẫn hiện, câu hỏi lọc theo ô hiện', () => {
+  assert.equal(DEFAULT_FORM_MODE, 'basic');
+  const paths = (type: 'AppearanceInspection' | 'Measurement') =>
+    visibleFieldDefs(emptyRequirement(type), 'basic').map((def) => def.path);
+  assert.deepEqual(new Set(paths('AppearanceInspection')), new Set([
+    'object.sizeX', 'object.sizeY', 'object.surface', 'detection.0.minSize', 'detection.0.defectType',
+    'measurement.0.tolerance', 'production.partsPerMinute', 'production.motion', 'system.cameraCount', 'integration.resultInterface',
+  ]));
+  assert.deepEqual(new Set(paths('Measurement')), new Set([
+    'object.sizeX', 'object.sizeY', 'object.surface', 'measurement.0.tolerance', 'measurement.0.feature',
+    'production.partsPerMinute', 'production.motion', 'system.cameraCount', 'integration.resultInterface',
+  ]));
+  assert.equal(isBasicField('AppearanceInspection', 'measurement.0.feature'), false, 'ngoai quan khong co kich thuoc can do');
+
+  // Mọi ô bắt buộc đều nằm trong Cơ bản — thiếu thì Cơ bản không ra được kết quả.
+  for (const type of ['AppearanceInspection', 'Measurement'] as const) {
+    for (const [path, need] of needsFor(type)) if (need === 'required') assert.ok(isBasicField(type, path), `${type}: ${path}`);
+    assert.equal(visibleFieldDefs(emptyRequirement(type), 'advanced').length, fieldsFor(type).length);
+    assert.equal(hiddenFieldCount(emptyRequirement(type), 'advanced'), 0);
+  }
+
+  // Ô nâng cao đã có giá trị thì vẫn hiện ở Cơ bản (Q3); đếm tiến độ theo ô đang hiện (Q5).
+  const req = withFieldValue(emptyRequirement('AppearanceInspection'), 'system.workingDistance', 300);
+  const basic = visibleFieldDefs(req, 'basic');
+  assert.ok(basic.some((def) => def.path === 'system.workingDistance'));
+  assert.equal(hiddenFieldCount(req, 'basic'), fieldsFor('AppearanceInspection').length - 11);
+  assert.deepEqual(countFilled(req, basic), { filled: 1, total: 11 });
+  assert.equal(Object.values(countByNeed(req, basic)).reduce((sum, c) => sum + c.total, 0), 11);
+
+  // Câu hỏi (Q4): Cơ bản bỏ câu về ô nâng cao đang ẩn (vd. độ tương phản lỗi).
+  const withDefect = withFieldValue(emptyRequirement('AppearanceInspection'), 'detection.0.minSize', 0.4);
+  const visible = new Set(visibleFieldDefs(withDefect, 'basic').map((def) => def.path));
+  const all = pendingQuestionsForMode(withDefect).open.map((q) => q.id);
+  const shown = questionsForMode(pendingQuestionsForMode(withDefect).open, visible).map((q) => q.id);
+  assert.ok(all.includes('contrast') && !shown.includes('contrast'));
+  assert.ok(shown.includes('objectSize'));
 });

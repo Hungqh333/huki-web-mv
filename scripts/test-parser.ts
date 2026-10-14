@@ -28,7 +28,7 @@ import {
   withFieldUnknown,
   withFieldValue,
 } from '../src/lib/requirement/fields';
-import { PARSE_TEXT_MAX, applyParseResult, pickApplicationType, safeParseCode } from '../src/lib/requirement/parseResult';
+import { PARSE_TEXT_MAX, applicationTypeFromFields, applyParseResult, pickApplicationType, safeParseCode } from '../src/lib/requirement/parseResult';
 
 function loadMessages(locale: 'vi' | 'en') {
   return JSON.parse(readFileSync(new URL(`../src/messages/${locale}.json`, import.meta.url), 'utf8'));
@@ -250,6 +250,7 @@ test('kết quả đọc → bản nháp: nhận ra loại thì dựng bảng (S
     applied: 1,
     dropped: 1,
     inferredApplicationType: 'AppearanceInspection',
+    inferredFrom: 'text',
     pending: [],
   });
   assert.equal(typed.revision, fromText.revision + 1);
@@ -263,6 +264,31 @@ test('kết quả đọc → bản nháp: nhận ra loại thì dựng bảng (S
   assert.deepEqual(picked.parse!.pending, []);
   assert.equal(picked.parse!.applied, 1);
   assert.equal(picked.parse!.inferredApplicationType, null, 'nguoi dung tu chon thi khong con "Suy ra"');
+});
+
+test('bộ đọc không chọn loại: code suy từ ô đọc được (có lỗi → ngoại quan; chỉ đo → đo lường)', () => {
+  const fromText = startDraftFromText('kiểm tra sản phẩm 100x100 mm, độ chính xác 0.1 mm, lỗi nhỏ nhất 0.4 mm, 1 camera');
+  const tolerance = { path: 'measurement.0.tolerance', value: 0.1, sourceSpan: 'độ chính xác 0.1 mm' };
+  const defect = { path: 'detection.0.minSize', value: 0.4, sourceSpan: 'lỗi nhỏ nhất 0.4 mm' };
+  const sizeX = { path: 'object.sizeX', value: 100, sourceSpan: '100x100 mm' };
+
+  assert.equal(applicationTypeFromFields([tolerance, defect]), 'AppearanceInspection', 'co loi thi la ngoai quan, ke ca khi co do');
+  assert.equal(applicationTypeFromFields([sizeX, tolerance]), 'Measurement');
+  assert.equal(applicationTypeFromFields([sizeX]), null, 'chi co kich thuoc vat thi khong doan');
+
+  const draft = applyParseResult(fromText, { status: 'ok', applicationType: null, fields: [sizeX, tolerance, defect], dropped: 0 });
+  assert.equal(draft.requirement!.applicationType, 'AppearanceInspection');
+  assert.equal(readField(draft.requirement!, 'measurement.0.tolerance')!.value, 0.1, 'do chinh xac van duoc dien');
+  assert.equal(readField(draft.requirement!, 'detection.0.minSize')!.value, 0.4);
+  assert.deepEqual([draft.parse!.inferredApplicationType, draft.parse!.inferredFrom, draft.parse!.pending], ['AppearanceInspection', 'fields', []]);
+
+  // Bộ đọc tự chọn loại thì căn cứ là mô tả; "Đọc lại" giữ nguyên căn cứ cũ.
+  const typed = applyParseResult(fromText, { status: 'ok', applicationType: 'Measurement', fields: [defect], dropped: 0 });
+  assert.equal(typed.parse!.inferredFrom, 'text');
+  const again = applyParseResult(draft, { status: 'ok', applicationType: 'Measurement', fields: [], dropped: 0 });
+  assert.deepEqual([again.requirement!.applicationType, again.parse!.inferredFrom], ['AppearanceInspection', 'fields']);
+  // Bản nháp có căn cứ vẫn đọc lại được từ trình duyệt.
+  assert.equal(parseDraft(JSON.stringify(draft))!.parse!.inferredFrom, 'fields');
 });
 
 test('"Đọc lại" không đổi loại ứng dụng và không đè ô đã có', () => {

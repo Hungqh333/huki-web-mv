@@ -1659,7 +1659,8 @@
         "dropped": "Đã bỏ {count} thông số vì không khớp nguyên văn mô tả hoặc ghi chưa rõ.",
         "reread": "Đọc lại",
         "inferredType": "Loại ứng dụng do bộ đọc chọn từ mô tả — hãy xác nhận hoặc đổi.",
-        "sourceSpan": "Từ mô tả: “{span}”"
+        "sourceSpan": "Từ mô tả: “{span}”",
+        "inferredTypeFromFields": "Loại ứng dụng suy từ các thông số đọc được (có kích thước lỗi → Kiểm tra ngoại quan; chỉ có độ chính xác đo → Đo lường) — hãy xác nhận hoặc đổi."
       },
       "applicationType": "Loại ứng dụng",
       "pickApplication": "Chọn loại ứng dụng",

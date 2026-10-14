@@ -330,7 +330,9 @@ export function RequirementSummary({
             ))}
           </select>
           {inferredType ? (
-            <p className="mt-2 text-xs text-violet-700 dark:text-violet-300">{t('parser.inferredType')}</p>
+            <p className="mt-2 text-xs text-violet-700 dark:text-violet-300">
+              {t(base.parse?.inferredFrom === 'fields' ? 'parser.inferredTypeFromFields' : 'parser.inferredType')}
+            </p>
           ) : null}
 
           {requirement && !V1A_FULL_SUPPORT.includes(requirement.applicationType) ? (

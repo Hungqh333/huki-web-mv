@@ -1659,7 +1659,8 @@
         "dropped": "Dropped {count} values that did not match the description wording or were unclear.",
         "reread": "Read again",
         "inferredType": "Application type chosen by the reader from the description — confirm or change it.",
-        "sourceSpan": "From description: “{span}”"
+        "sourceSpan": "From description: “{span}”",
+        "inferredTypeFromFields": "Application type derived from the values read (defect size → Appearance inspection; measurement accuracy only → Measurement) — confirm or change it."
       },
       "applicationType": "Application type",
       "pickApplication": "Pick an application type",

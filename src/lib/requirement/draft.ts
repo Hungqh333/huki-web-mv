@@ -66,6 +66,11 @@ export type DraftParse = {
   dropped: number;
   /** Loại ứng dụng do bộ đọc chọn — hiện nhãn "Suy ra" tới khi người dùng đổi. */
   inferredApplicationType: ApplicationType | null;
+  /**
+   * Căn cứ của loại suy ra: 'text' = bộ đọc thấy trong mô tả; 'fields' = code suy từ
+   * các ô đọc được (applicationTypeFromFields). Bản nháp cũ không có = 'text'.
+   */
+  inferredFrom?: 'text' | 'fields';
   /** Ô đọc được khi chưa có loại ứng dụng — áp khi người dùng chọn loại. */
   pending: ParsedField[];
   /**
@@ -83,6 +88,7 @@ function isDraftParse(value: unknown): value is DraftParse {
     typeof parse.applied === 'number' &&
     typeof parse.dropped === 'number' &&
     (parse.inferredApplicationType === null || isApplicationType(parse.inferredApplicationType)) &&
+    (parse.inferredFrom === undefined || parse.inferredFrom === 'text' || parse.inferredFrom === 'fields') &&
     (parse.detail === undefined || typeof parse.detail === 'string') &&
     Array.isArray(parse.pending) &&
     parse.pending.every(

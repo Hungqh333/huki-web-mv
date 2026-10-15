@@ -103,6 +103,10 @@ export function BomPanel({
     return def?.unit ? `${text} ${def.unit}` : text;
   };
   const available = accessories.filter((item) => !bom.lines.some((line) => line.code === item.code));
+  // Số thứ tự liên tục qua mọi hạng mục, theo đúng thứ tự hiển thị — "dòng 7" là duy nhất (2026-10-15).
+  const lineNumber = new Map(
+    CATEGORY_ORDER.flatMap((category) => bom.lines.filter((line) => line.category === category)).map((line, index) => [line.key, index + 1])
+  );
 
   return (
     <section aria-labelledby="bom-title" className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
@@ -112,6 +116,7 @@ export function BomPanel({
           <table className="w-full min-w-[40rem] text-left text-sm">
             <thead className="text-xs text-slate-500 dark:text-slate-400">
               <tr className="border-b border-slate-200 dark:border-slate-800">
+                <th className="w-8 py-2 pl-2 pr-2 font-medium">#</th>
                 <th className="py-2 pr-3 font-medium">{t('colItem')}</th>
                 <th className="py-2 pr-3 font-medium">{t('colQty')}</th>
                 <th className="py-2 pr-3 font-medium">{t('colPrice')}</th>
@@ -125,13 +130,14 @@ export function BomPanel({
               if (lines.length === 0) return null;
               return (
                 <tbody key={category} className="border-b border-slate-100 dark:border-slate-800">
-                  <tr>
-                    <td colSpan={6} className="pt-3 pb-1 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                  <tr className="bg-slate-100 dark:bg-slate-800/70">
+                    <td colSpan={7} className="px-2 py-1.5 text-xs font-semibold uppercase tracking-wide text-slate-800 dark:text-slate-100">
                       {t(`categories.${category}`)}
                     </td>
                   </tr>
                   {lines.map((line) => (
                     <tr key={line.key} className="align-top">
+                      <td className="py-1.5 pl-2 pr-2 tabular-nums text-slate-400 dark:text-slate-500">{lineNumber.get(line.key)}</td>
                       <td className="py-1.5 pr-3">
                         <span className={line.placeholder ? 'italic' : 'font-medium'}>{nameOf(line)}</span>
                         {line.unverified ? (

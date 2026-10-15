@@ -45,15 +45,21 @@ export function ArchitectureDiagram({
 
   return (
     <div>
-      <ol className="flex flex-col items-stretch">
+      {/* Màn rộng: 2 hàng × 4 khối, đọc trái → phải theo chiều tín hiệu (2026-10-15). */}
+      <ol className="flex flex-col items-stretch lg:grid lg:grid-cols-4 lg:gap-x-8 lg:gap-y-4">
         {architecture.nodes.map((node, index) => {
           const status = node.status ?? 'info';
           const open = openNode === node.id;
           return (
-            <li key={node.id} className="flex flex-col items-center">
+            <li key={node.id} className="relative flex flex-col items-center lg:items-stretch">
               {index > 0 ? (
-                <span aria-hidden="true" className="my-1 text-slate-400">
+                <span aria-hidden="true" className="my-1 text-slate-400 lg:hidden">
                   ↓
+                </span>
+              ) : null}
+              {index % 4 !== 0 ? (
+                <span aria-hidden="true" className="absolute top-4 -left-6 hidden text-slate-400 lg:block">
+                  →
                 </span>
               ) : null}
               <button

@@ -387,6 +387,8 @@ export function RequirementSummary({
           aria-busy={reading}
           className="m-0 min-w-0 space-y-6 border-0 p-0 disabled:opacity-60"
         >
+        {/* Mô tả + Loại ứng dụng đặt cạnh nhau ở màn rộng (2026-10-15). */}
+        <div className={base.rawText ? 'grid gap-6 xl:grid-cols-2 xl:items-start' : ''}>
         {base.rawText ? (
           <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <PanelHeader
@@ -507,11 +509,14 @@ export function RequirementSummary({
           )}
           </div>
         </div>
+        </div>
 
         {requirement ? (
           <RequirementQuestions requirement={requirement} revision={base.revision} onAnswer={onAnswer} visiblePaths={visiblePaths} />
         ) : null}
 
+        {/* Bảy nhóm ô nhập xếp 2 cột ở màn rộng (2026-10-15) — thứ tự đọc theo hàng. */}
+        <div className="grid gap-6 xl:grid-cols-2 xl:items-start">
         {requirement && resolved
           ? REQUIREMENT_SECTIONS.map((section) => {
               const sectionDefs = shownDefs.filter((def) => def.section === section);
@@ -555,7 +560,7 @@ export function RequirementSummary({
                       return (
                         <li
                           key={def.path}
-                          className={`grid items-center gap-2 px-4 py-3 sm:grid-cols-[minmax(0,13rem)_minmax(0,1fr)_6.5rem] sm:gap-4 sm:px-5 ${
+                          className={`grid items-center gap-2 px-4 py-3 sm:grid-cols-[minmax(0,13rem)_minmax(0,20rem)_6.5rem] sm:gap-4 sm:px-5 ${
                             missingNeeded
                               ? 'border-l-4 border-rose-500 bg-rose-50 pl-3 sm:pl-4 dark:bg-rose-500/10'
                               : ''
@@ -607,6 +612,7 @@ export function RequirementSummary({
               );
             })
           : null}
+        </div>
 
         {/* V1b: phân tích kỹ thuật chạy trên chính bảng này (engine + đánh giá khả thi). */}
         {requirement ? <AnalysisPanel requirement={requirement} onFocusField={focusAnyField} engineParams={engineParams} /> : null}

@@ -96,33 +96,21 @@ export function ProjectSaveBar({ canExportPdf = false }: { canExportPdf?: boolea
           // "Chưa lưu" là cảnh báo thật — giữ màu; trạng thái khác là ghi chú mờ.
           link && !link.locked && dirty ? <span className="text-amber-700 dark:text-amber-400">{status}</span> : status
         }
+        /* Gọn thành một thanh (2026-10-15): ô tên + nút lưu nằm ngay trong thanh tiêu đề;
+           thân khung chỉ hiện khi có nút xuất file / xác nhận / thông báo. */
         actions={
-          <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
-            {link ? (
-              <Link href={`${PROJECTS_ROUTE}/${link.id}`} className="text-sky-700 hover:underline dark:text-sky-400">
-                {t('openProject')}
-              </Link>
-            ) : null}
-            <Link href={PROJECTS_ROUTE} className="text-sky-700 hover:underline dark:text-sky-400">
-              {t('allProjects')}
-            </Link>
-          </div>
-        }
-      />
-      <div className="px-4 pb-4 sm:px-5 empty:hidden">
-
+          <div className="flex flex-wrap items-center gap-2">
       {link?.locked ? null : (
-        <div className="mt-3 flex flex-wrap items-end gap-2">
-          <label className="block w-full min-w-0 text-xs text-slate-600 sm:w-80 dark:text-slate-400">
-            <span className="mb-1 block">{t('nameLabel')}</span>
+        <>
             <input
               type="text"
               value={name}
               maxLength={PROJECT_NAME_MAX}
               onChange={(event) => setTypedName({ key: linkKey, value: event.target.value })}
-              className={INPUT_CLASS}
+              aria-label={t('nameLabel')}
+              placeholder={t('nameLabel')}
+              className={`w-full sm:w-64 ${INPUT_CLASS}`}
             />
-          </label>
           <button
             type="button"
             disabled={pending || nameMissing || (link !== null && !dirty)}
@@ -163,15 +151,28 @@ export function ProjectSaveBar({ canExportPdf = false }: { canExportPdf?: boolea
               </button>
             )
           ) : null}
-        </div>
+        </>
       )}
-
+            <span className="flex flex-wrap gap-x-4 gap-y-1 pl-1 text-sm">
+              {link ? (
+                <Link href={`${PROJECTS_ROUTE}/${link.id}`} className="text-sky-700 hover:underline dark:text-sky-400">
+                  {t('openProject')}
+                </Link>
+              ) : null}
+              <Link href={PROJECTS_ROUTE} className="text-sky-700 hover:underline dark:text-sky-400">
+                {t('allProjects')}
+              </Link>
+            </span>
+          </div>
+        }
+      />
+      <div className="px-4 py-3 sm:px-5 empty:hidden">
       {confirmNext && link && !link.locked ? (
-        <p className="mt-2 text-xs text-amber-700 dark:text-amber-400">{t('confirmHint', { label: link.revLabel })}</p>
+        <p className="text-xs text-amber-700 dark:text-amber-400">{t('confirmHint', { label: link.revLabel })}</p>
       ) : null}
 
       {link ? (
-        <div className="mt-3 border-t border-slate-100 pt-3 dark:border-slate-800">
+        <div className="mt-3 first:mt-0">
           <ExportLinks projectId={link.id} revisionId={link.revisionId} canPdf={canExportPdf} unsaved={dirty} hasBom={Boolean(draft?.bom)} />
         </div>
       ) : null}
@@ -179,7 +180,7 @@ export function ProjectSaveBar({ canExportPdf = false }: { canExportPdf?: boolea
       {message ? (
         <p
           role={message.tone === 'error' ? 'alert' : 'status'}
-          className={`mt-3 text-sm ${
+          className={`mt-3 text-sm first:mt-0 ${
             message.tone === 'error' ? 'text-red-600 dark:text-red-400' : 'text-emerald-700 dark:text-emerald-400'
           }`}
         >

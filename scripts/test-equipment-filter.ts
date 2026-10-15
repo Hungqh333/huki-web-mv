@@ -241,9 +241,5 @@ test('mọi câu diễn giải của bộ lọc có đủ vi/en', () => {
       assert.ok(messages.selector.vision.checks[result.key], `${locale}: checks.${result.key}`);
       if (result.noteKey) assert.ok(messages.selector.vision.notes[result.noteKey], `${locale}: notes.${result.noteKey}`);
     }
-    const equipment = messages.designer.requirement.equipment;
-    for (const key of ['title', 'subtitle', 'noCatalog', 'notReady', 'counts', 'excludedTitle', 'unverified', 'unchecked', 'bestLens', 'noLens']) {
-      assert.ok(equipment[key], `${locale}: equipment.${key}`);
-    }
   }
 });

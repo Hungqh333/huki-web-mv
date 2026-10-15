@@ -18,7 +18,6 @@ import { buildArchitecture } from '@/lib/vision/architecture';
 import type { RuleResult } from '@/lib/vision/rules';
 import { ArchitectureDiagram } from './ArchitectureDiagram';
 import { BomPanel } from './BomPanel';
-import { EquipmentPanel } from './EquipmentPanel';
 import { SolutionPanel } from './SolutionPanel';
 import type { Explainer } from './WhyPanel';
 import { DEFAULT_ENGINE_PARAMS, type EngineParams } from '@/lib/vision/engineParams';
@@ -100,12 +99,35 @@ export function DesignPanels({
   );
   const tv = useTranslations('selector.vision');
   const tArch = useTranslations('designer.requirement.architecture');
+  const tSolutions = useTranslations('designer.requirement.solutions');
   const noteOf = (result: RuleResult) =>
     result.noteKey
       ? result.noteKey.includes('.')
         ? tv(result.noteKey, result.noteValues ?? {})
         : tv(`notes.${result.noteKey}`, result.noteValues ?? {})
       : null;
+  /* Không mức nào dựng được → 3 lý do loại phổ biến nhất (camera, ống kính, đèn, máy tính),
+     thay cho khối "Thiết bị phù hợp" đã bỏ. */
+  const noSolutionReasons = useMemo(() => {
+    if (!filter.ready || solutions.levels.some((l) => l.status === 'ok')) return [];
+    const counts = new Map<string, number>();
+    const excluded = [
+      ...filter.cameras.excluded,
+      ...filter.cameras.accepted.flatMap((c) => c.lenses.excluded),
+      ...filter.lights.excluded,
+      ...filter.pcs.excluded,
+    ];
+    for (const item of excluded) {
+      for (const reason of item.reasons) {
+        const label = `${reason.ruleId} · ${tv(`checks.${reason.key}`)}`;
+        counts.set(label, (counts.get(label) ?? 0) + 1);
+      }
+    }
+    return [...counts.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([label, n]) => tSolutions('noSolutionReason', { label, count: n }));
+  }, [filter, solutions, tv, tSolutions]);
   const accessories = useMemo(() => listAccessories(catalog.filter((c) => c.is_active) as Component[]), [catalog]);
 
   const t = useTranslations('designer.requirement.solutions.line');
@@ -132,6 +154,7 @@ export function DesignPanels({
         solutions={solutions}
         requirementLine={parts.join(' · ')}
         ready={ready}
+        noSolutionReasons={noSolutionReasons}
         selectedLevel={selection?.level ?? null}
         onSelect={readOnly ? null : select}
         why={why}
@@ -150,7 +173,6 @@ export function DesignPanels({
       <Panel id="architecture-title" title={tArch('title')} note={chosenLevel ? tArch('hint') : tArch('pickSolutionHint')}>
         <ArchitectureDiagram architecture={architecture} noteOf={noteOf} />
       </Panel>
-      <EquipmentPanel filter={filter} catalogEmpty={catalog.length === 0} />
     </>
   );
 }

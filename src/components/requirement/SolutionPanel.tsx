@@ -7,7 +7,7 @@ import type { Candidate } from '@/lib/vision/equipmentFilter';
 import { noteMessageKey, type RuleResult } from '@/lib/vision/rules';
 import type { SolutionLevel, SolutionLevelKey, Solutions } from '@/lib/vision/solutionLevels';
 import type { WhyFacts } from '@/lib/vision/whyFacts';
-import { nameOf, summarise } from './EquipmentPanel';
+import { nameOf, summarise } from './equipmentText';
 import { WhyPanel, type Explainer } from './WhyPanel';
 
 /**
@@ -25,6 +25,7 @@ export function SolutionPanel({
   solutions,
   requirementLine,
   ready,
+  noSolutionReasons = [],
   selectedLevel,
   onSelect,
   why,
@@ -42,6 +43,11 @@ export function SolutionPanel({
   /** "sai số ±0,1 mm · lỗi 0,5 mm · vật 380 × 280 mm" — dựng ở DesignPanels. */
   requirementLine: string;
   ready: boolean;
+  /**
+   * Khi không mức nào dựng được: lý do loại thiết bị phổ biến nhất trong kho (thay
+   * khối "Thiết bị phù hợp" đã bỏ 2026-10-15) — để biết phải nới yêu cầu nào.
+   */
+  noSolutionReasons?: readonly string[];
 }) {
   const t = useTranslations('designer.requirement.solutions');
   const tv = useTranslations('selector.vision');
@@ -77,6 +83,17 @@ export function SolutionPanel({
                 />
               ))}
             </div>
+
+            {noSolutionReasons.length > 0 ? (
+              <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+                <p className="font-semibold">{t('noSolutionTitle')}</p>
+                <ul className="mt-1 list-disc space-y-0.5 pl-5">
+                  {noSolutionReasons.map((reason) => (
+                    <li key={reason}>{reason}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
 
             {whyFacts ? <WhyPanel facts={whyFacts} explainer={explainer} onClose={() => setWhyLevel(null)} /> : null}
 

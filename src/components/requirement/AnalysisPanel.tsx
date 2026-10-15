@@ -166,16 +166,20 @@ export function AnalysisPanel({
           <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{t('scoreNote')}</p>
         </div>
 
-        {/* Cảnh báo — không che giấu bất định (spec §10.4). */}
+        {/* Cảnh báo — không che giấu bất định (spec §10.4): gập mặc định (chốt 2026-10-15)
+            nhưng tiêu đề luôn hiện số cảnh báo; điều kiện chặn (FAIL) đã nằm ở khối phía trên. */}
         {warnings.length > 0 ? (
-          <div>
-            <h3 className="text-sm font-semibold">{t('warningsTitle', { count: warnings.length })}</h3>
+          <details className="group">
+            <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-semibold [&::-webkit-details-marker]:hidden">
+              <span aria-hidden="true" className="inline-block text-slate-400 transition group-open:rotate-90">▶</span>
+              {t('warningsTitle', { count: warnings.length })}
+            </summary>
             <ul className="mt-2 divide-y divide-slate-100 rounded-xl border border-slate-200 dark:divide-slate-800 dark:border-slate-800">
               {warnings.map((result) => (
                 <ResultRow key={`w-${result.ruleId}-${result.key}`} result={result} note={noteOf(result)} onFocusField={onFocusField} />
               ))}
             </ul>
-          </div>
+          </details>
         ) : null}
 
         {/* Toàn bộ phép tính, gập theo nhóm — kỹ sư mở ra để tự kiểm chứng số. */}

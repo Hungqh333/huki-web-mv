@@ -1975,30 +1975,6 @@
         "noRules": "No rule decides this block yet.",
         "pickSolutionHint": "Showing the minimums from the Requirements table. Choose a solution to see the specific equipment in each block."
       },
-      "equipment": {
-        "title": "Matching equipment",
-        "subtitle": "Equipment that violates a physical constraint is excluded with the reason.",
-        "noCatalog": "The equipment catalog is empty, or this account cannot view it.",
-        "notReady": "Enter part size, smallest defect or measurement tolerance, and camera count to start filtering equipment.",
-        "cameras": "Cameras",
-        "lights": "Lights",
-        "pcs": "Computers",
-        "counts": "{accepted} pass · {excluded} excluded",
-        "noneAccepted": "No catalog item meets the requirement — see the reasons under excluded.",
-        "excludedTitle": "Excluded ({count}) — reasons",
-        "unverified": "Unverified",
-        "conditions": "Conditional: {rules}",
-        "unchecked": "Not checked: {rules}",
-        "lightsWanted": "Suggested light types: {types}",
-        "lightsAny": "No light type suggested yet (needs surface / defect type) — filtered by size only.",
-        "pcsReference": "Checked against the smallest passing camera: {camera}. Recalculated when a solution is chosen.",
-        "pcsNoCamera": "No camera passes yet, so computers cannot be checked.",
-        "lensesAccepted": "{count} matching lenses",
-        "bestLens": "best fit: {lens}",
-        "lensMargin": "resolution headroom {margin}×",
-        "noLens": "No catalog lens works with this camera.",
-        "lensesExcluded": "Excluded lenses ({count}) — reasons"
-      },
       "solutions": {
         "title": "Solutions",
         "notReady": "No solutions yet: an equipment catalog and enough inputs to filter are needed (part size, smallest defect or tolerance, camera count).",
@@ -2080,16 +2056,17 @@
             "invalid": "The requirement table is invalid — reload the page and try again.",
             "noSolution": "The server could not rebuild this solution (equipment catalog just changed?) — reload the page and try again."
           }
-        }
+        },
+        "noSolutionTitle": "No solution could be built. Most common reasons equipment was excluded:",
+        "noSolutionReason": "{label} — {count} items"
       },
       "bom": {
         "title": "Bill of materials — {level} solution",
-        "subtitle": "Save the project to lock in price, lead time and supplier as of now.",
+        "subtitle": "Save the project to lock in lead time and supplier as of now.",
         "clear": "Clear solution",
         "unavailable": "The chosen solution is no longer available for the current requirements (blocked, or the catalog has no configuration at this level). Please choose again.",
         "colItem": "Item",
         "colQty": "Qty",
-        "colPrice": "Unit price (VND)",
         "colLeadTime": "Lead time",
         "colRule": "Rule",
         "categories": {
@@ -2116,8 +2093,6 @@
         "addLabel": "Add an accessory from the catalog",
         "addPlaceholder": "Add accessory…",
         "add": "Add",
-        "total": "Estimated total: {total} VND",
-        "totalMissing": "Prices incomplete — {count} lines missing",
         "assumptionsTitle": "Assumptions & Exclusions",
         "assumptionsIntro": "This quotation relies on the following assumptions. If reality differs, configuration and price will change:",
         "noAssumptions": "No field currently uses an assumed value.",

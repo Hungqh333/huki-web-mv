@@ -1975,30 +1975,6 @@
         "noRules": "Chưa có luật nào quyết định khối này.",
         "pickSolutionHint": "Đang hiện mức tối thiểu từ bảng Yêu cầu. Chọn một phương án để xem thiết bị cụ thể của từng khối."
       },
-      "equipment": {
-        "title": "Thiết bị phù hợp",
-        "subtitle": "Thiết bị vi phạm ràng buộc vật lý bị loại kèm lý do.",
-        "noCatalog": "Kho thiết bị đang trống, hoặc tài khoản chưa đủ quyền xem.",
-        "notReady": "Điền kích thước vật, lỗi nhỏ nhất hoặc dung sai đo, và số camera để bắt đầu lọc thiết bị.",
-        "cameras": "Camera",
-        "lights": "Đèn",
-        "pcs": "Máy tính",
-        "counts": "{accepted} đạt · {excluded} đã loại",
-        "noneAccepted": "Không có thiết bị nào trong kho đạt yêu cầu — xem lý do ở mục đã loại.",
-        "excludedTitle": "Đã loại ({count}) — lý do",
-        "unverified": "Chưa kiểm chứng",
-        "conditions": "Có điều kiện: {rules}",
-        "unchecked": "Chưa kiểm được: {rules}",
-        "lightsWanted": "Loại đèn gợi ý: {types}",
-        "lightsAny": "Chưa có gợi ý loại đèn (cần bề mặt / loại lỗi) — chỉ lọc theo kích thước.",
-        "pcsReference": "Tính theo camera đạt nhỏ nhất: {camera}. Sẽ tính lại khi chốt phương án.",
-        "pcsNoCamera": "Chưa có camera nào đạt nên chưa kiểm được máy tính.",
-        "lensesAccepted": "{count} ống kính phù hợp",
-        "bestLens": "khớp nhất: {lens}",
-        "lensMargin": "dư độ phân giải {margin}×",
-        "noLens": "Không ống kính nào trong kho ghép được với camera này.",
-        "lensesExcluded": "Ống kính đã loại ({count}) — lý do"
-      },
       "solutions": {
         "title": "Phương án",
         "notReady": "Chưa dựng được phương án: cần kho thiết bị và đủ thông số để lọc (kích thước vật, lỗi nhỏ nhất hoặc dung sai, số camera).",
@@ -2080,16 +2056,17 @@
             "invalid": "Bảng yêu cầu không hợp lệ — tải lại trang rồi thử lại.",
             "noSolution": "Máy chủ không dựng lại được phương án này (kho thiết bị vừa đổi?) — tải lại trang rồi thử lại."
           }
-        }
+        },
+        "noSolutionTitle": "Chưa dựng được phương án nào. Lý do loại thiết bị phổ biến nhất trong kho:",
+        "noSolutionReason": "{label} — {count} thiết bị"
       },
       "bom": {
         "title": "Danh mục vật tư — phương án {level}",
-        "subtitle": "Lưu dự án để chốt giá, thời gian giao và nhà cung cấp tại thời điểm này.",
+        "subtitle": "Lưu dự án để chốt thời gian giao và nhà cung cấp tại thời điểm này.",
         "clear": "Bỏ chọn phương án",
         "unavailable": "Phương án đã chọn không còn khả dụng với bảng Yêu cầu hiện tại (bị chặn hoặc kho không còn cấu hình ở mức này). Hãy chọn lại phương án.",
         "colItem": "Hạng mục",
         "colQty": "SL",
-        "colPrice": "Đơn giá (₫)",
         "colLeadTime": "Giao hàng",
         "colRule": "Luật",
         "categories": {
@@ -2116,8 +2093,6 @@
         "addLabel": "Thêm phụ kiện từ kho",
         "addPlaceholder": "Thêm phụ kiện…",
         "add": "Thêm",
-        "total": "Tổng ước tính: {total} ₫",
-        "totalMissing": "Chưa đủ giá để cộng tổng — thiếu {count} dòng",
         "assumptionsTitle": "Giả định & Loại trừ",
         "assumptionsIntro": "Báo giá này dựa trên các giả định sau. Nếu thực tế khác, cấu hình và giá sẽ thay đổi:",
         "noAssumptions": "Không có ô nào đang dùng giá trị giả định.",

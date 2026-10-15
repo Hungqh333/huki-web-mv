@@ -1813,7 +1813,11 @@
         "noDefaults": "Không còn ô nào dùng mặc định.",
         "editInTable": "Sửa trong bảng",
         "fixedInCode": "Tham số kỹ thuật, cố định trong code",
-        "warningLabel": "Cần lưu ý"
+        "warningLabel": "Cần lưu ý",
+        "collapse": "Thu gọn",
+        "expand": "Mở khung giả định",
+        "close": "Đóng ✕",
+        "warningCount": "{count} giả định cần chú ý"
       },
       "inferredOption": "Suy ra: {value}",
       "purposes": {

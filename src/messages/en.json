@@ -1813,7 +1813,11 @@
         "noDefaults": "No field is using a default any more.",
         "editInTable": "Edit in table",
         "fixedInCode": "Engineering parameter, fixed in code",
-        "warningLabel": "Needs attention"
+        "warningLabel": "Needs attention",
+        "collapse": "Collapse",
+        "expand": "Open the assumptions panel",
+        "close": "Close ✕",
+        "warningCount": "{count} assumptions need attention"
       },
       "inferredOption": "Inferred: {value}",
       "purposes": {

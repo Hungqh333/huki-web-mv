@@ -152,6 +152,25 @@ function writeFormMode(mode: FormMode) {
   window.dispatchEvent(new Event(FORM_MODE_EVENT));
 }
 
+/* Khung "Giả định đang dùng" mở / thu gọn (2026-10-15) — mặc định thu gọn để các
+   bảng bên trái rộng hơn; nhớ theo trình duyệt, cùng cơ chế với chế độ bảng. */
+const ASSUMPTIONS_OPEN_KEY = 'mvh.assumptionsPanelOpen';
+function readAssumptionsOpen(): boolean {
+  try {
+    return localStorage.getItem(ASSUMPTIONS_OPEN_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+function writeAssumptionsOpen(open: boolean) {
+  try {
+    localStorage.setItem(ASSUMPTIONS_OPEN_KEY, open ? '1' : '0');
+  } catch {
+    // Không lưu được thì vẫn đổi cho lần xem này (state trong component).
+  }
+  window.dispatchEvent(new Event(FORM_MODE_EVENT));
+}
+
 /** Panel bấm "Sửa trong bảng" → cuộn tới ô đó và đặt con trỏ vào. */
 function focusField(path: string) {
   const element = document.getElementById(inputId(path));
@@ -251,6 +270,7 @@ export function RequirementSummary({
 
   // Bản đã điền mặc định — CHỈ để hiển thị. Mọi thao tác ghi vẫn trên `requirement`.
   const resolved = useMemo(() => (requirement ? resolveAssumptions(requirement) : null), [requirement]);
+  const warningAssumptions = resolved ? resolved.assumptions.filter((a) => a.level === 'warning').length : 0;
 
   const onPickApp = (value: string) => {
     if (!isApplicationType(value)) return;
@@ -281,6 +301,28 @@ export function RequirementSummary({
     setSessionMode(next);
     writeFormMode(next);
   };
+  const storedAssumptionsOpen = useSyncExternalStore(subscribeFormMode, readAssumptionsOpen, () => false);
+  const [sessionAssumptionsOpen, setSessionAssumptionsOpen] = useState<boolean | null>(null);
+  const assumptionsOpen = sessionAssumptionsOpen ?? storedAssumptionsOpen;
+  const setAssumptionsOpen = (open: boolean) => {
+    setSessionAssumptionsOpen(open);
+    writeAssumptionsOpen(open);
+  };
+  /* Màn hẹp (< lg): bấm nút Giả định mở bảng toàn màn hình thay vì khung cuối trang
+     (chốt 2026-10-15). "Sửa trong bảng" trong bảng đó đóng bảng rồi mới nhảy tới ô. */
+  const [assumptionsOverlay, setAssumptionsOverlay] = useState(false);
+  const openAssumptions = () => {
+    if (window.matchMedia('(min-width: 1024px)').matches) setAssumptionsOpen(true);
+    else setAssumptionsOverlay(true);
+  };
+  useEffect(() => {
+    if (!assumptionsOverlay) return;
+    const onKey = (event: globalThis.KeyboardEvent) => {
+      if (event.key === 'Escape') setAssumptionsOverlay(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [assumptionsOverlay]);
   const onReset = () => {
     if (!requirement) return;
     writeDraft({
@@ -316,7 +358,7 @@ export function RequirementSummary({
 
   return (
     <KnowledgeProvider index={knowledge}>
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+    <div className={`grid gap-6 ${assumptionsOpen ? 'lg:grid-cols-[minmax(0,1fr)_20rem]' : 'lg:grid-cols-[minmax(0,1fr)_auto]'}`}>
       <div className="min-w-0 space-y-6">
         {reading ? (
           <div
@@ -602,8 +644,62 @@ export function RequirementSummary({
 
       {resolved ? (
         <aside className="min-w-0 lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:self-start lg:overflow-y-auto">
-          <AssumptionsPanel assumptions={resolved.assumptions} onFocusField={focusAnyField} />
+          {assumptionsOpen ? (
+            <AssumptionsPanel
+              assumptions={resolved.assumptions}
+              onFocusField={focusAnyField}
+              onCollapse={() => setAssumptionsOpen(false)}
+            />
+          ) : (
+            // Thu gọn: dải dọc hẹp ở màn rộng, nút ngang ở màn hẹp.
+            <button
+              type="button"
+              onClick={openAssumptions}
+              aria-expanded={false}
+              title={t('assumptions.expand')}
+              className="flex w-full items-center justify-center gap-2 rounded-2xl border border-amber-200 bg-[#E4E5F6] px-3 py-3 text-sm font-semibold text-indigo-950 shadow-sm transition hover:brightness-95 lg:w-11 lg:flex-col lg:px-0 lg:py-4 dark:border-amber-500/30 dark:bg-[#22274A] dark:text-indigo-100"
+            >
+              <span aria-hidden="true" className="lg:rotate-180">‹</span>
+              <span className="lg:[writing-mode:vertical-rl] lg:rotate-180">{t('assumptions.title')}</span>
+              <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-500/15 dark:text-amber-300">
+                {resolved.assumptions.length}
+              </span>
+              {/* Số giả định đáng lo — vẫn thấy khi đang thu gọn. */}
+              {warningAssumptions > 0 ? (
+                <span
+                  title={t('assumptions.warningCount', { count: warningAssumptions })}
+                  className="rounded-full bg-amber-500 px-2 py-0.5 text-xs font-semibold text-white dark:bg-amber-500 dark:text-slate-950"
+                >
+                  ⚠ {warningAssumptions}
+                </span>
+              ) : null}
+            </button>
+          )}
         </aside>
+      ) : null}
+
+      {resolved && assumptionsOverlay ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="assumptions-title"
+          className="fixed inset-0 z-50 flex flex-col bg-slate-950/50 p-3 lg:hidden"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) setAssumptionsOverlay(false);
+          }}
+        >
+          <div className="min-h-0 flex-1 overflow-y-auto rounded-2xl">
+            <AssumptionsPanel
+              assumptions={resolved.assumptions}
+              onFocusField={(path) => {
+                setAssumptionsOverlay(false);
+                requestAnimationFrame(() => focusAnyField(path));
+              }}
+              onCollapse={() => setAssumptionsOverlay(false)}
+              collapseLabel={t('assumptions.close')}
+            />
+          </div>
+        </div>
       ) : null}
     </div>
     </KnowledgeProvider>
@@ -889,7 +985,18 @@ function QuestionItem({
 
 // ─────────────────────────────── Panel giả định ───────────────────────────────
 
-function AssumptionsPanel({ assumptions, onFocusField }: { assumptions: Assumption[]; onFocusField: (path: string) => void }) {
+function AssumptionsPanel({
+  assumptions,
+  onFocusField,
+  onCollapse,
+  collapseLabel,
+}: {
+  assumptions: Assumption[];
+  onFocusField: (path: string) => void;
+  onCollapse: () => void;
+  /** Mặc định "Thu gọn ›"; bảng toàn màn hình (màn hẹp) dùng "Đóng". */
+  collapseLabel?: string;
+}) {
   const t = useTranslations('designer.requirement');
   const locale = useLocale();
   const pick = (text: { vi: string; en: string }) => (locale === 'en' ? text.en : text.vi);
@@ -973,6 +1080,16 @@ function AssumptionsPanel({ assumptions, onFocusField }: { assumptions: Assumpti
           </>
         }
         note={t('assumptions.subtitle')}
+        actions={
+          <button
+            type="button"
+            onClick={onCollapse}
+            aria-expanded={true}
+            className="text-xs font-medium text-slate-600 hover:underline dark:text-slate-300"
+          >
+            {collapseLabel ?? `${t('assumptions.collapse')} ›`}
+          </button>
+        }
       />
 
       <h3 className={heading}>{t('assumptions.defaultsTitle')}</h3>

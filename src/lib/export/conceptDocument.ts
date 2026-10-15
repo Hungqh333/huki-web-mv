@@ -1,6 +1,6 @@
 import { V1A_FIELDS, fieldsFor, readField } from '@/lib/requirement/fields';
 import type { Requirement } from '@/lib/requirement/types';
-import { buildArchitecture, type ArchitectureNodeId } from '@/lib/vision/architecture';
+import { buildArchitecture } from '@/lib/vision/architecture';
 import { BOM_EXCLUSIONS, RULESET_VERSION, type BomSnapshot } from '@/lib/vision/bom';
 import { assessFeasibility } from '@/lib/vision/feasibility';
 import { renderFormula } from '@/lib/vision/formulaTerms';
@@ -83,14 +83,6 @@ export type RevisionForExport = {
 };
 
 /** Khối kiến trúc ↔ nhóm dòng BOM chứa thiết bị của khối đó. */
-const NODE_EQUIPMENT: Partial<Record<ArchitectureNodeId, string[]>> = {
-  lighting: ['light'],
-  lens: ['lens'],
-  camera: ['camera'],
-  interface: ['interfaceCard', 'cable:data'],
-  ipc: ['pc'],
-  software: ['software'],
-};
 
 export function buildConceptDocument(input: {
   projectName: string;
@@ -110,8 +102,9 @@ export function buildConceptDocument(input: {
   const analysis = analyseRequirement(requirement, params);
   const rulesetNow = rulesetVersionFor(RULESET_VERSION, params);
   const feasibility = assessFeasibility(analysis.results);
-  const architecture = buildArchitecture(analysis);
   const bom = revision.bom;
+  // Cùng cách ghép thiết bị vào khối với sơ đồ trên màn hình (NODE_EQUIPMENT).
+  const architecture = buildArchitecture(analysis, bom ? { configResults: [], lines: bom.lines } : null);
 
   const fieldLabel = (path: string) => {
     const def = V1A_FIELDS.find((item) => item.path === path);
@@ -231,8 +224,7 @@ export function buildConceptDocument(input: {
       .filter((r) => r.status === 'warn' || r.status === 'fail')
       .map((r) => ({ ruleId: r.ruleId, status: t(`selector.vision.status.${r.status}`), text: textOf(r) })),
     architecture: architecture.nodes.map((node) => {
-      const keys = NODE_EQUIPMENT[node.id] ?? [];
-      const items = bom?.lines.filter((l) => keys.includes(l.key)).map((l) => `${l.qty} × ${l.brand} ${l.model}`) ?? [];
+      const items = node.equipment.map((e) => `${e.qty} × ${[e.brand, e.model].filter(Boolean).join(' ')}`);
       return {
         node: t(`designer.requirement.architecture.nodes.${node.id}`),
         detail: node.detail ? t(`designer.requirement.architecture.details.${node.detail.key}`, node.detail.values ?? {}) : '',

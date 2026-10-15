@@ -13,6 +13,10 @@ import { analyseRequirement } from '@/lib/vision/requirementAnalysis';
 import { buildSolutionLevels, type SolutionLevelKey } from '@/lib/vision/solutionLevels';
 import { fmt } from '@/lib/vision/types';
 import { buildWhyFacts, type WhyFacts } from '@/lib/vision/whyFacts';
+import { Panel } from '@/components/ui/PanelHeader';
+import { buildArchitecture } from '@/lib/vision/architecture';
+import type { RuleResult } from '@/lib/vision/rules';
+import { ArchitectureDiagram } from './ArchitectureDiagram';
 import { BomPanel } from './BomPanel';
 import { EquipmentPanel } from './EquipmentPanel';
 import { SolutionPanel } from './SolutionPanel';
@@ -78,6 +82,30 @@ export function DesignPanels({
       },
     };
   }, [explainAvailable, requirement]);
+  /* Sơ đồ hệ thống (tách khỏi Phân tích, 2026-10-15): có phương án đã chọn thì
+     vẽ thiết bị thật + luật cấu hình của chính bộ thiết bị đó. */
+  const chosenLevel = selection && bom ? solutions.levels.find((l) => l.key === selection.level) ?? null : null;
+  const architecture = useMemo(
+    () =>
+      buildArchitecture(
+        analysis,
+        chosenLevel && bom
+          ? {
+              configResults: [chosenLevel.camera, chosenLevel.lens, chosenLevel.light, chosenLevel.pc].flatMap((c) => c?.results ?? []),
+              lines: bom.lines,
+            }
+          : null
+      ),
+    [analysis, chosenLevel, bom]
+  );
+  const tv = useTranslations('selector.vision');
+  const tArch = useTranslations('designer.requirement.architecture');
+  const noteOf = (result: RuleResult) =>
+    result.noteKey
+      ? result.noteKey.includes('.')
+        ? tv(result.noteKey, result.noteValues ?? {})
+        : tv(`notes.${result.noteKey}`, result.noteValues ?? {})
+      : null;
   const accessories = useMemo(() => listAccessories(catalog.filter((c) => c.is_active) as Component[]), [catalog]);
 
   const t = useTranslations('designer.requirement.solutions.line');
@@ -119,6 +147,9 @@ export function DesignPanels({
           readOnly={readOnly}
         />
       ) : null}
+      <Panel id="architecture-title" title={tArch('title')} note={chosenLevel ? tArch('hint') : tArch('pickSolutionHint')}>
+        <ArchitectureDiagram architecture={architecture} noteOf={noteOf} />
+      </Panel>
       <EquipmentPanel filter={filter} catalogEmpty={catalog.length === 0} />
     </>
   );

@@ -1969,10 +1969,11 @@
           "plcInterface": "Results via {list}",
           "plcUnknown": "No result interface chosen yet"
         },
-        "pending": "Chosen in the equipment step",
-        "pendingDetail": "This block needs specific equipment (PC configuration, PLC protocol) — it is computed when equipment is chosen.",
+        "pending": "Choose a solution to get a specific PC",
+        "pendingDetail": "This block needs specific equipment — choose a solution in the Solutions panel to see the PC and the cycle checks (THR-003, THR-004).",
         "noData": "Not enough data",
-        "noRules": "No rule decides this block yet."
+        "noRules": "No rule decides this block yet.",
+        "pickSolutionHint": "Showing the minimums from the Requirements table. Choose a solution to see the specific equipment in each block."
       },
       "equipment": {
         "title": "Matching equipment",

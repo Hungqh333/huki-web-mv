@@ -8,9 +8,12 @@ import type { CheckStatus } from './types';
  *   VẬT → CHIẾU SÁNG → ỐNG KÍNH → CAMERA → GIAO TIẾP → MÁY TÍNH → PHẦN MỀM → PLC
  *
  * Mỗi khối gắn các luật đã quyết định nó; trạng thái khối là trạng thái xấu nhất
- * của các luật đó. Khối máy tính (THR-004) và PLC (INT-001) cần thiết bị cụ thể
- * nên ở V1b là "chờ bước chọn thiết bị" — hiện ra để thấy toàn cảnh, không giả
- * vờ đã tính.
+ * của các luật đó.
+ *
+ * Hai tầng (2026-10-15): chưa chọn phương án → mức tối thiểu từ bảng Yêu cầu; đã
+ * chọn → thêm thiết bị thật từ BOM và luật cấu hình của chính bộ thiết bị đó
+ * (THR-003 nhịp, THR-004 máy tính… chỉ tính được khi có thiết bị). Màn hình và
+ * Concept Report dùng CHUNG hàm này và NODE_EQUIPMENT — không thể lệch nhau.
  *
  * Nhóm cơ khí/nhiệt/môi trường (MEC, ENV) gắn vào khối VẬT: sai số của chúng đến
  * từ chính sản phẩm và nơi đặt máy.
@@ -19,14 +22,34 @@ import type { CheckStatus } from './types';
 export const ARCHITECTURE_NODES = ['product', 'lighting', 'lens', 'camera', 'interface', 'ipc', 'software', 'plc'] as const;
 export type ArchitectureNodeId = (typeof ARCHITECTURE_NODES)[number];
 
+/** Dòng BOM nào thuộc khối nào — dùng chung cho màn hình và Concept Report. */
+export const NODE_EQUIPMENT: Partial<Record<ArchitectureNodeId, readonly string[]>> = {
+  lighting: ['light', 'lightController'],
+  lens: ['lens'],
+  camera: ['camera'],
+  interface: ['interfaceCard', 'cable:data'],
+  ipc: ['pc'],
+  software: ['software'],
+};
+
+export type NodeEquipment = { qty: number; brand: string | null; model: string | null };
+
+/** Phương án đã chọn: luật cấu hình của bộ thiết bị + các dòng BOM. */
+export type ChosenSolution = {
+  configResults: readonly RuleResult[];
+  lines: readonly { key: string; qty: number; brand: string | null; model: string | null }[];
+};
+
 export type ArchitectureNode = {
   id: ArchitectureNodeId;
+  /** Thiết bị thật của phương án đã chọn; rỗng khi chưa chọn. */
+  equipment: NodeEquipment[];
   /** Khoá nhãn chi tiết (designer.requirement.architecture.details.<key>) kèm số. null = chưa có gì để nói. */
   detail: { key: string; values?: Record<string, string | number> } | null;
   results: RuleResult[];
   /** Trạng thái xấu nhất của các luật gắn vào khối; null khi chưa có luật nào. */
   status: CheckStatus | null;
-  /** true = khối cần thiết bị cụ thể, làm ở V1c. */
+  /** true = khối cần thiết bị cụ thể mà chưa có (chưa chọn phương án / chưa chọn giao tiếp PLC). */
   pending: boolean;
 };
 
@@ -48,14 +71,35 @@ const OWNER: Array<[ArchitectureNodeId, (ruleId: string) => boolean]> = [
   ['lens', (id) => id.startsWith('OPT-')],
   ['camera', (id) => id.startsWith('RES-') || id === 'THR-005'],
   ['interface', (id) => id === 'THR-001' || id === 'THR-002'],
+  // THR-003 (ngân sách nhịp: chụp + xử lý + truyền) và THR-004 (máy tính đủ sức) — chỉ có khi đã chọn thiết bị.
+  ['ipc', (id) => id === 'THR-003' || id === 'THR-004'],
   ['software', (id) => id.startsWith('AI-')],
   ['plc', (id) => id.startsWith('INT-')],
 ];
 
-export function buildArchitecture(analysis: RequirementAnalysis): Architecture {
+export function buildArchitecture(analysis: RequirementAnalysis, chosen?: ChosenSolution | null): Architecture {
+  /* Luật cấu hình trùng (ruleId, key) với luật bảng Yêu cầu thì lấy bản cấu hình:
+     nó tính trên thiết bị thật. */
+  const configKeys = new Set((chosen?.configResults ?? []).map((r) => `${r.ruleId}|${r.key}`));
+  const all = [
+    ...analysis.results.filter((r) => !configKeys.has(`${r.ruleId}|${r.key}`)),
+    ...(chosen?.configResults ?? []),
+  ];
   const own = (id: ArchitectureNodeId) => {
     const match = OWNER.find(([node]) => node === id)?.[1];
-    return match ? analysis.results.filter((result) => match(result.ruleId)) : [];
+    if (!match) return [];
+    const seen = new Set<string>();
+    return all.filter((result) => {
+      if (!match(result.ruleId)) return false;
+      const key = `${result.ruleId}|${result.key}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  };
+  const equipmentOf = (id: ArchitectureNodeId): NodeEquipment[] => {
+    const keys = NODE_EQUIPMENT[id] ?? [];
+    return (chosen?.lines ?? []).filter((line) => keys.includes(line.key)).map(({ qty, brand, model }) => ({ qty, brand, model }));
   };
   const find = (ruleId: string) => analysis.results.find((result) => result.ruleId === ruleId);
   const round = (value: number, digits: number) => Math.round(value * 10 ** digits) / 10 ** digits;
@@ -105,7 +149,9 @@ export function buildArchitecture(analysis: RequirementAnalysis): Architecture {
 
   const nodes = ARCHITECTURE_NODES.map((id): ArchitectureNode => {
     const results = own(id);
-    return { id, detail: detailOf(id), results, status: worst(results), pending: id === 'ipc' || (id === 'plc' && results.length === 0) };
+    const equipment = equipmentOf(id);
+    const pending = (id === 'ipc' && equipment.length === 0) || (id === 'plc' && results.length === 0);
+    return { id, equipment, detail: detailOf(id), results, status: worst(results), pending };
   });
 
   return { nodes, cameraCount: analysis.cameraCount };

@@ -45,10 +45,7 @@ export function ArchitectureDiagram({
 
   return (
     <div>
-      <h3 className="text-sm font-semibold">{t('title')}</h3>
-      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('hint')}</p>
-
-      <ol className="mt-3 flex flex-col items-stretch">
+      <ol className="flex flex-col items-stretch">
         {architecture.nodes.map((node, index) => {
           const status = node.status ?? 'info';
           const open = openNode === node.id;
@@ -85,14 +82,22 @@ export function ArchitectureDiagram({
                     ))}
                   </span>
                 ) : null}
-                <span className="mt-1 block text-xs text-slate-600 dark:text-slate-400">
-                  {/* Khối chờ (PLC chưa chọn giao tiếp) vẫn có câu riêng thì hiện câu đó. */}
-                  {node.detail
-                    ? t(`details.${node.detail.key}`, node.detail.values ?? {})
-                    : node.pending
-                      ? t('pending')
-                      : t('noData')}
-                </span>
+                {/* Khối chờ (PLC chưa chọn giao tiếp) vẫn có câu riêng thì hiện câu đó. Khối đã có
+                    thiết bị thật mà không có câu chi tiết thì thôi, không ghi "chưa đủ dữ liệu". */}
+                {node.detail || node.pending || node.equipment.length === 0 ? (
+                  <span className="mt-1 block text-xs text-slate-600 dark:text-slate-400">
+                    {node.detail
+                      ? t(`details.${node.detail.key}`, node.detail.values ?? {})
+                      : node.pending
+                        ? t('pending')
+                        : t('noData')}
+                  </span>
+                ) : null}
+                {node.equipment.length > 0 ? (
+                  <span className="mt-1 block text-sm font-medium text-slate-800 dark:text-slate-100">
+                    {node.equipment.map((e) => `${e.qty} × ${[e.brand, e.model].filter(Boolean).join(' ')}`).join(' · ')}
+                  </span>
+                ) : null}
               </button>
 
               {open ? (

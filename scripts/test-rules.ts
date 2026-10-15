@@ -13,7 +13,13 @@ import type { Requirement } from '../src/lib/requirement/types';
 import { analyseRequirement, K_BLUR, STROBE_EXPOSURE_LIMIT_US } from '../src/lib/vision/requirementAnalysis';
 import { completeness, FEASIBILITY_DIMENSIONS, knowledgeSlugFor, RULES, type RuleResult } from '../src/lib/vision/rules';
 import { assessFeasibility, scoreResult } from '../src/lib/vision/feasibility';
-import { ARCHITECTURE_NODES, buildArchitecture } from '../src/lib/vision/architecture';
+import { ARCHITECTURE_NODES, NODE_EQUIPMENT, buildArchitecture } from '../src/lib/vision/architecture';
+import { GOLDEN_CASES } from './golden/cases';
+import { filterEquipment } from '../src/lib/vision/equipmentFilter';
+import { buildSolutionLevels } from '../src/lib/vision/solutionLevels';
+import { buildBom } from '../src/lib/vision/bom';
+import { emptySelection } from '../src/lib/vision/bomSelection';
+import { sampleCatalog } from './c9/sample';
 import { renderFormula } from '../src/lib/vision/formulaTerms';
 
 /** Công thức engine ghi thẻ ⟦…⟧ (C9 Q4) — dịch bằng bảng từ tiếng Việt trước khi so chữ. */
@@ -335,6 +341,38 @@ test('sơ đồ GT-001: sinh từ kết quả engine, khối mang trạng thái 
   assert.equal(noCount.nodes.find((n) => n.id === 'camera')!.detail!.key, 'cameraUnknown');
 });
 
+test('sơ đồ theo phương án đã chọn (2026-10-15): thiết bị thật từ BOM, máy tính hết "chờ", THR-003/THR-004 gắn vào khối', () => {
+  const gt = GOLDEN_CASES.find((c) => c.id === 'S-11')!;
+  const req = Object.entries(gt.input).reduce((r, [path, value]) => withFieldValue(r, path, value), emptyRequirement(gt.applicationType));
+  const analysis = analyseRequirement(req);
+  const catalog = sampleCatalog();
+  const solutions = buildSolutionLevels(analysis, filterEquipment(analysis, catalog), catalog);
+  const level = solutions.levels.find((l) => l.status === 'ok')!;
+  const bom = buildBom(analysis, solutions, catalog, emptySelection(level.key))!;
+  const configResults = [level.camera, level.lens, level.light, level.pc].flatMap((c) => c?.results ?? []);
+  const arch = buildArchitecture(analysis, { configResults, lines: bom.lines });
+  const node = (id: string) => arch.nodes.find((n) => n.id === id)!;
+
+  assert.equal(node('camera').equipment[0].model, level.camera!.component.model);
+  assert.equal(node('lens').equipment[0].model, level.lens!.component.model);
+  assert.equal(node('ipc').equipment[0].model, level.pc!.component.model);
+  assert.equal(node('ipc').pending, false, 'co may tinh that thi het "cho"');
+  const ipcRules = node('ipc').results.map((r) => r.ruleId);
+  assert.ok(ipcRules.includes('THR-003') && ipcRules.includes('THR-004'), ipcRules.join(' '));
+  assert.ok(node('lighting').equipment.some((e) => e.model === level.light!.component.model));
+
+  // Chưa chọn phương án: như cũ — không thiết bị, máy tính chờ, không có THR-003/004.
+  const bare = buildArchitecture(analysis);
+  assert.ok(bare.nodes.every((n) => n.equipment.length === 0));
+  assert.equal(bare.nodes.find((n) => n.id === 'ipc')!.pending, true);
+  assert.ok(!bare.nodes.some((n) => n.results.some((r) => r.ruleId === 'THR-003' || r.ruleId === 'THR-004')));
+
+  // Mọi khoá trong NODE_EQUIPMENT đều là khoá dòng BOM có thật (không gõ nhầm).
+  const lineKeys = new Set(bom.lines.map((l) => l.key));
+  for (const key of ['light', 'lightController', 'lens', 'camera', 'cable:data', 'pc', 'software']) assert.ok(lineKeys.has(key), key);
+  assert.ok(Object.values(NODE_EQUIPMENT).flat().includes('interfaceCard'));
+});
+
 test('nhãn sơ đồ đủ ở cả hai ngôn ngữ: mọi khối, mọi dạng chi tiết', () => {
   const details = [
     'productSize', 'lightType', 'lensStandard', 'lensTelecentric', 'lensTelecentricExpensive', 'lensTelecentricInfeasible',
@@ -342,7 +380,7 @@ test('nhãn sơ đồ đủ ở cả hai ngôn ngữ: mọi khối, mọi dạng
   ];
   for (const locale of ['vi', 'en'] as const) {
     const arch = JSON.parse(readFileSync(new URL(`../src/messages/${locale}.json`, import.meta.url), 'utf8')).designer.requirement.architecture;
-    for (const key of ['title', 'hint', 'pending', 'pendingDetail', 'noData', 'noRules']) assert.ok(arch[key], `${locale}: ${key}`);
+    for (const key of ['title', 'hint', 'pickSolutionHint', 'pending', 'pendingDetail', 'noData', 'noRules']) assert.ok(arch[key], `${locale}: ${key}`);
     for (const id of ARCHITECTURE_NODES) assert.ok(arch.nodes[id], `${locale}: nodes.${id}`);
     for (const key of details) assert.ok(arch.details[key], `${locale}: details.${key}`);
   }

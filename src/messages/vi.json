@@ -1969,10 +1969,11 @@
           "plcInterface": "Trả kết quả qua {list}",
           "plcUnknown": "Chưa chọn giao tiếp trả kết quả"
         },
-        "pending": "Chọn ở bước thiết bị",
-        "pendingDetail": "Khối này cần thiết bị cụ thể (cấu hình máy tính, giao thức với PLC) — sẽ tính khi chọn thiết bị.",
+        "pending": "Chọn phương án để có máy tính cụ thể",
+        "pendingDetail": "Khối này cần thiết bị cụ thể — chọn một phương án ở khung Phương án để xem máy tính và kiểm nhịp (THR-003, THR-004).",
         "noData": "Chưa đủ dữ liệu",
-        "noRules": "Chưa có luật nào quyết định khối này."
+        "noRules": "Chưa có luật nào quyết định khối này.",
+        "pickSolutionHint": "Đang hiện mức tối thiểu từ bảng Yêu cầu. Chọn một phương án để xem thiết bị cụ thể của từng khối."
       },
       "equipment": {
         "title": "Thiết bị phù hợp",

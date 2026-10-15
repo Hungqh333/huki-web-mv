@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
+import { PanelHeader } from '@/components/ui/PanelHeader';
 import { SPEC_FIELDS, SUMMARY_KEYS, type Component } from '@/lib/components/specs';
 import type { Candidate, CameraCandidate, EquipmentFilter } from '@/lib/vision/equipmentFilter';
 import { noteMessageKey, type RuleResult } from '@/lib/vision/rules';
@@ -78,12 +79,7 @@ export function EquipmentPanel({ filter, catalogEmpty }: { filter: EquipmentFilt
 
   return (
     <section aria-labelledby="equipment-title" className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-      <div className="border-b border-slate-200 px-4 py-3 sm:px-5 dark:border-slate-800">
-        <h2 id="equipment-title" className="text-sm font-semibold">
-          {t('title')}
-        </h2>
-        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('subtitle')}</p>
-      </div>
+      <PanelHeader id="equipment-title" title={t('title')} note={t('subtitle')} />
       <div className="px-4 py-4 sm:px-5">{body()}</div>
     </section>
   );

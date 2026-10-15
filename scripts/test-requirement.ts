@@ -35,6 +35,7 @@ import {
   QUESTIONS,
   answerUnknown,
   countByNeed,
+  fieldNoteKey,
   needsFor,
   pendingPaths,
   pendingQuestions,
@@ -267,8 +268,8 @@ test('nhãn bảng tóm tắt đủ ở cả hai ngôn ngữ', () => {
   for (const locale of ['vi', 'en'] as const) {
     const r = loadMessages(locale).designer.requirement;
     for (const key of [
-      'step', 'title', 'subtitle', 'applicationType', 'progress', 'reset', 'notSet', 'yes', 'no',
-      'needLegend', 'missingOnly', 'missingOnlyNone',
+      'step', 'title', 'applicationType', 'progress', 'reset', 'notSet', 'yes', 'no',
+      'missingOnly', 'missingOnlyNone',
     ]) {
       assert.ok(r[key], `${locale}: ${key}`);
     }
@@ -476,8 +477,14 @@ test('mức cần thiết của ô: suy từ bảng câu hỏi, chỉ gồm ô �
   assert.equal(insp.get('object.sizeY'), 'required');
   assert.equal(insp.get('detection.0.minSize'), 'required');
   assert.equal(meas.get('measurement.0.tolerance'), 'required');
-  // Bài ngoại quan không bắt buộc dung sai, nhưng vẫn nên có.
-  assert.equal(insp.get('measurement.0.tolerance'), 'recommended');
+  // Bài ngoại quan: dung sai là Tuỳ chọn, kèm ghi chú "chỉ điền khi cần đo thêm" (chốt 2026-10-15).
+  assert.equal(insp.get('measurement.0.tolerance'), 'optional');
+  assert.equal(fieldNoteKey('AppearanceInspection', 'measurement.0.tolerance'), 'toleranceOnlyIfMeasuring');
+  assert.equal(fieldNoteKey('Measurement', 'measurement.0.tolerance'), null);
+  for (const locale of ['vi', 'en']) {
+    const notes = JSON.parse(readFileSync(`src/messages/${locale}.json`, 'utf8')).designer.requirement.fieldNotes;
+    assert.ok(notes?.toleranceOnlyIfMeasuring, locale);
+  }
 
   for (const path of ['detection.0.contrast', 'object.heightVariation', 'system.workingDistance', 'object.surface']) {
     assert.equal(insp.get(path), 'recommended', path);
@@ -683,7 +690,7 @@ test('V1a hiện MỤC ĐÍCH: mọi mã luật trong cấu hình có mục đí
     for (const q of QUESTIONS) {
       assert.ok(r.questions?.items?.[q.id]?.question && r.questions.items[q.id].short, `${locale}: questions.items.${q.id}`);
     }
-    for (const key of ['title', 'subtitle', 'done', 'more', 'markedUnknown', 'askAgain', 'unknown', 'confirm', 'suggestions', 'invalidNumber']) {
+    for (const key of ['title', 'done', 'more', 'markedUnknown', 'askAgain', 'unknown', 'confirm', 'suggestions', 'invalidNumber']) {
       assert.ok(r.questions[key], `${locale}: questions.${key}`);
     }
     assert.ok(r.inferredOption?.includes('{value}'), `${locale}: inferredOption`);

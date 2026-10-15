@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useMemo, useState, useSyncExternalStore, useTransition } from 'react';
 import { useTranslations } from 'next-intl';
+import { PanelHeader } from '@/components/ui/PanelHeader';
 import { saveProjectAction, startNextRevisionAction, type ProjectActionResult } from '@/app/actions/projects';
 import { parseDraft, type RequirementDraft } from '@/lib/requirement/draft';
 import { readDraftRaw, subscribeDraft, writeDraft } from '@/lib/requirement/draftStore';
@@ -86,32 +87,29 @@ export function ProjectSaveBar({ canExportPdf = false }: { canExportPdf?: boolea
   return (
     <section
       aria-labelledby="project-save-title"
-      className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5 dark:border-slate-800 dark:bg-slate-900"
+      className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900"
     >
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h2 id="project-save-title" className="text-sm font-semibold">
-            {link ? t('linked', { name: link.name, label: link.revLabel }) : t('title')}
-          </h2>
-          <p
-            className={`mt-1 text-xs ${
-              link && !link.locked && dirty ? 'text-amber-700 dark:text-amber-400' : 'text-slate-500 dark:text-slate-400'
-            }`}
-          >
-            {status}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
-          {link ? (
-            <Link href={`${PROJECTS_ROUTE}/${link.id}`} className="text-sky-700 hover:underline dark:text-sky-400">
-              {t('openProject')}
+      <PanelHeader
+        id="project-save-title"
+        title={link ? t('linked', { name: link.name, label: link.revLabel }) : t('title')}
+        note={
+          // "Chưa lưu" là cảnh báo thật — giữ màu; trạng thái khác là ghi chú mờ.
+          link && !link.locked && dirty ? <span className="text-amber-700 dark:text-amber-400">{status}</span> : status
+        }
+        actions={
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+            {link ? (
+              <Link href={`${PROJECTS_ROUTE}/${link.id}`} className="text-sky-700 hover:underline dark:text-sky-400">
+                {t('openProject')}
+              </Link>
+            ) : null}
+            <Link href={PROJECTS_ROUTE} className="text-sky-700 hover:underline dark:text-sky-400">
+              {t('allProjects')}
             </Link>
-          ) : null}
-          <Link href={PROJECTS_ROUTE} className="text-sky-700 hover:underline dark:text-sky-400">
-            {t('allProjects')}
-          </Link>
-        </div>
-      </div>
+          </div>
+        }
+      />
+      <div className="px-4 pb-4 sm:px-5 empty:hidden">
 
       {link?.locked ? null : (
         <div className="mt-3 flex flex-wrap items-end gap-2">
@@ -188,6 +186,7 @@ export function ProjectSaveBar({ canExportPdf = false }: { canExportPdf?: boolea
           {message.text}
         </p>
       ) : null}
+      </div>
     </section>
   );
 }

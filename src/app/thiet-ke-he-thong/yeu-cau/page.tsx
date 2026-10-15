@@ -55,7 +55,6 @@ export default async function RequirementPage({ searchParams }: PageProps<'/thie
     <section className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6">
       <p className="text-xs font-semibold uppercase tracking-wide text-sky-700 dark:text-sky-400">{t('step')}</p>
       <h1 className="mt-2 text-3xl font-bold tracking-tight">{t('title')}</h1>
-      <p className="mt-3 max-w-2xl text-slate-600 dark:text-slate-400">{t('subtitle')}</p>
 
       <div className="mt-8 space-y-6">
         <ProjectSaveBar canExportPdf={hasAdvancedFeatures(session?.profile?.role ?? null)} />

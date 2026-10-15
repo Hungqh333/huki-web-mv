@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useFormatter, useTranslations } from 'next-intl';
+import { PanelHeader } from '@/components/ui/PanelHeader';
 import type { Component } from '@/lib/components/specs';
 import { V1A_FIELDS } from '@/lib/requirement/fields';
 import { BOM_QTY_MAX, type BomSelection } from '@/lib/vision/bomSelection';
@@ -43,19 +44,18 @@ export function BomPanel({
   const [adding, setAdding] = useState('');
 
   const heading = (
-    <div className="flex flex-wrap items-start justify-between gap-2 border-b border-slate-200 px-4 py-3 sm:px-5 dark:border-slate-800">
-      <div>
-        <h2 id="bom-title" className="text-sm font-semibold">
-          {t('title', { level: tLevels(selection.level) })}
-        </h2>
-        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('subtitle')}</p>
-      </div>
-      {readOnly ? null : (
-        <button type="button" onClick={onClear} className="text-xs text-slate-500 hover:underline dark:text-slate-400">
-          {t('clear')}
-        </button>
-      )}
-    </div>
+    <PanelHeader
+      id="bom-title"
+      title={t('title', { level: tLevels(selection.level) })}
+      note={t('subtitle')}
+      actions={
+        readOnly ? null : (
+          <button type="button" onClick={onClear} className="text-xs text-slate-600 hover:underline dark:text-slate-300">
+            {t('clear')}
+          </button>
+        )
+      }
+    />
   );
 
   if (!bom) {
@@ -217,7 +217,7 @@ export function BomPanel({
         {/* Giả định & Loại trừ — UI_CONTENT màn 7, bắt buộc. */}
         <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm dark:border-slate-800 dark:bg-slate-950/40">
           <h3 className="font-semibold">{t('assumptionsTitle')}</h3>
-          <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">{t('assumptionsIntro')}</p>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('assumptionsIntro')}</p>
           {bom.assumptions.length > 0 ? (
             <ul className="mt-1 list-disc pl-5 text-xs">
               {bom.assumptions.map((item) => (

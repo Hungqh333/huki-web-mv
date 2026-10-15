@@ -78,8 +78,9 @@ export async function signInAction(
 
   if (error) return { error: t('invalidCredentials') };
 
+  // Đăng nhập xong về thẳng trang chủ (chốt 2026-10-15) — trang tài khoản vẫn có trên menu.
   revalidatePath('/', 'layout');
-  redirect('/tai-khoan');
+  redirect('/');
 }
 
 export async function signOutAction() {

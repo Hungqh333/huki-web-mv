@@ -42,6 +42,7 @@ import {
   NEED_LEVELS,
   answerUnknown,
   countByNeed,
+  fieldNoteKey,
   needsFor,
   pendingPaths,
   pendingQuestions,
@@ -53,6 +54,7 @@ import type { Assumption, Confidence, Requirement } from '@/lib/requirement/type
 import { AnalysisPanel } from './AnalysisPanel';
 import { DesignPanels } from './DesignPanels';
 import { KnowledgeProvider } from '@/components/knowledge/KnowledgeLink';
+import { NOTE_CLASS, PanelHeader } from '@/components/ui/PanelHeader';
 import type { KnowledgeIndex } from '@/lib/knowledge';
 import type { Component } from '@/lib/components/specs';
 import type { BomSelection } from '@/lib/vision/bomSelection';
@@ -344,40 +346,77 @@ export function RequirementSummary({
           className="m-0 min-w-0 space-y-6 border-0 p-0 disabled:opacity-60"
         >
         {base.rawText ? (
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5 dark:border-slate-800 dark:bg-slate-900/60">
-            <div className="flex flex-wrap items-start justify-between gap-2">
-              <h2 className="text-sm font-semibold">{t('rawTextTitle')}</h2>
-              {canReread ? (
-                <button
-                  type="button"
-                  onClick={() => runParse(base)}
-                  className="text-xs font-medium text-sky-700 hover:underline disabled:cursor-not-allowed disabled:opacity-50 dark:text-sky-400"
-                >
-                  {t('parser.reread')}
-                </button>
-              ) : null}
+          <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <PanelHeader
+              title={t('rawTextTitle')}
+              actions={
+                canReread ? (
+                  <button
+                    type="button"
+                    onClick={() => runParse(base)}
+                    className="text-xs font-medium text-sky-700 hover:underline disabled:cursor-not-allowed disabled:opacity-50 dark:text-sky-400"
+                  >
+                    {t('parser.reread')}
+                  </button>
+                ) : null
+              }
+            />
+            <div className="px-4 py-3 sm:px-5">
+              <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-700 dark:text-slate-300">{base.rawText}</p>
+              {reading ? null : <ParseStatus parse={base.parse} />}
             </div>
-            <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-slate-700 dark:text-slate-300">
-              {base.rawText}
-            </p>
-            {reading ? null : <ParseStatus parse={base.parse} />}
           </div>
         ) : null}
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5 dark:border-slate-800 dark:bg-slate-900">
-          <label htmlFor="application-type" className="block text-sm font-medium text-slate-700 dark:text-slate-200">
-            {t('applicationType')}
-            {inferredType ? (
-              <span className={`ml-2 rounded-full px-2 py-0.5 text-xs font-medium ${BADGE_CLASS.inferred}`}>
-                {t('confidence.inferred')}
-              </span>
-            ) : null}
-          </label>
+        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <PanelHeader
+            id="application-type-title"
+            title={
+              <>
+                {t('applicationType')}
+                {inferredType ? (
+                  <span className={`ml-2 rounded-full px-2 py-0.5 text-xs font-medium ${BADGE_CLASS.inferred}`}>
+                    {t('confidence.inferred')}
+                  </span>
+                ) : null}
+              </>
+            }
+            meta={progress ? t('progress', progress) : null}
+            note={requirement ? (mode === 'basic' ? t('mode.basicHint', { count: hiddenCount }) : t('mode.advancedHint')) : null}
+            actions={
+              requirement ? (
+                <div
+                  role="radiogroup"
+                  aria-label={t('mode.title')}
+                  className="inline-flex rounded-lg border border-slate-300 bg-white/60 p-0.5 dark:border-slate-600 dark:bg-slate-900/40"
+                >
+                  {FORM_MODES.map((option) => (
+                    <button
+                      key={option}
+                      type="button"
+                      role="radio"
+                      aria-checked={mode === option}
+                      onClick={() => chooseMode(option)}
+                      className={`min-h-8 rounded-md px-3 text-sm font-medium transition ${
+                        mode === option
+                          ? 'bg-sky-600 text-white shadow-sm dark:bg-sky-500 dark:text-slate-950'
+                          : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
+                      }`}
+                    >
+                      {t(`mode.${option}`)}
+                    </button>
+                  ))}
+                </div>
+              ) : null
+            }
+          />
+          <div className="px-4 py-4 sm:px-5">
           <select
             id="application-type"
+            aria-labelledby="application-type-title"
             value={requirement?.applicationType ?? ''}
             onChange={(event) => onPickApp(event.target.value)}
-            className={`mt-2 sm:max-w-sm ${INPUT_CLASS}`}
+            className={`sm:max-w-sm ${INPUT_CLASS}`}
           >
             <option value="" disabled>
               {t('pickApplication')}
@@ -389,39 +428,9 @@ export function RequirementSummary({
             ))}
           </select>
           {inferredType ? (
-            <p className="mt-2 text-xs text-violet-700 dark:text-violet-300">
+            <p className={`mt-2 ${NOTE_CLASS}`}>
               {t(base.parse?.inferredFrom === 'fields' ? 'parser.inferredTypeFromFields' : 'parser.inferredType')}
             </p>
-          ) : null}
-
-          {requirement ? (
-            <div className="mt-4">
-              <div
-                role="radiogroup"
-                aria-label={t('mode.title')}
-                className="inline-flex rounded-xl border border-slate-200 bg-slate-50 p-1 dark:border-slate-700 dark:bg-slate-800/60"
-              >
-                {FORM_MODES.map((option) => (
-                  <button
-                    key={option}
-                    type="button"
-                    role="radio"
-                    aria-checked={mode === option}
-                    onClick={() => chooseMode(option)}
-                    className={`min-h-9 rounded-lg px-4 text-sm font-medium transition ${
-                      mode === option
-                        ? 'bg-sky-600 text-white shadow-sm dark:bg-sky-500 dark:text-slate-950'
-                        : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100'
-                    }`}
-                  >
-                    {t(`mode.${option}`)}
-                  </button>
-                ))}
-              </div>
-              <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-                {mode === 'basic' ? t('mode.basicHint', { count: hiddenCount }) : t('mode.advancedHint')}
-              </p>
-            </div>
           ) : null}
 
           {requirement && !V1A_FULL_SUPPORT.includes(requirement.applicationType) ? (
@@ -431,8 +440,7 @@ export function RequirementSummary({
           ) : null}
           {progress && needCounts ? (
             <>
-              <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">{t('progress', progress)}</p>
-              <ul className="mt-2 flex flex-wrap gap-2">
+              <ul className="mt-3 flex flex-wrap gap-2">
                 {NEED_LEVELS.map((level) => (
                   <li
                     key={level}
@@ -442,7 +450,6 @@ export function RequirementSummary({
                   </li>
                 ))}
               </ul>
-              <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{t('needLegend')}</p>
               <label className="mt-3 inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
                 <input
                   type="checkbox"
@@ -454,8 +461,9 @@ export function RequirementSummary({
               </label>
             </>
           ) : (
-            <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">{t('pickApplicationHint')}</p>
+            <p className={`mt-3 ${NOTE_CLASS}`}>{t('pickApplicationHint')}</p>
           )}
+          </div>
         </div>
 
         {requirement ? (
@@ -471,9 +479,7 @@ export function RequirementSummary({
                   key={section}
                   className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900"
                 >
-                  <h2 className="border-b border-slate-200 px-4 py-3 text-sm font-semibold sm:px-5 dark:border-slate-800">
-                    {t(`sections.${section}`)}
-                  </h2>
+                  <PanelHeader title={t(`sections.${section}`)} />
                   <ul className="divide-y divide-slate-100 dark:divide-slate-800">
                     {sectionDefs.map((def) => {
                       const field = readField(requirement, def.path);
@@ -540,6 +546,11 @@ export function RequirementSummary({
                             {badge === 'assumed' ? <span aria-hidden="true">⚠ </span> : null}
                             {t(`confidence.${badge}`)}
                           </span>
+                          {fieldNoteKey(requirement.applicationType, def.path) ? (
+                            <p className="text-xs text-slate-500 sm:col-start-2 sm:col-end-4 dark:text-slate-400">
+                              {t(`fieldNotes.${fieldNoteKey(requirement.applicationType, def.path)}`)}
+                            </p>
+                          ) : null}
                           {field?.sourceSpan ? (
                             // Đoạn văn gốc bộ đọc lấy ra — để người dùng đối chiếu (spec §1).
                             <p className="text-xs text-slate-500 sm:col-start-2 sm:col-end-4 dark:text-slate-400">
@@ -646,12 +657,8 @@ function ParseStatus({ parse }: { parse: DraftParse | undefined }) {
   }
 
   if (!message) return null;
-  const color =
-    tone === 'ok'
-      ? 'text-emerald-700 dark:text-emerald-400'
-      : tone === 'warn'
-        ? 'text-amber-700 dark:text-amber-400'
-        : 'text-slate-500 dark:text-slate-400';
+  // Ghi chú không là điểm nhấn (2026-10-15): chỉ cảnh báo giữ màu.
+  const color = tone === 'warn' ? 'text-amber-700 dark:text-amber-400' : 'text-slate-500 dark:text-slate-400';
 
   return (
     <div role="status" className={`mt-2 space-y-1 text-xs ${color}`}>
@@ -690,12 +697,7 @@ function RequirementQuestions({
       aria-labelledby="questions-title"
       className="rounded-2xl border border-sky-200 bg-white shadow-sm dark:border-sky-500/30 dark:bg-slate-900"
     >
-      <div className="border-b border-slate-200 px-4 py-3 sm:px-5 dark:border-slate-800">
-        <h2 id="questions-title" className="text-sm font-semibold">
-          {t('title')}
-        </h2>
-        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('subtitle')}</p>
-      </div>
+      <PanelHeader id="questions-title" title={t('title')} />
 
       {visible.length > 0 ? (
         <ol className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -783,7 +785,7 @@ function QuestionItem({
       <p id={headingId} className="text-sm font-medium text-slate-900 dark:text-slate-100">
         {t(`questions.items.${question.id}.question`)}
       </p>
-      {purposes ? <p className="mt-0.5 text-xs text-sky-700 dark:text-sky-400">→ {purposes}</p> : null}
+      {purposes ? <p className={`mt-0.5 ${NOTE_CLASS}`}>→ {purposes}</p> : null}
 
       <div className="mt-3 space-y-3">
         {choiceDefs.map((def) => (
@@ -960,15 +962,18 @@ function AssumptionsPanel({ assumptions, onFocusField }: { assumptions: Assumpti
       aria-labelledby="assumptions-title"
       className="rounded-2xl border border-amber-200 bg-white shadow-sm dark:border-amber-500/30 dark:bg-slate-900"
     >
-      <div className="border-b border-slate-200 px-4 py-3 dark:border-slate-800">
-        <h2 id="assumptions-title" className="text-sm font-semibold">
-          {t('assumptions.title')}{' '}
-          <span className="ml-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-500/15 dark:text-amber-300">
-            {assumptions.length}
-          </span>
-        </h2>
-        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('assumptions.subtitle')}</p>
-      </div>
+      <PanelHeader
+        id="assumptions-title"
+        title={
+          <>
+            {t('assumptions.title')}{' '}
+            <span className="ml-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-500/15 dark:text-amber-300">
+              {assumptions.length}
+            </span>
+          </>
+        }
+        note={t('assumptions.subtitle')}
+      />
 
       <h3 className={heading}>{t('assumptions.defaultsTitle')}</h3>
       {filled.length > 0 ? (

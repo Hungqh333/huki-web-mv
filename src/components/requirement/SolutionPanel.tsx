@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslations, useFormatter } from 'next-intl';
+import { PanelHeader } from '@/components/ui/PanelHeader';
 import type { Candidate } from '@/lib/vision/equipmentFilter';
 import { noteMessageKey, type RuleResult } from '@/lib/vision/rules';
 import type { SolutionLevel, SolutionLevelKey, Solutions } from '@/lib/vision/solutionLevels';
@@ -50,12 +51,7 @@ export function SolutionPanel({
 
   return (
     <section aria-labelledby="solutions-title" className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-      <div className="border-b border-slate-200 px-4 py-3 sm:px-5 dark:border-slate-800">
-        <h2 id="solutions-title" className="text-sm font-semibold">
-          {t('title')}
-        </h2>
-        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('subtitle')}</p>
-      </div>
+      <PanelHeader id="solutions-title" title={t('title')} />
 
       <div className="space-y-4 px-4 py-4 sm:px-5">
         {!ready ? (

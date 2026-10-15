@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { KnowledgeLink } from '@/components/knowledge/KnowledgeLink';
+import { PanelHeader } from '@/components/ui/PanelHeader';
 import type { Requirement } from '@/lib/requirement/types';
 import { buildArchitecture } from '@/lib/vision/architecture';
 import { assessFeasibility, type DimensionStatus, type FeasibilityStatus } from '@/lib/vision/feasibility';
@@ -80,14 +81,7 @@ export function AnalysisPanel({
     .filter((result) => result.status === 'warn' || result.status === 'fail')
     .sort((a, b) => (a.status === b.status ? 0 : a.status === 'fail' ? -1 : 1));
 
-  const heading = (
-    <div className="border-b border-slate-200 px-4 py-3 sm:px-5 dark:border-slate-800">
-      <h2 id="analysis-title" className="text-sm font-semibold">
-        {t('title')}
-      </h2>
-      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('subtitle')}</p>
-    </div>
-  );
+  const heading = <PanelHeader id="analysis-title" title={t('title')} note={t('subtitle')} />;
 
   if (analysis.results.length === 0) {
     return (

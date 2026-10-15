@@ -232,6 +232,24 @@ function probeValue(def: RequirementFieldDef): unknown {
 const needsCache = new Map<ApplicationType, ReadonlyMap<string, FieldNeed>>();
 
 /**
+ * Mức đặt tay theo loại, đè lên mức suy từ câu hỏi. Chốt 2026-10-15: dung sai trong
+ * bài ngoại quan là Tuỳ chọn — điền vào thì nhánh đo (RES-002/003) có thể đòi camera
+ * lớn hơn hẳn nhánh phát hiện lỗi, nên không được để người dùng tưởng phải điền.
+ */
+const NEED_OVERRIDES: Partial<Record<ApplicationType, Readonly<Record<string, FieldNeed>>>> = {
+  AppearanceInspection: { 'measurement.0.tolerance': 'optional' },
+};
+
+/** Ghi chú dưới ô theo loại — khoá trong designer.requirement.fieldNotes. */
+const FIELD_NOTES: Partial<Record<ApplicationType, Readonly<Record<string, string>>>> = {
+  AppearanceInspection: { 'measurement.0.tolerance': 'toleranceOnlyIfMeasuring' },
+};
+
+export function fieldNoteKey(type: ApplicationType, path: string): string | null {
+  return FIELD_NOTES[type]?.[path] ?? null;
+}
+
+/**
  * Mức của từng ô đang hiện cho một loại ứng dụng. Xét trên bản mồi đã điền đủ,
  * nên mức KHÔNG đổi khi người dùng điền dần — bảng không nhảy mức giữa chừng.
  */
@@ -254,6 +272,9 @@ export function needsFor(type: ApplicationType): ReadonlyMap<string, FieldNeed> 
       // Ô nằm trong nhiều câu thì lấy mức nặng nhất.
       if (needs.get(path) !== 'required') needs.set(path, need);
     }
+  }
+  for (const [path, need] of Object.entries(NEED_OVERRIDES[type] ?? {})) {
+    if (needs.has(path)) needs.set(path, need);
   }
 
   needsCache.set(type, needs);

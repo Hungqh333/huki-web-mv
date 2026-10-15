@@ -388,7 +388,7 @@ export function RequirementSummary({
           className="m-0 min-w-0 space-y-6 border-0 p-0 disabled:opacity-60"
         >
         {/* Mô tả + Loại ứng dụng đặt cạnh nhau ở màn rộng (2026-10-15). */}
-        <div className={base.rawText ? 'grid gap-6 xl:grid-cols-2 xl:items-start' : ''}>
+        <div className={base.rawText ? 'grid gap-6 xl:grid-cols-2' : ''}>
         {base.rawText ? (
           <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <PanelHeader
@@ -515,8 +515,8 @@ export function RequirementSummary({
           <RequirementQuestions requirement={requirement} revision={base.revision} onAnswer={onAnswer} visiblePaths={visiblePaths} />
         ) : null}
 
-        {/* Bảy nhóm ô nhập xếp 2 cột ở màn rộng (2026-10-15) — thứ tự đọc theo hàng. */}
-        <div className="grid gap-6 xl:grid-cols-2 xl:items-start">
+        {/* Bảy nhóm ô nhập xếp 2 cột ở màn rộng (2026-10-15) — thứ tự đọc theo hàng; hai khung cùng hàng kéo cao bằng nhau (phương án B). */}
+        <div className="grid gap-6 xl:grid-cols-2 ">
         {requirement && resolved
           ? REQUIREMENT_SECTIONS.map((section) => {
               const sectionDefs = shownDefs.filter((def) => def.section === section);

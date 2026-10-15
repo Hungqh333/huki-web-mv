@@ -1977,7 +1977,8 @@
         "pendingDetail": "This block needs specific equipment — choose a solution in the Solutions panel to see the PC and the cycle checks (THR-003, THR-004).",
         "noData": "Not enough data",
         "noRules": "No rule decides this block yet.",
-        "pickSolutionHint": "Showing the minimums from the Requirements table. Choose a solution to see the specific equipment in each block."
+        "pickSolutionHint": "Showing the minimums from the Requirements table. Choose a solution to see the specific equipment in each block.",
+        "ruleCount": "{count, plural, one {# rule} other {# rules}}"
       },
       "solutions": {
         "title": "Solutions",

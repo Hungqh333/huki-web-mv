@@ -1977,7 +1977,8 @@
         "pendingDetail": "Khối này cần thiết bị cụ thể — chọn một phương án ở khung Phương án để xem máy tính và kiểm nhịp (THR-003, THR-004).",
         "noData": "Chưa đủ dữ liệu",
         "noRules": "Chưa có luật nào quyết định khối này.",
-        "pickSolutionHint": "Đang hiện mức tối thiểu từ bảng Yêu cầu. Chọn một phương án để xem thiết bị cụ thể của từng khối."
+        "pickSolutionHint": "Đang hiện mức tối thiểu từ bảng Yêu cầu. Chọn một phương án để xem thiết bị cụ thể của từng khối.",
+        "ruleCount": "{count} luật"
       },
       "solutions": {
         "title": "Phương án",

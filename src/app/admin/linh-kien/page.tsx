@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
+import { PanelHeader } from '@/components/ui/PanelHeader';
 import { deleteComponentAction } from '@/app/actions/components';
 import { DeleteButton } from '@/components/admin/DeleteButton';
 import { COMPONENT_KINDS, SPEC_FIELDS, type Component } from '@/lib/components/specs';
@@ -48,18 +49,19 @@ export default async function AdminComponentsPage({
 
   return (
     <section>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-semibold">{t('title')}</h2>
-          <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{t('subtitle')}</p>
-        </div>
-        <Link
-          href="/admin/linh-kien/moi"
-          className="rounded-md bg-sky-600 px-3 py-2 text-sm font-medium text-white hover:bg-sky-700"
-        >
-          {t('new')}
-        </Link>
-      </div>
+      <PanelHeader
+        standalone
+        title={t('title')}
+        note={t('subtitle')}
+        actions={
+          <Link
+            href="/admin/linh-kien/moi"
+            className="rounded-md bg-sky-600 px-3 py-2 text-sm font-medium text-white hover:bg-sky-700"
+          >
+            {t('new')}
+          </Link>
+        }
+      />
 
       {saved ? <Flash tone="ok" text={t('saved')} /> : null}
       {deleted ? <Flash tone="ok" text={t('deleted')} /> : null}

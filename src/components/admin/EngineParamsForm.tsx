@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react';
 import { useTranslations } from 'next-intl';
+import { PanelHeader } from '@/components/ui/PanelHeader';
 import { saveEngineParamsAction, type EngineParamsState } from '@/app/actions/admin';
 import { ENGINE_PARAM_GROUPS, ENGINE_PARAMS, type EngineParams } from '@/lib/vision/engineParams';
 
@@ -41,10 +42,11 @@ export function EngineParamsForm({
       ) : null}
 
       {ENGINE_PARAM_GROUPS.map((group) => (
-        <fieldset key={group} className="rounded-lg border border-slate-200 p-4 dark:border-slate-800">
-          <legend className="px-1 text-sm font-semibold">{t(`groups.${group}.title`)}</legend>
-          <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">{t(`groups.${group}.hint`)}</p>
-          <div className="space-y-3">
+        <fieldset key={group} className="min-w-0 rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          {/* legend cho trình đọc màn hình; thanh tiêu đề chung để nhìn (2026-10-15). */}
+          <legend className="sr-only">{t(`groups.${group}.title`)}</legend>
+          <PanelHeader as="h3" title={t(`groups.${group}.title`)} note={t(`groups.${group}.hint`)} />
+          <div className="space-y-3 px-4 py-4 sm:px-5">
             {ENGINE_PARAMS.filter((def) => def.group === group).map((def) => {
               const changed = current[def.key] !== def.default;
               const meta = stored[def.key];

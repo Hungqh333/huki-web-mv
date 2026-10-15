@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { Panel } from '@/components/ui/PanelHeader';
 import type { KpiProblemGroup, ProblemType } from '@/lib/kpi/types';
 
 const GROUP_ORDER: KpiProblemGroup[] = ['presence', 'metrology', 'code', 'process', 'cosmetic'];
@@ -33,22 +34,27 @@ export function ProblemTypeStep({
   const name = (p: ProblemType) => (locale === 'en' ? p.name_en : p.name_vi);
 
   return (
-    <section>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold">
-          <span className="mr-2 text-sky-600">1.</span>
-          {t('title')}
-        </h2>
-        <button
-          type="button"
-          onClick={() => setHelperOpen((open) => !open)}
-          aria-expanded={helperOpen}
-          aria-controls="kpi-problem-helper"
-          className="rounded px-2 py-2 text-sm text-sky-700 hover:underline dark:text-sky-400"
-        >
-          {t('helperTrigger')}
-        </button>
-      </div>
+    <Panel
+        id="kpi-step1-title"
+        title={
+          <>
+            <span className="mr-2 text-sky-600 dark:text-sky-400">1.</span>
+            {t('title')}
+          </>
+        }
+        actions={
+          <button
+            type="button"
+            onClick={() => setHelperOpen((open) => !open)}
+            aria-expanded={helperOpen}
+            aria-controls="kpi-problem-helper"
+            className="rounded px-2 py-1 text-sm text-sky-700 hover:underline dark:text-sky-400"
+          >
+            {t('helperTrigger')}
+          </button>
+        }
+        bodyClassName="px-4 pb-4 pt-1 sm:px-5"
+      >
 
       {helperOpen ? (
         <div
@@ -113,6 +119,6 @@ export function ProblemTypeStep({
           );
         })}
       </div>
-    </section>
+    </Panel>
   );
 }

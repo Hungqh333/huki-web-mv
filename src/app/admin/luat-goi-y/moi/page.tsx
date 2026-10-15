@@ -1,4 +1,5 @@
 import { getTranslations } from 'next-intl/server';
+import { PanelHeader } from '@/components/ui/PanelHeader';
 import { RuleForm } from '@/components/admin/RuleForm';
 import { DERIVED_FIELD_KEYS } from '@/lib/selector/derivedKeys';
 import { FIELD_CATALOG } from '@/lib/selector/fields';
@@ -17,7 +18,10 @@ export default async function NewRulePage() {
 
   return (
     <section>
-      <h2 className="text-lg font-semibold">{t('newTitle')}</h2>
+      <PanelHeader
+        standalone
+        title={t('newTitle')}
+      />
       <div className="mt-6">
         <RuleForm
           taskTypes={taskTypes ?? []}

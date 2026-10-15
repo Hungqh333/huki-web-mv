@@ -1,4 +1,5 @@
 import { getTranslations } from 'next-intl/server';
+import { PanelHeader } from '@/components/ui/PanelHeader';
 import { ComponentForm } from '@/components/admin/ComponentForm';
 
 export default async function NewComponentPage() {
@@ -6,7 +7,10 @@ export default async function NewComponentPage() {
 
   return (
     <section>
-      <h2 className="text-lg font-semibold">{t('newTitle')}</h2>
+      <PanelHeader
+        standalone
+        title={t('newTitle')}
+      />
       <div className="mt-6">
         <ComponentForm
           draft={{

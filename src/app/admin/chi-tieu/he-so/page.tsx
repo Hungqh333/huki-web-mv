@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
+import { PanelHeader } from '@/components/ui/PanelHeader';
 import { deleteModifierAction } from '@/app/actions/kpi-admin';
 import { DeleteButton } from '@/components/admin/DeleteButton';
 import { DataSourceBadge, KpiAdminNav } from '@/components/admin/KpiAdminNav';
@@ -34,17 +35,20 @@ export default async function AdminKpiModifiersPage({
     <section>
       <KpiAdminNav active="modifiers" />
 
-      <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-semibold">{t('title')}</h2>
-          <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{t('subtitle')}</p>
-        </div>
-        <Link
-          href="/admin/chi-tieu/he-so/moi"
-          className="rounded-md bg-sky-600 px-3 py-2 text-sm font-medium text-white hover:bg-sky-700"
-        >
-          {t('new')}
-        </Link>
+      <div className="mt-6">
+      <PanelHeader
+        standalone
+        title={t('title')}
+        note={t('subtitle')}
+        actions={
+          <Link
+            href="/admin/chi-tieu/he-so/moi"
+            className="rounded-md bg-sky-600 px-3 py-2 text-sm font-medium text-white hover:bg-sky-700"
+          >
+            {t('new')}
+          </Link>
+        }
+      />
       </div>
 
       {saved ? <Flash text={t('saved')} /> : null}

@@ -2,6 +2,7 @@
 
 import { Fragment, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { Panel } from '@/components/ui/PanelHeader';
 import { listPcOptions, pickSoftware } from '@/lib/components/match';
 import { planPcForLines, type VisionLine } from '@/lib/components/pc';
 import {
@@ -98,20 +99,21 @@ export function PcPlanner({
   return (
     <div className="space-y-8">
       {/* ---------------------------------------------------- BÀI TOÁN VÀO -- */}
-      <div>
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="font-semibold">{t('linesTitle')}</h2>
+      <Panel
+        id="pc-lines-title"
+        title={t('linesTitle')}
+        note={t('linesHint')}
+        actions={
           <button
             type="button"
             onClick={() => setLines((current) => [...current, newLine()])}
-            className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800"
+            className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
           >
             {t('addLine')}
           </button>
-        </div>
-        <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{t('linesHint')}</p>
-
-        <div className="mt-3 overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
+        }
+      >
+        <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
           <table className="w-full min-w-[720px] text-left text-sm">
             <thead className="bg-slate-50 text-xs uppercase text-slate-500 dark:bg-slate-900 dark:text-slate-400">
               <tr>
@@ -221,7 +223,7 @@ export function PcPlanner({
             </tbody>
           </table>
         </div>
-      </div>
+      </Panel>
 
       {/* ------------------------------------------------------- TỔNG HỢP -- */}
       <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -250,10 +252,8 @@ export function PcPlanner({
       ) : null}
 
       {/* ------------------------------------------------- DANH MỤC VẬT TƯ -- */}
-      <div>
-        <h2 className="font-semibold">{t('bomTitle')}</h2>
-
-        <div className="mt-3 overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
+      <Panel id="pc-bom-title" title={t('bomTitle')}>
+        <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
           <table className="w-full min-w-[640px] text-left text-sm">
             <thead className="bg-slate-50 text-xs uppercase text-slate-500 dark:bg-slate-900 dark:text-slate-400">
               <tr>
@@ -363,7 +363,7 @@ export function PcPlanner({
         </div>
 
         <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{t('bomNote')}</p>
-      </div>
+      </Panel>
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { getLocale, getTranslations } from 'next-intl/server';
+import { Panel } from '@/components/ui/PanelHeader';
 import { canUseSelector, getSessionContext } from '@/lib/auth';
 import { hasSupabaseEnv } from '@/lib/supabase/env';
 import { createClient } from '@/lib/supabase/server';
@@ -142,13 +143,17 @@ export default async function SelectorHomePage() {
 
           <aside className="space-y-4 xl:sticky xl:top-6 xl:self-start">
             {/* Bài toán vừa dùng — chỉ hiện khi có lịch sử, khỏi chiếm chỗ vô ích */}
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-              <div className="flex items-center gap-2.5">
-                <IconBadge name="clock" tone="amber" className="size-8" />
-                <h2 className="font-semibold">{t('recentTitle')}</h2>
-              </div>
+            <Panel
+              id="recent-tasks-title"
+              title={
+                <span className="inline-flex items-center gap-2.5">
+                  <IconBadge name="clock" tone="amber" className="size-7" />
+                  {t('recentTitle')}
+                </span>
+              }
+            >
               {recentTasks.length > 0 ? (
-                <ul className="mt-3 space-y-1">
+                <ul className="space-y-1">
                   {recentTasks.map((task) => (
                     <li key={task.slug}>
                       <Link
@@ -164,9 +169,9 @@ export default async function SelectorHomePage() {
                   ))}
                 </ul>
               ) : (
-                <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">{t('recentEmpty')}</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">{t('recentEmpty')}</p>
               )}
-            </div>
+            </Panel>
 
             {/* Hướng dẫn cách công cụ chọn — luôn có, không bao giờ trống */}
             <div className="rounded-2xl border border-sky-200 bg-sky-50 p-5 dark:border-sky-900 dark:bg-sky-950/30">

@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
+import { PanelHeader } from '@/components/ui/PanelHeader';
 import { KpiAdminNav } from '@/components/admin/KpiAdminNav';
 import {
   KpiProblemTypeForm,
@@ -52,7 +53,12 @@ export default async function EditProblemTypePage({ params }: PageProps<'/admin/
   return (
     <section>
       <KpiAdminNav active="problemTypes" />
-      <h2 className="mt-6 text-lg font-semibold">{t('editTitle')}</h2>
+      <div className="mt-6">
+      <PanelHeader
+        standalone
+        title={t('editTitle')}
+      />
+      </div>
       <div className="mt-6">
         <KpiProblemTypeForm draft={draft} />
       </div>

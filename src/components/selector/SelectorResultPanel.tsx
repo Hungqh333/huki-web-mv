@@ -3,6 +3,7 @@
 import { useLocale, useTranslations } from 'next-intl';
 import { renderFormula } from '@/lib/vision/formulaTerms';
 import { IconBadge, type BadgeTone, type IconName } from '@/components/ui/Icon';
+import { NOTE_CLASS, Panel } from '@/components/ui/PanelHeader';
 import type { Component } from '@/lib/components/specs';
 import type { SelectorInput, SelectorResult } from '@/lib/selector/types';
 import { appearanceInputFromForm } from '@/lib/vision/fromInput';
@@ -127,11 +128,8 @@ export function SelectorResultPanel({
         </p>
       ) : null}
 
-      <div hidden={hasCatalog}>
-        <h3 className="font-semibold">{t('bomTitle')}</h3>
-        <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{t('bomHint')}</p>
-
-        <ol className="mt-4 space-y-3">
+      <Panel id="selector-bom-title" as="h3" title={t('bomTitle')} note={t('bomHint')} className={hasCatalog ? 'hidden' : ''}>
+        <ol className="space-y-3">
           {BOM.map((item, index) => {
             const value = valueOf(item.key);
             return (
@@ -160,26 +158,21 @@ export function SelectorResultPanel({
             );
           })}
         </ol>
-      </div>
+      </Panel>
 
       {components.length > 0 ? (
         <ComponentPicker result={result} input={input} components={components} />
       ) : null}
 
       {result.approachReason ? (
-        <div className="rounded-lg border border-slate-200 p-4 dark:border-slate-800">
-          <h3 className="text-sm font-semibold">{t('approachReason')}</h3>
-          <p className="mt-2 text-sm text-slate-700 dark:text-slate-300">
-            {pickNote(result.approachReason)}
-          </p>
-        </div>
+        <Panel id="selector-approach-title" as="h3" title={t('approachReason')}>
+          <p className="text-sm text-slate-700 dark:text-slate-300">{pickNote(result.approachReason)}</p>
+        </Panel>
       ) : null}
 
       {result.derived.length > 0 && !hasVisionChecks ? (
-        <div className="rounded-lg border border-slate-200 p-4 dark:border-slate-800">
-          <h3 className="text-sm font-semibold">{t('calculations')}</h3>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('calculationsHint')}</p>
-          <ul className="mt-3 space-y-2">
+        <Panel id="selector-calculations-title" as="h3" title={t('calculations')} note={t('calculationsHint')}>
+          <ul className="space-y-2">
             {result.derived.map((metric) => (
               <li key={metric.key} className="text-sm">
                 <span className="font-medium text-slate-700 dark:text-slate-300">
@@ -191,7 +184,7 @@ export function SelectorResultPanel({
               </li>
             ))}
           </ul>
-        </div>
+        </Panel>
       ) : null}
 
       {/* Giả định engine đã tự điền (vd. chiều cao FOV thiếu). Bản ghi lịch sử
@@ -210,19 +203,16 @@ export function SelectorResultPanel({
       ) : null}
 
       {result.notes.length > 0 ? (
-        <div className="rounded-lg border border-slate-200 p-4 dark:border-slate-800">
-          <h3 className="text-sm font-semibold">{t('notes')}</h3>
-          <ul className="mt-3 space-y-3">
+        <Panel id="selector-notes-title" as="h3" title={t('notes')}>
+          <ul className="space-y-3">
             {result.notes.map((note, index) => (
               <li key={`${note.ruleCode ?? 'note'}-${index}`} className="text-sm">
                 <p className="text-slate-700 dark:text-slate-300">{pickNote(note)}</p>
-                {note.ruleCode ? (
-                  <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{note.ruleCode}</p>
-                ) : null}
+                {note.ruleCode ? <p className={`mt-0.5 ${NOTE_CLASS}`}>{note.ruleCode}</p> : null}
               </li>
             ))}
           </ul>
-        </div>
+        </Panel>
       ) : null}
 
     </section>

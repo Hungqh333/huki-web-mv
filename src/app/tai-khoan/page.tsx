@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { getFormatter, getTranslations } from 'next-intl/server';
+import { Panel } from '@/components/ui/PanelHeader';
 import { ProfileForm } from '@/components/auth/ProfileForm';
 import { RoleBadge } from '@/components/auth/RoleBadge';
 import { SignOutButton } from '@/components/auth/SignOutButton';
@@ -113,17 +114,16 @@ function SettingCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-      <div className="flex items-start gap-4">
-        <IconBadge name={icon} tone={iconTone} />
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="font-semibold">{title}</h2>
-            {action}
-          </div>
-          <div className="mt-3">{children}</div>
-        </div>
-      </div>
-    </div>
+    <Panel
+      title={
+        <span className="inline-flex items-center gap-2.5">
+          <IconBadge name={icon} tone={iconTone} className="size-7" />
+          {title}
+        </span>
+      }
+      actions={action}
+    >
+      {children}
+    </Panel>
   );
 }

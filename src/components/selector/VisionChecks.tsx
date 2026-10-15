@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { Panel } from '@/components/ui/PanelHeader';
 import { renderFormula } from '@/lib/vision/formulaTerms';
 import { worstStatus, type AppearanceAnalysis, type Check, type CheckStatus } from '@/lib/vision';
 
@@ -51,11 +52,7 @@ export function VisionChecks({
   const needsAttention = analysis.overall === 'warn' || analysis.overall === 'fail';
 
   return (
-    <div>
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="font-semibold">{t('title')}</h3>
-        <StatusBadge status={analysis.overall} />
-      </div>
+    <Panel id="vision-checks-title" as="h3" title={t('title')} actions={<StatusBadge status={analysis.overall} />}>
 
       {/*
         Cảnh báo cố định: hiện dù mọi phép kiểm đều đạt. Đủ độ phân giải chỉ nói
@@ -63,7 +60,7 @@ export function VisionChecks({
         mà không công thức nào vượt qua được. Nằm NGOÀI khối gập, nếu không nó
         biến mất đúng lúc mọi thứ đều đạt — tức là đúng lúc dễ chủ quan nhất.
       */}
-      <p className="mt-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm leading-relaxed text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+      <p className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm leading-relaxed text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
         {t('contrastDisclaimer')}
       </p>
 
@@ -110,7 +107,7 @@ export function VisionChecks({
           })}
       </div>
       </details>
-    </div>
+    </Panel>
   );
 }
 

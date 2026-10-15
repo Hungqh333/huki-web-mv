@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { Panel } from '@/components/ui/PanelHeader';
 import type { BurdenStrategy } from '@/lib/kpi/types';
 
 const STRATEGIES: BurdenStrategy[] = ['no-recheck', 'minimize-scrap', 'balanced', 'custom'];
@@ -26,11 +27,16 @@ export function BurdenStep({
   const t = useTranslations('kpi.step3');
 
   return (
-    <section>
-      <h2 className="text-lg font-semibold">
-        <span className="mr-2 text-sky-600">3.</span>
-        {t('title')}
-      </h2>
+    <Panel
+        id="kpi-step3-title"
+        title={
+          <>
+            <span className="mr-2 text-sky-600 dark:text-sky-400">3.</span>
+            {t('title')}
+          </>
+        }
+        bodyClassName="px-4 pb-4 sm:px-5"
+      >
 
       {/*
         Câu này là ý niệm cốt lõi của cả module — đặt ngay dưới tiêu đề, trước
@@ -91,6 +97,6 @@ export function BurdenStep({
           </div>
         </div>
       ) : null}
-    </section>
+    </Panel>
   );
 }

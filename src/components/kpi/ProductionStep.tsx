@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { Panel } from '@/components/ui/PanelHeader';
 import { digitsOnly } from '@/lib/kpi/input';
 import type { ProductionInputs } from './KpiCalculator';
 
@@ -50,12 +51,17 @@ export function ProductionStep({
   const t = useTranslations('kpi.step4');
 
   return (
-    <section>
-      <h2 className="text-lg font-semibold">
-        <span className="mr-2 text-sky-600">4.</span>
-        {t('title')}
-      </h2>
-      <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{t('subtitle')}</p>
+    <Panel
+        id="kpi-step4-title"
+        title={
+          <>
+            <span className="mr-2 text-sky-600 dark:text-sky-400">4.</span>
+            {t('title')}
+          </>
+        }
+        note={t('subtitle')}
+        bodyClassName="px-4 pb-4 sm:px-5"
+      >
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         {FIELDS.map((field) => {
@@ -128,6 +134,6 @@ export function ProductionStep({
           </span>
         </span>
       </label>
-    </section>
+    </Panel>
   );
 }

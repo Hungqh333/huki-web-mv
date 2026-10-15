@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
+import { PanelHeader } from '@/components/ui/PanelHeader';
 import { ArticleForm } from '@/components/admin/ArticleForm';
 import type { AccessTier } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
@@ -43,7 +44,10 @@ export default async function EditArticlePage({ params }: PageProps<'/admin/bai-
 
   return (
     <section>
-      <h2 className="text-lg font-semibold">{t('editTitle')}</h2>
+      <PanelHeader
+        standalone
+        title={t('editTitle')}
+      />
       <div className="mt-6">
         <ArticleForm
           categories={categories ?? []}

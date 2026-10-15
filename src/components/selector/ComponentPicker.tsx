@@ -3,6 +3,7 @@
 import { Fragment, useState } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import { Panel } from '@/components/ui/PanelHeader';
 import {
   listAccessories,
   pickCamera,
@@ -424,9 +425,9 @@ export function ComponentPicker({
   let index = 0;
 
   return (
-    <div>
+    <div className="space-y-6">
       {variants.length > 1 ? (
-        <div className="mb-8">
+        <div>
           <VariantCompare
             variants={variants}
             selectedCode={camera?.code ?? null}
@@ -437,9 +438,11 @@ export function ComponentPicker({
         </div>
       ) : null}
 
-      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-        <h3 className="font-semibold">{t('title')}</h3>
-
+      <Panel
+        id="component-picker-title"
+        as="h3"
+        title={t('title')}
+        actions={
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
           <label className="flex items-center gap-2">
             <span className="text-slate-600 dark:text-slate-400">{t('stationsLabel')}</span>
@@ -482,9 +485,9 @@ export function ComponentPicker({
             </label>
           ) : null}
         </div>
-      </div>
-
-      <div className="mt-3 overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
+        }
+      >
+      <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
         <table className="w-full min-w-[640px] text-left text-sm">
           <thead className="bg-slate-50 text-xs uppercase text-slate-500 dark:bg-slate-900 dark:text-slate-400">
             <tr>
@@ -661,12 +664,9 @@ export function ComponentPicker({
           <span aria-hidden="true">→</span>
         </Link>
       </div>
+      </Panel>
 
-      {analysis ? (
-        <div className="mt-6 border-t border-slate-200 pt-6 dark:border-slate-800">
-          <VisionChecks analysis={analysis} hasCamera={camera !== null} />
-        </div>
-      ) : null}
+      {analysis ? <VisionChecks analysis={analysis} hasCamera={camera !== null} /> : null}
     </div>
   );
 }

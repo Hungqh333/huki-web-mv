@@ -1,4 +1,5 @@
 import { getTranslations } from 'next-intl/server';
+import { PanelHeader } from '@/components/ui/PanelHeader';
 import { EngineParamsForm } from '@/components/admin/EngineParamsForm';
 import { loadEngineParams } from '@/lib/engineParamsLoad';
 import { createClient } from '@/lib/supabase/server';
@@ -13,8 +14,11 @@ export default async function EngineParamsPage() {
 
   return (
     <section>
-      <h2 className="text-lg font-semibold">{t('title')}</h2>
-      <p className="mt-1 max-w-2xl text-sm text-slate-600 dark:text-slate-400">{t('subtitle')}</p>
+      <PanelHeader
+        standalone
+        title={t('title')}
+        note={t('subtitle')}
+      />
       <p className="mt-2 font-mono text-xs text-slate-500 dark:text-slate-400">
         {t('version', { version: rulesetVersionFor(RULESET_VERSION, loaded.params) })}
       </p>

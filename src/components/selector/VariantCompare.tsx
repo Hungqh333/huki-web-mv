@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
+import { Panel } from '@/components/ui/PanelHeader';
 import { COMFORTABLE_MARGIN_PCT, type Variant } from '@/lib/components/variants';
 
 /**
@@ -63,11 +64,8 @@ export function VariantCompare({
   );
 
   return (
-    <div>
-      <h3 className="font-semibold">{t('title')}</h3>
-      <p className="mt-1 max-w-3xl text-sm text-slate-600 dark:text-slate-400">{t('hint')}</p>
-
-      <div className="mt-3 overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
+    <Panel id="variant-compare-title" as="h3" title={t('title')} note={t('hint')}>
+      <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
         <table className="w-full min-w-[640px] text-left">
           <thead>
             <tr className="bg-slate-50 dark:bg-slate-900">
@@ -193,6 +191,6 @@ export function VariantCompare({
       </div>
 
       <p className="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">{t('foot')}</p>
-    </div>
+    </Panel>
   );
 }

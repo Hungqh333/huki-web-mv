@@ -1,4 +1,5 @@
 import { getFormatter, getTranslations } from 'next-intl/server';
+import { PanelHeader } from '@/components/ui/PanelHeader';
 import { RoleSelect } from '@/components/admin/RoleSelect';
 import { getSessionContext, type Profile } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
@@ -20,8 +21,11 @@ export default async function AdminUsersPage() {
 
   return (
     <section>
-      <h2 className="text-lg font-semibold">{t('title')}</h2>
-      <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{t('subtitle')}</p>
+      <PanelHeader
+        standalone
+        title={t('title')}
+        note={t('subtitle')}
+      />
 
       {error ? (
         <p className="mt-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">

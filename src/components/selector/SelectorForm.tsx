@@ -2,6 +2,7 @@
 
 import { useActionState, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { Panel } from '@/components/ui/PanelHeader';
 import { runSelectorAction, type SelectorState } from '@/app/actions/selector';
 import { FIELD_GROUPS, visibleFieldDefs, type FieldDef } from '@/lib/selector/fields';
 import type { InputValue } from '@/lib/selector/types';
@@ -176,11 +177,10 @@ export function SelectorForm({
       {/* Chỉ hiện khi đã có kết quả. Thay cho cả cái form, nên phải nói được
           "đã nhập gì" chứ không chỉ là một cái nút. */}
       {hasResult ? (
-        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/60">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-              {t('submittedTitle')}
-            </h2>
+        <Panel
+          id="submitted-inputs-title"
+          title={t('submittedTitle')}
+          actions={
             <button
               type="button"
               onClick={() => setEditing((current) => !current)}
@@ -189,14 +189,15 @@ export function SelectorForm({
             >
               {editing ? t('closeEdit') : t('editInputs')}
             </button>
-          </div>
+          }
+        >
 
           {/* Chỉ hiện vài thông số đầu. Bài ngoại quan có 17 thông số — liệt kê
               hết thì riêng thanh nhắc lại đã cao 496px trên điện thoại, tức là
               hơn nửa màn hình cho thứ người dùng vừa tự tay nhập xong. */}
           {summary.length > 0 ? (
             <>
-              <dl className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 text-sm">
+              <dl className="flex flex-wrap gap-x-5 gap-y-1.5 text-sm">
                 {(showAllInputs ? summary : summary.slice(0, SUMMARY_PREVIEW)).map(
                   ({ def, text }) => (
                     <div key={def.key} className="flex gap-1.5">
@@ -223,7 +224,7 @@ export function SelectorForm({
               ) : null}
             </>
           ) : null}
-        </div>
+        </Panel>
       ) : null}
 
       {/* ------------------------------------------------------- FORM -- */}

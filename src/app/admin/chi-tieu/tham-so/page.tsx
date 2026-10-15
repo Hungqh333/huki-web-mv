@@ -1,4 +1,5 @@
 import { getLocale, getTranslations } from 'next-intl/server';
+import { Panel, PanelHeader } from '@/components/ui/PanelHeader';
 import { KpiAdminNav } from '@/components/admin/KpiAdminNav';
 import {
   KpiConfigForm,
@@ -38,8 +39,13 @@ export default async function AdminKpiParametersPage() {
     <section>
       <KpiAdminNav active="parameters" />
 
-      <h2 className="mt-6 text-lg font-semibold">{t('title')}</h2>
-      <p className="mt-1 max-w-2xl text-sm text-slate-600 dark:text-slate-400">{t('subtitle')}</p>
+      <div className="mt-6">
+      <PanelHeader
+        standalone
+        title={t('title')}
+        note={t('subtitle')}
+      />
+      </div>
 
       {/*
         Cảnh báo có chủ ý. Sửa mấy con số này ảnh hưởng tới MỌI kết quả tính, kể
@@ -50,22 +56,13 @@ export default async function AdminKpiParametersPage() {
         {t('globalWarning')}
       </p>
 
-      <div className="mt-8">
-        <h3 className="text-sm font-semibold">{t('configSection')}</h3>
-        <div className="mt-4">
-          <KpiConfigForm rows={configRows} locale={locale} />
-        </div>
-      </div>
+      <Panel id="kpi-config-title" as="h3" title={t('configSection')} className="mt-8">
+        <KpiConfigForm rows={configRows} locale={locale} />
+      </Panel>
 
-      <div className="mt-10">
-        <h3 className="text-sm font-semibold">{t('tighteningSection')}</h3>
-        <p className="mt-1 max-w-2xl text-sm text-slate-600 dark:text-slate-400">
-          {t('tighteningHint')}
-        </p>
-        <div className="mt-4">
-          <KpiTighteningForm rows={tighteningRows} locale={locale} />
-        </div>
-      </div>
+      <Panel id="kpi-tightening-title" as="h3" title={t('tighteningSection')} note={t('tighteningHint')} className="mt-8">
+        <KpiTighteningForm rows={tighteningRows} locale={locale} />
+      </Panel>
     </section>
   );
 }

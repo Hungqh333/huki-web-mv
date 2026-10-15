@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
+import { PanelHeader } from '@/components/ui/PanelHeader';
 import { ComponentForm } from '@/components/admin/ComponentForm';
 import type { Component } from '@/lib/components/specs';
 import { createClient } from '@/lib/supabase/server';
@@ -21,8 +22,11 @@ export default async function EditComponentPage({ params }: PageProps<'/admin/li
 
   return (
     <section>
-      <h2 className="text-lg font-semibold">{t('editTitle')}</h2>
-      <p className="mt-1 font-mono text-xs text-slate-500 dark:text-slate-400">{data.code}</p>
+      <PanelHeader
+        standalone
+        title={t('editTitle')}
+        note={data.code}
+      />
       <div className="mt-6">
         <ComponentForm
           draft={{

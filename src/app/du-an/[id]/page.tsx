@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { getFormatter, getTranslations } from 'next-intl/server';
+import { Panel } from '@/components/ui/PanelHeader';
 import { ExportLinks } from '@/components/projects/ExportLinks';
 import { OpenRevisionButton } from '@/components/projects/OpenRevisionButton';
 import { SupabaseNotConfigured } from '@/components/auth/SupabaseNotConfigured';
@@ -77,12 +78,14 @@ export default async function ProjectPage({ params }: PageProps<'/du-an/[id]'>) 
         {t(`status.${project.status}`)}
       </p>
 
-      <h2 className="mt-10 text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-        {t('detail.revisions')}
-      </h2>
-      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('detail.lockedHint')}</p>
-
-      <ul className="mt-4 divide-y divide-slate-100 rounded-2xl border border-slate-200 bg-white shadow-sm dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900">
+      <Panel
+        id="revisions-title"
+        title={t('detail.revisions')}
+        note={t('detail.lockedHint')}
+        className="mt-10"
+        bodyClassName=""
+      >
+      <ul className="divide-y divide-slate-100 dark:divide-slate-800">
         {revisions.map((revision) => {
           const draft = revisionToDraft(project, revision);
           const locked = revision.locked_at !== null;
@@ -130,6 +133,7 @@ export default async function ProjectPage({ params }: PageProps<'/du-an/[id]'>) 
           );
         })}
       </ul>
+      </Panel>
     </section>
   );
 }

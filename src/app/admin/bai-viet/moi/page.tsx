@@ -1,4 +1,5 @@
 import { getTranslations } from 'next-intl/server';
+import { PanelHeader } from '@/components/ui/PanelHeader';
 import { ArticleForm, type ArticleDraft } from '@/components/admin/ArticleForm';
 import { RULE_ID_PATTERN } from '@/lib/knowledge';
 import { createClient } from '@/lib/supabase/server';
@@ -40,7 +41,10 @@ export default async function NewArticlePage({ searchParams }: PageProps<'/admin
 
   return (
     <section>
-      <h2 className="text-lg font-semibold">{t('newTitle')}</h2>
+      <PanelHeader
+        standalone
+        title={t('newTitle')}
+      />
       <div className="mt-6">
         <ArticleForm categories={categories} draft={draft} />
       </div>

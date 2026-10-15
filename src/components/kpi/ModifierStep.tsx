@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { Panel } from '@/components/ui/PanelHeader';
 import type { Modifier, ModifierResult } from '@/lib/kpi/types';
 
 export function ModifierStep({
@@ -59,12 +60,17 @@ export function ModifierStep({
   );
 
   return (
-    <section>
-      <h2 className="text-lg font-semibold">
-        <span className="mr-2 text-sky-600">2.</span>
-        {t('title')}
-      </h2>
-      <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{t('subtitle')}</p>
+    <Panel
+        id="kpi-step2-title"
+        title={
+          <>
+            <span className="mr-2 text-sky-600 dark:text-sky-400">2.</span>
+            {t('title')}
+          </>
+        }
+        note={t('subtitle')}
+        bodyClassName="px-4 pb-4 sm:px-5"
+      >
 
       <div className="mt-4 rounded-lg border border-slate-200 p-4 dark:border-slate-800">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -95,6 +101,6 @@ export function ModifierStep({
         {column(worse, t('worse'))}
         {column(better, t('better'))}
       </div>
-    </section>
+    </Panel>
   );
 }

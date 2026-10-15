@@ -2062,7 +2062,7 @@
       },
       "bom": {
         "title": "Danh mục vật tư — phương án {level}",
-        "subtitle": "Lưu dự án để chốt thời gian giao và nhà cung cấp tại thời điểm này.",
+        "subtitle": "Lưu dự án để chốt giá, thời gian giao và nhà cung cấp tại thời điểm này.",
         "clear": "Bỏ chọn phương án",
         "unavailable": "Phương án đã chọn không còn khả dụng với bảng Yêu cầu hiện tại (bị chặn hoặc kho không còn cấu hình ở mức này). Hãy chọn lại phương án.",
         "colItem": "Hạng mục",
@@ -2105,7 +2105,10 @@
         },
         "feasibilityAt": "Trạng thái khả thi tại thời điểm này:",
         "yes": "Có",
-        "no": "Không"
+        "no": "Không",
+        "colPrice": "Đơn giá (₫)",
+        "total": "Tổng ước tính: {total} ₫",
+        "totalMissing": "Chưa đủ giá để cộng tổng — thiếu {count} dòng"
       },
       "mode": {
         "title": "Chế độ bảng",

@@ -2062,7 +2062,7 @@
       },
       "bom": {
         "title": "Bill of materials — {level} solution",
-        "subtitle": "Save the project to lock in lead time and supplier as of now.",
+        "subtitle": "Save the project to lock in price, lead time and supplier as of now.",
         "clear": "Clear solution",
         "unavailable": "The chosen solution is no longer available for the current requirements (blocked, or the catalog has no configuration at this level). Please choose again.",
         "colItem": "Item",
@@ -2105,7 +2105,10 @@
         },
         "feasibilityAt": "Feasibility status at this time:",
         "yes": "Yes",
-        "no": "No"
+        "no": "No",
+        "colPrice": "Unit price (VND)",
+        "total": "Estimated total: {total} VND",
+        "totalMissing": "Prices incomplete — {count} lines missing"
       },
       "mode": {
         "title": "Form mode",

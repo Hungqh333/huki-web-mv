@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useFormatter, useTranslations } from 'next-intl';
 import { PanelHeader } from '@/components/ui/PanelHeader';
 import type { Component } from '@/lib/components/specs';
 import { V1A_FIELDS } from '@/lib/requirement/fields';
@@ -36,6 +36,7 @@ export function BomPanel({
   readOnly: boolean;
 }) {
   const t = useTranslations('designer.requirement.bom');
+  const format = useFormatter();
   const tLevels = useTranslations('designer.requirement.solutions.levels');
   const tFields = useTranslations('designer.requirement.fields');
   const tStatus = useTranslations('designer.requirement.analysis.status');
@@ -113,6 +114,7 @@ export function BomPanel({
               <tr className="border-b border-slate-200 dark:border-slate-800">
                 <th className="py-2 pr-3 font-medium">{t('colItem')}</th>
                 <th className="py-2 pr-3 font-medium">{t('colQty')}</th>
+                <th className="py-2 pr-3 font-medium">{t('colPrice')}</th>
                 <th className="py-2 pr-3 font-medium">{t('colLeadTime')}</th>
                 <th className="py-2 pr-3 font-medium">{t('colRule')}</th>
                 <th className="py-2" />
@@ -124,7 +126,7 @@ export function BomPanel({
               return (
                 <tbody key={category} className="border-b border-slate-100 dark:border-slate-800">
                   <tr>
-                    <td colSpan={5} className="pt-3 pb-1 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                    <td colSpan={6} className="pt-3 pb-1 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                       {t(`categories.${category}`)}
                     </td>
                   </tr>
@@ -137,7 +139,8 @@ export function BomPanel({
                         ) : null}
                         {line.placeholder ? <span className="block text-xs text-amber-700 dark:text-amber-400">{t('needsQuote')}</span> : null}
                         {line.summary ? <span className="block text-xs text-slate-500 dark:text-slate-400">{line.summary}</span> : null}
-                        {line.supplier ? <span className="block text-xs text-slate-500 dark:text-slate-400">{line.supplier}</span> : null}
+                        {/* Nhà cung cấp không hiện trên màn hình (chốt 2026-10-15): kho chạy thử ghi
+                            "GIÁ ƯỚC TÍNH…" ở mọi dòng. Vẫn có trong Excel / Concept Report, nơi còn cột giá. */}
                       </td>
                       <td className="py-1.5 pr-3">
                         {readOnly ? (
@@ -159,6 +162,7 @@ export function BomPanel({
                           <span className="block text-[10px] text-slate-500 dark:text-slate-400">{t('suggested', { qty: line.suggestedQty })}</span>
                         ) : null}
                       </td>
+                      <td className="py-1.5 pr-3 tabular-nums">{line.unitPrice != null ? format.number(line.unitPrice) : '—'}</td>
                       <td className="py-1.5 pr-3 tabular-nums">{line.leadTimeDays != null ? t('days', { days: line.leadTimeDays }) : '—'}</td>
                       <td className="py-1.5 pr-3 font-mono text-xs text-slate-500 dark:text-slate-400">{line.ruleIds.join(', ') || t('manual')}</td>
                       <td className="py-1.5 text-right">
@@ -176,7 +180,10 @@ export function BomPanel({
           </table>
         </div>
 
-        <div className="flex flex-wrap items-center justify-end gap-3 text-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
+          <p className="font-semibold">
+            {bom.total != null ? t('total', { total: format.number(bom.total) }) : t('totalMissing', { count: bom.missingPrices })}
+          </p>
           {!readOnly ? (
             <div className="flex flex-wrap items-center gap-2">
               {selection.removed.length > 0 ? (

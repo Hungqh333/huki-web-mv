@@ -173,7 +173,7 @@ test('mở lại revision: khôi phục lựa chọn BOM từ ảnh chụp; revi
 test('nhãn khối BOM đủ vi/en', () => {
   for (const locale of ['vi', 'en']) {
     const m = JSON.parse(readFileSync(new URL(`../src/messages/${locale}.json`, import.meta.url), 'utf8')).designer.requirement;
-    for (const key of ['title', 'unavailable', 'needsQuote', 'assumptionsTitle', 'exclusionsTitle', 'feasibilityAt']) {
+    for (const key of ['title', 'unavailable', 'needsQuote', 'total', 'totalMissing', 'assumptionsTitle', 'exclusionsTitle', 'feasibilityAt']) {
       assert.ok(m.bom[key], `${locale}: bom.${key}`);
     }
     for (const key of BOM_EXCLUSIONS) assert.ok(m.bom.exclusions[key], `${locale}: exclusions.${key}`);

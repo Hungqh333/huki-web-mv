@@ -10,6 +10,7 @@ import type { Requirement } from '@/lib/requirement/types';
 import type { BomSelection } from './bomSelection';
 import { buildSolutionLevels, type SolutionLevelKey, type Solutions } from './solutionLevels';
 import { DEFAULT_ENGINE_PARAMS, rulesetVersionFor, type EngineParams } from './engineParams';
+import type { EngineTables } from './engineTables';
 
 export { emptySelection, isBomSelection, type BomSelection } from './bomSelection';
 
@@ -266,7 +267,7 @@ export function buildBom(
 
   return {
     version: 1,
-    rulesetVersion: rulesetVersionFor(RULESET_VERSION, analysis.params),
+    rulesetVersion: rulesetVersionFor(RULESET_VERSION, analysis.params, analysis.tables),
     selection,
     level: level.key,
     margin: level.margin,
@@ -289,9 +290,10 @@ export function bomForRequirement(
   requirement: Requirement,
   catalog: readonly Component[],
   selection: BomSelection,
-  params: EngineParams = DEFAULT_ENGINE_PARAMS
+  params: EngineParams = DEFAULT_ENGINE_PARAMS,
+  tables?: EngineTables
 ): BomSnapshot | null {
-  const analysis = analyseRequirement(requirement, params);
+  const analysis = analyseRequirement(requirement, params, tables);
   const solutions = buildSolutionLevels(analysis, filterEquipment(analysis, catalog), catalog);
   return buildBom(analysis, solutions, catalog, selection);
 }

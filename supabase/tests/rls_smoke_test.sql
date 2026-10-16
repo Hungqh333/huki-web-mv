@@ -101,6 +101,14 @@ begin
   exception when insufficient_privilege then
     raise notice 'PASS: Guest bị chặn đọc engine_parameters';
   end;
+
+  -- Bảng engine (2026-10-16): khách không đọc.
+  begin
+    perform count(*) from public.engine_tables;
+    raise exception 'FAIL: Guest đọc được engine_tables';
+  exception when insufficient_privilege then
+    raise notice 'PASS: Guest bị chặn đọc engine_tables';
+  end;
 end $$;
 
 reset role;
@@ -218,6 +226,16 @@ begin
     raise notice 'PASS: Member bị chặn ghi engine_parameters';
   end;
 
+  -- Bảng engine (2026-10-16): member đọc được, không ghi được.
+  perform count(*) from public.engine_tables;
+  raise notice 'PASS: Member đọc được engine_tables';
+  begin
+    insert into public.engine_tables (table_key, row_key, data) values ('lighting', 'scratch', '{}'::jsonb);
+    raise exception 'FAIL: Member ghi được engine_tables';
+  exception when insufficient_privilege then
+    raise notice 'PASS: Member bị chặn ghi engine_tables';
+  end;
+
   -- Ghi chú luật nháp (C8, seed_rule_notes.sql) chỉ Admin thấy — chưa duyệt thì không lộ ra.
   perform pg_temp.assert_eq(
     (select count(*) from public.articles where media_type = 'ruleNote' and published_at is null), 0,
@@ -323,6 +341,14 @@ begin
     (select count(*) from public.engine_parameters where key = 'rlsTestKey'), 1,
     'Admin ghi được engine_parameters');
   delete from public.engine_parameters where key = 'rlsTestKey';
+
+  -- Bảng engine (2026-10-16): Admin ghi / xoá được.
+  insert into public.engine_tables (table_key, row_key, data, updated_by)
+    values ('lighting', 'scratch', '{"lightType":"ring"}'::jsonb, 'Admin RLS');
+  perform pg_temp.assert_eq(
+    (select count(*) from public.engine_tables where table_key = 'lighting' and row_key = 'scratch'), 1,
+    'Admin ghi được engine_tables');
+  delete from public.engine_tables where table_key = 'lighting' and row_key = 'scratch';
 end $$;
 
 reset role;

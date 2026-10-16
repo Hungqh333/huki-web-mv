@@ -169,6 +169,17 @@ const MUTATIONS = [
     sql: `grant select on public.engine_parameters to anon;
           create policy "engine_parameters_select_anon" on public.engine_parameters for select to anon using (true);`,
   },
+  {
+    name: 'Bang engine: cho moi tai khoan ghi',
+    sql: `drop policy "engine_tables_write_admin" on public.engine_tables;
+          create policy "engine_tables_write_admin" on public.engine_tables
+            for all to authenticated using (true) with check (true);`,
+  },
+  {
+    name: 'Bang engine: cho khach doc',
+    sql: `grant select on public.engine_tables to anon;
+          create policy "engine_tables_select_anon" on public.engine_tables for select to anon using (true);`,
+  },
 ];
 
 let caught = 0;

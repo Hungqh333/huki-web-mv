@@ -7,6 +7,7 @@ import { renderFormula } from '@/lib/vision/formulaTerms';
 import { analyseRequirement } from '@/lib/vision/requirementAnalysis';
 import { FEASIBILITY_DIMENSIONS, noteMessageKey, type RuleResult } from '@/lib/vision/rules';
 import { DEFAULT_ENGINE_PARAMS, rulesetVersionFor, type EngineParams } from '@/lib/vision/engineParams';
+import type { EngineTables } from '@/lib/vision/engineTables';
 
 /**
  * Nội dung xuất của MỘT revision đã lưu — V1c mục C6 (spec V1.1 §11.1, §11.2).
@@ -95,12 +96,14 @@ export function buildConceptDocument(input: {
   locale?: string;
   /** Ngưỡng engine đang dùng (admin). Mặc định = giá trị gốc. */
   params?: EngineParams;
+  /** Bảng chiếu sáng + giả định mặc định đang dùng (admin). */
+  tables?: EngineTables;
 }): ConceptDocument {
   const { revision, t } = input;
   const requirement = revision.requirement;
   const params = input.params ?? DEFAULT_ENGINE_PARAMS;
-  const analysis = analyseRequirement(requirement, params);
-  const rulesetNow = rulesetVersionFor(RULESET_VERSION, params);
+  const analysis = analyseRequirement(requirement, params, input.tables);
+  const rulesetNow = rulesetVersionFor(RULESET_VERSION, params, input.tables);
   const feasibility = assessFeasibility(analysis.results);
   const bom = revision.bom;
   // Cùng cách ghép thiết bị vào khối với sơ đồ trên màn hình (NODE_EQUIPMENT).

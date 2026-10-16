@@ -59,6 +59,7 @@ import type { KnowledgeIndex } from '@/lib/knowledge';
 import type { Component } from '@/lib/components/specs';
 import type { BomSelection } from '@/lib/vision/bomSelection';
 import { DEFAULT_ENGINE_PARAMS, type EngineParams } from '@/lib/vision/engineParams';
+import { DEFAULT_ENGINE_TABLES, type EngineTables } from '@/lib/vision/engineTables';
 
 /**
  * Bảng tóm tắt yêu cầu — spec V1.1 §10.2 "Tôi hiểu bài toán của bạn".
@@ -188,9 +189,12 @@ export function RequirementSummary({
   explainAvailable = false,
   knowledge = null,
   engineParams = DEFAULT_ENGINE_PARAMS,
+  engineTables = DEFAULT_ENGINE_TABLES,
 }: {
   /** Ngưỡng engine đang dùng (admin, V1c 2026-10-12) — nạp ở server. */
   engineParams?: EngineParams;
+  /** Bảng chiếu sáng + giả định mặc định (admin, 2026-10-16) — nạp ở server. */
+  engineTables?: EngineTables;
   initialApp: ApplicationType | null;
   /** Catalog linh kiện tải ở server (RLS Member+) — V1c C3. */
   catalog?: readonly Component[];
@@ -269,7 +273,7 @@ export function RequirementSummary({
   const mountKey = `${base.revision}-${raw !== null}`;
 
   // Bản đã điền mặc định — CHỈ để hiển thị. Mọi thao tác ghi vẫn trên `requirement`.
-  const resolved = useMemo(() => (requirement ? resolveAssumptions(requirement, engineParams) : null), [requirement, engineParams]);
+  const resolved = useMemo(() => (requirement ? resolveAssumptions(requirement, engineParams, engineTables) : null), [requirement, engineParams, engineTables]);
   const warningAssumptions = resolved ? resolved.assumptions.filter((a) => a.level === 'warning').length : 0;
 
   const onPickApp = (value: string) => {
@@ -615,7 +619,7 @@ export function RequirementSummary({
         </div>
 
         {/* V1b: phân tích kỹ thuật chạy trên chính bảng này (engine + đánh giá khả thi). */}
-        {requirement ? <AnalysisPanel requirement={requirement} onFocusField={focusAnyField} engineParams={engineParams} /> : null}
+        {requirement ? <AnalysisPanel requirement={requirement} onFocusField={focusAnyField} engineParams={engineParams} engineTables={engineTables} /> : null}
         {requirement ? (
           <DesignPanels
             requirement={requirement}
@@ -625,6 +629,7 @@ export function RequirementSummary({
             readOnly={base.project?.locked === true}
             explainAvailable={explainAvailable}
             engineParams={engineParams}
+            engineTables={engineTables}
           />
         ) : null}
 

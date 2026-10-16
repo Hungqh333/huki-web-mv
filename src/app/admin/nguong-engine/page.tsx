@@ -20,7 +20,7 @@ export default async function EngineParamsPage() {
         note={t('subtitle')}
       />
       <p className="mt-2 font-mono text-xs text-slate-500 dark:text-slate-400">
-        {t('version', { version: rulesetVersionFor(RULESET_VERSION, loaded.params) })}
+        {t('version', { version: rulesetVersionFor(RULESET_VERSION, loaded.params, loaded.tables) })}
       </p>
       <div className="mt-6">
         <EngineParamsForm current={loaded.params} stored={loaded.stored} rejected={loaded.rejected} />

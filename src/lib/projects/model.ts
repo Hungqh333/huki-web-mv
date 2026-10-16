@@ -11,6 +11,7 @@
  */
 import { resolveAssumptions } from '../requirement/assumptions';
 import type { EngineParams } from '../vision/engineParams';
+import type { EngineTables } from '../vision/engineTables';
 import { DRAFT_VERSION, parseDraft, type RequirementDraft } from '../requirement/draft';
 import type { ApplicationType } from '../visionEntry';
 import type { Assumption, Requirement } from '../requirement/types';
@@ -54,13 +55,13 @@ export function normalizeProjectName(value: unknown): string | null {
  * Bản nháp → nội dung ghi vào revision. Giả định tính ở đây (phía server gọi),
  * không nhận từ trình duyệt. `null` khi chưa chọn loại ứng dụng.
  */
-export function buildRevisionPayload(draft: RequirementDraft, params?: EngineParams): RevisionPayload | null {
+export function buildRevisionPayload(draft: RequirementDraft, params?: EngineParams, tables?: EngineTables): RevisionPayload | null {
   const requirement = draft.requirement;
   if (!requirement) return null;
   return {
     applicationType: requirement.applicationType,
     requirement,
-    assumptions: resolveAssumptions(requirement, params).assumptions,
+    assumptions: resolveAssumptions(requirement, params, tables).assumptions,
     rawText: draft.rawText,
     schemaVersion: DRAFT_VERSION,
   };

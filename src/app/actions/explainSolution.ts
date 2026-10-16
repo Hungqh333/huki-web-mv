@@ -43,8 +43,8 @@ export async function explainSolutionAction(requirementJson: string, level: Solu
     .order('sort_order');
   const components = (catalog ?? []) as Component[];
 
-  const { params } = await loadEngineParams(supabase);
-  const analysis = analyseRequirement(draft.requirement, params);
+  const { params, tables } = await loadEngineParams(supabase);
+  const analysis = analyseRequirement(draft.requirement, params, tables);
   const solutions = buildSolutionLevels(analysis, filterEquipment(analysis, components), components);
   const chosen = solutions.levels.find((l) => l.key === level);
 

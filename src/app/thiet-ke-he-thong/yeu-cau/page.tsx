@@ -49,7 +49,7 @@ export default async function RequirementPage({ searchParams }: PageProps<'/thie
   // Bài ghi chú luật đã có (C8) — liên kết "📄 Tài liệu" cạnh từng mã luật.
   const knowledge = await loadKnowledgeIndex(supabase, isAdmin(session?.profile?.role ?? null));
   // Ngưỡng engine sửa qua admin — cùng bộ server dùng khi lưu dự án / xuất file.
-  const { params: engineParams } = await loadEngineParams(supabase);
+  const { params: engineParams, tables: engineTables } = await loadEngineParams(supabase);
 
   return (
     <section className="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6">
@@ -62,6 +62,7 @@ export default async function RequirementPage({ searchParams }: PageProps<'/thie
           explainAvailable={explainerConfigured()}
           knowledge={knowledge}
           engineParams={engineParams}
+          engineTables={engineTables}
         />
       </div>
     </section>

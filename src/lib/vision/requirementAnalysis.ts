@@ -3,6 +3,7 @@ import { fieldsFor, readField } from '@/lib/requirement/fields';
 import type { Assumption, DefectContrast, Requirement } from '@/lib/requirement/types';
 import { CYCLE_DEFAULTS } from './configurationRules';
 import { suggestLighting } from './lighting';
+import { DEFAULT_ENGINE_TABLES, type EngineTables } from './engineTables';
 import { DEFAULT_ENGINE_PARAMS, type EngineParams, interfaceBandwidthFor, pxPerDefectFor } from './engineParams';
 import { perspectiveCheck, perspectiveErrorMm, telecentricCheck } from './optics';
 import { stitchCheck, thermalCheck, thermalErrorUm } from './mechanics';
@@ -49,6 +50,8 @@ export type RequirementAnalysis = {
   results: RuleResult[];
   /** Ngưỡng phán đoán đã dùng (sửa qua admin) — các tầng sau (Cấu hình, phương án, BOM) đọc từ đây. */
   params: EngineParams;
+  /** Bảng chiếu sáng + giả định mặc định đã dùng (engineTables). */
+  tables: EngineTables;
   /** Giả định đã áp — cùng danh sách với panel trên trang Yêu cầu. */
   assumptions: Assumption[];
   /** Ô thật ÷ (ô thật + ô giả định) trên các ô engine đã dùng. */
@@ -91,8 +94,12 @@ export type RequirementAnalysis = {
 const CONTRASTS: readonly DefectContrast[] = ['high', 'medium', 'low', 'unknown'];
 const isContrast = (value: unknown): value is DefectContrast => CONTRASTS.includes(value as DefectContrast);
 
-export function analyseRequirement(draft: Requirement, params: EngineParams = DEFAULT_ENGINE_PARAMS): RequirementAnalysis {
-  const { requirement: req, assumptions } = resolveAssumptions(draft, params);
+export function analyseRequirement(
+  draft: Requirement,
+  params: EngineParams = DEFAULT_ENGINE_PARAMS,
+  tables: EngineTables = DEFAULT_ENGINE_TABLES
+): RequirementAnalysis {
+  const { requirement: req, assumptions } = resolveAssumptions(draft, params, tables);
   const pxPerDefect = pxPerDefectFor(params);
   const bandwidthTable = interfaceBandwidthFor(params);
   const results: RuleResult[] = [];
@@ -440,7 +447,7 @@ export function analyseRequirement(draft: Requirement, params: EngineParams = DE
   const surface = raw('object.surface');
   const defectType = req.detection[0]?.defectType.value ?? null;
   const surfaceKey = surface === 'glossy' || surface === 'metallic' ? 'reflective' : surface === 'transparent' ? 'transparent' : null;
-  const lighting = suggestLighting({ defectType, surface: surfaceKey });
+  const lighting = suggestLighting({ defectType, surface: surfaceKey }, tables.lighting);
   let lightingOut: RequirementAnalysis['lighting'] = null;
   if (lighting) {
     const ruleId =
@@ -460,7 +467,10 @@ export function analyseRequirement(draft: Requirement, params: EngineParams = DE
         key: 'lightingSuggestion',
         status: 'warn',
         formula: lighting.alternativeType ? `${lighting.lightType} / ${lighting.alternativeType}` : lighting.lightType,
-        noteKey: `lightingReason.${lighting.reasonKey}`,
+        // Câu lý do admin nhập (bảng chiếu sáng) đi qua khoá 'custom' — messages chỉ chèn lại nguyên văn.
+        ...(lighting.customReason
+          ? { noteKey: 'lightingReason.custom', noteValues: { textVi: lighting.customReason.vi, textEn: lighting.customReason.en } }
+          : { noteKey: `lightingReason.${lighting.reasonKey}` }),
       },
       'requires-sample-test',
       ['object.surface', 'detection.0.defectType']
@@ -513,6 +523,7 @@ export function analyseRequirement(draft: Requirement, params: EngineParams = DE
   return {
     results,
     params,
+    tables,
     assumptions,
     completeness: completeness(results),
     governingMmPerPx: governing,

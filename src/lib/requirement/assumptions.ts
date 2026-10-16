@@ -13,6 +13,7 @@
  */
 import { GRR_DIVISOR, K_SUBPIXEL } from '../vision/resolution';
 import { DEFAULT_ENGINE_PARAMS, materialAlphaFor, pxPerDefectFor, type EngineParams } from '../vision/engineParams';
+import { DEFAULT_ENGINE_TABLES, DEFAULT_ROW_DEFS, type EngineTables } from '../vision/engineTables';
 import { FIELD_DEFAULTS, MATERIAL_ALPHA, type KnownMaterial } from './defaults';
 import { fieldsFor, readField } from './fields';
 import { requirementToSelectorInput } from './toSelectorInput';
@@ -39,7 +40,8 @@ function isKnownMaterial(value: unknown): value is KnownMaterial {
  */
 export function applyDefaults(
   requirement: Requirement,
-  params: EngineParams = DEFAULT_ENGINE_PARAMS
+  params: EngineParams = DEFAULT_ENGINE_PARAMS,
+  tables: EngineTables = DEFAULT_ENGINE_TABLES
 ): { requirement: Requirement; assumptions: Assumption[] } {
   const shown = new Set(fieldsFor(requirement.applicationType).map((def) => def.path));
   const next = structuredClone(requirement);
@@ -125,7 +127,13 @@ export function applyDefaults(
     });
   }
 
-  for (const def of FIELD_DEFAULTS) {
+  for (const codeDef of FIELD_DEFAULTS) {
+    // Giá trị + câu giải thích sửa được qua admin (Giả định mặc định, 2026-10-16); mức cảnh báo giữ cố định.
+    const rowKey = DEFAULT_ROW_DEFS.find((d) => d.path === codeDef.path)?.key;
+    const row = rowKey ? tables.defaults[rowKey] : null;
+    const def = row
+      ? { ...codeDef, value: row.value, basis: { vi: row.basisVi ?? row.basisEn ?? codeDef.basis.vi, en: row.basisEn ?? row.basisVi ?? codeDef.basis.en } }
+      : codeDef;
     if (!shown.has(def.path)) continue;
     const field = readField(next, def.path);
     if (!field || field.value !== null) continue;
@@ -239,12 +247,13 @@ function measurementParameters(effective: Requirement): Assumption[] {
  */
 export function resolveAssumptions(
   requirement: Requirement,
-  params: EngineParams = DEFAULT_ENGINE_PARAMS
+  params: EngineParams = DEFAULT_ENGINE_PARAMS,
+  tables: EngineTables = DEFAULT_ENGINE_TABLES
 ): {
   requirement: Requirement;
   assumptions: Assumption[];
 } {
-  const { requirement: effective, assumptions: defaults } = applyDefaults(requirement, params);
+  const { requirement: effective, assumptions: defaults } = applyDefaults(requirement, params, tables);
   const adapter = requirementToSelectorInput(requirement).assumptions;
   const pxPerDefect = pxPerDefectAssumption(effective, params);
 

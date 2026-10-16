@@ -58,6 +58,12 @@ export const BUNDLES = {
       ['PHAN 1/1: MIGRATION — bang nguong engine sua qua admin (chi Admin ghi, nguoi dang nhap doc)', 'supabase/migrations/20261012000001_engine_parameters.sql'],
     ],
   },
+  'engine-tables': {
+    out: 'CHAY-BUOC-NAY-BANG-ENGINE.sql',
+    parts: [
+      ['PHAN 1/1: MIGRATION — bang chieu sang + gia dinh mac dinh sua qua admin (chi Admin ghi, nguoi dang nhap doc)', 'supabase/migrations/20261016000001_engine_tables.sql'],
+    ],
+  },
   projects: {
     out: 'CHAY-BUOC-NAY-DUAN.sql',
     parts: [

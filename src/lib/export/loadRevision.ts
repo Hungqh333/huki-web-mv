@@ -80,7 +80,7 @@ export async function loadRevisionForExport(projectId: string, revisionId: strin
     formatDate: (date) => formatter.dateTime(date, { dateStyle: 'medium', timeStyle: 'short' }),
     t,
     locale: await getLocale(),
-    params: (await loadEngineParams(supabase)).params,
+    ...(await loadEngineParams(supabase).then(({ params, tables }) => ({ params, tables }))),
   });
 
   // Tên file chỉ ký tự an toàn: tên dự án có dấu tiếng Việt, khoảng trắng.

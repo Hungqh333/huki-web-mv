@@ -2,6 +2,7 @@ import 'server-only';
 
 import type { createClient } from '@/lib/supabase/server';
 import { DEFAULT_ENGINE_PARAMS, resolveEngineParams, type EngineParamKey, type EngineParams } from '@/lib/vision/engineParams';
+import { DEFAULT_ENGINE_TABLES, resolveEngineTables, type EngineTables, type TableRowError } from '@/lib/vision/engineTables';
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
 
@@ -13,7 +14,36 @@ export type LoadedEngineParams = {
   rejected: boolean;
   /** Giá trị đang lưu trong bảng (cho form admin) và người sửa gần nhất. */
   stored: Record<string, { value: number; updatedBy: string | null; updatedAt: string }>;
+  /** Bảng chiếu sáng + giả định mặc định (engine_tables, 2026-10-16). */
+  tables: EngineTables;
+  /** Dòng bảng lỗi bị bỏ (đang dùng mặc định cho dòng đó). */
+  tableRejected: TableRowError[];
+  /** Người sửa gần nhất từng dòng bảng — khoá `${table}.${row}`. */
+  tableStored: Record<string, { updatedBy: string | null; updatedAt: string }>;
 };
+
+/** Bảng engine_tables (migration 20261016000001). Chưa có bảng / lỗi → mặc định. */
+async function loadTables(supabase: Supabase): Promise<Pick<LoadedEngineParams, 'tables' | 'tableRejected' | 'tableStored'>> {
+  const fallback = { tables: DEFAULT_ENGINE_TABLES, tableRejected: [], tableStored: {} };
+  try {
+    const { data, error } = await supabase.from('engine_tables').select('table_key, row_key, data, updated_by, updated_at');
+    if (error) {
+      console.warn('[engine-tables]', error.code, error.message);
+      return fallback;
+    }
+    const rows = (data ?? []) as { table_key: string; row_key: string; data: unknown; updated_by: string | null; updated_at: string }[];
+    const resolved = resolveEngineTables(rows);
+    if (resolved.rejected.length > 0) console.warn('[engine-tables] dong loi bi bo:', resolved.rejected.map((r) => `${r.table}.${r.row}`).join(', '));
+    return {
+      tables: resolved.tables,
+      tableRejected: resolved.rejected,
+      tableStored: Object.fromEntries(rows.map((row) => [`${row.table_key}.${row.row_key}`, { updatedBy: row.updated_by, updatedAt: row.updated_at }])),
+    };
+  } catch (error) {
+    console.warn('[engine-tables]', error instanceof Error ? error.name : 'Error');
+    return fallback;
+  }
+}
 
 /**
  * Ngưỡng engine đang dùng (bảng engine_parameters, migration 20261012000001).
@@ -21,7 +51,8 @@ export type LoadedEngineParams = {
  * trang vẫn chạy, chỉ là chưa áp ngưỡng đã sửa.
  */
 export async function loadEngineParams(supabase: Supabase): Promise<LoadedEngineParams> {
-  const fallback: LoadedEngineParams = { params: DEFAULT_ENGINE_PARAMS, overridden: [], rejected: false, stored: {} };
+  const tables = await loadTables(supabase);
+  const fallback: LoadedEngineParams = { params: DEFAULT_ENGINE_PARAMS, overridden: [], rejected: false, stored: {}, ...tables };
   try {
     const { data, error } = await supabase.from('engine_parameters').select('key, value, updated_by, updated_at');
     if (error) {
@@ -33,6 +64,7 @@ export async function loadEngineParams(supabase: Supabase): Promise<LoadedEngine
     if (resolved.rejected) console.warn('[engine-params] bo gia tri vi pham gioi han — dung mac dinh');
     return {
       ...resolved,
+      ...tables,
       stored: Object.fromEntries(rows.map((row) => [row.key, { value: Number(row.value), updatedBy: row.updated_by, updatedAt: row.updated_at }])),
     };
   } catch (error) {

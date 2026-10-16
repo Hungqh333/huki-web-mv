@@ -7,6 +7,7 @@ import { getSessionContext, isAdmin, type UserRole } from '@/lib/auth';
 import { sanitizeArticleHtml } from '@/lib/html';
 import { parseKnowledgeFields } from '@/lib/knowledge';
 import { parseEngineParamsForm } from '@/lib/vision/engineParams';
+import { parseTableForm } from '@/lib/vision/engineTables';
 import { FEASIBILITY_DIMENSIONS, RULES } from '@/lib/vision/rules';
 import { validateCondition } from '@/lib/selector/conditions';
 import { dbError } from '@/lib/db-error';
@@ -306,4 +307,59 @@ export async function saveEngineParamsAction(_prev: EngineParamsState, formData:
   revalidatePath('/admin/nguong-engine');
   revalidatePath('/thiet-ke-he-thong/yeu-cau');
   return { notice: te('saved'), saved: true };
+}
+
+// ------------------------------------------------------------- BẢNG ENGINE --
+
+export type EngineTableState = AdminState & { saved?: boolean };
+
+/**
+ * Lưu bảng chiếu sáng / giả định mặc định (chốt 2026-10-16, đợt 2). Kiểm từng dòng
+ * bằng parseTableForm (cùng hàm engine dùng khi đọc bảng); bảng chỉ giữ dòng khác
+ * mặc định. Ô form tên `${dòng}__${trường}`. RLS chỉ cho Admin ghi.
+ */
+async function saveEngineTable(table: 'lighting' | 'defaults', formData: FormData): Promise<EngineTableState> {
+  const t = await getTranslations('admin.errors');
+  const te = await getTranslations('admin.tables.errors');
+  const session = await requireAdmin();
+  if (!session) return { error: t('notAdmin') };
+
+  const parsed = parseTableForm(table, (row, field) => {
+    const value = formData.get(`${row}__${field}`);
+    return typeof value === 'string' ? value : null;
+  });
+  if (parsed.errors.length > 0) {
+    const fieldErrors: Record<string, string> = {};
+    for (const error of parsed.errors) fieldErrors[error.row] = te(error.code);
+    return { fieldErrors, error: te('fix') };
+  }
+
+  const supabase = await createClient();
+  const by = session.profile?.email ?? session.user.email ?? 'admin';
+  if (parsed.upserts.length > 0) {
+    const { error } = await supabase
+      .from('engine_tables')
+      .upsert(
+        parsed.upserts.map((row) => ({ table_key: table, row_key: row.row, data: row.data, updated_by: by })),
+        { onConflict: 'table_key,row_key' }
+      );
+    if (error) return { error: await dbError(error, `saveEngineTable:${table}:upsert`) };
+  }
+  if (parsed.deletes.length > 0) {
+    const { error } = await supabase.from('engine_tables').delete().eq('table_key', table).in('row_key', parsed.deletes);
+    if (error) return { error: await dbError(error, `saveEngineTable:${table}:delete`) };
+  }
+
+  revalidatePath(table === 'lighting' ? '/admin/bang-chieu-sang' : '/admin/gia-dinh-mac-dinh');
+  revalidatePath('/admin/nguong-engine');
+  revalidatePath('/thiet-ke-he-thong/yeu-cau');
+  return { notice: te('saved'), saved: true };
+}
+
+export async function saveLightingTableAction(_prev: EngineTableState, formData: FormData): Promise<EngineTableState> {
+  return saveEngineTable('lighting', formData);
+}
+
+export async function saveDefaultsTableAction(_prev: EngineTableState, formData: FormData): Promise<EngineTableState> {
+  return saveEngineTable('defaults', formData);
 }

@@ -55,9 +55,9 @@ async function prepare(input: ProjectActionInput): Promise<Prepared> {
 
   const supabase = await createClient();
   // Ngưỡng engine đang dùng (admin) — cùng bộ với trang Yêu cầu; giả định và phiên bản bộ luật ghi vào revision.
-  const { params } = await loadEngineParams(supabase);
+  const { params, tables } = await loadEngineParams(supabase);
 
-  const payload = buildRevisionPayload(draft, params);
+  const payload = buildRevisionPayload(draft, params, tables);
   if (!payload) return { ok: false, error: t('pickApplication') };
 
   const name = normalizeProjectName(input.name);
@@ -72,10 +72,10 @@ async function prepare(input: ProjectActionInput): Promise<Prepared> {
       .from('components')
       .select('id, code, kind, brand, model, spec, price_vnd, lead_time_days, supplier, used_in_projects, datasheet_url, source, notes_vi, notes_en, is_active, sort_order')
       .eq('is_active', true);
-    bom = bomForRequirement(draft.requirement, (catalog ?? []) as Component[], draft.bom, params);
+    bom = bomForRequirement(draft.requirement, (catalog ?? []) as Component[], draft.bom, params, tables);
   }
 
-  return { ok: true, t, supabase, draft, payload, name, bom, ruleVersion: rulesetVersionFor(RULESET_VERSION, params) };
+  return { ok: true, t, supabase, draft, payload, name, bom, ruleVersion: rulesetVersionFor(RULESET_VERSION, params, tables) };
 }
 
 /** Mã lỗi Postgres → câu dễ hiểu. Chi tiết kỹ thuật chỉ ghi log phía server. */

@@ -760,7 +760,8 @@
         "shallow_dent": "Lõm lồi rất nông cần chụp bốn hướng rồi dựng lại pháp tuyến bề mặt — một hướng chiếu không đủ.",
         "transparent": "Vật trong suốt phải soi xuyên, chiếu nghiêng hoặc DOAL để lỗi hiện thành bóng.",
         "surfaceTransparent": "Bề mặt trong suốt lấn át loại lỗi: phải soi xuyên trước đã.",
-        "surfaceReflective": "Bề mặt bóng như gương lấn át loại lỗi: dark field thông thường chỉ thấy loá. Dùng dome khuếch tán, hoặc tấm đèn phẳng diện rộng (backlight) đặt đúng góc phản xạ gương để bề mặt phản chiếu nền sáng đều vào camera — lỗi hiện thành chấm tối."
+        "surfaceReflective": "Bề mặt bóng như gương lấn át loại lỗi: dark field thông thường chỉ thấy loá. Dùng dome khuếch tán, hoặc tấm đèn phẳng diện rộng (backlight) đặt đúng góc phản xạ gương để bề mặt phản chiếu nền sáng đều vào camera — lỗi hiện thành chấm tối.",
+        "custom": "{textVi}"
       },
       "checkCount": "Xem {count} bước kiểm chứng",
       "formulaTerms": {
@@ -880,7 +881,9 @@
       "rules": "Bảng luật gợi ý",
       "kpi": "Bộ tính chỉ tiêu",
       "components": "Linh kiện",
-      "engine": "Ngưỡng engine"
+      "engine": "Ngưỡng engine",
+      "lighting": "Bảng chiếu sáng",
+      "defaults": "Giả định mặc định"
     },
     "users": {
       "title": "Quản lý người dùng",
@@ -1403,6 +1406,70 @@
         "pxOrder": "Phải lớn hơn hoặc bằng mức độ tương phản cao hơn."
       },
       "sensitiveWarning": "Hằng số vật lý / thông số chuẩn — sửa nhầm sẽ đổi kết quả của MỌI dự án. Chỉ sửa khi có datasheet hoặc số đo thực tế."
+    },
+    "tables": {
+      "version": "Phiên bản bộ luật đang dùng: {version}",
+      "versionNote": "Sửa bất kỳ dòng nào thì phiên bản bộ luật đổi: revision lưu trước đó, khi xuất Concept Report, sẽ ghi rõ \"phân tích tính lại với bộ luật mới\". Ô câu chữ để trống = dùng câu mặc định (chữ mờ trong ô).",
+      "changed": "đã sửa",
+      "updatedBy": "sửa bởi {name}",
+      "rowRejected": "Dòng đang lưu không hợp lệ — engine đang dùng mặc định cho dòng này. Lưu lại để sửa.",
+      "defaultIs": "Mặc định: {value}",
+      "range": "cho phép {min}–{max}",
+      "save": "Lưu bảng",
+      "saving": "Đang lưu...",
+      "text": {
+        "vi": "Câu tiếng Việt",
+        "en": "Câu tiếng Anh"
+      },
+      "lightTypes": {
+        "ring": "Ring (vòng)",
+        "dome": "Dome (vòm khuếch tán)",
+        "backlight": "Backlight (đèn nền)",
+        "bar": "Bar (thanh)",
+        "coaxial": "Coaxial (đồng trục)",
+        "darkfield": "Dark field (góc thấp)",
+        "photometric_stereo": "Photometric stereo (nhiều hướng)"
+      },
+      "lighting": {
+        "title": "Bảng chiếu sáng",
+        "subtitle": "LGT-001 → LGT-004: kiểu đèn gợi ý theo loại lỗi; hai dòng \"bề mặt\" lấn át loại lỗi. Kiểu đèn chỉ chọn trong 7 kiểu của kho thiết bị — bước lọc tìm đèn theo đúng kiểu này.",
+        "lightType": "Đèn chính",
+        "alternativeType": "Đèn thay thế",
+        "none": "— Không có —",
+        "rows": {
+          "scratch": "Xước / nứt nông",
+          "glossy_curved": "Bề mặt cong bóng",
+          "print_color": "Lỗi in / sai màu",
+          "profile_hole_burr": "Biên dạng / lỗ / ba via",
+          "shallow_dent": "Lõm lồi nông",
+          "transparent": "Vật trong suốt",
+          "surface_transparent": "Bề mặt trong suốt (lấn át loại lỗi)",
+          "surface_reflective": "Bề mặt bóng / kim loại (lấn át loại lỗi)"
+        }
+      },
+      "defaults": {
+        "title": "Giả định mặc định",
+        "subtitle": "Giá trị hệ thống điền khi ô trên bảng Yêu cầu bỏ trống, kèm câu giải thích hiện ở khung \"Giả định đang dùng\". Mức cảnh báo (⚠ / thông tin) cố định.",
+        "value": "Giá trị",
+        "rows": {
+          "contrast": "Độ tương phản lỗi",
+          "heightVariation": "Dao động chiều cao",
+          "workingDistance": "Khoảng cách làm việc",
+          "thermalExpansionCoeff": "Hệ số giãn nở α (khi chưa biết vật liệu)",
+          "ambientTempRange": "Dao động nhiệt độ ΔT",
+          "motion": "Chuyển động khi chụp"
+        }
+      },
+      "errors": {
+        "fix": "Có dòng chưa hợp lệ — xem dòng báo đỏ.",
+        "lightType": "Kiểu đèn không hợp lệ.",
+        "alternativeType": "Kiểu đèn thay thế không hợp lệ.",
+        "sameType": "Đèn thay thế phải khác đèn chính.",
+        "outOfRange": "Giá trị ngoài giới hạn cho phép.",
+        "choice": "Lựa chọn không hợp lệ.",
+        "text": "Câu chữ quá dài.",
+        "saved": "Đã lưu bảng. Trang Yêu cầu dùng ngay từ lần tải sau."
+      }
     }
   },
   "errors": {

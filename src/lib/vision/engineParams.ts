@@ -12,6 +12,8 @@
  * chạy với DEFAULT_ENGINE_PARAMS. Hàm thuần: database đọc ở engineParamsLoad.ts.
  */
 
+import { DEFAULT_ENGINE_TABLES, engineTablesFingerprint, type EngineTables } from './engineTables';
+
 export const ENGINE_PARAM_GROUPS = ['levels', 'ranking', 'optics', 'throughput', 'budget', 'equipment', 'detection', 'materials', 'interfaces'] as const;
 export type EngineParamGroup = (typeof ENGINE_PARAM_GROUPS)[number];
 /** Nhóm là hằng số vật lý / quy ước đo / thông số chuẩn — mở theo chốt 2026-10-16, trang admin cảnh báo đỏ. */
@@ -191,12 +193,17 @@ export function interfaceBandwidthFor(params: EngineParams): Readonly<Record<str
  * dấu vân tay ngắn của các giá trị đã sửa. Revision lưu chuỗi này, nên Concept Report
  * của revision cũ tự ghi "bộ luật đã đổi" khi admin sửa ngưỡng.
  */
-export function rulesetVersionFor(base: string, params: EngineParams): string {
+export function rulesetVersionFor(base: string, params: EngineParams, tables: EngineTables = DEFAULT_ENGINE_TABLES): string {
   const changed = ENGINE_PARAMS.filter((p) => params[p.key] !== p.default).map((p) => `${p.key}=${params[p.key]}`);
-  if (changed.length === 0) return base;
-  let hash = 2166136261;
-  for (const ch of changed.join('|')) hash = Math.imul(hash ^ ch.charCodeAt(0), 16777619) >>> 0;
-  return `${base}+p${hash.toString(36)}`;
+  let version = base;
+  if (changed.length > 0) {
+    let hash = 2166136261;
+    for (const ch of changed.join('|')) hash = Math.imul(hash ^ ch.charCodeAt(0), 16777619) >>> 0;
+    version += `+p${hash.toString(36)}`;
+  }
+  // Bảng chiếu sáng / giả định mặc định đã sửa (engineTables, 2026-10-16).
+  const tablePrint = engineTablesFingerprint(tables);
+  return tablePrint ? `${version}+t${tablePrint}` : version;
 }
 
 /**

@@ -19,6 +19,8 @@ export type LightingSuggestion = {
   reasonKey: string;
   /** Kiểu đèn thay thế cũng dùng được. */
   alternativeType?: string;
+  /** Câu lý do admin nhập (engineTables, 2026-10-16) — có thì thay cho reasonKey khi hiển thị. */
+  customReason?: { vi: string; en: string };
 };
 
 /** Loại lỗi ngoại quan — dùng làm giá trị của trường nhập defect_type. */
@@ -53,15 +55,49 @@ const SURFACE_OVERRIDE: Record<string, LightingSuggestion> = {
   reflective: { lightType: 'dome', reasonKey: 'surfaceReflective', alternativeType: 'backlight' },
 };
 
-export function suggestLighting(input: {
-  defectType: string | null;
-  surface: string | null;
-}): LightingSuggestion | null {
-  if (input.surface && SURFACE_OVERRIDE[input.surface]) return SURFACE_OVERRIDE[input.surface];
-  if (input.defectType && input.defectType in BY_DEFECT) {
-    return BY_DEFECT[input.defectType as DefectType];
-  }
-  return null;
+/**
+ * Dòng của bảng chiếu sáng sửa được qua admin (engineTables.ts): 6 loại lỗi + 2 bề
+ * mặt lấn át. Khoá bề mặt có tiền tố `surface_` để không trùng khoá loại lỗi
+ * (`transparent` có ở cả hai).
+ */
+export const LIGHTING_ROW_KEYS = [...DEFECT_TYPES, 'surface_transparent', 'surface_reflective'] as const;
+export type LightingRowKey = (typeof LIGHTING_ROW_KEYS)[number];
+export const DEFAULT_LIGHTING_ROWS: Record<LightingRowKey, LightingSuggestion> = {
+  ...BY_DEFECT,
+  surface_transparent: SURFACE_OVERRIDE.transparent,
+  surface_reflective: SURFACE_OVERRIDE.reflective,
+};
+
+/** Bảng admin truyền vào: chỉ cần đèn chính, đèn thay thế, câu lý do. */
+export type LightingTable = Readonly<
+  Record<LightingRowKey, { lightType: string; alternativeType: string | null; reasonVi: string | null; reasonEn: string | null }>
+>;
+
+export function suggestLighting(
+  input: {
+    defectType: string | null;
+    surface: string | null;
+  },
+  table?: LightingTable
+): LightingSuggestion | null {
+  const rowKey: LightingRowKey | null =
+    input.surface && SURFACE_OVERRIDE[input.surface]
+      ? (`surface_${input.surface}` as LightingRowKey)
+      : input.defectType && input.defectType in BY_DEFECT
+        ? (input.defectType as DefectType)
+        : null;
+  if (!rowKey) return null;
+  const base = DEFAULT_LIGHTING_ROWS[rowKey];
+  const row = table?.[rowKey];
+  if (!row) return base;
+  // reasonKey giữ theo dòng: các luật LGT-002…004 chọn mã luật theo loại lỗi, không theo kiểu đèn.
+  const custom = row.reasonVi || row.reasonEn ? { vi: row.reasonVi ?? row.reasonEn!, en: row.reasonEn ?? row.reasonVi! } : undefined;
+  return {
+    lightType: row.lightType,
+    reasonKey: base.reasonKey,
+    ...(row.alternativeType ? { alternativeType: row.alternativeType } : {}),
+    ...(custom ? { customReason: custom } : {}),
+  };
 }
 
 export function lightingChecks(input: {

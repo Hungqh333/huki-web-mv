@@ -13,7 +13,19 @@ const NAV: { href: string; key: string; icon: IconName; tone: BadgeTone }[] = [
   { href: '/admin/chi-tieu', key: 'kpi', icon: 'kpi', tone: 'amber' },
   { href: '/admin/linh-kien', key: 'components', icon: 'camera', tone: 'slate' },
   { href: '/admin/nguong-engine', key: 'engine', icon: 'ruler', tone: 'sky' },
+  { href: '/admin/bang-chieu-sang', key: 'lighting', icon: 'sun', tone: 'amber' },
+  { href: '/admin/gia-dinh-mac-dinh', key: 'defaults', icon: 'rules', tone: 'violet' },
 ];
+
+type Messages = Awaited<ReturnType<typeof getMessages>>;
+function adminClientMessages(messages: Messages) {
+  const m = messages as Record<string, Record<string, Record<string, unknown>>>;
+  return {
+    admin: messages.admin,
+    selector: { vision: { lightingReason: (m.selector?.vision as Record<string, unknown> | undefined)?.lightingReason } },
+    designer: { requirement: { options: (m.designer?.requirement as Record<string, unknown> | undefined)?.options } },
+  } as Messages;
+}
 
 export default async function AdminLayout({ children }: LayoutProps<'/admin'>) {
   const t = await getTranslations('admin.nav');
@@ -47,7 +59,9 @@ export default async function AdminLayout({ children }: LayoutProps<'/admin'>) {
         />
 
         <div className="min-w-0">
-          <NextIntlClientProvider messages={{ admin: messages.admin }}>
+          {/* Provider lồng THAY danh sách chữ của provider ngoài. Form Bảng chiếu sáng / Giả định
+              mặc định (2026-10-16) cần thêm câu lý do chiếu sáng + nhãn lựa chọn — cả hai đều công khai. */}
+          <NextIntlClientProvider messages={adminClientMessages(messages)}>
             {children}
           </NextIntlClientProvider>
         </div>

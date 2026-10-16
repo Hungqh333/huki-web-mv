@@ -21,6 +21,7 @@ import { BomPanel } from './BomPanel';
 import { SolutionPanel } from './SolutionPanel';
 import type { Explainer } from './WhyPanel';
 import { DEFAULT_ENGINE_PARAMS, type EngineParams } from '@/lib/vision/engineParams';
+import { DEFAULT_ENGINE_TABLES, type EngineTables } from '@/lib/vision/engineTables';
 
 /**
  * Phương án (C4) → BOM (C5) → Thiết bị phù hợp (C3), dưới Phân tích kỹ thuật.
@@ -37,9 +38,12 @@ export function DesignPanels({
   readOnly,
   explainAvailable = false,
   engineParams = DEFAULT_ENGINE_PARAMS,
+  engineTables = DEFAULT_ENGINE_TABLES,
 }: {
   /** Ngưỡng engine đang dùng (admin). */
   engineParams?: EngineParams;
+  /** Bảng chiếu sáng + giả định mặc định (admin). */
+  engineTables?: EngineTables;
   requirement: Requirement;
   /** Server có key AI → hiện nút "Diễn giải bằng lời" (C7). */
   explainAvailable?: boolean;
@@ -49,7 +53,7 @@ export function DesignPanels({
   /** Revision đã khoá: xem được, không đổi được lựa chọn. */
   readOnly: boolean;
 }) {
-  const analysis = useMemo(() => analyseRequirement(requirement, engineParams), [requirement, engineParams]);
+  const analysis = useMemo(() => analyseRequirement(requirement, engineParams, engineTables), [requirement, engineParams, engineTables]);
   const filter = useMemo(() => filterEquipment(analysis, catalog), [analysis, catalog]);
   const solutions = useMemo(() => buildSolutionLevels(analysis, filter, catalog), [analysis, filter, catalog]);
   const bom = useMemo(() => (selection ? buildBom(analysis, solutions, catalog, selection) : null), [analysis, solutions, catalog, selection]);

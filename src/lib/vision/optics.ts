@@ -180,16 +180,16 @@ export const TELECENTRIC_FEASIBLE_MAX_MM = 200;
 export const TELECENTRIC_FRONT_DIAMETER_FACTOR = 1.3;
 
 /** Đường kính đầu ống telecentric cần cho một cạnh vùng nhìn (mm). */
-export function telecentricFrontDiameterMm(fovMaxMm: number): number | null {
+export function telecentricFrontDiameterMm(fovMaxMm: number, factor: number = TELECENTRIC_FRONT_DIAMETER_FACTOR): number | null {
   if (!(fovMaxMm > 0)) return null;
-  return fovMaxMm * TELECENTRIC_FRONT_DIAMETER_FACTOR;
+  return fovMaxMm * factor;
 }
 
 /**
  * Phương án thay thế ①: lưới camera để mỗi camera ≤ 100 mm, tính cả chồng lấn
  * 10% như tiling.ts. Trục vừa một camera thì không cần chồng lấn.
  */
-export function camerasForTelecentric(input: { fovWidthMm: number; fovHeightMm: number; practicalMaxMm?: number }): {
+export function camerasForTelecentric(input: { fovWidthMm: number; fovHeightMm: number; practicalMaxMm?: number; overlapRatio?: number }): {
   cols: number;
   rows: number;
   count: number;
@@ -197,7 +197,7 @@ export function camerasForTelecentric(input: { fovWidthMm: number; fovHeightMm: 
   const { fovWidthMm, fovHeightMm } = input;
   if (!(fovWidthMm > 0) || !(fovHeightMm > 0)) return null;
   const practical = input.practicalMaxMm ?? TELECENTRIC_PRACTICAL_MAX_MM;
-  const maxBase = practical / (1 + TILE_OVERLAP_RATIO);
+  const maxBase = practical / (1 + (input.overlapRatio ?? TILE_OVERLAP_RATIO));
   const axis = (totalMm: number) => (totalMm <= practical ? 1 : Math.ceil(totalMm / maxBase));
   const cols = axis(fovWidthMm);
   const rows = axis(fovHeightMm);
@@ -229,6 +229,8 @@ export function telecentricCheck(input: {
   /** Ngưỡng sửa được qua admin (engineParams) — mặc định là hằng số ở trên. */
   practicalMaxMm?: number;
   feasibleMaxMm?: number;
+  frontDiameterFactor?: number;
+  overlapRatio?: number;
 }): Check | null {
   const { tile } = input;
   const practical = input.practicalMaxMm ?? TELECENTRIC_PRACTICAL_MAX_MM;
@@ -236,11 +238,12 @@ export function telecentricCheck(input: {
   if (!input.needed || !tile) return null;
 
   const sizeMm = Math.max(tile.widthMm, tile.heightMm);
-  const diameterMm = telecentricFrontDiameterMm(sizeMm);
+  const factor = input.frontDiameterFactor ?? TELECENTRIC_FRONT_DIAMETER_FACTOR;
+  const diameterMm = telecentricFrontDiameterMm(sizeMm, factor);
   if (diameterMm === null) return null;
 
   const status = sizeMm <= practical ? 'pass' : sizeMm <= feasible ? 'warn' : 'fail';
-  const grid = camerasForTelecentric({ fovWidthMm: input.fovWidthMm, fovHeightMm: input.fovHeightMm, practicalMaxMm: practical });
+  const grid = camerasForTelecentric({ fovWidthMm: input.fovWidthMm, fovHeightMm: input.fovHeightMm, practicalMaxMm: practical, overlapRatio: input.overlapRatio });
   const maxHeight =
     input.uncertaintyBudgetMm !== null && input.workingDistanceMm !== null
       ? maxHeightVariationMm({
@@ -254,7 +257,7 @@ export function telecentricCheck(input: {
   return {
     key: 'telecentricFeasibility',
     status,
-    formula: `${term('tileSide')} ${fmt(sizeMm, 1)} mm ${limit} mm · ${term('frontDiameter')} ≈ ${fmt(sizeMm, 1)} × ${TELECENTRIC_FRONT_DIAMETER_FACTOR} = ${fmt(diameterMm, 0)} mm`,
+    formula: `${term('tileSide')} ${fmt(sizeMm, 1)} mm ${limit} mm · ${term('frontDiameter')} ≈ ${fmt(sizeMm, 1)} × ${factor} = ${fmt(diameterMm, 0)} mm`,
     noteKey: status === 'fail' ? 'telecentricInfeasible' : status === 'warn' ? 'telecentricExpensive' : 'telecentricCostNote',
     noteValues: {
       size: round(sizeMm, 1),

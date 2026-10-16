@@ -77,15 +77,20 @@ export function cameraTile(input: {
   fovHeightMm: number;
   cameraCount: number;
   mmPerPx: number | null;
+  /** Ngưỡng sửa được qua admin (engineParams) — mặc định là hằng số ở trên. */
+  overlapRatio?: number;
+  overlapMinPx?: number;
 }): CameraTile | null {
   const grid = cameraGrid(input);
   if (!grid) return null;
 
-  const minOverlapMm = input.mmPerPx !== null && input.mmPerPx > 0 ? TILE_OVERLAP_MIN_PX * input.mmPerPx : 0;
+  const overlapRatio = input.overlapRatio ?? TILE_OVERLAP_RATIO;
+  const overlapMinPx = input.overlapMinPx ?? TILE_OVERLAP_MIN_PX;
+  const minOverlapMm = input.mmPerPx !== null && input.mmPerPx > 0 ? overlapMinPx * input.mmPerPx : 0;
   const axis = (totalMm: number, count: number) => {
     const baseMm = totalMm / count;
     if (count === 1) return { sizeMm: baseMm, overlapMm: 0 };
-    const overlapMm = Math.max(TILE_OVERLAP_RATIO * baseMm, minOverlapMm);
+    const overlapMm = Math.max(overlapRatio * baseMm, minOverlapMm);
     return { sizeMm: baseMm + overlapMm, overlapMm };
   };
 

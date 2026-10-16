@@ -1331,6 +1331,22 @@
         "budget": {
           "title": "Measurement error budget",
           "hint": "Warn when a single error source (perspective, thermal, stitching) takes more than this share of the budget."
+        },
+        "equipment": {
+          "title": "Equipment thresholds",
+          "hint": "PC (THR-004), camera temperature rating (ENV-002), maximum interface bandwidth used (THR-002), image overlap between cameras (RES-005), lens image circle (OPT-002), telecentric front diameter (OPT-007)."
+        },
+        "detection": {
+          "title": "Pixels per defect",
+          "hint": "RES-001: pixels needed across the smallest defect, by contrast. Unknown contrast is treated as \"low\". Must increase from high → low."
+        },
+        "materials": {
+          "title": "Thermal expansion α by material",
+          "hint": "MEC-001: typical α when only the material is known. The explanation in the Assumptions panel still follows the material table."
+        },
+        "interfaces": {
+          "title": "Camera interface bandwidth",
+          "hint": "THR-001 / THR-002: PRACTICAL bandwidth (after overhead), not the theoretical figure. CoaXPress is per lane."
         }
       },
       "params": {
@@ -1349,7 +1365,32 @@
         "cycleMinMargin": "Minimum headroom versus takt (ratio)",
         "processMs": "Assumed processing time — traditional",
         "processDeepLearningMs": "Assumed processing time — deep learning",
-        "errorWarnShare": "Warning threshold — share of the measurement budget per error source"
+        "errorWarnShare": "Warning threshold — share of the measurement budget per error source",
+        "ipcRamMinGb": "Minimum PC RAM",
+        "ipcBufferDepth": "Frames buffered in RAM per camera",
+        "highTempCameraMinC": "Minimum camera operating temperature in hot environments",
+        "interfaceMaxShare": "Maximum share of interface bandwidth used",
+        "tileOverlapRatio": "Image overlap between cameras (ratio of side)",
+        "tileOverlapMinPx": "Minimum image overlap",
+        "imageCircleTolerance": "Lens image circle tolerance vs sensor diagonal",
+        "telecentricFrontDiameterFactor": "Telecentric front diameter vs field side",
+        "pxPerDefectHigh": "High contrast",
+        "pxPerDefectMedium": "Medium contrast",
+        "pxPerDefectLow": "Low / unknown contrast",
+        "alphaAluminium": "Aluminium",
+        "alphaSteel": "Carbon steel",
+        "alphaStainless": "Stainless (austenitic)",
+        "alphaPlastic": "Plastic",
+        "bwGigE": "GigE",
+        "bwUsbThree": "USB3",
+        "bwFiveGigE": "5GigE",
+        "bwTenGigE": "10GigE",
+        "bwCxpSix": "CoaXPress CXP-6 (1 lane)",
+        "bwCxpTwelve": "CoaXPress CXP-12 (1 lane)",
+        "bwCameraLinkBase": "Camera Link Base",
+        "bwCameraLinkMedium": "Camera Link Medium",
+        "bwCameraLinkFull": "Camera Link Full",
+        "bwCameraLinkDeca": "Camera Link Deca"
       },
       "errors": {
         "fix": "Some fields are invalid — see the red lines.",
@@ -1358,8 +1399,10 @@
         "levelOrder": "Must be greater than the level below.",
         "telecentricOrder": "Must be greater than the \"reasonably priced\" threshold.",
         "weightsSum": "The six weights add up to {sum}; they must add up to 1.",
-        "saved": "Thresholds saved. The Requirements page uses them from the next load."
-      }
+        "saved": "Thresholds saved. The Requirements page uses them from the next load.",
+        "pxOrder": "Must be greater than or equal to the higher-contrast level."
+      },
+      "sensitiveWarning": "Physical constant / standard spec — a wrong value changes the result of EVERY project. Only change it with a datasheet or real measurement."
     }
   },
   "errors": {

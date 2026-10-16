@@ -12,7 +12,8 @@
  * File thuần TypeScript: không import React, không import tầng AI.
  */
 import { GRR_DIVISOR, K_SUBPIXEL } from '../vision/resolution';
-import { FIELD_DEFAULTS, MATERIAL_ALPHA, N_DET_BY_CONTRAST, type KnownMaterial } from './defaults';
+import { DEFAULT_ENGINE_PARAMS, materialAlphaFor, pxPerDefectFor, type EngineParams } from '../vision/engineParams';
+import { FIELD_DEFAULTS, MATERIAL_ALPHA, type KnownMaterial } from './defaults';
 import { fieldsFor, readField } from './fields';
 import { requirementToSelectorInput } from './toSelectorInput';
 import type { Assumption, DefectContrast, Requirement } from './types';
@@ -36,7 +37,10 @@ function isKnownMaterial(value: unknown): value is KnownMaterial {
  * Chỉ điền ô đang hiện trên bảng của loại ứng dụng này — giả định nào cũng phải
  * thay được bằng số thật ngay trong bảng.
  */
-export function applyDefaults(requirement: Requirement): { requirement: Requirement; assumptions: Assumption[] } {
+export function applyDefaults(
+  requirement: Requirement,
+  params: EngineParams = DEFAULT_ENGINE_PARAMS
+): { requirement: Requirement; assumptions: Assumption[] } {
   const shown = new Set(fieldsFor(requirement.applicationType).map((def) => def.path));
   const next = structuredClone(requirement);
   const assumptions: Assumption[] = [];
@@ -45,7 +49,8 @@ export function applyDefaults(requirement: Requirement): { requirement: Requirem
   const alpha = readField(next, ALPHA_PATH);
   const material = readField(next, 'object.material')?.value;
   if (shown.has(ALPHA_PATH) && alpha && alpha.value === null && isKnownMaterial(material)) {
-    const typical = MATERIAL_ALPHA[material];
+    // α lấy theo ngưỡng admin (2026-10-16); câu giải thích và mức cảnh báo giữ theo bảng vật liệu.
+    const typical = { ...MATERIAL_ALPHA[material], alpha: materialAlphaFor(params)[material] };
     const key = derivedAssumptionKey(ALPHA_PATH);
     alpha.value = typical.alpha;
     alpha.confidence = 'inferred';
@@ -164,15 +169,16 @@ const CONTRAST_LABEL: Record<DefectContrast, { vi: string; en: string }> = {
  * chọn thiết bị cũ vẫn dùng DEFAULT_PX_PER_DEFECT = 3, nhưng trang Yêu cầu
  * không còn đi qua nó.
  */
-function pxPerDefectAssumption(effective: Requirement): Assumption | null {
+function pxPerDefectAssumption(effective: Requirement, params: EngineParams): Assumption | null {
   if (effective.detection.length === 0) return null;
+  const nByContrast = pxPerDefectFor(params);
 
   // Nhiều mục lỗi thì mục cần nhiều px nhất quyết định.
   const driving = effective.detection
     .map((item) => {
       const stated = item.contrast.confidence !== 'assumed' ? item.contrast.value : null;
       const contrast: DefectContrast = stated ?? 'unknown';
-      return { contrast, stated: stated !== null && stated !== 'unknown', n: N_DET_BY_CONTRAST[contrast] };
+      return { contrast, stated: stated !== null && stated !== 'unknown', n: nByContrast[contrast] };
     })
     .reduce((worst, entry) => (entry.n > worst.n ? entry : worst));
 
@@ -194,10 +200,10 @@ function pxPerDefectAssumption(effective: Requirement): Assumption | null {
     level: driving.stated ? 'info' : 'warning',
     vi:
       `px/lỗi theo luật chọn độ phân giải theo độ tương phản: contrast ${label.vi} → ${driving.n} px ` +
-      `(cao 3 · trung bình 4 · thấp hoặc chưa rõ 5).${confirm.vi}`,
+      `(cao ${nByContrast.high} · trung bình ${nByContrast.medium} · thấp hoặc chưa rõ ${nByContrast.low}).${confirm.vi}`,
     en:
       `px/defect per the contrast-based resolution rule: ${label.en} contrast → ${driving.n} px ` +
-      `(high 3 · medium 4 · low or unknown 5).${confirm.en}`,
+      `(high ${nByContrast.high} · medium ${nByContrast.medium} · low or unknown ${nByContrast.low}).${confirm.en}`,
   };
 }
 
@@ -231,13 +237,16 @@ function measurementParameters(effective: Requirement): Assumption[] {
  * Mọi thứ panel cần: requirement đã điền mặc định (để bảng hiện badge
  * "Giả định") và danh sách giả định theo thứ tự hiển thị.
  */
-export function resolveAssumptions(requirement: Requirement): {
+export function resolveAssumptions(
+  requirement: Requirement,
+  params: EngineParams = DEFAULT_ENGINE_PARAMS
+): {
   requirement: Requirement;
   assumptions: Assumption[];
 } {
-  const { requirement: effective, assumptions: defaults } = applyDefaults(requirement);
+  const { requirement: effective, assumptions: defaults } = applyDefaults(requirement, params);
   const adapter = requirementToSelectorInput(requirement).assumptions;
-  const pxPerDefect = pxPerDefectAssumption(effective);
+  const pxPerDefect = pxPerDefectAssumption(effective, params);
 
   return {
     requirement: effective,

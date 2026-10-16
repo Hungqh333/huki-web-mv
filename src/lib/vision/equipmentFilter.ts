@@ -1,4 +1,5 @@
-import { INTERFACE_BANDWIDTH, specNumber, specString, type Component } from '@/lib/components/specs';
+import { specNumber, specString, type Component } from '@/lib/components/specs';
+import { DEFAULT_ENGINE_PARAMS, interfaceBandwidthFor } from './engineParams';
 import {
   blockingResults,
   cameraFromComponent,
@@ -7,7 +8,7 @@ import {
   pcFromComponent,
   uncheckedResults,
 } from './configurationRules';
-import { INTERFACE_MAX_SHARE, type RequirementAnalysis } from './requirementAnalysis';
+import type { RequirementAnalysis } from './requirementAnalysis';
 import { toRuleResult, type Evidence, type RuleResult } from './rules';
 import { fmt, round, type Check } from './types';
 import { term } from './formulaTerms';
@@ -60,7 +61,7 @@ export type EquipmentFilter = {
 };
 
 /** Nhiệt độ vỏ camera tối thiểu nên có khi môi trường có "nhiệt độ cao". */
-export const HIGH_TEMP_CAMERA_MIN_C = 50;
+export const HIGH_TEMP_CAMERA_MIN_C = DEFAULT_ENGINE_PARAMS.highTempCameraMinC;
 
 const IP_LEVEL: Record<string, number> = { ip54: 54, ip65: 65, ip67: 67 };
 /** Đèn đo theo ĐƯỜNG CHÉO vùng nhìn (vòng sáng bao quanh); các loại khác đo theo cạnh dài. */
@@ -171,17 +172,18 @@ export function cameraRequirementChecks(analysis: RequirementAnalysis, component
   // THR-002: băng thông THẬT của camera này (pixel của nó, không phải pixel cần).
   const ppm = analysis.partsPerMinute;
   if (ppm !== null && ppm > 0 && camera.interfaceName) {
-    const capacity = INTERFACE_BANDWIDTH[camera.interfaceName];
+    const capacity = interfaceBandwidthFor(analysis.params)[camera.interfaceName];
+    const maxShare = analysis.params.interfaceMaxShare;
     const rate = ((camera.widthPx * camera.heightPx * camera.bytesPerPx) / 1e6) * (ppm / 60);
     if (capacity !== undefined) {
-      const ok = rate <= capacity * INTERFACE_MAX_SHARE;
+      const ok = rate <= capacity * maxShare;
       results.push(
         make(
           'THR-002',
           {
             key: 'cameraFit',
             status: ok ? 'pass' : 'fail',
-            formula: `${fmt(rate, 1)} MB/s ${ok ? '≤' : '>'} ${INTERFACE_MAX_SHARE * 100}% × ${capacity} MB/s (${camera.interfaceName})`,
+            formula: `${fmt(rate, 1)} MB/s ${ok ? '≤' : '>'} ${Math.round(maxShare * 100)}% × ${capacity} MB/s (${camera.interfaceName})`,
             noteKey: ok ? undefined : 'cameraInterfaceSlow',
             noteValues: { rate: round(rate, 1), capacity, name: camera.interfaceName },
           },
@@ -212,9 +214,9 @@ export function cameraRequirementChecks(analysis: RequirementAnalysis, component
     const temp = specNumber(spec, 'temp_max_c');
     if (temp === null) {
       results.push(make('ENV-002', { key: 'cameraFit', status: 'info', formula: '—', noteKey: 'cameraTempUnknown' }, 'unknown', {}));
-    } else if (temp < HIGH_TEMP_CAMERA_MIN_C) {
+    } else if (temp < analysis.params.highTempCameraMinC) {
       results.push(
-        make('ENV-002', { key: 'cameraFit', status: 'warn', formula: `${temp} °C < ${HIGH_TEMP_CAMERA_MIN_C} °C`, noteKey: 'cameraTempLow', noteValues: { temp } }, 'rule-of-thumb', {
+        make('ENV-002', { key: 'cameraFit', status: 'warn', formula: `${temp} °C < ${analysis.params.highTempCameraMinC} °C`, noteKey: 'cameraTempLow', noteValues: { temp } }, 'rule-of-thumb', {
           'camera.temp_max_c': temp,
         })
       );

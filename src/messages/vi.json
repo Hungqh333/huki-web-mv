@@ -1331,6 +1331,22 @@
         "budget": {
           "title": "Ngân sách sai số đo",
           "hint": "Một nguồn sai số (phối cảnh, nhiệt, ghép ảnh) chiếm quá tỉ lệ này của ngân sách đo thì cảnh báo."
+        },
+        "equipment": {
+          "title": "Ngưỡng thiết bị",
+          "hint": "Máy tính (THR-004), camera chịu nhiệt (ENV-002), băng thông tối đa được dùng (THR-002), chồng lấn ảnh giữa các camera (RES-005), vòng ảnh ống kính (OPT-002), đường kính đầu ống kính telecentric (OPT-007)."
+        },
+        "detection": {
+          "title": "Số pixel phủ lên lỗi",
+          "hint": "RES-001: số pixel cần phủ lên lỗi nhỏ nhất theo độ tương phản. Độ tương phản chưa rõ lấy như \"thấp\". Phải tăng dần từ cao → thấp."
+        },
+        "materials": {
+          "title": "Hệ số giãn nở nhiệt α theo vật liệu",
+          "hint": "MEC-001: α điển hình khi khách chỉ nêu vật liệu, chưa có α. Câu giải thích ở khung Giả định vẫn giữ theo bảng vật liệu."
+        },
+        "interfaces": {
+          "title": "Băng thông giao tiếp camera",
+          "hint": "THR-001 / THR-002: băng thông THỰC DỤNG (đã trừ overhead), không phải số lý thuyết. CoaXPress tính cho MỘT làn."
         }
       },
       "params": {
@@ -1349,7 +1365,32 @@
         "cycleMinMargin": "Dư tối thiểu so với nhịp (tỉ lệ)",
         "processMs": "Thời gian xử lý giả định — xử lý truyền thống",
         "processDeepLearningMs": "Thời gian xử lý giả định — deep learning",
-        "errorWarnShare": "Ngưỡng cảnh báo — tỉ lệ ngân sách đo của một nguồn sai số"
+        "errorWarnShare": "Ngưỡng cảnh báo — tỉ lệ ngân sách đo của một nguồn sai số",
+        "ipcRamMinGb": "RAM máy tính tối thiểu",
+        "ipcBufferDepth": "Số ảnh đệm trong RAM mỗi camera",
+        "highTempCameraMinC": "Nhiệt độ làm việc tối thiểu của camera khi môi trường nóng",
+        "interfaceMaxShare": "Tỉ lệ băng thông giao tiếp tối đa được dùng",
+        "tileOverlapRatio": "Chồng lấn ảnh giữa các camera (tỉ lệ cạnh)",
+        "tileOverlapMinPx": "Chồng lấn ảnh tối thiểu",
+        "imageCircleTolerance": "Dung sai vòng ảnh ống kính so với đường chéo cảm biến",
+        "telecentricFrontDiameterFactor": "Đường kính đầu ống kính telecentric so với cạnh vùng nhìn",
+        "pxPerDefectHigh": "Độ tương phản cao",
+        "pxPerDefectMedium": "Độ tương phản trung bình",
+        "pxPerDefectLow": "Độ tương phản thấp / chưa rõ",
+        "alphaAluminium": "Nhôm",
+        "alphaSteel": "Thép carbon",
+        "alphaStainless": "Inox (austenit)",
+        "alphaPlastic": "Nhựa",
+        "bwGigE": "GigE",
+        "bwUsbThree": "USB3",
+        "bwFiveGigE": "5GigE",
+        "bwTenGigE": "10GigE",
+        "bwCxpSix": "CoaXPress CXP-6 (1 làn)",
+        "bwCxpTwelve": "CoaXPress CXP-12 (1 làn)",
+        "bwCameraLinkBase": "Camera Link Base",
+        "bwCameraLinkMedium": "Camera Link Medium",
+        "bwCameraLinkFull": "Camera Link Full",
+        "bwCameraLinkDeca": "Camera Link Deca"
       },
       "errors": {
         "fix": "Có ô chưa hợp lệ — xem dòng báo đỏ.",
@@ -1358,8 +1399,10 @@
         "levelOrder": "Phải lớn hơn mức liền dưới.",
         "telecentricOrder": "Phải lớn hơn ngưỡng \"giá hợp lý\".",
         "weightsSum": "Sáu trọng số đang cộng lại bằng {sum}, phải bằng 1.",
-        "saved": "Đã lưu ngưỡng. Trang Yêu cầu dùng ngay từ lần tải sau."
-      }
+        "saved": "Đã lưu ngưỡng. Trang Yêu cầu dùng ngay từ lần tải sau.",
+        "pxOrder": "Phải lớn hơn hoặc bằng mức độ tương phản cao hơn."
+      },
+      "sensitiveWarning": "Hằng số vật lý / thông số chuẩn — sửa nhầm sẽ đổi kết quả của MỌI dự án. Chỉ sửa khi có datasheet hoặc số đo thực tế."
     }
   },
   "errors": {

@@ -53,19 +53,19 @@ async function prepare(input: ProjectActionInput): Promise<Prepared> {
   const draft = typeof input?.draftJson === 'string' ? parseDraft(input.draftJson) : null;
   if (!draft) return { ok: false, error: t('invalidDraft') };
 
-  const payload = buildRevisionPayload(draft);
+  const supabase = await createClient();
+  // Ngưỡng engine đang dùng (admin) — cùng bộ với trang Yêu cầu; giả định và phiên bản bộ luật ghi vào revision.
+  const { params } = await loadEngineParams(supabase);
+
+  const payload = buildRevisionPayload(draft, params);
   if (!payload) return { ok: false, error: t('pickApplication') };
 
   const name = normalizeProjectName(input.name);
   if (!name) return { ok: false, error: t('nameRequired', { max: PROJECT_NAME_MAX }) };
 
-  const supabase = await createClient();
-
   /* BOM (V1c C5): dựng lại ở server từ kho thật theo LỰA CHỌN trong bản nháp —
      giá, thời gian giao, nhà cung cấp chụp lại tại lúc lưu. RLS chỉ trả kho
      cho Member+, đúng quyền của hành động này. */
-  // Ngưỡng engine đang dùng (admin) — cùng bộ với trang Yêu cầu; phiên bản bộ luật ghi vào revision.
-  const { params } = await loadEngineParams(supabase);
   let bom: BomSnapshot | null = null;
   if (draft.bom && draft.requirement) {
     const { data: catalog } = await supabase

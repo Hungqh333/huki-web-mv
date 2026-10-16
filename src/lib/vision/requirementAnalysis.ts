@@ -1,11 +1,9 @@
-import { INTERFACE_BANDWIDTH } from '@/lib/components/specs';
 import { resolveAssumptions } from '@/lib/requirement/assumptions';
-import { N_DET_BY_CONTRAST } from '@/lib/requirement/defaults';
 import { fieldsFor, readField } from '@/lib/requirement/fields';
 import type { Assumption, DefectContrast, Requirement } from '@/lib/requirement/types';
 import { CYCLE_DEFAULTS } from './configurationRules';
 import { suggestLighting } from './lighting';
-import { DEFAULT_ENGINE_PARAMS, type EngineParams } from './engineParams';
+import { DEFAULT_ENGINE_PARAMS, type EngineParams, interfaceBandwidthFor, pxPerDefectFor } from './engineParams';
 import { perspectiveCheck, perspectiveErrorMm, telecentricCheck } from './optics';
 import { stitchCheck, thermalCheck, thermalErrorUm } from './mechanics';
 import { GRR_DIVISOR, K_SUBPIXEL, measurementBudget } from './resolution';
@@ -35,7 +33,7 @@ export const K_BLUR = 0.5;
 /** LGT-008: thời gian phơi sáng tối đa dưới mức này thì bắt buộc strobe + global shutter. */
 export const STROBE_EXPOSURE_LIMIT_US = 50;
 /** THR-006: dùng quá tỉ lệ này băng thông giao tiếp là mỏng biên. */
-export const INTERFACE_MAX_SHARE = 0.7;
+export const INTERFACE_MAX_SHARE = DEFAULT_ENGINE_PARAMS.interfaceMaxShare;
 /** THR-001: ảnh đơn sắc 8 bit (Bayer 8 bit cũng 1 byte/px) khi chưa chọn camera. */
 export const BYTES_PER_PX = 1;
 /** Tên chuẩn giao tiếp — danh từ riêng, giống nhau mọi ngôn ngữ. */
@@ -94,7 +92,9 @@ const CONTRASTS: readonly DefectContrast[] = ['high', 'medium', 'low', 'unknown'
 const isContrast = (value: unknown): value is DefectContrast => CONTRASTS.includes(value as DefectContrast);
 
 export function analyseRequirement(draft: Requirement, params: EngineParams = DEFAULT_ENGINE_PARAMS): RequirementAnalysis {
-  const { requirement: req, assumptions } = resolveAssumptions(draft);
+  const { requirement: req, assumptions } = resolveAssumptions(draft, params);
+  const pxPerDefect = pxPerDefectFor(params);
+  const bandwidthTable = interfaceBandwidthFor(params);
   const results: RuleResult[] = [];
 
   const num = (path: string): number | null => {
@@ -131,7 +131,7 @@ export function analyseRequirement(draft: Requirement, params: EngineParams = DE
     const minSize = item.minSize.value;
     if (minSize === null || !(minSize > 0)) return;
     const contrast = isContrast(item.contrast.value) ? item.contrast.value : 'unknown';
-    const n = N_DET_BY_CONTRAST[contrast];
+    const n = pxPerDefect[contrast];
     const mmPerPx = minSize / n;
     detectionMmPerPx = detectionMmPerPx === null ? mmPerPx : Math.min(detectionMmPerPx, mmPerPx);
     push(
@@ -220,7 +220,14 @@ export function analyseRequirement(draft: Requirement, params: EngineParams = DE
         sizePaths
       );
     } else if (cameraCount >= 1) {
-      tile = cameraTile({ fovWidthMm: fovW, fovHeightMm: fovH, cameraCount, mmPerPx: governing });
+      tile = cameraTile({
+        fovWidthMm: fovW,
+        fovHeightMm: fovH,
+        cameraCount,
+        mmPerPx: governing,
+        overlapRatio: params.tileOverlapRatio,
+        overlapMinPx: params.tileOverlapMinPx,
+      });
       if (tile) {
         if (cameraCount > 1) {
           push(
@@ -315,6 +322,8 @@ export function analyseRequirement(draft: Requirement, params: EngineParams = DE
     workingDistanceMm: workingDistance,
     practicalMaxMm: params.telecentricPracticalMaxMm,
     feasibleMaxMm: params.telecentricFeasibleMaxMm,
+    frontDiameterFactor: params.telecentricFrontDiameterFactor,
+    overlapRatio: params.tileOverlapRatio,
   });
   if (telecentric && tile) {
     const size = Math.max(tile.widthMm, tile.heightMm);
@@ -407,9 +416,10 @@ export function analyseRequirement(draft: Requirement, params: EngineParams = DE
       'calculated',
       throughputPaths
     );
-    const choice = Object.entries(INTERFACE_BANDWIDTH)
+    const maxShare = params.interfaceMaxShare;
+    const choice = Object.entries(bandwidthTable)
       .sort((a, b) => a[1] - b[1])
-      .find(([, capacity]) => capacity * INTERFACE_MAX_SHARE >= perCamera);
+      .find(([, capacity]) => capacity * maxShare >= perCamera);
     interfaceName = choice ? choice[0] : null;
     push(
       'THR-002',
@@ -417,12 +427,12 @@ export function analyseRequirement(draft: Requirement, params: EngineParams = DE
         ? {
             key: 'interfaceSuggestion',
             status: 'info',
-            formula: `${choice[0]}: ${fmt(perCamera, 1)} ÷ ${choice[1]} MB/s = ${Math.round((perCamera / choice[1]) * 100)}% ≤ ${INTERFACE_MAX_SHARE * 100}%`,
+            formula: `${choice[0]}: ${fmt(perCamera, 1)} ÷ ${choice[1]} MB/s = ${Math.round((perCamera / choice[1]) * 100)}% ≤ ${Math.round(maxShare * 100)}%`,
           }
         : { key: 'interfaceSuggestion', status: 'fail', formula: `${fmt(perCamera, 1)} MB/s/camera`, noteKey: 'interfaceTooSlow' },
       'calculated',
       throughputPaths,
-      choice ? (choice[1] * INTERFACE_MAX_SHARE) / perCamera : null
+      choice ? (choice[1] * maxShare) / perCamera : null
     );
   }
 

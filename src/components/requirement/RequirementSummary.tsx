@@ -269,7 +269,7 @@ export function RequirementSummary({
   const mountKey = `${base.revision}-${raw !== null}`;
 
   // Bản đã điền mặc định — CHỈ để hiển thị. Mọi thao tác ghi vẫn trên `requirement`.
-  const resolved = useMemo(() => (requirement ? resolveAssumptions(requirement) : null), [requirement]);
+  const resolved = useMemo(() => (requirement ? resolveAssumptions(requirement, engineParams) : null), [requirement, engineParams]);
   const warningAssumptions = resolved ? resolved.assumptions.filter((a) => a.level === 'warning').length : 0;
 
   const onPickApp = (value: string) => {
@@ -562,7 +562,7 @@ export function RequirementSummary({
                           key={def.path}
                           className={`grid items-center gap-2 px-4 py-3 sm:grid-cols-[minmax(0,13rem)_minmax(0,20rem)_6.5rem] sm:gap-4 sm:px-5 ${
                             missingNeeded
-                              ? 'border-l-4 border-rose-500 bg-rose-50 pl-3 sm:pl-4 dark:bg-rose-500/10'
+                              ? 'border-l-4 border-l-rose-500 bg-rose-50 pl-3 sm:pl-4 dark:bg-rose-500/10'
                               : ''
                           }`}
                         >

@@ -4,7 +4,7 @@ import { useActionState } from 'react';
 import { useTranslations } from 'next-intl';
 import { PanelHeader } from '@/components/ui/PanelHeader';
 import { saveEngineParamsAction, type EngineParamsState } from '@/app/actions/admin';
-import { ENGINE_PARAM_GROUPS, ENGINE_PARAMS, type EngineParams } from '@/lib/vision/engineParams';
+import { ENGINE_PARAM_GROUPS, ENGINE_PARAMS, SENSITIVE_GROUPS, type EngineParams } from '@/lib/vision/engineParams';
 
 const inputClass =
   'block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm tabular-nums outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100';
@@ -45,7 +45,19 @@ export function EngineParamsForm({
         <fieldset key={group} className="min-w-0 rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
           {/* legend cho trình đọc màn hình; thanh tiêu đề chung để nhìn (2026-10-15). */}
           <legend className="sr-only">{t(`groups.${group}.title`)}</legend>
-          <PanelHeader as="h3" title={t(`groups.${group}.title`)} note={t(`groups.${group}.hint`)} />
+          <PanelHeader
+            as="h3"
+            title={t(`groups.${group}.title`)}
+            note={
+              <>
+                {t(`groups.${group}.hint`)}
+                {/* Hằng số vật lý / quy ước đo / thông số chuẩn — mở theo chốt 2026-10-16. */}
+                {SENSITIVE_GROUPS.includes(group) ? (
+                  <span className="mt-1 block font-medium text-red-700 dark:text-red-400">{t('sensitiveWarning')}</span>
+                ) : null}
+              </>
+            }
+          />
           <div className="space-y-3 px-4 py-4 sm:px-5">
             {ENGINE_PARAMS.filter((def) => def.group === group).map((def) => {
               const changed = current[def.key] !== def.default;

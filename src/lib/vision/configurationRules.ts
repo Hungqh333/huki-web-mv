@@ -1,7 +1,6 @@
 import {
   COLOR_DEFAULT_PIXEL_FORMAT,
   DEFAULT_PIXEL_FORMAT,
-  INTERFACE_BANDWIDTH,
   SENSOR_FORMATS,
   pixelFormatBytes,
   sensorDiagonalMm,
@@ -10,7 +9,7 @@ import {
   type Component,
 } from '@/lib/components/specs';
 import { DEFAULT_CIRCLE_OF_CONFUSION_PX, WAVELENGTH_UM, requiredLpPerMm } from './optics';
-import { DEFAULT_ENGINE_PARAMS } from './engineParams';
+import { DEFAULT_ENGINE_PARAMS, interfaceBandwidthFor } from './engineParams';
 import { term } from './formulaTerms';
 import type { RequirementAnalysis } from './requirementAnalysis';
 import { toRuleResult, type Evidence, type RuleAssumedInput, type RuleInput, type RuleResult } from './rules';
@@ -44,7 +43,7 @@ export const DOF_DIFFRACTION_TOLERANCE = DEFAULT_ENGINE_PARAMS.dofDiffractionTol
 /** OPT-005: ống kính chưa khai khẩu mở nhất thì coi mở được tới F/1 (ống machine vision nhanh nhất thường F/0.95–1.4). */
 export const DOF_FASTEST_PRACTICAL_F = 1;
 /** OPT-002: dung sai so vòng ảnh với đường chéo — số danh nghĩa trên datasheet làm tròn. */
-export const IMAGE_CIRCLE_TOLERANCE = 0.02;
+export const IMAGE_CIRCLE_TOLERANCE = DEFAULT_ENGINE_PARAMS.imageCircleTolerance;
 /** THR-003: dư dưới tỉ lệ này của nhịp là mỏng. Mặc định — sửa qua admin (engineParams). */
 export const CYCLE_MIN_MARGIN = DEFAULT_ENGINE_PARAMS.cycleMinMargin;
 /** THR-003: giả định khi chưa đo thuật toán thật. */
@@ -58,8 +57,8 @@ export const CYCLE_DEFAULTS = {
   frameIntervalMs: 100,
 } as const;
 /** THR-004: RAM đệm = 4 × ảnh × số camera × số ảnh đệm, tối thiểu 16 GB. */
-export const IPC_RAM_MIN_GB = 16;
-export const IPC_BUFFER_DEPTH = 10;
+export const IPC_RAM_MIN_GB = DEFAULT_ENGINE_PARAMS.ipcRamMinGb;
+export const IPC_BUFFER_DEPTH = DEFAULT_ENGINE_PARAMS.ipcBufferDepth;
 /** Chuẩn giao tiếp chạy trên cổng mạng thường — cắm thẳng vào LAN bo mạch được. */
 const ETHERNET_INTERFACES = ['GigE', '5GigE', '10GigE'];
 
@@ -326,7 +325,7 @@ export function evaluateConfiguration(input: ConfigurationInput): RuleResult[] {
       unknown = true;
       noteKey = 'lensCircleUnknown';
     } else {
-      const covers = lensDiag >= cameraDiag * (1 - IMAGE_CIRCLE_TOLERANCE);
+      const covers = lensDiag >= cameraDiag * (1 - analysis.params.imageCircleTolerance);
       parts.push(`Ø ${fmt(lensDiag, 2)} mm ${covers ? '≥' : '<'} ${fmt(cameraDiag, 2)} mm`);
       if (!covers) {
         status = 'fail';
@@ -495,7 +494,7 @@ export function evaluateConfiguration(input: ConfigurationInput): RuleResult[] {
     const takt = 60000 / ppm;
     const frameMs = camera.maxFps && camera.maxFps > 0 ? 1000 / camera.maxFps : CYCLE_DEFAULTS.frameIntervalMs;
     const frameMb = (camera.widthPx * camera.heightPx * camera.bytesPerPx) / 1e6;
-    const bandwidth = camera.interfaceName ? INTERFACE_BANDWIDTH[camera.interfaceName] : undefined;
+    const bandwidth = camera.interfaceName ? interfaceBandwidthFor(analysis.params)[camera.interfaceName] : undefined;
     const transferMs = bandwidth ? (frameMb / bandwidth) * 1000 : 0;
     const measured = input.processMsPerImage ?? null;
     const processMs = measured ?? (analysis.usesDeepLearning ? analysis.params.processDeepLearningMs : analysis.params.processMs);
@@ -568,14 +567,16 @@ export function evaluateConfiguration(input: ConfigurationInput): RuleResult[] {
 
     if (pc.ramGb === null) unknownKeys.push('ram_gb');
     else {
-      const need = Math.max(IPC_RAM_MIN_GB, Math.ceil((4 * frameMb * n * IPC_BUFFER_DEPTH) / 1024));
+      const ramMin = analysis.params.ipcRamMinGb;
+      const depth = analysis.params.ipcBufferDepth;
+      const need = Math.max(ramMin, Math.ceil((4 * frameMb * n * depth) / 1024));
       const ok = pc.ramGb >= need;
       push(
         'THR-004',
         {
           key: 'ipcRam',
           status: ok ? 'pass' : 'fail',
-          formula: `${pc.ramGb} GB ${ok ? '≥' : '<'} max(${IPC_RAM_MIN_GB}, 4 × ${fmt(frameMb, 1)} MB × ${n} × ${IPC_BUFFER_DEPTH}) = ${need} GB`,
+          formula: `${pc.ramGb} GB ${ok ? '≥' : '<'} max(${ramMin}, 4 × ${fmt(frameMb, 1)} MB × ${n} × ${depth}) = ${need} GB`,
           noteKey: ok ? undefined : 'ipcRamShort',
           noteValues: { need, have: pc.ramGb },
         },

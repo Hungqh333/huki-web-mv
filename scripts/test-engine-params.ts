@@ -28,6 +28,12 @@ import { analyseRequirement } from '../src/lib/vision/requirementAnalysis';
 import { ERROR_WARN_SHARE } from '../src/lib/vision/resolution';
 import { RANKING_WEIGHTS, SOLUTION_LEVELS, buildSolutionLevels } from '../src/lib/vision/solutionLevels';
 import { sampleCatalog } from './c9/sample';
+import { INTERFACE_BANDWIDTH } from '../src/lib/components/specs';
+import { MATERIAL_ALPHA, N_DET_BY_CONTRAST } from '../src/lib/requirement/defaults';
+import { resolveAssumptions } from '../src/lib/requirement/assumptions';
+import { TELECENTRIC_FRONT_DIAMETER_FACTOR } from '../src/lib/vision/optics';
+import { TILE_OVERLAP_MIN_PX, TILE_OVERLAP_RATIO } from '../src/lib/vision/tiling';
+import { interfaceBandwidthFor, materialAlphaFor, pxPerDefectFor } from '../src/lib/vision/engineParams';
 
 const caseOf = (id: string) => {
   const gt = GOLDEN_CASES.find((c) => c.id === id)!;
@@ -116,4 +122,62 @@ test('mỗi ngưỡng có nhãn vi/en trong trang admin', () => {
     for (const group of new Set(ENGINE_PARAMS.map((d) => d.group))) assert.ok(engine.groups[group]?.title && engine.groups[group]?.hint, `${locale}: ${group}`);
     for (const code of ['fix', 'notNumber', 'outOfRange', 'levelOrder', 'telecentricOrder', 'weightsSum', 'saved']) assert.ok(engine.errors[code], `${locale}: ${code}`);
   }
+});
+
+// ─────────────── Mở rộng 2026-10-16: ngưỡng thiết bị, px/lỗi, α vật liệu, băng thông ───────────────
+
+test('ngưỡng mở thêm 2026-10-16: mặc định trùng đúng bảng / hằng số cũ trong code', () => {
+  assert.deepEqual({ ...pxPerDefectFor(DEFAULT_ENGINE_PARAMS) }, { ...N_DET_BY_CONTRAST });
+  for (const [material, entry] of Object.entries(MATERIAL_ALPHA)) {
+    assert.equal(materialAlphaFor(DEFAULT_ENGINE_PARAMS)[material as keyof typeof MATERIAL_ALPHA], entry.alpha, material);
+  }
+  assert.deepEqual({ ...interfaceBandwidthFor(DEFAULT_ENGINE_PARAMS) }, { ...INTERFACE_BANDWIDTH }, 'du moi chuan, dung so');
+  const p = DEFAULT_ENGINE_PARAMS;
+  assert.deepEqual(
+    [p.ipcRamMinGb, p.ipcBufferDepth, p.highTempCameraMinC, p.interfaceMaxShare, p.imageCircleTolerance],
+    [16, 10, 50, 0.7, 0.02]
+  );
+  assert.deepEqual([p.tileOverlapRatio, p.tileOverlapMinPx, p.telecentricFrontDiameterFactor], [TILE_OVERLAP_RATIO, TILE_OVERLAP_MIN_PX, TELECENTRIC_FRONT_DIAMETER_FACTOR]);
+});
+
+test('px/lỗi phải tăng dần từ tương phản cao → thấp', () => {
+  const codes = (patch: Partial<EngineParams>) => validateEngineParams(withParams(patch)).map((e) => `${e.key}:${e.code}`);
+  assert.deepEqual(codes({ pxPerDefectHigh: 4.5 }), ['pxPerDefectMedium:pxOrder']);
+  assert.deepEqual(codes({ pxPerDefectLow: 3.5 }), ['pxPerDefectLow:pxOrder']);
+  assert.deepEqual(codes({ pxPerDefectHigh: 4, pxPerDefectMedium: 4, pxPerDefectLow: 4 }), [], 'bang nhau duoc');
+});
+
+test('sửa ngưỡng mới đổi đúng kết quả: px/lỗi, α vật liệu, băng thông, RAM, đường kính telecentric', () => {
+  const s11 = caseOf('S-11');
+  // px/lỗi: S-11 nêu độ tương phản trung bình → đổi 4 → 4.5 thì RES-001 và panel giả định đổi theo.
+  const res001 = (params: EngineParams) => analyseRequirement(s11, params).results.find((r) => r.ruleId === 'RES-001')!.formula;
+  assert.notEqual(res001(withParams({ pxPerDefectMedium: 4.5 })), res001(DEFAULT_ENGINE_PARAMS));
+  const pxAssumption = resolveAssumptions(s11, withParams({ pxPerDefectMedium: 4.5 })).assumptions.find((a) => a.key === 'parameter:pxPerDefect')!;
+  assert.equal(pxAssumption.value, 4.5);
+  assert.match(pxAssumption.vi!, /trung bình 4.5/);
+
+  // α vật liệu: S-11 là nhôm → α suy từ vật liệu theo ngưỡng admin.
+  const alpha = (params: EngineParams) => resolveAssumptions(s11, params).assumptions.find((a) => a.path === 'object.thermalExpansionCoeff')?.value;
+  assert.equal(alpha(DEFAULT_ENGINE_PARAMS), 23);
+  assert.equal(alpha(withParams({ alphaAluminium: 24 })), 24);
+
+  // Băng thông: GigE còn 1 MB/s thì gợi ý giao tiếp không còn là GigE.
+  const iface = (params: EngineParams) => analyseRequirement(s11, params).interfaceName;
+  assert.equal(iface(DEFAULT_ENGINE_PARAMS), 'GigE');
+  assert.notEqual(iface(withParams({ bwGigE: 1 })), 'GigE');
+
+  // RAM tối thiểu: nâng lên 64 GB thì THR-004 RAM của máy 16 GB trong phương án thành FAIL.
+  const catalog = sampleCatalog();
+  const ram = (params: EngineParams) => {
+    const analysis = analyseRequirement(s11, params);
+    const level = buildSolutionLevels(analysis, filterEquipment(analysis, catalog), catalog).levels.find((l) => l.status === 'ok');
+    return level?.pc?.results.find((r) => r.key === 'ipcRam')?.status ?? null;
+  };
+  assert.equal(ram(DEFAULT_ENGINE_PARAMS), 'pass');
+  assert.notEqual(ram(withParams({ ipcRamMinGb: 64 })), 'pass');
+
+  // Đường kính đầu telecentric: GT-001 hiện hệ số trong công thức OPT-007.
+  const opt007 = (params: EngineParams) => analyseRequirement(caseOf('GT-001'), params).results.find((r) => r.ruleId === 'OPT-007')!.formula;
+  assert.match(opt007(DEFAULT_ENGINE_PARAMS), /× 1\.3 =/);
+  assert.match(opt007(withParams({ telecentricFrontDiameterFactor: 2 })), /× 2 =/);
 });

@@ -2059,9 +2059,9 @@
         "hint": "Click a block to see which rules decided it.",
         "nodes": {
           "product": "Product & environment",
-          "lighting": "Lighting",
-          "lens": "Lens",
           "camera": "Camera",
+          "lens": "Lens",
+          "lighting": "Lighting",
           "interface": "Interface / image transfer",
           "ipc": "Processing PC",
           "software": "Vision software",

@@ -5,7 +5,10 @@ import type { CheckStatus } from './types';
 /**
  * Sơ đồ kiến trúc hệ thống — spec V1.1 §9. SINH từ kết quả engine, không vẽ cứng:
  *
- *   VẬT → CHIẾU SÁNG → ỐNG KÍNH → CAMERA → GIAO TIẾP → MÁY TÍNH → PHẦN MỀM → PLC
+ *   VẬT → CAMERA → ỐNG KÍNH → CHIẾU SÁNG → GIAO TIẾP → MÁY TÍNH → PHẦN MỀM → PLC
+ *
+ * Camera → ống kính → đèn là thứ tự chọn thiết bị: camera quyết định cảm biến/ngàm,
+ * ống kính theo cảm biến, đèn theo trường nhìn của ống kính (Hưng chốt 2026-10-17).
  *
  * Mỗi khối gắn các luật đã quyết định nó; trạng thái khối là trạng thái xấu nhất
  * của các luật đó.
@@ -19,14 +22,14 @@ import type { CheckStatus } from './types';
  * từ chính sản phẩm và nơi đặt máy.
  */
 
-export const ARCHITECTURE_NODES = ['product', 'lighting', 'lens', 'camera', 'interface', 'ipc', 'software', 'plc'] as const;
+export const ARCHITECTURE_NODES = ['product', 'camera', 'lens', 'lighting', 'interface', 'ipc', 'software', 'plc'] as const;
 export type ArchitectureNodeId = (typeof ARCHITECTURE_NODES)[number];
 
 /** Dòng BOM nào thuộc khối nào — dùng chung cho màn hình và Concept Report. */
 export const NODE_EQUIPMENT: Partial<Record<ArchitectureNodeId, readonly string[]>> = {
-  lighting: ['light', 'lightController'],
-  lens: ['lens'],
   camera: ['camera'],
+  lens: ['lens'],
+  lighting: ['light', 'lightController'],
   interface: ['interfaceCard', 'cable:data'],
   ipc: ['pc'],
   software: ['software'],
@@ -67,9 +70,9 @@ function worst(results: RuleResult[]): CheckStatus | null {
 
 const OWNER: Array<[ArchitectureNodeId, (ruleId: string) => boolean]> = [
   ['product', (id) => id.startsWith('MEC-') || id.startsWith('ENV-')],
-  ['lighting', (id) => id.startsWith('LGT-')],
-  ['lens', (id) => id.startsWith('OPT-')],
   ['camera', (id) => id.startsWith('RES-') || id === 'THR-005'],
+  ['lens', (id) => id.startsWith('OPT-')],
+  ['lighting', (id) => id.startsWith('LGT-')],
   ['interface', (id) => id === 'THR-001' || id === 'THR-002'],
   // THR-003 (ngân sách nhịp: chụp + xử lý + truyền) và THR-004 (máy tính đủ sức) — chỉ có khi đã chọn thiết bị.
   ['ipc', (id) => id === 'THR-003' || id === 'THR-004'],

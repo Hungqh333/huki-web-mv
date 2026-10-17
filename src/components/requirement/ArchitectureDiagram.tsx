@@ -66,7 +66,7 @@ export function ArchitectureDiagram({
 
   return (
     <div>
-      {/* Màn rộng: 2 hàng × 4 khối, đọc trái → phải theo chiều tín hiệu (2026-10-15). */}
+      {/* Màn rộng: 2 hàng × 4 khối, đọc trái → phải (2026-10-15); camera → ống kính → đèn (2026-10-17). */}
       <ol className="flex flex-col items-stretch lg:grid lg:grid-cols-4 lg:gap-x-8 lg:gap-y-4">
         {architecture.nodes.map((node, index) => {
           const status = node.status ?? 'info';

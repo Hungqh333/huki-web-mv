@@ -740,8 +740,10 @@ Mỗi mức hiện: Camera / Lens / Lighting / IPC / Software / chi phí ước 
 Sinh graph từ kết quả engine, không vẽ cứng.
 
 ```
-PRODUCT → LIGHTING → LENS → CAMERA → INTERFACE → GRABBER/NIC → IPC → VISION SW → PLC/ROBOT
+PRODUCT → CAMERA → LENS → LIGHTING → INTERFACE → GRABBER/NIC → IPC → VISION SW → PLC/ROBOT
 ```
+
+Camera → Lens → Lighting là thứ tự chọn thiết bị: camera quyết định cảm biến/ngàm, lens theo cảm biến, đèn theo FOV của lens (chốt 2026-10-17, thay thứ tự Lighting → Lens → Camera cũ).
 
 Multi-camera:
 

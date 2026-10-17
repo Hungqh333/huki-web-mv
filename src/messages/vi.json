@@ -2059,9 +2059,9 @@
         "hint": "Bấm vào từng khối để xem luật đã quyết định nó.",
         "nodes": {
           "product": "Sản phẩm & môi trường",
-          "lighting": "Chiếu sáng",
-          "lens": "Ống kính",
           "camera": "Camera",
+          "lens": "Ống kính",
+          "lighting": "Chiếu sáng",
           "interface": "Giao tiếp / truyền ảnh",
           "ipc": "Máy tính xử lý",
           "software": "Phần mềm xử lý ảnh",

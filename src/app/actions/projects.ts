@@ -16,6 +16,7 @@ import { createClient } from '@/lib/supabase/server';
 import { RULESET_VERSION, bomForRequirement, type BomSnapshot } from '@/lib/vision/bom';
 import { loadEngineParams } from '@/lib/engineParamsLoad';
 import { rulesetVersionFor } from '@/lib/vision/engineParams';
+import { fetchAllRows } from '@/lib/components/fetchAll';
 
 /**
  * Lưu bảng tóm tắt yêu cầu thành dự án (V1a hạng mục 7).
@@ -68,10 +69,17 @@ async function prepare(input: ProjectActionInput): Promise<Prepared> {
      cho Member+, đúng quyền của hành động này. */
   let bom: BomSnapshot | null = null;
   if (draft.bom && draft.requirement) {
-    const { data: catalog } = await supabase
-      .from('components')
-      .select('id, code, kind, brand, model, spec, price_vnd, lead_time_days, supplier, used_in_projects, datasheet_url, source, notes_vi, notes_en, is_active, sort_order')
-      .eq('is_active', true);
+    // Đọc hết kho theo trang — Supabase trả tối đa 1.000 dòng mỗi lần (fetchAll.ts).
+    const { data: catalog } = await fetchAllRows((from, to) =>
+      supabase
+        .from('components')
+        .select('id, code, kind, brand, model, spec, price_vnd, lead_time_days, supplier, used_in_projects, datasheet_url, source, notes_vi, notes_en, is_active, sort_order')
+        .eq('is_active', true)
+        .order('kind')
+        .order('sort_order')
+        .order('id')
+        .range(from, to)
+    );
     bom = bomForRequirement(draft.requirement, (catalog ?? []) as Component[], draft.bom, params, tables);
   }
 

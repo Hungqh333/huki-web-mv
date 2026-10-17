@@ -10,6 +10,7 @@ import type { Component } from '@/lib/components/specs';
 import { hasSupabaseEnv } from '@/lib/supabase/env';
 import { createClient } from '@/lib/supabase/server';
 import { loadEngineParams } from '@/lib/engineParamsLoad';
+import { fetchAllRows } from '@/lib/components/fetchAll';
 
 /**
  * Bước 1 của Vision Engineer — bảng tóm tắt yêu cầu (spec V1.1 §10.2).
@@ -39,12 +40,17 @@ export default async function RequirementPage({ searchParams }: PageProps<'/thie
 
   // Catalog cho khối Thiết bị phù hợp (V1c C3). RLS chỉ trả cho Member+ — đúng quyền trang này.
   const supabase = await createClient();
-  const { data: catalog } = await supabase
-    .from('components')
-    .select('id, code, kind, brand, model, spec, price_vnd, lead_time_days, supplier, used_in_projects, datasheet_url, source, notes_vi, notes_en, is_active, sort_order')
-    .eq('is_active', true)
-    .order('kind')
-    .order('sort_order');
+  // Đọc hết kho theo trang — Supabase trả tối đa 1.000 dòng mỗi lần (fetchAll.ts).
+  const { data: catalog } = await fetchAllRows((from, to) =>
+    supabase
+      .from('components')
+      .select('id, code, kind, brand, model, spec, price_vnd, lead_time_days, supplier, used_in_projects, datasheet_url, source, notes_vi, notes_en, is_active, sort_order')
+      .eq('is_active', true)
+      .order('kind')
+      .order('sort_order')
+      .order('id')
+      .range(from, to)
+  );
   const appParam = Array.isArray(app) ? app[0] : app;
   // Bài ghi chú luật đã có (C8) — liên kết "📄 Tài liệu" cạnh từng mã luật.
   const knowledge = await loadKnowledgeIndex(supabase, isAdmin(session?.profile?.role ?? null));

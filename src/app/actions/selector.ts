@@ -7,6 +7,7 @@ import { getFieldDefs, parseInput, visibleFieldDefs } from '@/lib/selector/field
 import { runSelector } from '@/lib/selector/engine';
 import type { SelectorInput, SelectorResult, SelectorRule } from '@/lib/selector/types';
 import type { Component } from '@/lib/components/specs';
+import { fetchAllRows } from '@/lib/components/fetchAll';
 
 export type SelectorState = {
   error?: string;
@@ -85,14 +86,19 @@ export async function runSelectorAction(
   const result = runSelector(rules as unknown as SelectorRule[], input, slug);
 
   // RLS lo phần quyền: không phải Member+ thì truy vấn này trả rỗng.
-  const { data: componentRows } = await supabase
-    .from('components')
-    .select(
-      'id, code, kind, brand, model, spec, price_vnd, datasheet_url, source, notes_vi, notes_en, is_active, sort_order'
-    )
-    .eq('is_active', true)
-    .order('kind')
-    .order('sort_order');
+  // Đọc hết kho theo trang — Supabase trả tối đa 1.000 dòng mỗi lần (fetchAll.ts).
+  const { data: componentRows } = await fetchAllRows((from, to) =>
+    supabase
+      .from('components')
+      .select(
+        'id, code, kind, brand, model, spec, price_vnd, datasheet_url, source, notes_vi, notes_en, is_active, sort_order'
+      )
+      .eq('is_active', true)
+      .order('kind')
+      .order('sort_order')
+      .order('id')
+      .range(from, to)
+  );
 
   // Lưu lịch sử cho Member+ (RLS cũng yêu cầu đúng như vậy).
   // Lấy lại id để nút xuất PDF trỏ tới đúng bản ghi này.

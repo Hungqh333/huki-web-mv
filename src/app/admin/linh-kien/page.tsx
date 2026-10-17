@@ -5,6 +5,7 @@ import { deleteComponentAction } from '@/app/actions/components';
 import { DeleteButton } from '@/components/admin/DeleteButton';
 import { COMPONENT_KINDS, SPEC_FIELDS, type Component } from '@/lib/components/specs';
 import { createClient } from '@/lib/supabase/server';
+import { fetchAllRows } from '@/lib/components/fetchAll';
 
 const SOURCE_STYLES: Record<string, string> = {
   unverified: 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300',
@@ -22,15 +23,14 @@ export default async function AdminComponentsPage({
   const activeKind = typeof kind === 'string' && COMPONENT_KINDS.includes(kind as never) ? kind : null;
 
   const supabase = await createClient();
-  let query = supabase
-    .from('components')
-    .select('id, code, kind, brand, model, spec, price_vnd, source, is_active, sort_order')
-    .order('kind')
-    .order('sort_order');
-
-  if (activeKind) query = query.eq('kind', activeKind);
-
-  const { data, error } = await query;
+  // Đọc hết kho theo trang — Supabase trả tối đa 1.000 dòng mỗi lần (fetchAll.ts).
+  const { data, error } = await fetchAllRows((from, to) => {
+    let query = supabase
+      .from('components')
+      .select('id, code, kind, brand, model, spec, price_vnd, source, is_active, sort_order');
+    if (activeKind) query = query.eq('kind', activeKind);
+    return query.order('kind').order('sort_order').order('id').range(from, to);
+  });
   const components = (data ?? []) as Component[];
 
   /** Tóm tắt thông số: lấy các trường bắt buộc của loại đó, đủ để nhận ra thiết bị. */

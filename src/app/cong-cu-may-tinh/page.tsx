@@ -6,6 +6,7 @@ import { contactMailto } from '@/lib/contact';
 import type { Component } from '@/lib/components/specs';
 import { hasSupabaseEnv } from '@/lib/supabase/env';
 import { createClient } from '@/lib/supabase/server';
+import { fetchAllRows } from '@/lib/components/fetchAll';
 
 /**
  * Cấu hình máy tính dùng chung — trang riêng, tách khỏi bộ chọn từng bài toán.
@@ -44,14 +45,19 @@ async function getComponents(): Promise<Component[]> {
   if (!hasSupabaseEnv()) return [];
   const supabase = await createClient();
   // RLS lo phần quyền: không phải Member+ thì truy vấn này trả rỗng.
-  const { data } = await supabase
-    .from('components')
-    .select(
-      'id, code, kind, brand, model, spec, price_vnd, datasheet_url, source, notes_vi, notes_en, is_active, sort_order'
-    )
-    .eq('is_active', true)
-    .order('kind')
-    .order('sort_order');
+  // Đọc hết kho theo trang — Supabase trả tối đa 1.000 dòng mỗi lần (fetchAll.ts).
+  const { data } = await fetchAllRows((from, to) =>
+    supabase
+      .from('components')
+      .select(
+        'id, code, kind, brand, model, spec, price_vnd, datasheet_url, source, notes_vi, notes_en, is_active, sort_order'
+      )
+      .eq('is_active', true)
+      .order('kind')
+      .order('sort_order')
+      .order('id')
+      .range(from, to)
+  );
   return (data ?? []) as Component[];
 }
 

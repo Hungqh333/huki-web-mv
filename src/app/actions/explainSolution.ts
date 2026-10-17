@@ -12,6 +12,7 @@ import { analyseRequirement } from '@/lib/vision/requirementAnalysis';
 import { SOLUTION_LEVELS, buildSolutionLevels, type SolutionLevelKey } from '@/lib/vision/solutionLevels';
 import { buildWhyFacts, whyFactsToText } from '@/lib/vision/whyFacts';
 import { loadEngineParams } from '@/lib/engineParamsLoad';
+import { fetchAllRows } from '@/lib/components/fetchAll';
 
 export type ExplainResult =
   | { status: 'ok'; paragraphs: string[] }
@@ -35,12 +36,17 @@ export async function explainSolutionAction(requirementJson: string, level: Solu
   if (!draft?.requirement || !SOLUTION_LEVELS.some((l) => l.key === level)) return { status: 'invalid' };
 
   const supabase = await createClient();
-  const { data: catalog } = await supabase
-    .from('components')
-    .select('id, code, kind, brand, model, spec, price_vnd, lead_time_days, supplier, used_in_projects, datasheet_url, source, notes_vi, notes_en, is_active, sort_order')
-    .eq('is_active', true)
-    .order('kind')
-    .order('sort_order');
+  // Đọc hết kho theo trang — Supabase trả tối đa 1.000 dòng mỗi lần (fetchAll.ts).
+  const { data: catalog } = await fetchAllRows((from, to) =>
+    supabase
+      .from('components')
+      .select('id, code, kind, brand, model, spec, price_vnd, lead_time_days, supplier, used_in_projects, datasheet_url, source, notes_vi, notes_en, is_active, sort_order')
+      .eq('is_active', true)
+      .order('kind')
+      .order('sort_order')
+      .order('id')
+      .range(from, to)
+  );
   const components = (catalog ?? []) as Component[];
 
   const { params, tables } = await loadEngineParams(supabase);

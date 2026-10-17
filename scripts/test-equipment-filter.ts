@@ -243,3 +243,36 @@ test('mọi câu diễn giải của bộ lọc có đủ vi/en', () => {
     }
   }
 });
+
+test('lọc nhanh (2026-10-17): dừng ở FAIL đầu tiên + dùng chung kết quả theo thông số — cặp đạt giống hệt bản đầy đủ', async () => {
+  const { GOLDEN_CASES } = await import('./golden/cases');
+  const { sampleCatalog } = await import('./c9/sample');
+  const { cameraFromComponent, evaluateConfiguration, lensFromComponent } = await import('../src/lib/vision/configurationRules');
+  const catalog = sampleCatalog();
+  // Bản sao khác mã/model nhưng cùng thông số — phải ra đúng cùng kết luận (dùng chung kết quả).
+  const twins = catalog.filter((c) => c.kind === 'lens').map((c) => ({ ...c, id: `${c.id}-twin`, code: `${c.code}-TWIN`, model: `${c.model} twin` }));
+  const withTwins = [...catalog, ...twins];
+  for (const gt of GOLDEN_CASES) {
+    const req = Object.entries(gt.input).reduce((r, [path, value]) => withFieldValue(r, path, value), emptyRequirement(gt.applicationType));
+    const analysis = analyseRequirement(req);
+    const filter = filterEquipment(analysis, withTwins);
+    for (const camera of filter.cameras.accepted) {
+      const config = cameraFromComponent(camera.component);
+      for (const lens of [...camera.lenses.accepted, ...camera.lenses.excluded]) {
+        const full = evaluateConfiguration({ analysis, camera: config, lens: lensFromComponent(lens.component) });
+        if (full.some((r) => r.status === 'fail')) {
+          assert.ok(lens.reasons.length > 0, `${gt.id} ${lens.component.model}: phai bi loai`);
+          assert.deepEqual(lens.results, full.slice(0, lens.results.length), `${gt.id} ${lens.component.model}: phan dau trung ban day du`);
+        } else {
+          assert.deepEqual(lens.results, full, `${gt.id} ${lens.component.model}: cap dat giong het`);
+        }
+      }
+      // Ống kính sinh đôi ra cùng kết luận với bản gốc.
+      for (const twin of twins) {
+        const original = camera.lenses.accepted.concat(camera.lenses.excluded).find((l) => l.component.code === twin.code.replace('-TWIN', ''));
+        const copy = camera.lenses.accepted.concat(camera.lenses.excluded).find((l) => l.component.code === twin.code);
+        assert.deepEqual(copy?.results, original?.results, `${gt.id} ${twin.model}`);
+      }
+    }
+  }
+});

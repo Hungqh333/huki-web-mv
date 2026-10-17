@@ -193,6 +193,12 @@ export type ConfigurationInput = {
   pc?: ConfigPc | null;
   /** Số card giao tiếp cắm vào máy (C3/C5 tính); 0 = camera cắm thẳng cổng bo mạch. */
   interfaceCards?: number;
+  /**
+   * Dừng ngay khi đã có FAIL (2026-10-17): bước lọc chỉ cần biết cặp bị loại, không
+   * cần chạy nốt các luật sau. Cặp không FAIL vẫn chạy đủ — kết quả giống hệt.
+   * Kho thật 376 camera × 1.115 ống kính: không dừng sớm thì lọc mất 1–8 giây.
+   */
+  stopOnFail?: boolean;
   /** Thời gian xử lý đo thật (ms/ảnh). Không có thì giả định theo CYCLE_DEFAULTS. */
   processMsPerImage?: number | null;
 };
@@ -308,6 +314,8 @@ export function evaluateConfiguration(input: ConfigurationInput): RuleResult[] {
     }
   }
 
+  if (input.stopOnFail && results.some((r) => r.status === 'fail')) return results;
+
   // ─── OPT-002: vòng ảnh + ngàm ───
   if (lens) {
     const eq = {
@@ -370,6 +378,8 @@ export function evaluateConfiguration(input: ConfigurationInput): RuleResult[] {
     );
   }
 
+  if (input.stopOnFail && results.some((r) => r.status === 'fail')) return results;
+
   // ─── OPT-003: độ phân giải ống kính ───
   if (lens && pitch !== null) {
     const need = requiredLpPerMm(pitch)!;
@@ -408,6 +418,8 @@ export function evaluateConfiguration(input: ConfigurationInput): RuleResult[] {
     }
   }
 
+  if (input.stopOnFail && results.some((r) => r.status === 'fail')) return results;
+
   // ─── OPT-004: giới hạn nhiễu xạ ───
   const fMax = pitch !== null ? maxFNumber(pitch) : null;
   if (lens && fMax !== null) {
@@ -439,6 +451,8 @@ export function evaluateConfiguration(input: ConfigurationInput): RuleResult[] {
       );
     }
   }
+
+  if (input.stopOnFail && results.some((r) => r.status === 'fail')) return results;
 
   // ─── OPT-005: độ sâu trường ảnh ↔ nhiễu xạ ───
   const heightVariation = analysis.heightVariationMm;
@@ -492,6 +506,8 @@ export function evaluateConfiguration(input: ConfigurationInput): RuleResult[] {
       push('OPT-005', check, 'calculated', paths, eq, margin);
     }
   }
+
+  if (input.stopOnFail && results.some((r) => r.status === 'fail')) return results;
 
   // ─── THR-003: ngân sách thời gian chu kỳ ───
   const ppm = analysis.partsPerMinute;

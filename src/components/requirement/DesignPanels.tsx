@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { explainSolutionAction, type ExplainResult } from '@/app/actions/explainSolution';
 import { listAccessories } from '@/lib/components/match';
@@ -30,6 +30,20 @@ import { DEFAULT_ENGINE_TABLES, type EngineTables } from '@/lib/vision/engineTab
  * lọc cứng mà khối Thiết bị phù hợp đang hiện, và BOM dựng từ đúng phương án
  * đang hiện — không thể lệch nhau.
  */
+/**
+ * Giá trị "lắng": chỉ đổi theo `value` sau khi `value` đứng yên `delayMs`. Lọc thiết bị với kho
+ * thật (~1.700 món) mất vài trăm ms — tính theo từng phím gõ thì bảng nhập bị khựng (2026-10-17).
+ */
+function useSettled<T>(value: T, delayMs: number): T {
+  const [settled, setSettled] = useState(value);
+  useEffect(() => {
+    if (Object.is(settled, value)) return;
+    const timer = setTimeout(() => setSettled(value), delayMs);
+    return () => clearTimeout(timer);
+  }, [value, settled, delayMs]);
+  return settled;
+}
+
 export function DesignPanels({
   requirement,
   catalog,
@@ -53,7 +67,12 @@ export function DesignPanels({
   /** Revision đã khoá: xem được, không đổi được lựa chọn. */
   readOnly: boolean;
 }) {
-  const analysis = useMemo(() => analyseRequirement(requirement, engineParams, engineTables), [requirement, engineParams, engineTables]);
+  // Phương án / BOM / sơ đồ tính theo bảng đã "lắng" 400 ms — gõ số trên bảng không bị khựng.
+  const settledRequirement = useSettled(requirement, 400);
+  const analysis = useMemo(
+    () => analyseRequirement(settledRequirement, engineParams, engineTables),
+    [settledRequirement, engineParams, engineTables]
+  );
   const filter = useMemo(() => filterEquipment(analysis, catalog), [analysis, catalog]);
   const solutions = useMemo(() => buildSolutionLevels(analysis, filter, catalog), [analysis, filter, catalog]);
   const bom = useMemo(() => (selection ? buildBom(analysis, solutions, catalog, selection) : null), [analysis, solutions, catalog, selection]);

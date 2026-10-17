@@ -198,7 +198,16 @@ export function buildSolutionLevels(analysis: RequirementAnalysis, filter: Equip
     };
     if (inRange.length === 0) return empty;
 
-    const chosen = inRange.reduce((a, b) => (b.score.total > a.score.total ? b : a));
+    /* Tiết kiệm (chốt 2026-10-17): chọn trong các cặp KHÔNG rủi ro (camera + ống kính không
+       FAIL/MARGINAL); chỉ khi không còn cặp sạch mới lấy cặp điểm cao nhất để nêu lý do chặn.
+       Trước đây lấy cặp điểm cao nhất rồi chặn cả mức — kho thật (S-11: 166/422 cặp sạch)
+       bị chặn chỉ vì cặp đứng đầu có ống kính thiếu lp/mm. */
+    const clean =
+      level.key === 'economy'
+        ? inRange.filter(({ p }) => ![...p.camera.results, ...p.lens.results].some(isMarginalOrFail))
+        : inRange;
+    const pool = clean.length > 0 ? clean : inRange;
+    const chosen = pool.reduce((a, b) => (b.score.total > a.score.total ? b : a));
     const { camera, lens, margin } = chosen.p;
 
     // Máy tính theo camera của mức này (chốt Q5).

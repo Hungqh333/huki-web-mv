@@ -295,6 +295,13 @@ export function filterEquipment(analysis: RequirementAnalysis, catalog: readonly
   const active = (kind: Component['kind']) =>
     catalog.filter((c) => c.is_active && c.kind === kind).sort((a, b) => a.sort_order - b.sort_order);
   const lenses = active('lens');
+  // Đọc thông số ống kính một lần, không lặp lại cho từng camera.
+  const lensConfigs = lenses.map((lens) => {
+    const config = lensFromComponent(lens);
+    return { lens, config, key: JSON.stringify(config) };
+  });
+  const uniqueLenses = new Map(lensConfigs.map(({ key, config }) => [key, config] as const));
+  const pairCache = new Map<string, Map<string, RuleResult[]>>();
 
   const cameras: CameraCandidate[] = active('camera')
     .map((component) => {
@@ -302,10 +309,20 @@ export function filterEquipment(analysis: RequirementAnalysis, catalog: readonly
       if (base.reasons.length > 0) return { ...base, lenses: { accepted: [], excluded: [], best: null } };
 
       const config = cameraFromComponent(component);
-      const lensCandidates = lenses.map((lens) => {
-        const all = evaluateConfiguration({ analysis, camera: config, lens: lensFromComponent(lens) });
-        return candidate(lens, all);
-      });
+      /* Luật cấu hình chỉ phụ thuộc thông số kỹ thuật, không phụ thuộc tên model: camera / ống kính
+         cùng thông số dùng chung một kết quả (kho thật: 376 camera chỉ có 163 bộ thông số, 1.115
+         ống kính có 787). Ống kính bị loại chỉ mang luật tới chỗ FAIL đầu tiên (stopOnFail). */
+      const cameraKey = JSON.stringify(config);
+      let byLens = pairCache.get(cameraKey);
+      if (!byLens) {
+        byLens = new Map();
+        for (const [lensKey, lensConfig] of uniqueLenses) {
+          byLens.set(lensKey, evaluateConfiguration({ analysis, camera: config, lens: lensConfig, stopOnFail: true }));
+        }
+        pairCache.set(cameraKey, byLens);
+      }
+      const results = byLens;
+      const lensCandidates = lensConfigs.map(({ lens, key }) => candidate(lens, results.get(key)!));
       const grouped = split(lensCandidates);
       /* Khớp nhất = không cảnh báo trước, rồi biên OPT-001 LỚN nhất: ống đã qua
          kiểm phủ đủ vùng nhìn, nên tiêu cự càng gần mức lý tưởng thì càng dùng

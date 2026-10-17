@@ -114,6 +114,18 @@ test('Tiết kiệm bị chặn khi cấu hình có MARGINAL (ống lp/mm thấp
   assert.equal(level(s, 'recommended').status, 'ok', 'muc khac van hien');
 });
 
+test('Tiết kiệm chọn cặp KHÔNG rủi ro khi cặp điểm cao nhất có rủi ro (chốt 2026-10-17, kho thật)', () => {
+  // f18 rẻ nhưng lp/mm thấp (MARGINAL) → điểm cao nhất; bản f18 sạch đắt hơn cùng khoảng dư.
+  const catalog = [
+    ...catalogOf({ f18: { resolution_lp_mm: 100 } }).map((c) => (c.model === 'f18' ? { ...c, price_vnd: 500_000 } : c)),
+    make('lens', 'f18clean', { lens_type: 'fixed', focal_length_mm: 18, image_circle: '2/3', mount: 'C', f_number_min: 1.4, f_number_max: 16, resolution_lp_mm: 160 }, { price_vnd: 9_000_000, lead_time_days: 0 }),
+  ];
+  const economy = level(solve({}, catalog), 'economy');
+  assert.equal(economy.status, 'ok', 'con cap sach thi khong chan');
+  assert.equal(economy.lens?.component.model, 'f18clean');
+  assert.ok(!economy.risks.some((r) => r.ruleId === 'OPT-003'));
+});
+
 test('Tiết kiệm dư 1,1–1,2: KHÔNG tự chặn bởi chính hệ số dư OPT-001 (lỗi tìm ra khi chạy thử C9)', () => {
   // f17 ở 300 mm: β = 17 ÷ 283 → 0,00345 ÷ 0,0601 = 0,0574 mm/px → dư 0,0667 ÷ 0,0574 ≈ 1,16.
   // Bảng điểm coi 1,0–1,2 là MARGINAL; trước khi sửa, Tiết kiệm hiện "KHÔNG KHẢ DỤNG — OPT-001 Đạt".

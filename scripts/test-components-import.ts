@@ -28,6 +28,7 @@ import {
   type SheetRow,
 } from './lib/components-io';
 import { buildTemplate, readSheets } from './lib/components-workbook';
+import { cameraSensorSizeMm } from '../src/lib/components/specs';
 import { COMPONENT_KINDS, SPEC_FIELDS } from '../src/lib/components/specs';
 
 const sheet = (kind: string): SheetDef => SHEETS.find((s) => s.kind === kind)!;
@@ -87,7 +88,7 @@ test('cỡ cảm biến ghi lệch với pixel × pitch bị bắt — đúng l�
     rowOf('camera', { 'derive.width_px': '5472', 'spec.resolution_h_px': '3648', 'spec.pixel_size_um': '2.4', 'spec.sensor_format': '1.1' }),
   ]);
   assert.equal(problems.length, 1);
-  assert.match(problems[0].message, /gần cỡ 1"/);
+  assert.match(problems[0].message, /Gần cỡ 1" nhất/);
   assert.match(problems[0].column, /Cỡ cảm biến/);
 });
 
@@ -109,21 +110,62 @@ test('camera line scan: pixel một hàng thành line_width_px, cột chỉ củ
   assert.match(wrong.problems[0].message, /Line scan không dùng/);
 });
 
-test('area scan thiếu pixel dọc hoặc cỡ cảm biến bị báo, không âm thầm bỏ qua', () => {
-  const { problems } = parseSheet(sheet('camera'), [rowOf('camera', { 'spec.resolution_h_px': '', 'spec.sensor_format': '' })]);
-  const columns = problems.map((p) => p.column);
-  assert.ok(columns.some((c) => c.startsWith('Độ phân giải dọc')));
-  assert.ok(columns.some((c) => c.startsWith('Cỡ cảm biến')));
+test('area scan thiếu pixel dọc bị báo, không âm thầm bỏ qua', () => {
+  const { problems } = parseSheet(sheet('camera'), [rowOf('camera', { 'spec.resolution_h_px': '' })]);
+  assert.ok(problems.some((p) => p.column.startsWith('Độ phân giải dọc')));
+});
+
+test('cỡ cảm biến để trống thì máy tính từ pixel; cảm biến lớn không khớp cỡ nào được bảo để trống', () => {
+  /* Chốt 2026-10-16: GMAX3265 (9344 × 7000 × 3,2 µm = 29,9 × 22,4 mm) không
+     phải Full frame (36 × 24) cũng không phải APS-C. Bắt ghi một nhãn là bắt
+     ghi sai — để trống thì cameraSensorSizeMm tính từ pixel. */
+  const big = { 'derive.width_px': '9344', 'spec.resolution_h_px': '7000', 'spec.pixel_size_um': '3.2' };
+  const blank = parseSheet(sheet('camera'), [rowOf('camera', { ...big, 'spec.sensor_format': '' })]);
+  assert.deepEqual(blank.problems, []);
+  const size = cameraSensorSizeMm(blank.components[0].spec)!;
+  assert.ok(Math.abs(size.widthMm - 29.9) < 0.01 && Math.abs(size.heightMm - 22.4) < 0.01);
+
+  const labelled = parseSheet(sheet('camera'), [rowOf('camera', { ...big, 'spec.sensor_format': 'Full frame' })]);
+  assert.equal(labelled.problems.length, 1);
+  assert.match(labelled.problems[0].message, /Không cỡ nào khớp — để trống/);
+
+  // Lệch nhỏ trong dung sai vẫn nhận: GMAX0505 2592 × 2160 × 2,5 µm (8,4 mm), datasheet ghi 1/1.8" (8,9 mm).
+  const near = parseSheet(sheet('camera'), [
+    rowOf('camera', { 'derive.width_px': '2592', 'spec.resolution_h_px': '2160', 'spec.pixel_size_um': '2.5', 'spec.sensor_format': '1/1.8' }),
+  ]);
+  assert.deepEqual(near.problems, []);
+});
+
+test('số làn CXP: chỉ nhận 1 / 2 / 4 / 8 và chỉ với CoaXPress', () => {
+  const cxp = { 'spec.interface': 'CXP-12', 'spec.cxp_lanes': '4' };
+  const ok = parseSheet(sheet('camera'), [rowOf('camera', cxp)]);
+  assert.deepEqual(ok.problems, []);
+  assert.equal(ok.components[0].spec.cxp_lanes, 4);
+
+  const three = parseSheet(sheet('camera'), [rowOf('camera', { ...cxp, 'spec.cxp_lanes': '3' })]);
+  assert.match(three.problems[0].message, /chỉ có 1 \/ 2 \/ 4 \/ 8 làn/);
+
+  const gige = parseSheet(sheet('camera'), [rowOf('camera', { 'spec.interface': 'GigE', 'spec.cxp_lanes': '2' })]);
+  assert.match(gige.problems[0].message, /Chỉ dùng cho CoaXPress/);
+});
+
+test('ngàm cảm biến lớn và ống telecentric lớn nhập được', () => {
+  for (const mount of ['M12', 'M40', 'M48', 'M58', 'M72', 'M90', 'V38']) {
+    const { problems, components } = parseSheet(sheet('lens'), [rowOf('lens', { 'spec.mount': mount })]);
+    assert.deepEqual(problems, [], mount);
+    assert.equal(components[0].spec.mount, mount);
+  }
 });
 
 test('vòng ảnh mm quy ra cỡ cảm biến bằng cách làm tròn XUỐNG', () => {
   assert.equal(imageCircleFormat(11), '2/3', '11 mm vừa phủ 2/3" (duong cheo 11,0)');
-  assert.equal(imageCircleFormat(15.9), '2/3', '15,9 mm CHUA phu 1" (16,0)');
+  assert.equal(imageCircleFormat(15.9), '1/1.1', '15,9 mm CHUA phu 1" (16,0), chi toi 1/1.1" (13,9)');
   assert.equal(imageCircleFormat(16), '1');
   assert.equal(imageCircleFormat(17.6), '1.1');
-  assert.equal(imageCircleFormat(4), null);
+  assert.equal(imageCircleFormat(4), '1/4', '1/4" cheo 3,84 mm');
+  assert.equal(imageCircleFormat(3), null);
 
-  const tiny = parseSheet(sheet('lens'), [rowOf('lens', { 'spec.image_circle_mm': '4' })]);
+  const tiny = parseSheet(sheet('lens'), [rowOf('lens', { 'spec.image_circle_mm': '3' })]);
   assert.match(tiny.problems[0].message, /nhỏ hơn cả cảm biến/);
 });
 

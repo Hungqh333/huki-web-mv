@@ -1,7 +1,9 @@
 import { pickCard, pickPc } from './pc';
 import {
-  coversSensor,
+  cameraLanes,
+  cameraSensorSizeMm,
   interfaceCarries,
+  lensCoversCamera,
   sensorWidthMm,
   specNumber,
   specString,
@@ -135,7 +137,7 @@ export function pickCamera(
     if (req.needsColor && color !== 'color') return false;
 
     if (req.dataRateMbytesS !== null) {
-      if (!interfaceCarries(specString(camera.spec, 'interface'), req.dataRateMbytesS)) return false;
+      if (!interfaceCarries(specString(camera.spec, 'interface'), req.dataRateMbytesS, cameraLanes(camera.spec))) return false;
     }
     return true;
   });
@@ -179,7 +181,7 @@ export function pickLens(
     needTelecentric: boolean;
   }
 ): ComponentChoice<LensFit> {
-  const sensorFormat = req.camera ? specString(req.camera.spec, 'sensor_format') : null;
+  const sensorSize = req.camera && specString(req.camera.spec, 'camera_type') !== 'line' ? cameraSensorSizeMm(req.camera.spec) : null;
   const sensorWidth = req.camera ? sensorWidthMm(req.camera.spec) : null;
   const cameraMount = req.camera ? specString(req.camera.spec, 'mount') : null;
 
@@ -203,7 +205,7 @@ export function pickLens(
     if (req.needTelecentric ? type !== 'telecentric' : type === 'telecentric') return false;
 
     // Vòng ảnh phải phủ nổi cảm biến, nếu không sẽ tối bốn góc.
-    if (sensorFormat && !coversSensor(specString(lens.spec, 'image_circle'), sensorFormat)) {
+    if (sensorSize && !lensCoversCamera(lens.spec, sensorSize)) {
       return false;
     }
 

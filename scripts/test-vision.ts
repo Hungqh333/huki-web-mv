@@ -54,7 +54,11 @@ import {
   type CameraLike,
 } from '../src/lib/vision';
 import {
+  cameraLanes,
+  cameraSensorSizeMm,
   coversSensor,
+  lensCoversCamera,
+  linkBandwidth,
   sensorDiagonalMm,
   INTERFACE_BANDWIDTH,
   SENSOR_FORMATS,
@@ -62,6 +66,8 @@ import {
   SPEC_FIELDS,
 } from '../src/lib/components/specs';
 import { appearanceInputFromForm } from '../src/lib/vision/fromInput';
+import { interfaceCardsFor } from '../src/lib/vision/equipmentFilter';
+import { lineScanChecks } from '../src/lib/vision/linescan';
 import { renderFormula } from '../src/lib/vision/formulaTerms';
 
 /** Công thức engine ghi thẻ ⟦…⟧ (C9 Q4) — dịch bằng bảng từ tiếng Việt trước khi so chữ. */
@@ -564,11 +570,11 @@ test('thêm format mới không làm hỏng phép kiểm vòng ảnh', () => {
   // tính từ hai cạnh, không còn số khai sẵn nào để so.
   assert.ok(Math.abs(sensorDiagonalMm('1.1')! - 17.5151) < 0.0001);
 
-  // 1.1" (17,52 mm) nằm GIỮA 1" (16 mm) và 4/3" (22 mm) — thêm vào cuối một
+  // 1.1" (17,52 mm) nằm GIỮA 1" (16 mm) và 1.2" (19,3 mm) — thêm vào cuối một
   // mảng viết tay là sai thứ tự, sort theo đường chéo thì tự đúng chỗ.
   const at = SENSOR_FORMAT_KEYS.indexOf('1.1');
   assert.equal(SENSOR_FORMAT_KEYS[at - 1], '1');
-  assert.equal(SENSOR_FORMAT_KEYS[at + 1], '4/3');
+  assert.equal(SENSOR_FORMAT_KEYS[at + 1], '1.2');
 
   assert.equal(coversSensor('4/3', '1.1'), true, 'vong anh 22 mm phu duoc duong cheo 17,52 mm');
   assert.equal(coversSensor('1', '1.1'), false, 'vong anh 16 mm KHONG phu noi 17,52 mm');
@@ -629,6 +635,46 @@ test('CXP-12 và Camera Link Full tính được thời gian truyền ảnh', ()
   assert.equal(frameTransfer({ ...shot, interfaceName: 'CXP-25' }), null, 'chuan la thi tra null');
 });
 
+test('CoaXPress nhiều làn: băng thông và số kênh grabber nhân theo số làn', () => {
+  /* Chốt 2026-10-16. INTERFACE_BANDWIDTH giữ số MỘT làn; camera khai cxp_lanes.
+     AX5F57MP050E (9344 × 7000 @ 71 fps ≈ 4.644 MB/s) chạy CXP-12 × 4 — tính
+     một làn (1.200) thì bị loại oan, tính bốn làn (4.800) mới đúng. */
+  assert.equal(linkBandwidth(INTERFACE_BANDWIDTH, 'CXP-12', 4), 4800);
+  assert.equal(linkBandwidth(INTERFACE_BANDWIDTH, 'CXP-6', 2), 1200);
+  assert.equal(linkBandwidth(INTERFACE_BANDWIDTH, 'GigE', 4), 110, 'chuan khong phai CXP khong nhan');
+  assert.equal(linkBandwidth(INTERFACE_BANDWIDTH, null), undefined);
+
+  assert.equal(cameraLanes({ interface: 'CXP-12', cxp_lanes: 4 }), 4);
+  assert.equal(cameraLanes({ interface: 'CXP-12' }), 1, 'khong khai = 1 lan, phia than trong');
+  assert.equal(cameraLanes({ interface: 'CXP-12', cxp_lanes: 3 }), 1, 'so lan sai chuan thi khong tin');
+  assert.equal(cameraLanes({ interface: 'GigE', cxp_lanes: 4 }), 1);
+
+  const shot = { widthPx: 4096, heightPx: 3000, pixelFormat: 'Mono8' as const, interfaceName: 'CXP-12' };
+  assert.equal(frameTransfer({ ...shot, lanes: 4 })!.transferMs, 2.56, '12.288.000 byte / 4800 MB/s');
+
+  const line = lineScanChecks({
+    speedMmS: 1000, mmPerPxCross: 0.01, lineWidthPx: 16384, maxLineRateKhz: 265, pixelFormat: 'Mono8',
+    interfaceName: 'CXP-12', lanes: 4, encoderResolutionUm: null,
+  }).find((c) => c.key === 'lineDataRate')!;
+  assert.equal(line.status, 'pass', '16384 px × 100 kHz = 1638 MB/s qua 4 lan CXP-12');
+
+  // Camera 4 làn chiếm 4 kênh: hai camera là hai card grabber 4 kênh.
+  assert.equal(interfaceCardsFor('CXP-12', 2), 1);
+  assert.equal(interfaceCardsFor('CXP-12', 2, 4), 2);
+  assert.equal(interfaceCardsFor('GigE', 2, 4), 0);
+});
+
+test('camera để trống nhãn cỡ cảm biến vẫn được kiểm vòng ảnh bằng kích thước từ pixel', () => {
+  const gmax3265 = { camera_type: 'area', resolution_w_px: 9344, resolution_h_px: 7000, pixel_size_um: 3.2 };
+  const size = cameraSensorSizeMm(gmax3265)!; // 29,9 × 22,4 mm, chéo 37,4 mm
+  assert.equal(lensCoversCamera({ image_circle_mm: 44 }, size), true);
+  assert.equal(lensCoversCamera({ image_circle_mm: 30 }, size), false);
+  assert.equal(lensCoversCamera({ image_circle: 'APS-C' }, size), false, 'APS-C 28,3 mm khong phu 37,4 mm');
+  assert.equal(lensCoversCamera({}, size), false, 'ong kinh thieu vong anh thi loai, khong doan');
+  // Có nhãn thì nhãn thắng, như OPT-002.
+  assert.deepEqual(cameraSensorSizeMm({ ...gmax3265, sensor_format: '2/3' }), SENSOR_FORMATS['2/3']);
+});
+
 test('dropdown cỡ cảm biến sắp theo đường chéo tăng dần, không theo thứ tự khai báo', () => {
   /* Hai ô chọn của form admin (sensor_format của camera, image_circle của lens)
      trước đây lấy từ mảng SENSOR_FORMAT_ORDER viết tay. Nay lấy từ
@@ -636,15 +682,30 @@ test('dropdown cỡ cảm biến sắp theo đường chéo tăng dần, không 
      điều: thứ tự đúng, nó thật sự đơn điệu theo đường chéo, và hai ô chọn
      dùng đúng danh sách đó chứ không phải một bản sao nào khác. */
   assert.deepEqual(SENSOR_FORMAT_KEYS, [
+    '1/4',
+    '1/3.6',
     '1/3',
+    '1/2.9',
+    '1/2.7',
+    '1/2.6',
+    '1/2.53',
     '1/2.5',
+    '1/2.3',
     '1/2',
     '1/1.8',
+    '1/1.7',
+    '1/1.566',
     '2/3',
+    '1/1.4',
+    '1/1.2',
+    '1/1.1',
     '1',
     '1.1',
+    '1.2',
     '4/3',
     'APS-C',
+    'Full frame',
+    'Medium format',
   ]);
 
   // Đường chéo phải TĂNG ĐƠN ĐIỆU. Đây là bất biến thật: ai khai thêm format

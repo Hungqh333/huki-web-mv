@@ -14,9 +14,13 @@
  */
 import {
   COMPONENT_SOURCES,
+  CXP_INTERFACES,
+  CXP_LANE_COUNTS,
   INTERFACE_BANDWIDTH,
+  MOUNTS,
   PIXEL_FORMAT_BYTES,
   SENSOR_FORMAT_KEYS,
+  SENSOR_FORMAT_TOLERANCE,
   sensorDiagonalMm,
   type ComponentKind,
   type ComponentSource,
@@ -42,7 +46,7 @@ export type ColumnDef = {
   example?: string | number;
 };
 
-const MOUNT_CHOICES = { C: 'C', CS: 'CS', F: 'F', M42: 'M42' };
+const MOUNT_CHOICES = Object.fromEntries(MOUNTS.map((m) => [m, m]));
 const YES_NO = { Có: 'yes', Không: 'no' };
 const identity = (values: string[]) => Object.fromEntries(values.map((v) => [v, v]));
 
@@ -145,7 +149,9 @@ export const SHEETS: SheetDef[] = [
         target: 'spec.sensor_format',
         type: 'choice',
         choices: identity(SENSOR_FORMAT_KEYS),
-        help: 'BẮT BUỘC với Area scan. Máy sẽ kiểm lại bằng pixel × pixel pitch: ghi 1.1" mà tính ra 1" là báo lỗi.',
+        help:
+          'Area scan: ghi theo datasheet. Máy kiểm lại bằng pixel × pixel pitch: ghi 1.1" mà tính ra 1" là báo lỗi. ' +
+          'Cảm biến lớn không đúng cỡ nào (ví dụ 29.9 × 22.4 mm) thì để trống — máy tự tính từ pixel.',
         example: '2/3',
       },
       {
@@ -186,6 +192,12 @@ export const SHEETS: SheetDef[] = [
         choices: identity(Object.keys(INTERFACE_BANDWIDTH)),
         help: 'Camera Link phải chọn đúng cấu hình Base / Medium / Full / Deca — băng thông chênh nhau tới 3 lần.',
         example: 'GigE',
+      },
+      {
+        header: 'Số làn CXP',
+        target: 'spec.cxp_lanes',
+        type: 'integer',
+        help: `Chỉ CoaXPress: ${CXP_LANE_COUNTS.join(' / ')}, theo datasheet (ví dụ CXP-12 × 4 ghi 4). Để trống = 1 làn — máy tính băng thông một làn, camera nhanh sẽ bị loại oan.`,
       },
       { header: 'Ngàm', target: 'spec.mount', type: 'choice', required: true, choices: MOUNT_CHOICES, help: 'Ngàm ống kính.', example: 'C' },
       {
@@ -524,6 +536,10 @@ export function parseSheet(sheet: SheetDef, rows: SheetRow[]): { components: Par
     const find = (target: string) => sheet.columns.find((c) => c.target === target)!;
 
     if (sheet.kind === 'camera') {
+      if (spec.cxp_lanes !== undefined) {
+        if (!CXP_INTERFACES.includes(String(spec.interface))) at(find('spec.cxp_lanes'), 'Chỉ dùng cho CoaXPress (CXP-6 / CXP-12) — để trống.');
+        else if (!CXP_LANE_COUNTS.includes(spec.cxp_lanes as number)) at(find('spec.cxp_lanes'), `CoaXPress chỉ có ${CXP_LANE_COUNTS.join(' / ')} làn.`);
+      }
       const widthPx = values['derive.width_px'] as number | undefined;
       if (spec.camera_type === 'line') {
         if (widthPx !== undefined) spec.line_width_px = widthPx;
@@ -536,20 +552,23 @@ export function parseSheet(sheet: SheetDef, rows: SheetRow[]): { components: Par
         if (heightPx === null && !problems.some((p) => p.row === row && p.sheet === sheet.name && p.column.startsWith('Độ phân giải dọc'))) {
           at(find('spec.resolution_h_px'), 'Area scan bắt buộc điền.');
         }
-        if (spec.sensor_format === undefined) at(find('spec.sensor_format'), 'Area scan bắt buộc điền.');
         if (spec.max_line_rate_khz !== undefined) at(find('spec.max_line_rate_khz'), 'Area scan không dùng cột này — để trống.');
 
         const pitch = num('pixel_size_um');
         if (widthPx !== undefined && heightPx !== null) {
           spec.resolution_mp = round((widthPx * heightPx) / 1e6, 1);
           if (pitch !== null && typeof spec.sensor_format === 'string') {
-            const closest = closestSensorFormat(widthPx, heightPx, pitch);
-            if (closest !== spec.sensor_format) {
+            const diagonal = (Math.hypot(widthPx, heightPx) * pitch) / 1000;
+            const labelled = sensorDiagonalMm(spec.sensor_format)!;
+            if (Math.abs(labelled - diagonal) > diagonal * SENSOR_FORMAT_TOLERANCE) {
               const w = round((widthPx * pitch) / 1000, 2);
               const h = round((heightPx * pitch) / 1000, 2);
+              const closest = closestSensorFormat(widthPx, heightPx, pitch);
+              const fits = Math.abs(sensorDiagonalMm(closest)! - diagonal) <= diagonal * SENSOR_FORMAT_TOLERANCE;
               at(
                 find('spec.sensor_format'),
-                `Ghi ${spec.sensor_format}" nhưng ${widthPx} × ${heightPx} px × ${pitch} µm = ${w} × ${h} mm, gần cỡ ${closest}" nhất. Kiểm lại datasheet.`
+                `Ghi ${spec.sensor_format}" (chéo ${round(labelled, 1)} mm) nhưng ${widthPx} × ${heightPx} px × ${pitch} µm = ${w} × ${h} mm (chéo ${round(diagonal, 1)} mm). ` +
+                  (fits ? `Gần cỡ ${closest}" nhất. Kiểm lại datasheet.` : 'Không cỡ nào khớp — để trống, máy tự tính từ pixel.')
               );
             }
           }

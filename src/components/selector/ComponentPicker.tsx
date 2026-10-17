@@ -19,7 +19,7 @@ import {
 } from '@/lib/components/match';
 import { accessoryQty, pickRuleAccessories } from '@/lib/components/accessories';
 import { buildVariants } from '@/lib/components/variants';
-import { SPEC_FIELDS, SUMMARY_KEYS, specString, type Component } from '@/lib/components/specs';
+import { SPEC_FIELDS, SUMMARY_KEYS, cameraLanes, specString, type Component } from '@/lib/components/specs';
 import type { SelectorInput, SelectorResult } from '@/lib/selector/types';
 import { analyseAppearance, maxExposureForBlur, requiredPixels, verifyResolution } from '@/lib/vision';
 import { appearanceInputFromForm } from '@/lib/vision/fromInput';
@@ -203,6 +203,7 @@ export function ComponentPicker({
         pixelSizeUm: (camera.spec.pixel_size_um as number) ?? null,
         sensorFormat: specString(camera.spec, 'sensor_format'),
         interfaceName: cameraInterface,
+        lanes: cameraLanes(camera.spec),
       }
     : null;
 

@@ -1260,6 +1260,7 @@
         "resolution_h_px": "Vertical pixels",
         "line_width_px": "Pixels per line",
         "max_line_rate_khz": "Max line rate",
+        "cxp_lanes": "CoaXPress lanes",
         "pixel_format": "Transmitted pixel format",
         "shutter": "Shutter type",
         "trigger_io": "Hardware trigger input",

@@ -1,4 +1,4 @@
-import { INTERFACE_BANDWIDTH } from '@/lib/components/specs';
+import { INTERFACE_BANDWIDTH, linkBandwidth } from '@/lib/components/specs';
 import { PIXEL_FORMAT_BYTES } from './timing';
 import { fmt, round, type Check } from './types';
 import { term } from './formulaTerms';
@@ -68,6 +68,7 @@ export function lineScanChecks(input: {
   maxLineRateKhz: number | null;
   pixelFormat: string;
   interfaceName: string | null;
+  lanes?: number;
   encoderResolutionUm: number | null;
 }): Check[] {
   const checks: Check[] = [];
@@ -115,7 +116,7 @@ export function lineScanChecks(input: {
     noteKey: 'lineNeedsBrightLight',
   });
 
-  const capacity = input.interfaceName ? INTERFACE_BANDWIDTH[input.interfaceName] : undefined;
+  const capacity = linkBandwidth(INTERFACE_BANDWIDTH, input.interfaceName, input.lanes);
   const carries = capacity !== undefined && capacity >= need.dataRateMbytesS;
   checks.push({
     key: 'lineDataRate',

@@ -40,6 +40,8 @@ export type CameraLike = {
   pixelSizeUm: number | null;
   sensorFormat: string | null;
   interfaceName: string | null;
+  /** Số làn CoaXPress (specs.ts `cameraLanes`). Không khai = 1. */
+  lanes?: number;
 };
 
 export const round = (value: number, digits = 3): number => {

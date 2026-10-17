@@ -2,6 +2,8 @@ import {
   COLOR_DEFAULT_PIXEL_FORMAT,
   DEFAULT_PIXEL_FORMAT,
   SENSOR_FORMATS,
+  cameraLanes,
+  linkBandwidth,
   pixelFormatBytes,
   sensorDiagonalMm,
   specNumber,
@@ -73,6 +75,8 @@ export type ConfigCamera = {
   sensorFormat: string | null;
   mount: string | null;
   interfaceName: string | null;
+  /** Số làn CoaXPress (specs.ts `cameraLanes`). Không khai = 1. */
+  lanes?: number;
   maxFps: number | null;
   bytesPerPx: number;
 };
@@ -111,6 +115,7 @@ export function cameraFromComponent(component: Component): ConfigCamera {
     sensorFormat: specString(spec, 'sensor_format'),
     mount: specString(spec, 'mount'),
     interfaceName: specString(spec, 'interface'),
+    lanes: cameraLanes(spec),
     maxFps: specNumber(spec, 'max_fps'),
     // Không khai định dạng thì suy từ màu, như bộ chọn cũ (specs.ts).
     bytesPerPx:
@@ -494,7 +499,7 @@ export function evaluateConfiguration(input: ConfigurationInput): RuleResult[] {
     const takt = 60000 / ppm;
     const frameMs = camera.maxFps && camera.maxFps > 0 ? 1000 / camera.maxFps : CYCLE_DEFAULTS.frameIntervalMs;
     const frameMb = (camera.widthPx * camera.heightPx * camera.bytesPerPx) / 1e6;
-    const bandwidth = camera.interfaceName ? interfaceBandwidthFor(analysis.params)[camera.interfaceName] : undefined;
+    const bandwidth = linkBandwidth(interfaceBandwidthFor(analysis.params), camera.interfaceName, camera.lanes);
     const transferMs = bandwidth ? (frameMb / bandwidth) * 1000 : 0;
     const measured = input.processMsPerImage ?? null;
     const processMs = measured ?? (analysis.usesDeepLearning ? analysis.params.processDeepLearningMs : analysis.params.processMs);

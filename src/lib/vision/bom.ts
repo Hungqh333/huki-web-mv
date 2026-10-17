@@ -193,9 +193,11 @@ export function buildBom(
   if (level.pc) {
     lines.push(componentLine('pc', 'computing', level.pc.component, 1, ['THR-004']));
     // Máy đạt THR-004 đã đủ cổng LAN cho camera cắm thẳng; card chỉ cần khi chuẩn cần grabber.
-    if (interfaceCardsFor(config.interfaceName, n) > 0) {
-      const card = pickInterfaceCard(components, { interfaceName: config.interfaceName, cameraCount: n }).chosen;
-      if (card) lines.push(componentLine('interfaceCard', 'computing', card, cardUnits(card, n), ['THR-002', 'THR-004']));
+    if (interfaceCardsFor(config.interfaceName, n, config.lanes) > 0) {
+      // Card đếm theo kênh: camera CoaXPress 4 làn chiếm 4 kênh.
+      const links = n * (config.lanes ?? 1);
+      const card = pickInterfaceCard(components, { interfaceName: config.interfaceName, cameraCount: links }).chosen;
+      if (card) lines.push(componentLine('interfaceCard', 'computing', card, cardUnits(card, links), ['THR-002', 'THR-004']));
     }
   }
 

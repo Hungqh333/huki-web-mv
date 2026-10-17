@@ -1,4 +1,4 @@
-import { specNumber, specString, type Component } from '@/lib/components/specs';
+import { linkBandwidth, specNumber, specString, type Component } from '@/lib/components/specs';
 import { DEFAULT_ENGINE_PARAMS, interfaceBandwidthFor } from './engineParams';
 import {
   blockingResults,
@@ -69,9 +69,12 @@ const DIAGONAL_LIGHTS = ['ring', 'dome', 'darkfield'];
 /** Chuẩn cần frame grabber — mỗi card coi như 4 kênh khi tính khe PCIe cho máy tính. */
 const GRABBER_INTERFACES = ['CXP-6', 'CXP-12', 'CameraLink-Base', 'CameraLink-Medium', 'CameraLink-Full', 'CameraLink-Deca'];
 
-/** Số card giao tiếp máy tính cần cho n camera cùng chuẩn: grabber 4 kênh; GigE/USB3 cắm thẳng bo mạch = 0. */
-export function interfaceCardsFor(interfaceName: string | null, cameraCount: number): number {
-  return interfaceName && GRABBER_INTERFACES.includes(interfaceName) ? Math.ceil(Math.max(1, cameraCount) / 4) : 0;
+/**
+ * Số card giao tiếp máy tính cần cho n camera cùng chuẩn: grabber 4 kênh; GigE/USB3 cắm thẳng bo mạch = 0.
+ * Camera CoaXPress nhiều làn chiếm một kênh mỗi làn: hai camera 4 làn là hai card.
+ */
+export function interfaceCardsFor(interfaceName: string | null, cameraCount: number, lanes = 1): number {
+  return interfaceName && GRABBER_INTERFACES.includes(interfaceName) ? Math.ceil((Math.max(1, cameraCount) * Math.max(1, lanes)) / 4) : 0;
 }
 
 const make = (ruleId: string, check: Check, evidence: Evidence, equipment: Record<string, unknown>, marginRatio: number | null = null): RuleResult =>
@@ -172,7 +175,8 @@ export function cameraRequirementChecks(analysis: RequirementAnalysis, component
   // THR-002: băng thông THẬT của camera này (pixel của nó, không phải pixel cần).
   const ppm = analysis.partsPerMinute;
   if (ppm !== null && ppm > 0 && camera.interfaceName) {
-    const capacity = interfaceBandwidthFor(analysis.params)[camera.interfaceName];
+    const capacity = linkBandwidth(interfaceBandwidthFor(analysis.params), camera.interfaceName, camera.lanes);
+    const link = (camera.lanes ?? 1) > 1 ? `${camera.interfaceName} × ${camera.lanes}` : camera.interfaceName;
     const maxShare = analysis.params.interfaceMaxShare;
     const rate = ((camera.widthPx * camera.heightPx * camera.bytesPerPx) / 1e6) * (ppm / 60);
     if (capacity !== undefined) {
@@ -183,9 +187,9 @@ export function cameraRequirementChecks(analysis: RequirementAnalysis, component
           {
             key: 'cameraFit',
             status: ok ? 'pass' : 'fail',
-            formula: `${fmt(rate, 1)} MB/s ${ok ? '≤' : '>'} ${Math.round(maxShare * 100)}% × ${capacity} MB/s (${camera.interfaceName})`,
+            formula: `${fmt(rate, 1)} MB/s ${ok ? '≤' : '>'} ${Math.round(maxShare * 100)}% × ${capacity} MB/s (${link})`,
             noteKey: ok ? undefined : 'cameraInterfaceSlow',
-            noteValues: { rate: round(rate, 1), capacity, name: camera.interfaceName },
+            noteValues: { rate: round(rate, 1), capacity, name: link },
           },
           'calculated',
           { 'camera.interface': camera.interfaceName },
@@ -323,7 +327,7 @@ export function filterEquipment(analysis: RequirementAnalysis, catalog: readonly
   let pcGroup: EquipmentGroup = { accepted: [], excluded: [] };
   if (reference) {
     const config = cameraFromComponent(reference);
-    const cards = interfaceCardsFor(config.interfaceName, n);
+    const cards = interfaceCardsFor(config.interfaceName, n, config.lanes);
     pcGroup = split(
       active('controller').map((component) =>
         candidate(

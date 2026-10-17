@@ -174,6 +174,7 @@ export function analyseAppearance(
     heightPx: camera?.heightPx ?? null,
     pixelFormat: input.pixelFormat,
     interfaceName: camera?.interfaceName ?? null,
+    lanes: camera?.lanes,
     cameraCount: cameraCountForBandwidth,
     throughputPpm: input.throughputPpm,
     dutyRatio: input.dutyRatio,
@@ -215,6 +216,7 @@ export function analyseAppearance(
           maxLineRateKhz: camera?.maxLineRateKhz ?? null,
           pixelFormat: input.pixelFormat,
           interfaceName: camera?.interfaceName ?? null,
+          lanes: camera?.lanes,
           encoderResolutionUm: input.encoderResolutionUm,
         })
       : [];

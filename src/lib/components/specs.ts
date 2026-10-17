@@ -76,20 +76,44 @@ export type Component = {
  * Nguồn con số: bảy format đầu có từ lúc dựng catalog, theo quy ước quang học
  * thông dụng, CHƯA đối chiếu datasheet. 1.1" và APS-C lấy theo
  * docs/HIEN_TRANG_VA_KHOANG_TRONG.md (GAP 6), cũng CHƯA đối chiếu datasheet.
+ *
+ * Mười lăm format thêm lúc nhập catalog iRayple (chốt 2026-10-16): kích thước
+ * TÍNH TỪ PIXEL × PITCH của chính các camera mang nhãn đó trong file nhập —
+ * tức là kích thước cảm biến thật, trùng datasheet cảm biến. Nhãn nào có nhiều
+ * cảm biến thì lấy cái có đường chéo LỚN NHẤT: nhãn dùng để kiểm vòng ảnh, lấy
+ * lớn là phía an toàn (thà loại một ống kính vừa khít còn hơn tối bốn góc).
+ * Riêng Full frame (36 × 24) và Medium format (IMX411, 53,4 × 40) theo định
+ * nghĩa chuẩn, vì nhiều cảm biến lớn của hãng KHÔNG đúng cỡ nào cả — camera như
+ * vậy để trống nhãn và máy tính từ pixel (xem `cameraSensorSizeMm`).
  */
 export const SENSOR_FORMATS: Record<string, { widthMm: number; heightMm: number }> = {
+  '1/4': { widthMm: 3.07, heightMm: 2.3 }, // PYTHON300 640 × 480 × 4,8 µm
+  '1/3.6': { widthMm: 3.84, heightMm: 2.88 }, // PYTHON480 800 × 600 × 4,8 µm
   '1/3': { widthMm: 4.8, heightMm: 3.6 },
+  '1/2.9': { widthMm: 4.97, heightMm: 3.75 }, // IMX273 / IMX287 / IMX296
+  '1/2.7': { widthMm: 5.12, heightMm: 4.1 },
+  '1/2.6': { widthMm: 5.52, heightMm: 4.14 },
+  '1/2.53': { widthMm: 5.6, heightMm: 4.28 },
   '1/2.5': { widthMm: 5.76, heightMm: 4.29 },
+  '1/2.3': { widthMm: 6.62, heightMm: 4.14 }, // IMX392
   '1/2': { widthMm: 6.4, heightMm: 4.8 },
   '1/1.8': { widthMm: 7.18, heightMm: 5.32 },
+  '1/1.7': { widthMm: 8.19, heightMm: 4.8 },
+  '1/1.566': { widthMm: 8.18, heightMm: 6.04 },
   '2/3': { widthMm: 8.8, heightMm: 6.6 },
+  '1/1.4': { widthMm: 10.48, heightMm: 5.4 },
+  '1/1.2': { widthMm: 11.25, heightMm: 7.03 }, // IMX174 / IMX249
+  '1/1.1': { widthMm: 11.22, heightMm: 8.22 }, // IMX545
   '1': { widthMm: 12.8, heightMm: 9.6 },
   /* Format phổ biến nhất của camera công nghiệp 12–24 MP hiện nay (IMX253,
      IMX255, IMX531). Thiếu nó thì đúng nhóm camera đang dùng nhiều nhất không
      tính nổi tiêu cự. */
   '1.1': { widthMm: 14.13, heightMm: 10.35 },
+  '1.2': { widthMm: 14.6, heightMm: 12.63 }, // IMX540
   '4/3': { widthMm: 17.6, heightMm: 13.2 },
   'APS-C': { widthMm: 23.6, heightMm: 15.6 },
+  'Full frame': { widthMm: 36, heightMm: 24 },
+  'Medium format': { widthMm: 53.4, heightMm: 40 }, // IMX411
 };
 
 /** Đường chéo của một kích thước cảm biến, tính từ hai cạnh. */
@@ -290,9 +314,30 @@ export function sensorWidthMm(spec: Record<string, unknown>): number | null {
     if (px !== null && size !== null) return (px * size) / 1000;
     return null;
   }
+  return cameraSensorSizeMm(spec)?.widthMm ?? null;
+}
+
+/**
+ * Lệch tối đa giữa nhãn cỡ cảm biến và kích thước tính từ pixel (theo đường
+ * chéo) mà bộ nhập Excel còn chấp nhận. Camera thật ghi đúng nhãn lệch tới ~5%
+ * (1": 15,2–16,5 mm so với 16); các lỗi nhãn đã gặp lệch từ 8% trở lên
+ * (5472 × 3648 × 2,4 µm ghi 1.1": 10%).
+ */
+export const SENSOR_FORMAT_TOLERANCE = 0.07;
+
+/**
+ * Kích thước cảm biến area scan (mm): cỡ danh nghĩa nếu có nhãn, không thì
+ * tính từ pixel × pitch. Ưu tiên nhãn vì datasheet ống kính ghi vòng ảnh theo
+ * cùng quy ước đó — giống `configurationRules` (OPT-002).
+ */
+export function cameraSensorSizeMm(spec: Record<string, unknown>): { widthMm: number; heightMm: number } | null {
   const format = specString(spec, 'sensor_format');
-  if (!format) return null;
-  return SENSOR_FORMATS[format]?.widthMm ?? null;
+  if (format && SENSOR_FORMATS[format]) return SENSOR_FORMATS[format];
+  const w = specNumber(spec, 'resolution_w_px');
+  const h = specNumber(spec, 'resolution_h_px');
+  const pitch = specNumber(spec, 'pixel_size_um');
+  if (w === null || h === null || pitch === null) return null;
+  return { widthMm: (w * pitch) / 1000, heightMm: (h * pitch) / 1000 };
 }
 
 /** Đường chéo cảm biến (mm) — so với vòng ảnh ống kính. */
@@ -321,10 +366,58 @@ export function coversSensor(imageCircle: string | null, sensorFormat: string | 
   return lensDiagonalMm >= sensorDiag;
 }
 
+/**
+ * Vòng ảnh ống kính có phủ nổi cảm biến của camera này không.
+ *
+ * Như `coversSensor`, nhưng phía camera dùng `cameraSensorSizeMm` — camera để
+ * trống nhãn (cảm biến lớn không đúng cỡ nào) vẫn được kiểm bằng kích thước
+ * tính từ pixel. Phía ống kính ưu tiên số mm của datasheet, giống OPT-002.
+ */
+export function lensCoversCamera(lensSpec: Record<string, unknown>, cameraSize: { widthMm: number; heightMm: number }): boolean {
+  const lensDiag = specNumber(lensSpec, 'image_circle_mm') ?? sensorDiagonalMm(specString(lensSpec, 'image_circle'));
+  if (lensDiag === null) return false;
+  return lensDiag >= diagonalOf(cameraSize);
+}
+
+/**
+ * Chuẩn CoaXPress — băng thông trong INTERFACE_BANDWIDTH là của MỘT làn, camera
+ * khai số làn ở `cxp_lanes` (chốt 2026-10-16). Camera CXP 4 làn iRayple chạy
+ * tới 4.600 MB/s; tính một làn thì bộ chọn loại oan cả nhóm camera nhanh nhất.
+ */
+export const CXP_INTERFACES = ['CXP-6', 'CXP-12'];
+
+/** Số làn CoaXPress chuẩn cho phép. */
+export const CXP_LANE_COUNTS = [1, 2, 4, 8];
+
+/**
+ * Số làn (đường cáp) camera dùng. Chuẩn không phải CoaXPress luôn là 1; CXP
+ * không khai thì cũng lấy 1 — phía thận trọng, như trước khi có khoá này.
+ */
+export function cameraLanes(spec: Record<string, unknown>): number {
+  if (!CXP_INTERFACES.includes(specString(spec, 'interface') ?? '')) return 1;
+  const lanes = specNumber(spec, 'cxp_lanes');
+  return lanes !== null && CXP_LANE_COUNTS.includes(lanes) ? lanes : 1;
+}
+
+/**
+ * Băng thông đường truyền của MỘT camera: số một làn × số làn với CoaXPress.
+ * `table` là bảng theo tên chuẩn — INTERFACE_BANDWIDTH hoặc bản admin đã sửa
+ * (`interfaceBandwidthFor`).
+ */
+export function linkBandwidth(
+  table: Readonly<Record<string, number>>,
+  interfaceName: string | null,
+  lanes = 1
+): number | undefined {
+  if (!interfaceName) return undefined;
+  const perLane = table[interfaceName];
+  if (perLane === undefined) return undefined;
+  return CXP_INTERFACES.includes(interfaceName) ? perLane * lanes : perLane;
+}
+
 /** Băng thông chuẩn giao tiếp có tải nổi mức dữ liệu này không. */
-export function interfaceCarries(interfaceName: string | null, dataRateMbytesS: number): boolean {
-  if (!interfaceName) return false;
-  const capacity = INTERFACE_BANDWIDTH[interfaceName];
+export function interfaceCarries(interfaceName: string | null, dataRateMbytesS: number, lanes = 1): boolean {
+  const capacity = linkBandwidth(INTERFACE_BANDWIDTH, interfaceName, lanes);
   return capacity !== undefined && capacity >= dataRateMbytesS;
 }
 
@@ -347,8 +440,11 @@ export type SpecFieldDef = {
   step?: number;
 };
 
-// M42: phổ biến ở line scan pixel lớn, ống kính C-mount không lắp thẳng được.
-const MOUNTS = ['C', 'CS', 'F', 'M42'];
+/* M42: phổ biến ở line scan pixel lớn, ống kính C-mount không lắp thẳng được.
+   M12 (board lens), M40/M48/M58/M72/M90 (camera cảm biến lớn, line scan, ống
+   telecentric lớn) và V38 (ống kính tiêu cự dài): thêm lúc nhập catalog
+   iRayple / Coolens / VST, chốt 2026-10-16. Khớp ngàm vẫn là so chuỗi. */
+export const MOUNTS = ['C', 'CS', 'F', 'M12', 'M40', 'M42', 'M48', 'M58', 'M72', 'M90', 'V38'];
 const INTERFACES = Object.keys(INTERFACE_BANDWIDTH);
 
 const SHUTTERS = ['global', 'rolling'];
@@ -404,6 +500,8 @@ export const SPEC_FIELDS: Record<ComponentKind, SpecFieldDef[]> = {
     { key: 'pixel_size_um', type: 'number', unit: 'µm', step: 0.01 },
     { key: 'mount', type: 'select', options: MOUNTS, required: true },
     { key: 'interface', type: 'select', options: INTERFACES, required: true },
+    /* Chỉ CoaXPress: 1, 2, 4 hoặc 8. Để trống = 1 làn. */
+    { key: 'cxp_lanes', type: 'number', unit: 'làn', step: 1 },
     { key: 'max_fps', type: 'number', unit: 'fps', step: 0.1 },
     { key: 'color', type: 'select', options: ['mono', 'color'], required: true },
     /* Để trống thì suy từ `color`. Chỉ khai khi datasheet nói rõ camera truyền

@@ -1,4 +1,4 @@
-import { INTERFACE_BANDWIDTH, PIXEL_FORMAT_BYTES } from '@/lib/components/specs';
+import { INTERFACE_BANDWIDTH, PIXEL_FORMAT_BYTES, linkBandwidth } from '@/lib/components/specs';
 import { fmt, round, type Check } from './types';
 import { term } from './formulaTerms';
 
@@ -53,9 +53,10 @@ export function frameTransfer(input: {
   heightPx: number;
   pixelFormat: string;
   interfaceName: string | null;
+  lanes?: number;
 }): FrameTransfer | null {
   const bytesPerPixel = PIXEL_FORMAT_BYTES[input.pixelFormat];
-  const usableMbytesS = input.interfaceName ? INTERFACE_BANDWIDTH[input.interfaceName] : undefined;
+  const usableMbytesS = linkBandwidth(INTERFACE_BANDWIDTH, input.interfaceName, input.lanes);
   if (bytesPerPixel === undefined || usableMbytesS === undefined) return null;
   if (input.widthPx <= 0 || input.heightPx <= 0) return null;
 
@@ -162,6 +163,7 @@ export function timingChecks(input: {
   heightPx: number | null;
   pixelFormat: string;
   interfaceName: string | null;
+  lanes?: number;
   cameraCount: number;
   throughputPpm: number | null;
   dutyRatio: number;
@@ -218,6 +220,7 @@ export function timingChecks(input: {
       heightPx: input.heightPx,
       pixelFormat: input.pixelFormat,
       interfaceName: input.interfaceName,
+      lanes: input.lanes,
     });
     if (transfer) {
       transferMs = transfer.transferMs;

@@ -1260,6 +1260,7 @@
         "resolution_h_px": "Số pixel dọc",
         "line_width_px": "Số pixel một hàng",
         "max_line_rate_khz": "Tốc độ quét dòng tối đa",
+        "cxp_lanes": "Số làn CoaXPress",
         "pixel_format": "Định dạng ảnh truyền",
         "shutter": "Kiểu màn trập",
         "trigger_io": "Có chân trigger",

@@ -4,6 +4,7 @@
  * Tách riêng khỏi script chạy lệnh để test được.
  */
 import ExcelJS from 'exceljs';
+import { readWorkbookFile } from './xlsx-tolerant';
 import { validateCondition } from '../../src/lib/selector/conditions';
 import { DERIVED_FIELD_KEYS } from '../../src/lib/selector/derivedKeys';
 import { FIELD_CATALOG } from '../../src/lib/selector/fields';
@@ -73,7 +74,9 @@ export async function readRows(filePath: string): Promise<RawRow[]> {
     // ExcelJS đọc CSV theo UTF-8 nên tiếng Việt không bị hỏng như khi tự tách chuỗi.
     await workbook.csv.readFile(filePath);
   } else {
-    await workbook.xlsx.readFile(filePath);
+    // Chịu được đường dẫn tuyệt đối trong file quan hệ (xlsx-tolerant.ts, 2026-10-16).
+    const loaded = await readWorkbookFile(filePath);
+    workbook.model = loaded.model;
   }
 
   const sheet = workbook.worksheets[0];

@@ -6,6 +6,7 @@
  */
 import ExcelJS from 'exceljs';
 import { EXAMPLE_MARK, SHEETS, normalizeHeader, type SheetDef, type SheetRow } from './components-io';
+import { readWorkbookFile } from './xlsx-tolerant';
 
 /** Số dòng có sẵn ô chọn (data validation). Đủ cho catalog cả phòng. */
 const VALIDATED_ROWS = 500;
@@ -136,9 +137,8 @@ function addDataSheet(workbook: ExcelJS.Workbook, sheet: SheetDef) {
  * file chỉ có sheet CAMERA). Thiếu cột BẮT BUỘC thì báo lỗi ngay, không đoán.
  */
 export async function readWorkbook(filePath: string): Promise<{ sheet: SheetDef; rows: SheetRow[] }[]> {
-  const workbook = new ExcelJS.Workbook();
-  await workbook.xlsx.readFile(filePath);
-  return readSheets(workbook);
+  // Chịu được đường dẫn tuyệt đối trong file quan hệ (xlsx-tolerant.ts, 2026-10-16).
+  return readSheets(await readWorkbookFile(filePath));
 }
 
 export function readSheets(workbook: ExcelJS.Workbook): { sheet: SheetDef; rows: SheetRow[] }[] {

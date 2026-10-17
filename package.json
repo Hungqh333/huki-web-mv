@@ -51,6 +51,7 @@
     "@types/sanitize-html": "^2.16.1",
     "eslint": "^9",
     "eslint-config-next": "16.3.2",
+    "jszip": "^3.10.1",
     "tailwindcss": "^4",
     "tsx": "^4.23.12",
     "typescript": "^5"

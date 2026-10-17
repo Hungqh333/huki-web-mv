@@ -311,3 +311,36 @@ test('trang quản trị có nhãn vi/en cho mọi loại linh kiện và mọi 
     for (const key of ['fieldLeadTime', 'fieldSupplier', 'fieldUsedInProjects']) assert.ok(labels[key], `${lang}: thieu ${key}`);
   }
 });
+
+test('file lưu bằng Excel 365 / WPS (ghi chú ô ở xl/comments/, đường dẫn tuyệt đối) vẫn đọc được', async () => {
+  const { normalizeXlsxRelationships, readWorkbookFile } = await import('./lib/xlsx-tolerant');
+  const JSZip = (await import('jszip')).default;
+  const { writeFileSync, mkdtempSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+
+  // File mẫu có ghi chú ô ở tiêu đề — giống file thật.
+  const source = await buildTemplate();
+  const buffer = Buffer.from(await source.xlsx.writeBuffer());
+  // Viết lại như phần mềm khác lưu: chuyển ghi chú vào thư mục con, Target tuyệt đối.
+  const zip = await JSZip.loadAsync(buffer);
+  for (const name of Object.keys(zip.files).filter((n) => /^xl\/worksheets\/_rels\/.+\.rels$/.test(n))) {
+    let xml = await zip.file(name)!.async('string');
+    for (const match of xml.matchAll(/Target="\.\.\/(comments\d+)\.xml"/g)) {
+      const from = `xl/${match[1]}.xml`;
+      const to = `xl/comments/${match[1].replace('comments', 'comment')}.xml`;
+      zip.file(to, await zip.file(from)!.async('uint8array'));
+      zip.remove(from);
+      xml = xml.replace(match[0], `Target="/${to}"`);
+    }
+    zip.file(name, xml);
+  }
+  const foreign = await zip.generateAsync({ type: 'nodebuffer' });
+  await assert.rejects(new ExcelJS.Workbook().xlsx.load(foreign as unknown as ArrayBuffer), 'exceljs tu doc thi vo — dung loi gap that');
+
+  const { changed } = await normalizeXlsxRelationships(foreign);
+  assert.ok(changed > 0);
+  const path = join(mkdtempSync(join(tmpdir(), 'xlsx-')), 'foreign.xlsx');
+  writeFileSync(path, foreign);
+  const sheets = readSheets(await readWorkbookFile(path));
+  assert.deepEqual(sheets.map((s) => s.sheet.name), ['CAMERA', 'ỐNG KÍNH', 'ĐÈN', 'MÁY TÍNH IPC']);
+});

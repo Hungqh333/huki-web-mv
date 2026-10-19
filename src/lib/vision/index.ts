@@ -191,6 +191,8 @@ export function analyseAppearance(
 
   const optics = opticsChecks({
     fovWidthMm: input.fovWidthMm,
+    fovHeightMm: input.fovHeightMm,
+    lineScan: input.captureMode === 'line_scan',
     workingDistanceMm: input.workingDistanceMm,
     sensorFormat: camera?.sensorFormat ?? null,
     pixelSizeUm: camera?.pixelSizeUm ?? null,

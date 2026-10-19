@@ -52,6 +52,57 @@ export function estimateLens(input: {
   };
 }
 
+/**
+ * β để vùng nhìn phủ hết vật (F1, chốt 2026-10-17): lấy TRỤC GIỚI HẠN, không chỉ
+ * bề rộng. Camera xoay 90° được, nên ghép cạnh dài cảm biến với cạnh dài vùng nhìn:
+ *   β = min(cạnh dài cảm biến ÷ cạnh dài vùng nhìn ; cạnh ngắn ÷ cạnh ngắn)
+ *
+ * Trước đây lấy β = rộng cảm biến ÷ rộng vùng nhìn: vùng nhìn 100 × 100 mm trên
+ * cảm biến 2/3" (8,8 × 6,6) ra β 0,088 → chiều cao chỉ phủ 75 mm, vật bị cắt.
+ */
+export function magnificationToFit(input: {
+  sensorWidthMm: number;
+  sensorHeightMm: number;
+  fovWidthMm: number;
+  fovHeightMm: number;
+  lineScan?: boolean;
+}): { beta: number; sensorMm: number; fovMm: number; formula: string } | null {
+  const sLong = Math.max(input.sensorWidthMm, input.sensorHeightMm);
+  const sShort = Math.min(input.sensorWidthMm, input.sensorHeightMm);
+  const fLong = Math.max(input.fovWidthMm, input.fovHeightMm);
+  const fShort = Math.min(input.fovWidthMm, input.fovHeightMm);
+  if (!(sLong > 0) || !(fLong > 0)) return null;
+  // Line scan: hàng pixel nằm ngang qua bề rộng vùng nhìn; chiều dài do vật chạy qua.
+  if (input.lineScan) {
+    if (!(input.fovWidthMm > 0)) return null;
+    const ratio = sLong / input.fovWidthMm;
+    return { beta: ratio, sensorMm: sLong, fovMm: input.fovWidthMm, formula: `${fmt(sLong)} mm ÷ ${fmt(input.fovWidthMm)} mm = ${fmt(ratio, 4)}` };
+  }
+  const longRatio = sLong / fLong;
+  if (!(sShort > 0) || !(fShort > 0)) {
+    return { beta: longRatio, sensorMm: sLong, fovMm: fLong, formula: `${fmt(sLong)} mm ÷ ${fmt(fLong)} mm = ${fmt(longRatio, 4)}` };
+  }
+  const shortRatio = sShort / fShort;
+  const shortLimits = shortRatio < longRatio;
+  const beta = Math.min(longRatio, shortRatio);
+  return {
+    beta,
+    sensorMm: shortLimits ? sShort : sLong,
+    fovMm: shortLimits ? fShort : fLong,
+    formula: `min(${fmt(sLong)} ÷ ${fmt(fLong)} ; ${fmt(sShort)} ÷ ${fmt(fShort)}) = ${fmt(beta, 4)}`,
+  };
+}
+
+/**
+ * Góc nhìn TẠI khoảng cách làm việc (chốt 2026-10-18, Q3): 2 × atan(vùng nhìn ÷ (2 × WD)).
+ * Khớp với β của engine. Datasheet hãng thường ghi góc ở vô cực (2 × atan(cảm biến ÷ 2f)),
+ * nên lệch vài phần trăm khi lấy nét gần — trang phải ghi rõ "góc tại WD".
+ */
+export function angleOfViewDeg(fovMm: number, workingDistanceMm: number): number | null {
+  if (!(fovMm > 0) || !(workingDistanceMm > 0)) return null;
+  return (2 * Math.atan(fovMm / (2 * workingDistanceMm)) * 180) / Math.PI;
+}
+
 /** Đĩa Airy (µm): d = 2,44 × λ × F#. Lớn hơn 2 pixel thì ống kính là nút cổ chai. */
 export function airyDiskUm(fNumber: number): number | null {
   if (fNumber <= 0) return null;
@@ -274,6 +325,10 @@ export function telecentricCheck(input: {
 
 export function opticsChecks(input: {
   fovWidthMm: number;
+  /** Không có thì coi bằng bề rộng (vùng nhìn vuông) — trường hợp xấu nhất cho cảm biến 4:3. */
+  fovHeightMm?: number | null;
+  /** Line scan chỉ phủ theo hàng pixel; chiều kia do vật chạy qua. */
+  lineScan?: boolean;
   workingDistanceMm: number | null;
   sensorFormat: string | null;
   pixelSizeUm: number | null;
@@ -288,17 +343,22 @@ export function opticsChecks(input: {
   let beta: number | null = null;
 
   if (sensor && input.workingDistanceMm !== null) {
-    const lens = estimateLens({
-      sensorSizeMm: sensor.widthMm,
-      fovMm: input.fovWidthMm,
-      workingDistanceMm: input.workingDistanceMm,
+    const fit = magnificationToFit({
+      sensorWidthMm: sensor.widthMm,
+      sensorHeightMm: sensor.heightMm,
+      fovWidthMm: input.fovWidthMm,
+      fovHeightMm: input.fovHeightMm ?? input.fovWidthMm,
+      lineScan: input.lineScan ?? false,
     });
-    if (lens) {
+    const lens = fit
+      ? estimateLens({ sensorSizeMm: fit.sensorMm, fovMm: fit.fovMm, workingDistanceMm: input.workingDistanceMm })
+      : null;
+    if (fit && lens) {
       beta = lens.beta;
       checks.push({
         key: 'magnification',
         status: 'info',
-        formula: `${fmt(sensor.widthMm)} mm ÷ ${fmt(input.fovWidthMm)} mm = ${fmt(lens.beta, 4)}`,
+        formula: fit.formula,
       });
       checks.push({
         key: 'focalLength',
@@ -323,13 +383,16 @@ export function opticsChecks(input: {
   }
 
   if (input.fNumber !== null && input.pixelSizeUm !== null) {
-    const airy = airyDiskUm(input.fNumber);
+    // F# hiệu dụng N × (1 + β) — xem effectiveFNumberFactor ở configurationRules.ts (F2, 2026-10-17).
+    const factor = beta !== null && beta > 0 ? 1 + beta : 1;
+    const airy = airyDiskUm(input.fNumber * factor);
     if (airy !== null) {
       const bottleneck = airy > 2 * input.pixelSizeUm;
+      const fText = factor === 1 ? `F/${fmt(input.fNumber, 1)}` : `F/${fmt(input.fNumber, 1)} × (1 + ${fmt(beta!, 4)})`;
       checks.push({
         key: 'airyDisk',
         status: bottleneck ? 'warn' : 'pass',
-        formula: `2,44 × ${WAVELENGTH_UM} µm × F/${fmt(input.fNumber, 1)} = ${fmt(airy, 2)} µm ${bottleneck ? '>' : '≤'} 2 × ${fmt(input.pixelSizeUm, 2)} µm`,
+        formula: `2,44 × ${WAVELENGTH_UM} µm × ${fText} = ${fmt(airy, 2)} µm ${bottleneck ? '>' : '≤'} 2 × ${fmt(input.pixelSizeUm, 2)} µm`,
         noteKey: bottleneck ? 'airyBottleneck' : undefined,
       });
     }

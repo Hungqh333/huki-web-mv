@@ -154,9 +154,37 @@ export function pcFromComponent(component: Component): ConfigPc {
 
 // ------------------------------------------------------------ công thức --
 
-/** OPT-004: F#max = 2 × pitch ÷ (2,44 × λ). */
+/** OPT-004: F#max = 2 × pitch ÷ (2,44 × λ) — F# HIỆU DỤNG phía cảm biến. */
 export function maxFNumber(pixelSizeUm: number): number {
   return (2 * pixelSizeUm) / (2.44 * WAVELENGTH_UM);
+}
+
+/*
+ * F# hiệu dụng (chốt 2026-10-17, F2): ống thường ghi F# đo ở vô cực; lấy nét gần
+ * thì ảnh lùi ra xa, chùm tia hẹp lại và nhiễu xạ tính theo N × (1 + β). Vùng nhìn
+ * lớn (β < 0,1) gần như không đổi; chụp cận β 0,5 thì đĩa Airy to thêm 50%.
+ * Đổi giới hạn về số ghi trên vòng khẩu: F#max ÷ (1 + β).
+ *
+ * Ống telecentric: datasheet ghi sẵn "working F/#" (đã là F# hiệu dụng) → hệ số 1.
+ * Chưa biết β (thiếu tiêu cự hoặc WD) → hệ số 1, như trước khi sửa.
+ */
+export function effectiveFNumberFactor(beta: number | null, lensType: string | null): number {
+  if (lensType === 'telecentric' || beta === null || !(beta > 0)) return 1;
+  return 1 + beta;
+}
+
+/** F#max trên vòng khẩu ống thường ở độ phóng đại β: 2 × pitch ÷ (2,44 × λ) ÷ (1 + β). */
+export function maxRingFNumber(pixelSizeUm: number, beta: number | null, lensType: string | null = null): number {
+  return maxFNumber(pixelSizeUm) / effectiveFNumberFactor(beta, lensType);
+}
+
+/**
+ * Ngàm ống → ngàm camera (OPT-002). Ống C lên camera CS: thêm vòng đệm 5 mm.
+ * Chiều ngược lại (CS lên C) không lấy nét được.
+ */
+export function mountFit(lensMount: string, cameraMount: string): 'ok' | 'spacer' | 'mismatch' {
+  if (lensMount === cameraMount) return 'ok';
+  return lensMount === 'C' && cameraMount === 'CS' ? 'spacer' : 'mismatch';
 }
 
 /** Độ phóng đại của ống thường ở khoảng cách làm việc: β = f ÷ (WD − f). */
@@ -176,8 +204,19 @@ export function fNumberForDepth(depthMm: number, circleOfConfusionMm: number, be
   return (depthMm * beta ** 2) / (2 * circleOfConfusionMm * (1 + beta));
 }
 
+/**
+ * F cần trên vòng khẩu để đạt độ sâu DOF. Ống thường: công thức trên (F ghi ở vô cực,
+ * (1 + β) đã nằm trong công thức). Telecentric ghi F# làm việc N × (1 + β), nên
+ * F làm việc cần = DOF × β² ÷ (2 × c) — chốt F2 2026-10-17, cùng quy ước OPT-004.
+ */
+export function ringFNumberForDepth(depthMm: number, circleOfConfusionMm: number, beta: number, lensType: string | null): number | null {
+  const nominal = fNumberForDepth(depthMm, circleOfConfusionMm, beta);
+  if (nominal === null) return null;
+  return lensType === 'telecentric' ? nominal * (1 + beta) : nominal;
+}
+
 /** Kích thước cảm biến thật (mm) từ số pixel × pitch; null khi thiếu pitch. */
-function sensorSizeMm(camera: ConfigCamera): { longMm: number; shortMm: number; diagonalMm: number } | null {
+export function sensorSizeMm(camera: ConfigCamera): { longMm: number; shortMm: number; diagonalMm: number } | null {
   if (camera.pixelSizeUm === null || !(camera.widthPx > 0)) return null;
   const a = (camera.widthPx * camera.pixelSizeUm) / 1000;
   const b = camera.cameraType === 'line' ? 0 : (camera.heightPx * camera.pixelSizeUm) / 1000;
@@ -351,18 +390,16 @@ export function evaluateConfiguration(input: ConfigurationInput): RuleResult[] {
       noteKey ??= 'lensCircleUnknown';
     } else {
       parts.push(`${lens.mount} → ${camera.mount}`);
-      if (lens.mount !== camera.mount) {
-        // Ống C lên camera CS: thêm vòng đệm 5 mm. Chiều ngược lại (CS lên C) không lấy nét được.
-        if (lens.mount === 'C' && camera.mount === 'CS') {
-          if (status === 'pass') {
-            status = 'warn';
-            noteKey = 'mountCsSpacer';
-          }
-        } else {
-          status = 'fail';
-          noteKey = 'mountMismatch';
-          noteValues = { lens: lens.mount, camera: camera.mount };
+      const fit = mountFit(lens.mount, camera.mount);
+      if (fit === 'spacer') {
+        if (status === 'pass') {
+          status = 'warn';
+          noteKey = 'mountCsSpacer';
         }
+      } else if (fit === 'mismatch') {
+        status = 'fail';
+        noteKey = 'mountMismatch';
+        noteValues = { lens: lens.mount, camera: camera.mount };
       }
     }
 
@@ -421,10 +458,14 @@ export function evaluateConfiguration(input: ConfigurationInput): RuleResult[] {
   if (input.stopOnFail && results.some((r) => r.status === 'fail')) return results;
 
   // ─── OPT-004: giới hạn nhiễu xạ ───
-  const fMax = pitch !== null ? maxFNumber(pitch) : null;
+  const fFactor = effectiveFNumberFactor(beta, lens?.lensType ?? null);
+  const fMax = pitch !== null ? maxFNumber(pitch) / fFactor : null;
   if (lens && fMax !== null) {
     const eq = { 'camera.pixel_size_um': pitch, 'lens.f_number_min': lens.fNumberMin };
-    const base = `F#max = 2 × ${fmt(pitch!, 2)} ÷ (2,44 × ${WAVELENGTH_UM}) = ${fmt(fMax, 2)}`;
+    const base =
+      fFactor === 1
+        ? `F#max = 2 × ${fmt(pitch!, 2)} ÷ (2,44 × ${WAVELENGTH_UM}) = ${fmt(fMax, 2)}`
+        : `F#max = 2 × ${fmt(pitch!, 2)} ÷ (2,44 × ${WAVELENGTH_UM}) ÷ (1 + ${fmt(beta!, 4)}) = ${fmt(fMax, 2)}`;
     if (lens.fNumberMin !== null) {
       const ok = lens.fNumberMin <= fMax;
       push(
@@ -459,14 +500,17 @@ export function evaluateConfiguration(input: ConfigurationInput): RuleResult[] {
   if (lens && beta !== null && fMax !== null && pitch !== null && heightVariation !== null) {
     const depth = heightVariation + analysis.tiltDepthMm;
     const c = (DEFAULT_CIRCLE_OF_CONFUSION_PX * pitch) / 1000;
-    const fNeed = fNumberForDepth(depth, c, beta);
+    const fNeed = ringFNumberForDepth(depth, c, beta, lens.lensType);
     if (fNeed !== null) {
       const eq = { 'camera.pixel_size_um': pitch, 'lens.f_number_min': lens.fNumberMin, 'lens.f_number_max': lens.fNumberMax };
       const paths = ['object.heightVariation', 'system.workingDistance', 'system.cameraTiltDeg'];
       const ratio = fNeed / fMax;
       const setF = Math.max(fNeed, lens.fNumberMin ?? 0);
       const depthText = analysis.tiltDepthMm > 0 ? `(${fmt(heightVariation, 2)} + ${fmt(analysis.tiltDepthMm, 1)}) mm` : `${fmt(depth, 2)} mm`;
-      const formula = `F = ${depthText} × ${fmt(beta, 4)}² ÷ (2 × ${fmt(c, 5)} × (1 + ${fmt(beta, 4)})) = F/${fmt(fNeed, 1)} vs F#max F/${fmt(fMax, 1)}`;
+      const formula =
+        lens.lensType === 'telecentric'
+          ? `F = ${depthText} × ${fmt(beta, 4)}² ÷ (2 × ${fmt(c, 5)}) = F/${fmt(fNeed, 1)} vs F#max F/${fmt(fMax, 1)}`
+          : `F = ${depthText} × ${fmt(beta, 4)}² ÷ (2 × ${fmt(c, 5)} × (1 + ${fmt(beta, 4)})) = F/${fmt(fNeed, 1)} vs F#max F/${fmt(fMax, 1)}`;
       const values = { f: round(setF, 1), dof: round(depth, 2), fMax: round(fMax, 1), ratio: round(ratio, 1), fLens: lens.fNumberMax ?? '—' };
 
       let check: Check;

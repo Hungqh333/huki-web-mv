@@ -25,7 +25,7 @@ const navItems = [
 ] as const;
 
 /*
- * Hai trang nằm dưới "Thiết bị".
+ * Các trang nằm dưới "Thiết bị".
  *
  * Chọn thiết bị vision làm theo TỪNG bài toán, còn máy tính thì dùng chung
  * cho cả dự án — nhiều bài toán chạy trên một máy. Gộp vào một mục xổ xuống
@@ -33,6 +33,8 @@ const navItems = [
  */
 const equipmentItems = [
   { href: '/cong-cu-chon-thiet-bi', key: 'selectorVision' },
+  // Chọn ống kính ra MÓN HÀNG (ống trong kho) → Thiết bị, không phải Công cụ (2026-10-17).
+  { href: '/chon-ong-kinh', key: 'lens' },
   { href: '/cong-cu-may-tinh', key: 'pc' },
 ] as const;
 

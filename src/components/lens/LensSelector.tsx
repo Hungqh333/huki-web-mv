@@ -13,6 +13,7 @@ import {
   type LensKindFilter,
   type LensSelectorInput,
 } from '@/lib/vision/lensSelector';
+import { renderFormula } from '@/lib/vision/formulaTerms';
 import type { CheckStatus } from '@/lib/vision/types';
 import { LensDiagram, type DiagramField } from './LensDiagram';
 
@@ -196,11 +197,14 @@ export function LensSelector({
   const diagram = {
     sensorLongMm: need?.sensorLongMm ?? null,
     sensorShortMm: need?.sensorShortMm ?? null,
+    widthPx: camera && camera.widthPx > 0 ? camera.widthPx : null,
+    heightPx: camera && camera.heightPx > 0 ? camera.heightPx : null,
+    pixelUm: camera?.pixelSizeUm ?? null,
+    lineScan: line,
     focalMm: tele ? null : (geometry?.focalLengthMm ?? f),
     wdMm: tele ? wd : (geometry?.workingDistanceMm ?? wd),
     fovLongMm: need?.fovLongMm ?? null,
     fovShortMm: line ? null : (need?.fovShortMm ?? null),
-    aovDeg: need?.aovLongDeg ?? null,
   };
 
   return (
@@ -386,7 +390,7 @@ export function LensSelector({
 
       {/* ── Sơ đồ + thông số cần ── */}
       <Panel id="lens-need" title={t('need.title')}>
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+        <div className="grid gap-6 lg:grid-cols-2">
           <LensDiagram {...diagram} telecentric={tele} highlight={focus} />
           {!input ? (
             <p className={`self-center ${NOTE_CLASS}`}>{t(tele ? 'need.missingTele' : `need.missing.${mode}`)}</p>
@@ -570,6 +574,7 @@ function NeedItem({ label, value, formula, note, status }: { label: string; valu
 
 function LensRow({ candidate: c, line, open, onToggle }: { candidate: LensCandidate; line: boolean; open: boolean; onToggle: () => void }) {
   const t = useTranslations('lensSelector');
+  const tv = useTranslations('selector.vision');
   const lens = c.lens;
   const optic =
     lens.lensType === 'telecentric' || (lens.focalLengthMm === null && lens.magnification !== null)
@@ -616,7 +621,7 @@ function LensRow({ candidate: c, line, open, onToggle }: { candidate: LensCandid
                 <li key={`${check.key}-${i}`} className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                   <StatusBadge status={check.status} />
                   <span className="text-sm font-medium text-slate-800 dark:text-slate-200">{t(`checks.${check.key}`)}</span>
-                  <span className="font-mono text-xs text-slate-500 dark:text-slate-400">{check.formula}</span>
+                  <span className="font-mono text-xs text-slate-500 dark:text-slate-400">{renderFormula(check.formula, (key) => tv(`formulaTerms.${key}`))}</span>
                   {check.noteKey ? <span className="w-full text-sm text-slate-600 dark:text-slate-300">{t(`notes.${check.noteKey}`, check.noteValues ?? {})}</span> : null}
                 </li>
               ))}

@@ -2540,7 +2540,8 @@
     },
     "diagram": {
       "aria": "Sơ đồ camera, ống kính, khoảng cách làm việc và vùng nhìn",
-      "sensor": "Cảm biến (mm)",
+      "sensor": "Cảm biến",
+      "pixel": "Pixel",
       "fov": "Vùng nhìn",
       "wdFromLens": "theo ống"
     }

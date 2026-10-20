@@ -885,7 +885,8 @@
       "components": "Linh kiện",
       "engine": "Ngưỡng engine",
       "lighting": "Bảng chiếu sáng",
-      "defaults": "Giả định mặc định"
+      "defaults": "Giả định mặc định",
+      "formulas": "Sổ tay công thức"
     },
     "users": {
       "title": "Quản lý người dùng",
@@ -1305,6 +1306,16 @@
         "invalidSource": "Nguồn thông số không hợp lệ.",
         "invalidNumber": "Giá trị phải là số."
       }
+    },
+    "formulas": {
+      "title": "Sổ tay công thức",
+      "meta": "{count} mục",
+      "toc": "Mục lục",
+      "reviewedAt": "Đối chiếu với code lần cuối: {date}.",
+      "expandAll": "Mở tất cả",
+      "collapseAll": "Thu gọn tất cả",
+      "entries": "{count} mục",
+      "subtitle": "Mọi phép tính thiết bị trên một trang — chỉ admin xem. Ngưỡng và bảng hiện giá trị ĐANG CHẠY; ô vàng là ngưỡng đã sửa khác mặc định. Sổ tay có test ràng buộc: thêm luật hoặc ngưỡng mới mà quên ghi vào đây thì test báo đỏ."
     },
     "engine": {
       "title": "Ngưỡng engine Vision Engineer",

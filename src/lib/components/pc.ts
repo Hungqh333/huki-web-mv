@@ -54,7 +54,7 @@ export type PcPlan = {
  * khe PCIe; không có cả hai thì coi như 4, con số quen thuộc của một IPC phổ
  * thông chứ không phải vô hạn.
  */
-const DEFAULT_CAMERAS_PER_PC = 4;
+export const DEFAULT_CAMERAS_PER_PC = 4;
 
 export function camerasPerPc(pc: Component | null, cardChannels: number): number {
   if (!pc) return DEFAULT_CAMERAS_PER_PC;
@@ -78,7 +78,7 @@ export function camerasPerPc(pc: Component | null, cardChannels: number): number
  * ở CPU. Dùng 4 lần băng thông một cổng làm mức trần thận trọng — vượt thì
  * tách máy, vì nghẽn kiểu này chỉ lộ ra khi lắp đủ camera, không lộ lúc chạy thử.
  */
-const PC_BANDWIDTH_HEADROOM = 4;
+export const PC_BANDWIDTH_HEADROOM = 4;
 
 export function maxCamerasByBandwidth(
   interfaceName: string | null,

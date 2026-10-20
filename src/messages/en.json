@@ -885,7 +885,8 @@
       "components": "Components",
       "engine": "Engine thresholds",
       "lighting": "Lighting table",
-      "defaults": "Default assumptions"
+      "defaults": "Default assumptions",
+      "formulas": "Formula handbook"
     },
     "users": {
       "title": "User management",
@@ -1305,6 +1306,16 @@
         "invalidSource": "Invalid spec source.",
         "invalidNumber": "The value must be a number."
       }
+    },
+    "formulas": {
+      "title": "Formula handbook",
+      "meta": "{count} entries",
+      "toc": "Contents",
+      "reviewedAt": "Last checked against the code: {date}.",
+      "expandAll": "Expand all",
+      "collapseAll": "Collapse all",
+      "entries": "{count} entries",
+      "subtitle": "Every equipment calculation on one page — admins only. Thresholds and tables show the values IN USE; yellow marks a threshold changed from its default. A test ties this handbook to the engine: a new rule or threshold without an entry here fails the build checks."
     },
     "engine": {
       "title": "Vision Engineer engine thresholds",

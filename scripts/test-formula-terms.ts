@@ -116,7 +116,9 @@ test('thẻ nào cũng có từ vi/en; bản tiếng Anh sau khi dịch không c
 test('mọi nơi hiển thị công thức đều dịch thẻ (hoặc nhận chữ đã dịch sẵn)', () => {
   // Hai file dưới đây nhận chữ ĐÃ dịch: ConceptReport từ conceptDocument, SelectorReport từ
   // route /api/bao-cao. Thêm nơi hiển thị mới mà quên renderFormula thì test này đỏ.
-  const preTranslated = ['src/lib/pdf/concept/ConceptReport.tsx', 'src/lib/pdf/selector/SelectorReport.tsx'];
+  // FormulaBookView (Sổ tay công thức, 2026-10-20): `formula` là chữ viết tay trong lib/formulaBook,
+  // không phải chuỗi engine có thẻ ⟦…⟧ — không có gì để dịch.
+  const preTranslated = ['src/lib/pdf/concept/ConceptReport.tsx', 'src/lib/pdf/selector/SelectorReport.tsx', 'src/components/admin/FormulaBookView.tsx'];
   // Chỉ quét .tsx (nơi hiển thị). architecture.ts dùng `.formula` làm danh sách kiểu đèn, không phải công thức.
   const files = execSync('git ls-files src', { encoding: 'utf8' }).split('\n').filter((file) => file.endsWith('.tsx'));
   const offenders: string[] = [];

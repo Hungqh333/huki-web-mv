@@ -15,6 +15,7 @@ const NAV: { href: string; key: string; icon: IconName; tone: BadgeTone }[] = [
   { href: '/admin/nguong-engine', key: 'engine', icon: 'ruler', tone: 'sky' },
   { href: '/admin/bang-chieu-sang', key: 'lighting', icon: 'sun', tone: 'amber' },
   { href: '/admin/gia-dinh-mac-dinh', key: 'defaults', icon: 'rules', tone: 'violet' },
+  { href: '/admin/cong-thuc', key: 'formulas', icon: 'handbook', tone: 'slate' },
 ];
 
 type Messages = Awaited<ReturnType<typeof getMessages>>;

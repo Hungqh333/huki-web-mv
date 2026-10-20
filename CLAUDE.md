@@ -121,3 +121,12 @@ categories       (id, slug, name_vi, name_en)
 - Bài toán 3D, OCR/OCV, đọc mã vạch, robot guidance (thêm ở phase 2, nhưng data model phải hỗ trợ mở rộng)
 - Tính năng cộng đồng (comment, Q&A)
 - Mobile app riêng
+
+## 11. Sổ tay công thức (bắt buộc — chốt 2026-10-20)
+
+Mọi phép tính thiết bị (luật engine, hằng số, ngưỡng admin, bảng tra) phải có mục trong `src/lib/formulaBook/book.ts` — hiển thị ở `/admin/cong-thuc`, **chỉ admin xem**.
+
+- Thêm hoặc sửa công thức trong code → cập nhật mục tương ứng trong sổ tay **cùng commit**, rồi chạy `npm run stamp:formulas`.
+- `scripts/test-formula-book.ts` báo đỏ khi: luật trong `RULES` hoặc ngưỡng trong `ENGINE_PARAMS` chưa có trong sổ; file nguồn của một mục đã đổi code mà chưa stamp; tên hàm ghi ở cột nguồn không còn; file `'use client'` import sổ tay.
+- Chỉ chạy `stamp:formulas` sau khi đã xem lại và sửa các mục test liệt kê — chạy để test xanh mà không xem là che lỗi.
+- Hằng số trong sổ tay lấy bằng `import` từ module engine, không gõ lại số. Sổ tay chỉ render ở máy chủ (server component), không bao giờ đưa vào JavaScript gửi xuống trình duyệt.

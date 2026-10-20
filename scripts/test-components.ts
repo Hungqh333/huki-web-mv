@@ -301,8 +301,12 @@ test('cần tube khi cơ khí ép camera vào gần hơn ống kính cho phép',
   });
 
   assert.equal(result.fit.needed, true);
-  assert.equal(result.fit.requiredLengthMm, 10);
-  assert.equal(result.chosen?.model, 'T10', 'chon tube gan 10 mm nhat');
+  /* Sửa 2026-10-20 (OPT-010): dải tube tính từ WD, không từ β mục tiêu.
+     β_WD = 25 ÷ 75 = 0,333 ; β_MOD = 25 ÷ 125 = 0,2 → e ∈ [25 × 0,133; 25 × 0,333] = [3,4; 8,3] mm.
+     Bản cũ chọn T10 (0,4 × 25) — lắp 10 mm thì chỉ nét 67–88 mm, trượt WD 100. */
+  assert.equal(result.fit.requiredLengthMm, 3.4);
+  assert.equal(result.fit.requiredMaxMm, 8.3);
+  assert.equal(result.chosen?.model, 'T5', 'chon tube nam trong dai 3,4–8,3 mm');
 });
 
 test('cáp camera phải khớp chuẩn giao tiếp, không gán bừa', () => {

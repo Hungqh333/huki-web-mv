@@ -18,13 +18,13 @@ import { createClient } from '@/lib/supabase/server';
  */
 
 async function getComponents(supabase: Awaited<ReturnType<typeof createClient>>): Promise<Component[]> {
-  // Kho thật > 1.000 dòng → đọc theo trang (fetchAll.ts). Chỉ cần camera và ống kính.
+  // Kho thật > 1.000 dòng → đọc theo trang (fetchAll.ts). Camera, ống kính + phụ kiện ống nối / bộ nhân.
   const { data } = await fetchAllRows((from, to) =>
     supabase
       .from('components')
       .select('id, code, kind, brand, model, spec, price_vnd, datasheet_url, source, notes_vi, notes_en, is_active, sort_order')
       .eq('is_active', true)
-      .in('kind', ['camera', 'lens'])
+      .in('kind', ['camera', 'lens', 'tube', 'converter'])
       .order('kind')
       .order('sort_order')
       .order('id')
@@ -81,7 +81,7 @@ export default async function LensSelectorPage() {
         {hasLens ? (
           <LensSelector
             components={components}
-            params={{ imageCircleTolerance: engine.params.imageCircleTolerance, dofDiffractionTolerance: engine.params.dofDiffractionTolerance }}
+            params={engine.params}
           />
         ) : (
           <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">

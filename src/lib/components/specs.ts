@@ -17,6 +17,8 @@ export type ComponentKind =
   | 'camera'
   | 'lens'
   | 'tube'
+  /** Bộ nhân tiêu cự (rear converter / extender) lắp giữa ống và camera — chốt 2026-10-20. */
+  | 'converter'
   | 'light'
   | 'cable'
   | 'light_controller'
@@ -585,6 +587,13 @@ export const SPEC_FIELDS: Record<ComponentKind, SpecFieldDef[]> = {
     { key: 'length_mm', type: 'number', unit: 'mm', required: true, step: 0.5 },
     { key: 'mount', type: 'select', options: MOUNTS, required: true },
   ],
+  /* Bộ nhân tiêu cự ×k: tiêu cự, F# và vòng ảnh nhân k; MOD không đổi. `max_format` là cỡ
+     cảm biến lớn nhất hãng cho phép — vượt thì góc ảnh tối dù ống gốc phủ đủ sau khi nhân. */
+  converter: [
+    { key: 'factor', type: 'number', unit: '×', required: true, step: 0.05 },
+    { key: 'mount', type: 'select', options: MOUNTS, required: true },
+    { key: 'max_format', type: 'select', options: SENSOR_FORMAT_KEYS },
+  ],
   cable: [
     {
       key: 'cable_for',
@@ -653,6 +662,7 @@ export const SUMMARY_KEYS: Record<ComponentKind, string[]> = {
   camera: ['camera_type', 'resolution_mp', 'line_width_px', 'sensor_format', 'interface', 'color'],
   lens: ['lens_type', 'focal_length_mm', 'magnification', 'image_circle'],
   tube: ['length_mm', 'mount'],
+  converter: ['factor', 'mount', 'max_format'],
   light: ['light_type', 'color', 'size_mm'],
   cable: ['cable_for', 'connector', 'length_m'],
   light_controller: ['channels', 'strobe', 'max_current_a'],
@@ -667,6 +677,7 @@ export const COMPONENT_KINDS: ComponentKind[] = [
   'camera',
   'lens',
   'tube',
+  'converter',
   'light',
   'cable',
   'light_controller',

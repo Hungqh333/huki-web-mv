@@ -1,15 +1,16 @@
 {
   "reviewedAt": "2026-10-20",
   "files": {
+    "components/match.ts": "a93d1a84a3882c30",
     "components/pc.ts": "83616b93c01b42c9",
-    "components/specs.ts": "b21108c6e4a5f558",
+    "components/specs.ts": "cbcf02f46830fee8",
     "kpi/calc.ts": "a16ec5d2a6870d15",
     "requirement/assumptions.ts": "391c6f8215cf2f71",
     "vision/configurationRules.ts": "85f7c57218261991",
     "vision/engineTables.ts": "5ecbc22d82c7e63c",
     "vision/equipmentFilter.ts": "5746ceabde16e49a",
     "vision/feasibility.ts": "f387aef3bb2d7868",
-    "vision/lensSelector.ts": "9bf74f601bb50954",
+    "vision/lensSelector.ts": "bc1743e2da1ba637",
     "vision/lighting.ts": "e8473ddad5b4ab45",
     "vision/linescan.ts": "6bc8e182650a46dd",
     "vision/mechanics.ts": "2467abf244df5c62",

@@ -500,7 +500,7 @@
       "computed": "Tính ra",
       "suggested": "Gợi ý",
       "tubeNotNeeded": "Không cần — khoảng cách làm việc nằm trong tầm của ống kính.",
-      "fitTube": "Ống kính cần tối thiểu {min} mm, cơ khí chỉ cho {actual} mm → nối thêm ≈ {length} mm",
+      "fitTube": "Ống kính cần tối thiểu {min} mm, cơ khí chỉ cho {actual} mm → nối thêm {length} mm (ngắn hơn thì chưa tới, dài hơn thì nét gần hơn {actual} mm)",
       "fitCableCamera": "Đầu nối theo chuẩn {connector}",
       "fitLightController": "{lights} đèn → cần {channels} kênh · {strobe}",
       "strobeRequired": "bắt buộc đánh xung (phơi sáng < 1 ms)",
@@ -1227,6 +1227,7 @@
         "controller": "Máy tính",
         "accessory": "Phụ kiện",
         "tube": "Vòng nối dài",
+        "converter": "Bộ nhân tiêu cự",
         "cable": "Cáp",
         "light_controller": "Bộ điều khiển đèn",
         "interface_card": "Card giao tiếp",
@@ -1285,6 +1286,8 @@
         "pcie_slots": "Số khe PCIe",
         "max_bandwidth_mbytes_s": "Băng thông tối đa cả máy",
         "length_mm": "Chiều dài",
+        "factor": "Hệ số nhân",
+        "max_format": "Cỡ cảm biến tối đa",
         "cable_for": "Cáp dùng cho",
         "connector": "Đầu nối",
         "length_m": "Chiều dài cáp",
@@ -1378,6 +1381,11 @@
         "telecentricPracticalMaxMm": "Telecentric — cạnh vùng nhìn còn mua được giá hợp lý",
         "telecentricFeasibleMaxMm": "Telecentric — cạnh vùng nhìn tối đa còn khả thi",
         "dofDiffractionTolerance": "Độ sâu trường ảnh — F cần tối đa bằng mấy lần F#max",
+        "accessoryMacroBetaWarn": "Phụ kiện — β vượt mức này với ống thường thì cảnh báo chất lượng (khuyên ống macro)",
+        "accessoryLightLossStopsWarn": "Phụ kiện — mất sáng vượt số stop này thì cảnh báo",
+        "tubeLengthToFocalWarn": "Ống nối — dài hơn bao nhiêu lần tiêu cự thì cảnh báo cơ khí",
+        "tubeMaxSegments": "Ống nối — ghép quá số khúc này thì cảnh báo",
+        "converterMaxFactor": "Bộ nhân — hệ số tối đa được gợi ý",
         "cycleMinMargin": "Dư tối thiểu so với nhịp (tỉ lệ)",
         "processMs": "Thời gian xử lý giả định — xử lý truyền thống",
         "processDeepLearningMs": "Thời gian xử lý giả định — deep learning",
@@ -2486,7 +2494,11 @@
       "details": "Chi tiết",
       "hide": "Ẩn",
       "unknownCount": "{n} thông số chưa khai",
-      "datasheet": "Datasheet"
+      "datasheet": "Datasheet",
+      "withTube": "+ ống nối {pieces}{total} mm",
+      "withConverter": "+ bộ nhân {k}×",
+      "notInStock": "chưa có trong kho",
+      "accessoryHint": "Ống bị loại vì MOD, vòng ảnh hay pixel thô được thử thêm ống nối hoặc bộ nhân — xếp sau ống đạt trơn, luôn ở mức Cảnh báo. Mở Chi tiết để xem ảnh hưởng."
     },
     "status": {
       "pass": "Đạt",
@@ -2502,7 +2514,9 @@
       "pixel": "mm/px",
       "resolution": "Độ phân giải ống",
       "diffraction": "Nhiễu xạ",
-      "depth": "Độ sâu trường ảnh"
+      "depth": "Độ sâu trường ảnh",
+      "tube": "Ống nối",
+      "converter": "Bộ nhân tiêu cự"
     },
     "notes": {
       "mountUnknown": "Ống hoặc camera chưa khai ngàm.",
@@ -2528,7 +2542,17 @@
       "dofTradeoff": "Cần F/{f}, hơi quá giới hạn nhiễu xạ F/{fMax}: mờ nhẹ, chấp nhận được nếu chụp thử đạt.",
       "dofSetAperture": "Đặt khẩu khoảng F/{f} (giới hạn nhiễu xạ F/{fMax}).",
       "wdFromLens": "Khoảng cách lấy theo ống: {min}–{max} mm.",
-      "wdMissing": "Chưa có khoảng cách làm việc."
+      "wdMissing": "Chưa có khoảng cách làm việc.",
+      "wdWithTube": "Lấy nét được nhờ ống nối {total} mm.",
+      "tubeChosen": "Thêm ống nối {total} mm: dải lấy nét còn {wdMin}–{wdMax} mm, không lấy nét về vô cực. Ở cùng WD, độ phóng đại không đổi — ống nối chỉ giúp tới được WD này. Hiệu chuẩn lại sau khi lắp.",
+      "accessoryNotInStock": "Kho chưa có phụ kiện ngàm {mount} phù hợp — đây là mức chuẩn gợi ý, cần đặt mua.",
+      "tubeMacro": "β {beta} ≥ {limit}: ống thường thiết kế cho vật ở xa, chụp cận thì mềm góc và méo tăng — cân nhắc ống macro.",
+      "accessoryLight": "Tối đi khoảng {stops} stop (ngưỡng {limit}) — tăng đèn hoặc phơi sáng lâu hơn, coi chừng nhoè chuyển động.",
+      "tubeLong": "Ống nối {total} mm dài hơn {ratio}× tiêu cự — đòn bẩy lên ngàm, dễ rung: cần giá đỡ ống.",
+      "tubeSegments": "Ghép {n} khúc (ngưỡng {max}) — sai số đồng trục tăng, dễ lỏng: dùng khúc dài hơn.",
+      "converterForPixel": "Thêm bộ nhân {k}× để đạt mm/px cần: vùng nhìn hẹp lại {k} lần. MOD không đổi ({mod} mm). Nhiễu xạ, độ phân giải ống và độ sâu trường ảnh đã tính lại với F# và lp/mm sau khi nhân.",
+      "converterForCircle": "Thêm bộ nhân {k}× để vòng ảnh phủ cảm biến: vùng nhìn hẹp lại {k} lần. MOD không đổi ({mod} mm). Nhiễu xạ, độ phân giải ống và độ sâu trường ảnh đã tính lại với F# và lp/mm sau khi nhân.",
+      "converterFit": "Thêm kính nên giảm tương phản; một số ống có thấu kính sau nhô ra không lắp được bộ nhân — kiểm datasheet cả hai."
     },
     "reset": "Đặt lại",
     "tabs": {

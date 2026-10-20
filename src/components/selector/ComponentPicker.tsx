@@ -292,7 +292,10 @@ export function ComponentPicker({
           ? t('fitTube', {
               min: tubeChoice.fit.lensMinWdMm,
               actual: workingDistance,
-              length: tubeChoice.fit.requiredLengthMm ?? '—',
+              length:
+                tubeChoice.fit.requiredLengthMm !== null && tubeChoice.fit.requiredMaxMm !== null
+                  ? `${tubeChoice.fit.requiredLengthMm}–${tubeChoice.fit.requiredMaxMm}`
+                  : '—',
             })
           : null,
     },

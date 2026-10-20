@@ -4,13 +4,14 @@ import { Fragment, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { NOTE_CLASS, Panel } from '@/components/ui/PanelHeader';
 import { MOUNTS, SENSOR_FORMAT_KEYS, specNumber, specString, type Component } from '@/lib/components/specs';
-import { cameraFromComponent, type ConfigCamera } from '@/lib/vision/configurationRules';
+import { cameraFromComponent, lensFromComponent, type ConfigCamera } from '@/lib/vision/configurationRules';
 import {
   selectLenses,
   solveGeometry,
   type GeometryMode,
   type LensCandidate,
   type LensKindFilter,
+  type LensParams,
   type LensSelectorInput,
 } from '@/lib/vision/lensSelector';
 import { renderFormula } from '@/lib/vision/formulaTerms';
@@ -69,12 +70,13 @@ export function LensSelector({
   params,
 }: {
   components: Component[];
-  params?: { imageCircleTolerance: number; dofDiffractionTolerance: number };
+  params?: LensParams;
 }) {
   const t = useTranslations('lensSelector');
 
   const cameras = useMemo(() => components.filter((c) => c.kind === 'camera'), [components]);
-  const lenses = useMemo(() => components.filter((c) => c.kind === 'lens'), [components]);
+  // Ống kính + phụ kiện (ống nối, bộ nhân) — engine tự thử phụ kiện cho ống bị loại (OPT-010/011).
+  const lenses = useMemo(() => components.filter((c) => c.kind === 'lens' || c.kind === 'tube' || c.kind === 'converter'), [components]);
 
   const [tab, setTab] = useState<LensKindFilter>('fixed');
   const [mode, setMode] = useState<GeometryMode>('fov-wd');
@@ -466,6 +468,7 @@ export function LensSelector({
           id="lens-list"
           title={t('list.title')}
           meta={t('list.meta', counts)}
+          note={all.some((c) => c.accessory) ? t('list.accessoryHint') : undefined}
           actions={
             <label className="inline-flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
               <input type="checkbox" checked={showRejected} onChange={(e) => setShowRejected(e.target.checked)} className="size-4 rounded border-slate-300 text-sky-600 dark:border-slate-600" />
@@ -575,12 +578,14 @@ function NeedItem({ label, value, formula, note, status }: { label: string; valu
 function LensRow({ candidate: c, line, open, onToggle }: { candidate: LensCandidate; line: boolean; open: boolean; onToggle: () => void }) {
   const t = useTranslations('lensSelector');
   const tv = useTranslations('selector.vision');
-  const lens = c.lens;
+  // Thông số hiển thị là của ống GỐC; c.lens đã nhân hệ số bộ nhân (nếu có) để kiểm.
+  const lens = lensFromComponent(c.component);
+  const acc = c.accessory;
   const optic =
     lens.lensType === 'telecentric' || (lens.focalLengthMm === null && lens.magnification !== null)
       ? `${show(lens.magnification, 3)}×`
       : lens.focalLengthMm !== null
-        ? `${show(lens.focalLengthMm, 1)} mm`
+        ? `${show(lens.focalLengthMm, 1)} mm${acc?.kind === 'converter' ? ` × ${show(acc.factor, 2)}` : ''}`
         : '—';
   return (
     <Fragment>
@@ -595,6 +600,14 @@ function LensRow({ candidate: c, line, open, onToggle }: { candidate: LensCandid
               .join(' · ')}
             {c.unknownCount > 0 ? ` · ${t('list.unknownCount', { n: c.unknownCount })}` : ''}
           </div>
+          {acc ? (
+            <div className="mt-1 inline-flex flex-wrap items-center gap-1.5 rounded-md bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-900 ring-1 ring-inset ring-amber-200 dark:bg-amber-950/40 dark:text-amber-200 dark:ring-amber-900">
+              {acc.kind === 'tube'
+                ? t('list.withTube', { pieces: acc.pieces.length > 1 ? `${acc.pieces.map((p) => show(p.lengthMm, 1)).join(' + ')} = ` : '', total: show(acc.totalMm, 1) })
+                : t('list.withConverter', { k: show(acc.factor, 2) })}
+              {!acc.inStock ? <span className="font-normal opacity-80">· {t('list.notInStock')}</span> : null}
+            </div>
+          ) : null}
         </td>
         <td className="py-2 pr-3 tabular-nums">
           {optic}

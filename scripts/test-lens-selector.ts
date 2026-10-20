@@ -9,7 +9,7 @@ import assert from 'node:assert/strict';
 
 import type { Component } from '../src/lib/components/specs';
 import type { ConfigCamera } from '../src/lib/vision/configurationRules';
-import { lensNeed, selectLenses, solveGeometry, type LensSelectorInput } from '../src/lib/vision/lensSelector';
+import { evaluateLens, lensNeed, selectLenses, solveGeometry, type LensSelectorInput } from '../src/lib/vision/lensSelector';
 
 const CAMERA: ConfigCamera = {
   cameraType: 'area',
@@ -99,16 +99,30 @@ test('loại: sai ngàm, vòng ảnh nhỏ, WD dưới MOD, mm/px thô hơn mứ
   const wrongMount = lens({ focal_length_mm: 16, mount: 'M42' });
   const smallCircle = lens({ focal_length_mm: 16, image_circle: '1/2' });
   const tooClose = lens({ focal_length_mm: 16, wd_min_mm: 400 });
-  const { candidates } = selectLenses(INPUT, [wrongMount, smallCircle, tooClose]);
-  for (const c of candidates) assert.equal(c.status, 'fail', c.component.spec.mount as string);
-  assert.equal(candidates.find((c) => c.component === wrongMount)!.checks.find((c) => c.key === 'mount')!.noteKey, 'mountMismatch');
-  assert.equal(candidates.find((c) => c.component === smallCircle)!.checks.find((c) => c.key === 'imageCircle')!.status, 'fail');
-  assert.equal(candidates.find((c) => c.component === tooClose)!.checks.find((c) => c.key === 'workingDistance')!.noteKey, 'wdBelowMod');
+  // Ống TRƠN (chưa thử phụ kiện): cả ba bị loại đúng lý do.
+  const need = lensNeed(INPUT)!;
+  const bare = (c: Component) => evaluateLens(INPUT, need, c);
+  assert.equal(bare(wrongMount).checks.find((c) => c.key === 'mount')!.noteKey, 'mountMismatch');
+  assert.equal(bare(smallCircle).checks.find((c) => c.key === 'imageCircle')!.status, 'fail');
+  assert.equal(bare(tooClose).checks.find((c) => c.key === 'workingDistance')!.noteKey, 'wdBelowMod');
+  for (const c of [wrongMount, smallCircle, tooClose]) assert.equal(bare(c).status, 'fail');
 
-  // mm/px cần 0,05: 16 mm cho 0,00345 ÷ 0,05634 = 0,0612 > 0,05 → loại
+  // Sau khi thử phụ kiện (2026-10-20): sai ngàm vẫn loại; vòng ảnh nhỏ cần bộ nhân 1,4× nhưng
+  // vùng nhìn còn 107 × 89,6 < 100 × 100 → vẫn loại; MOD 400 ở WD 300 cứu được bằng ống nối
+  // e ∈ [16 × (0,05634 − 0,04167); 16 × 0,05634] = [0,23; 0,90] mm → 0,5 mm chuẩn.
+  const { candidates } = selectLenses(INPUT, [wrongMount, smallCircle, tooClose]);
+  const by = (c: Component) => candidates.find((x) => x.component === c)!;
+  assert.equal(by(wrongMount).status, 'fail');
+  assert.equal(by(smallCircle).status, 'fail');
+  assert.equal(by(tooClose).status, 'warn');
+  assert.ok(by(tooClose).accessory?.kind === 'tube' && by(tooClose).accessory!.kind === 'tube');
+
+  // mm/px cần 0,05: 16 mm cho 0,00345 ÷ 0,05634 = 0,0612 > 0,05 → loại; bộ nhân 1,4× làm vùng
+  // nhìn hẹp hơn vật 100 × 100 → không cứu được, vẫn loại.
   const coarse = selectLenses({ ...INPUT, targetMmPerPx: 0.05 }, [lens({ focal_length_mm: 16 })]).candidates[0];
   assert.equal(coarse.checks.find((c) => c.key === 'pixel')!.status, 'fail');
   assert.equal(coarse.status, 'fail');
+  assert.equal(coarse.accessory, null);
 });
 
 test('ống C trên camera CS: cảnh báo vòng đệm, không loại', () => {
@@ -246,4 +260,94 @@ test('telecentric để trống WD: vẫn lọc, khoảng cách lấy theo dải
   assert.equal(r.candidates[0].status, 'pass');
   // Ống thường bắt buộc có WD
   assert.equal(lensNeed({ ...INPUT, workingDistanceMm: null }), null);
+});
+
+// ─────────────────────────────── PHỤ KIỆN: ỐNG NỐI / BỘ NHÂN (OPT-010 / OPT-011, 2026-10-20) ──
+
+const part = (kind: 'tube' | 'converter', spec: Record<string, unknown>, model: string): Component =>
+  ({ ...lens(spec, model), kind, spec }) as unknown as Component;
+
+test('[OPT-010] dải ống nối và dải lấy nét — tính tay', async () => {
+  const { tubeLengthRange, tubeFocusRange, chooseTubeStack } = await import('../src/lib/vision/lensSelector');
+  // f 25, MOD 200, WD 100: β_WD = 25 ÷ 75 = 0,3333 ; β_MOD = 25 ÷ 175 = 0,142857
+  // e ∈ [25 × (0,3333 − 0,142857); 25 × 0,3333] = [4,762; 8,333] mm
+  const r = tubeLengthRange(25, 200, 100)!;
+  close(r.minMm, 4.762, 1e-3, 'e min');
+  close(r.maxMm, 8.333, 1e-3, 'e max');
+  // Ống 5 mm: β ∈ [0,2; 0,342857] → WD ∈ [25 × (1 + 1 ÷ 0,342857); 25 × (1 + 1 ÷ 0,2)] = [97,92; 150]
+  const f = tubeFocusRange(25, 200, 5);
+  close(f.wdMinMm, 97.917, 1e-3, 'WD min');
+  close(f.wdMaxMm, 150, 1e-9, 'WD max');
+  // Chọn ít khúc nhất: kho 2/5/10 → [5]; khoảng [11; 13] → 1 khúc không có → 2 + 10 = 12
+  assert.deepEqual(chooseTubeStack([{ lengthMm: 2 }, { lengthMm: 5 }, { lengthMm: 10 }], 4.762, 8.333)!.map((t) => t.lengthMm), [5]);
+  assert.deepEqual(chooseTubeStack([{ lengthMm: 2 }, { lengthMm: 5 }, { lengthMm: 10 }], 11, 13)!.map((t) => t.lengthMm), [2, 10]);
+  assert.equal(chooseTubeStack([{ lengthMm: 20 }], 4, 8), null);
+});
+
+test('[OPT-010] ống bị loại vì MOD → đạt nhờ ống nối 5 mm trong kho, cảnh báo macro', () => {
+  const lens25 = lens({ focal_length_mm: 25, wd_min_mm: 200 }, 'f25-mod200');
+  const tubes = [part('tube', { length_mm: 5, mount: 'C' }, 'T5'), part('tube', { length_mm: 10, mount: 'C' }, 'T10')];
+  const input = { ...INPUT, fovWidthMm: 20, fovHeightMm: 18, workingDistanceMm: 100 };
+  const c = selectLenses(input, [lens25, ...tubes]).candidates[0];
+  assert.equal(c.status, 'warn', JSON.stringify(c.checks.map((k) => [k.key, k.status, k.noteKey])));
+  assert.equal(c.accessory?.kind, 'tube');
+  assert.ok(c.accessory?.kind === 'tube' && c.accessory.inStock && c.accessory.totalMm === 5);
+  const notes = c.checks.filter((k) => k.key === 'tube').map((k) => k.noteKey);
+  assert.ok(notes.includes('tubeChosen'));
+  assert.ok(notes.includes('tubeMacro'), 'β 0,333 ≥ 0,3');
+  assert.ok(!notes.includes('accessoryLight'), '2 log₂ 1,333 = 0,83 stop < 1');
+  // WD được kiểm theo dải mới, không còn LOẠI vì MOD
+  assert.equal(c.checks.find((k) => k.key === 'workingDistance')!.noteKey, 'wdWithTube');
+  // Kho không có ống nối → gợi ý mức chuẩn 5 mm, "chưa có trong kho"
+  const std = selectLenses(input, [lens25]).candidates[0];
+  assert.ok(std.accessory?.kind === 'tube' && !std.accessory.inStock && std.accessory.totalMm === 5);
+  assert.ok(std.checks.some((k) => k.noteKey === 'accessoryNotInStock'));
+});
+
+test('[OPT-011] mm/px thô → bộ nhân: k cần 1,53 → 2× chuẩn; kho có 1,6× thì lấy 1,6×', () => {
+  // f 16 ở WD 300: β = 16 ÷ 284 = 0,056338 → 0,06124 mm/px > 0,04 → k ≥ 0,06124 ÷ 0,04 = 1,531
+  const lens16 = lens({ focal_length_mm: 16 }, 'f16');
+  const input = { ...INPUT, fovWidthMm: 60, fovHeightMm: 50, targetMmPerPx: 0.04 };
+  const std = selectLenses(input, [lens16]).candidates[0];
+  assert.equal(std.accessory?.kind, 'converter');
+  assert.ok(std.accessory?.kind === 'converter' && std.accessory.factor === 2 && !std.accessory.inStock);
+  close(std.accessory!.kind === 'converter' ? std.accessory!.needFactor : 0, 1.531, 1e-3, 'k cần');
+  // 2 × 0,056338 = 0,11268 → 0,0306 mm/px ≤ 0,04 ; vùng nhìn 74,95 × 62,7 phủ 60 × 50
+  close(std.beta, 0.11268, 1e-5, 'β cả hệ');
+  close(std.mmPerPx, 0.03062, 1e-5, 'mm/px');
+  // F nhanh nhất 1,4 × 2 = 2,8 ≤ F#max 5,1416 ÷ 1,11268 = 4,62 → nhiễu xạ vẫn đạt
+  assert.equal(std.checks.find((k) => k.key === 'diffraction')!.status, 'pass');
+  // lp/mm 160 ÷ 2 = 80 < 144,9 → cảnh báo độ phân giải ống
+  assert.equal(std.checks.find((k) => k.key === 'resolution')!.status, 'warn');
+  // mất 2 log₂ 2 = 2 stop ≥ 1 → cảnh báo tối
+  assert.ok(std.checks.some((k) => k.key === 'converter' && k.noteKey === 'accessoryLight'));
+  const conv = part('converter', { factor: 1.6, mount: 'C', max_format: '1.1' }, 'X1.6');
+  const fromStock = selectLenses(input, [lens16, conv]).candidates[0];
+  assert.ok(fromStock.accessory?.kind === 'converter' && fromStock.accessory.factor === 1.6 && fromStock.accessory.inStock);
+});
+
+test('[OPT-011] vòng ảnh nhỏ → bộ nhân 1,4× (k ≥ 10,78 ÷ 8 = 1,35), không cảnh báo tối', () => {
+  const half = lens({ focal_length_mm: 16, image_circle: '1/2' }, 'f16-half');
+  const c = selectLenses({ ...INPUT, fovWidthMm: 60, fovHeightMm: 50 }, [half]).candidates[0];
+  assert.ok(c.accessory?.kind === 'converter' && c.accessory.factor === 1.4 && c.accessory.reason === 'imageCircle');
+  assert.equal(c.checks.find((k) => k.key === 'imageCircle')!.status, 'pass', 'Ø 8 × 1,4 = 11,2 ≥ 11');
+  assert.ok(!c.checks.some((k) => k.noteKey === 'accessoryLight'), '2 log₂ 1,4 = 0,97 stop < 1');
+});
+
+test('phụ kiện: không cứu ống telecentric, không ghép hai phụ kiện, xếp sau ống đạt trơn', () => {
+  // Hỏng cả MOD lẫn mm/px → cần hai phụ kiện → không gợi ý (Q4)
+  const both = lens({ focal_length_mm: 16, wd_min_mm: 400 }, 'both');
+  const r = selectLenses({ ...INPUT, targetMmPerPx: 0.04 }, [both]).candidates[0];
+  assert.equal(r.status, 'fail');
+  assert.equal(r.accessory, null);
+  // Telecentric ngoài dải WD → vẫn LOẠI, không thử phụ kiện (Q5)
+  const tele = lens({ lens_type: 'telecentric', focal_length_mm: null, magnification: 0.1, wd_min_mm: 290, wd_max_mm: 310 }, 'tc');
+  const t = selectLenses({ ...INPUT, fovWidthMm: 60, fovHeightMm: 50, workingDistanceMm: 200, lensKind: 'telecentric' }, [tele]).candidates[0];
+  assert.equal(t.status, 'fail');
+  assert.equal(t.accessory, null);
+  // Thứ tự: ống đạt trơn trước ống cần phụ kiện
+  const plain = lens({ focal_length_mm: 12 }, 'plain12');
+  const mod = lens({ focal_length_mm: 16, wd_min_mm: 400 }, 'mod16');
+  const order = selectLenses(INPUT, [mod, plain]).candidates.map((c) => c.component.model);
+  assert.deepEqual(order, ['plain12', 'mod16']);
 });

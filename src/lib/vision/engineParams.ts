@@ -46,6 +46,12 @@ export const ENGINE_PARAMS = [
   { key: 'telecentricFeasibleMaxMm', group: 'optics', default: 200, min: 20, max: 1000, step: 5, unit: 'mm' },
   // OPT-005 — F cần tới bao nhiêu lần F#max thì còn chấp nhận (mờ nhẹ, phải chụp thử).
   { key: 'dofDiffractionTolerance', group: 'optics', default: 1.5, min: 1, max: 3, step: 0.1, unit: '×' },
+  // OPT-010 / OPT-011 — phụ kiện ống nối / bộ nhân trên trang Chọn ống kính (chốt 2026-10-20).
+  { key: 'accessoryMacroBetaWarn', group: 'optics', default: 0.3, min: 0.05, max: 2, step: 0.05, unit: '×' },
+  { key: 'accessoryLightLossStopsWarn', group: 'optics', default: 1, min: 0.25, max: 4, step: 0.25, unit: 'stop' },
+  { key: 'tubeLengthToFocalWarn', group: 'optics', default: 1, min: 0.1, max: 5, step: 0.1, unit: '× f' },
+  { key: 'tubeMaxSegments', group: 'optics', default: 3, min: 1, max: 10, step: 1 },
+  { key: 'converterMaxFactor', group: 'optics', default: 2, min: 1.1, max: 4, step: 0.1, unit: '×' },
   // THR-003 — dư dưới tỉ lệ này của nhịp là mỏng; thời gian xử lý giả định khi chưa đo.
   { key: 'cycleMinMargin', group: 'throughput', default: 0.3, min: 0, max: 0.9, step: 0.05 },
   { key: 'processMs', group: 'throughput', default: 300, min: 10, max: 5000, step: 10, unit: 'ms' },

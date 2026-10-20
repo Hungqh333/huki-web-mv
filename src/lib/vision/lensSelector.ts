@@ -1,4 +1,4 @@
-import { SENSOR_FORMATS, sensorDiagonalMm, type Component } from '@/lib/components/specs';
+import { SENSOR_FORMATS, sensorDiagonalMm, specNumber, specString, type Component } from '@/lib/components/specs';
 import {
   effectiveFNumberFactor,
   entocentricMagnification,
@@ -58,7 +58,17 @@ export type LensSelectorInput = {
   lensKind: LensKindFilter;
 };
 
-type Params = Pick<EngineParams, 'imageCircleTolerance' | 'dofDiffractionTolerance'>;
+export type LensParams = Pick<
+  EngineParams,
+  | 'imageCircleTolerance'
+  | 'dofDiffractionTolerance'
+  | 'accessoryMacroBetaWarn'
+  | 'accessoryLightLossStopsWarn'
+  | 'tubeLengthToFocalWarn'
+  | 'tubeMaxSegments'
+  | 'converterMaxFactor'
+>;
+type Params = LensParams;
 
 export type LensNeed = {
   sensorLongMm: number;
@@ -88,7 +98,7 @@ export type LensNeed = {
   cameraTooCoarse: boolean;
 };
 
-export type LensCheckKey = 'mount' | 'imageCircle' | 'workingDistance' | 'fov' | 'pixel' | 'resolution' | 'diffraction' | 'depth';
+export type LensCheckKey = 'mount' | 'imageCircle' | 'workingDistance' | 'fov' | 'pixel' | 'resolution' | 'diffraction' | 'depth' | 'tube' | 'converter';
 
 export type LensCheck = Check & { key: LensCheckKey };
 
@@ -107,7 +117,161 @@ export type LensCandidate = {
   status: Check['status'];
   /** Số phép kiểm chưa kiểm được vì ống chưa khai thông số. */
   unknownCount: number;
+  /** Phụ kiện giúp ống này đạt (OPT-010 / OPT-011); null = dùng ống trơn. */
+  accessory: LensAccessory | null;
 };
+
+// ───────────────────────── PHỤ KIỆN — chốt 2026-10-20 (Q1–Q5) ──────────────────────────
+/*
+ * OPT-010 ống nối (extension tube): đẩy ống ra xa cảm biến → lấy nét được GẦN hơn MOD.
+ *   Thấu kính mỏng: ở cùng WD, β = f ÷ (WD − f) KHÔNG đổi — ống nối chỉ cho TỚI được WD đó.
+ *   Ống gốc lấy nét được β ∈ [0; β_MOD], β_MOD = f ÷ (MOD − f). Thêm ống e: β ∈ [e/f; e/f + β_MOD].
+ *   ⇒ cần e ∈ [f·(β_WD − β_MOD); f·β_WD].
+ * OPT-011 bộ nhân ×k (rear converter): F#, vòng ảnh × k; độ phóng đại × k (vùng nhìn ÷ k);
+ *   lp/mm của ống ÷ k; MOD KHÔNG đổi (nhóm thấu kính trước giữ nguyên) — không cứu được MOD.
+ * Không ghép hai phụ kiện (Q4), không áp cho telecentric — phá tính telecentric (Q5).
+ * Ống có phụ kiện luôn ở mức CẢNH BÁO và xếp sau ống đạt trơn (Q1/Q4).
+ */
+
+/** Bộ ống nối C-mount phổ biến — gợi ý khi kho chưa có (đánh dấu "chưa có trong kho"). */
+export const STANDARD_TUBE_LENGTHS_MM = [0.5, 1, 2, 5, 10, 20, 40] as const;
+/** Hệ số bộ nhân phổ biến cho ngàm C — gợi ý khi kho chưa có. */
+export const STANDARD_CONVERTER_FACTORS = [1.4, 1.5, 2] as const;
+/** Mức chuẩn chỉ gợi ý cho ngàm có bán sẵn ống nối / bộ nhân phổ thông. */
+const STANDARD_ACCESSORY_MOUNTS = ['C', 'CS'];
+/** Tìm tổ hợp ống nối tối đa bấy nhiêu khúc (cảnh báo từ tubeMaxSegments trở lên). */
+const TUBE_SEARCH_MAX_PIECES = 4;
+
+export type TubeAccessory = {
+  kind: 'tube';
+  mount: string;
+  pieces: { lengthMm: number; component: Component | null }[];
+  totalMm: number;
+  needMinMm: number;
+  needMaxMm: number;
+  /** Dải WD lấy nét được sau khi lắp ống. */
+  wdMinMm: number;
+  wdMaxMm: number;
+  inStock: boolean;
+};
+
+export type ConverterAccessory = {
+  kind: 'converter';
+  mount: string;
+  factor: number;
+  needFactor: number;
+  reason: 'pixel' | 'imageCircle';
+  component: Component | null;
+  inStock: boolean;
+};
+
+export type LensAccessory = TubeAccessory | ConverterAccessory;
+
+type LensVariant =
+  | { kind: 'tube'; accessory: TubeAccessory; checks: LensCheck[] }
+  | { kind: 'converter'; factor: number; accessory: ConverterAccessory; checks: LensCheck[] };
+
+/** Dải chiều dài ống nối cần để ống tiêu cự f (MOD đã biết) lấy nét được ở WD. */
+export function tubeLengthRange(focalMm: number, modMm: number, wdMm: number): { minMm: number; maxMm: number; betaWd: number; betaMod: number } | null {
+  if (!(focalMm > 0) || !(modMm > focalMm) || !(wdMm > focalMm)) return null;
+  const betaWd = focalMm / (wdMm - focalMm);
+  const betaMod = focalMm / (modMm - focalMm);
+  return { minMm: Math.max(0, focalMm * (betaWd - betaMod)), maxMm: focalMm * betaWd, betaWd, betaMod };
+}
+
+/** Dải WD lấy nét được khi lắp ống nối tổng `totalMm`: [f(1 + 1/(e/f + β_MOD)); f(1 + f/e)]. */
+export function tubeFocusRange(focalMm: number, modMm: number, totalMm: number): { wdMinMm: number; wdMaxMm: number } {
+  const betaMod = focalMm / (modMm - focalMm);
+  const lo = totalMm / focalMm;
+  return { wdMinMm: focalMm * (1 + 1 / (lo + betaMod)), wdMaxMm: lo > 0 ? focalMm * (1 + 1 / lo) : Infinity };
+}
+
+/** Tổ hợp ống nối có tổng ∈ [min; max]: ít khúc nhất, rồi ngắn nhất. Một chiều dài dùng lặp được. */
+export function chooseTubeStack<T extends { lengthMm: number }>(stock: readonly T[], minMm: number, maxMm: number, maxPieces = TUBE_SEARCH_MAX_PIECES): T[] | null {
+  const unique = [...new Map(stock.filter((t) => t.lengthMm > 0).map((t) => [t.lengthMm, t])).values()].sort((a, b) => a.lengthMm - b.lengthMm);
+  const total = (pieces: T[]) => pieces.reduce((sum, t) => sum + t.lengthMm, 0);
+  let best: T[] | null = null;
+  const walk = (start: number, picked: T[]) => {
+    const sum = total(picked);
+    if (picked.length > 0 && sum >= minMm - EPS && sum <= maxMm + EPS) {
+      if (best === null || picked.length < best.length || (picked.length === best.length && sum < total(best))) best = [...picked];
+      return;
+    }
+    if (picked.length >= maxPieces || sum > maxMm) return;
+    for (let i = start; i < unique.length; i++) walk(i, [...picked, unique[i]]);
+  };
+  walk(0, []);
+  return best;
+}
+
+/** Số stop mất khi F# hiệu dụng nhân `factor`: 2 × log₂(factor). */
+export const stopsLost = (factor: number) => 2 * Math.log2(factor);
+
+function tubeChecks(acc: TubeAccessory, focalMm: number, betaWd: number, params: Params): LensCheck[] {
+  const pieces = acc.pieces.length > 1 ? `${acc.pieces.map((p) => fmt(p.lengthMm, 1)).join(' + ')} = ` : '';
+  const wdMax = Number.isFinite(acc.wdMaxMm) ? fmt(acc.wdMaxMm, 0) : '∞';
+  const checks: LensCheck[] = [
+    {
+      key: 'tube',
+      status: 'warn',
+      formula: `e ∈ [${fmt(acc.needMinMm, 1)}; ${fmt(acc.needMaxMm, 1)}] mm → ${pieces}${fmt(acc.totalMm, 1)} mm · WD [${fmt(acc.wdMinMm, 0)}; ${wdMax}] mm`,
+      noteKey: 'tubeChosen',
+      noteValues: { total: round(acc.totalMm, 1), wdMin: Math.round(acc.wdMinMm), wdMax },
+    },
+  ];
+  if (!acc.inStock) checks.push({ key: 'tube', status: 'info', formula: acc.mount, noteKey: 'accessoryNotInStock', noteValues: { mount: acc.mount } });
+  if (betaWd >= params.accessoryMacroBetaWarn) {
+    checks.push({ key: 'tube', status: 'warn', formula: `β ${fmt(betaWd, 3)} ≥ ${params.accessoryMacroBetaWarn}`, noteKey: 'tubeMacro', noteValues: { beta: round(betaWd, 3), limit: params.accessoryMacroBetaWarn } });
+  }
+  const stops = stopsLost(1 + betaWd);
+  if (stops >= params.accessoryLightLossStopsWarn) {
+    checks.push({ key: 'tube', status: 'warn', formula: `2 × log₂(1 + ${fmt(betaWd, 3)}) = ${fmt(stops, 2)} stop`, noteKey: 'accessoryLight', noteValues: { stops: round(stops, 1), limit: params.accessoryLightLossStopsWarn } });
+  }
+  if (acc.totalMm > params.tubeLengthToFocalWarn * focalMm) {
+    checks.push({ key: 'tube', status: 'warn', formula: `${fmt(acc.totalMm, 1)} mm > ${params.tubeLengthToFocalWarn} × ${fmt(focalMm, 1)} mm`, noteKey: 'tubeLong', noteValues: { total: round(acc.totalMm, 1), ratio: params.tubeLengthToFocalWarn } });
+  }
+  if (acc.pieces.length > params.tubeMaxSegments) {
+    checks.push({ key: 'tube', status: 'warn', formula: `${acc.pieces.length} > ${params.tubeMaxSegments}`, noteKey: 'tubeSegments', noteValues: { n: acc.pieces.length, max: params.tubeMaxSegments } });
+  }
+  return checks;
+}
+
+function converterChecks(acc: ConverterAccessory, base: ConfigLens, params: Params): LensCheck[] {
+  const k = acc.factor;
+  const f = base.focalLengthMm ?? 0;
+  const fMin = base.fNumberMin;
+  const checks: LensCheck[] = [
+    {
+      key: 'converter',
+      status: 'warn',
+      formula:
+        `k ≥ ${fmt(acc.needFactor, 2)} → ${fmt(k, 2)}× · f ${fmt(f, 1)} → ${fmt(f * k, 1)} mm` +
+        (fMin !== null ? ` · F/${fmt(fMin, 1)} → F/${fmt(fMin * k, 1)}` : ''),
+      noteKey: acc.reason === 'pixel' ? 'converterForPixel' : 'converterForCircle',
+      noteValues: { k, mod: base.wdMinMm ?? '—' },
+    },
+  ];
+  if (!acc.inStock) checks.push({ key: 'converter', status: 'info', formula: acc.mount, noteKey: 'accessoryNotInStock', noteValues: { mount: acc.mount } });
+  const stops = stopsLost(k);
+  if (stops >= params.accessoryLightLossStopsWarn) {
+    checks.push({ key: 'converter', status: 'warn', formula: `2 × log₂(${fmt(k, 2)}) = ${fmt(stops, 2)} stop`, noteKey: 'accessoryLight', noteValues: { stops: round(stops, 1), limit: params.accessoryLightLossStopsWarn } });
+  }
+  checks.push({ key: 'converter', status: 'info', formula: '—', noteKey: 'converterFit' });
+  return checks;
+}
+
+/** Ống sau khi lắp bộ nhân ×k: F#, vòng ảnh × k; lp/mm ÷ k. Tiêu cự gốc giữ để tính β (× k ở evaluateLens). */
+function convertLens(base: ConfigLens, k: number): ConfigLens {
+  const circle = base.imageCircleMm ?? sensorDiagonalMm(base.imageCircleFormat);
+  return {
+    ...base,
+    fNumberMin: base.fNumberMin !== null ? base.fNumberMin * k : null,
+    fNumberMax: base.fNumberMax !== null ? base.fNumberMax * k : null,
+    imageCircleMm: circle !== null ? circle * k : null,
+    imageCircleFormat: null,
+    resolutionLpMm: base.resolutionLpMm !== null ? base.resolutionLpMm / k : null,
+  };
+}
 
 const EPS = 1e-9;
 
@@ -195,8 +359,15 @@ const matchesKind = (lens: ConfigLens, kind: LensKindFilter) => {
 };
 
 /** Một ống trong kho trên camera + bài toán đã nhập. */
-export function evaluateLens(input: LensSelectorInput, need: LensNeed, component: Component, params: Params = DEFAULT_ENGINE_PARAMS): LensCandidate {
-  const lens = lensFromComponent(component);
+export function evaluateLens(
+  input: LensSelectorInput,
+  need: LensNeed,
+  component: Component,
+  params: Params = DEFAULT_ENGINE_PARAMS,
+  variant: LensVariant | null = null
+): LensCandidate {
+  const baseLens = lensFromComponent(component);
+  const lens = variant?.kind === 'converter' ? convertLens(baseLens, variant.factor) : baseLens;
   const { camera, workingDistanceMm: wd } = input;
   const pitch = camera.pixelSizeUm;
   const line = camera.cameraType === 'line';
@@ -261,8 +432,20 @@ export function evaluateLens(input: LensSelectorInput, need: LensNeed, component
     unknown('workingDistance', '—', 'wdMissing');
   } else if (lens.focalLengthMm !== null && wd !== null) {
     beta = entocentricMagnification(lens.focalLengthMm, wd);
+    // Bộ nhân ×k: độ phóng đại cả hệ = k × β của ống gốc ở cùng WD (OPT-011).
+    if (beta !== null && variant?.kind === 'converter') beta *= variant.factor;
     if (beta === null) {
       checks.push({ key: 'workingDistance', status: 'fail', formula: `WD ${fmt(wd)} mm ≤ f ${fmt(lens.focalLengthMm, 1)} mm`, noteKey: 'wdBelowFocal' });
+    } else if (variant?.kind === 'tube') {
+      // Ống nối: WD nằm trong dải lấy nét mới (OPT-010) — MOD gốc không còn là giới hạn.
+      const acc = variant.accessory;
+      checks.push({
+        key: 'workingDistance',
+        status: 'pass',
+        formula: `WD ${fmt(wd)} mm ∈ [${fmt(acc.wdMinMm, 0)}; ${Number.isFinite(acc.wdMaxMm) ? fmt(acc.wdMaxMm, 0) : '∞'}] mm`,
+        noteKey: 'wdWithTube',
+        noteValues: { total: round(acc.totalMm, 1) },
+      });
     } else if (lens.wdMinMm !== null) {
       const ok = wd >= lens.wdMinMm - EPS;
       checks.push({
@@ -285,7 +468,9 @@ export function evaluateLens(input: LensSelectorInput, need: LensNeed, component
     const needLong = line ? input.fovWidthMm : Math.max(input.fovWidthMm, input.fovHeightMm);
     const needShort = Math.min(input.fovWidthMm, input.fovHeightMm);
     const covers = fovLong >= needLong * (1 - EPS) && (line || fovShort >= needShort * (1 - EPS));
-    const optic = fixedMagnification ? `β ${fmt(beta, 4)}×` : `β = ${fmt(lens.focalLengthMm!, 1)} ÷ (${fmt(wd!)} − ${fmt(lens.focalLengthMm!, 1)}) = ${fmt(beta, 4)}`;
+    const optic = fixedMagnification
+      ? `β ${fmt(beta, 4)}×`
+      : `β = ${variant?.kind === 'converter' ? `${fmt(variant.factor, 2)} × ` : ''}${fmt(lens.focalLengthMm!, 1)} ÷ (${fmt(wd!)} − ${fmt(lens.focalLengthMm!, 1)}) = ${fmt(beta, 4)}`;
     checks.push({
       key: 'fov',
       status: covers ? 'pass' : 'fail',
@@ -364,6 +549,8 @@ export function evaluateLens(input: LensSelectorInput, need: LensNeed, component
     }
   }
 
+  if (variant) checks.push(...variant.checks);
+
   const judged = checks.filter((c) => c.status !== 'info').map((c) => c.status);
   // Ống chưa khai đủ để biết vùng nhìn thì không được xếp "đạt" chỉ nhờ ngàm khớp.
   if (beta === null && !judged.includes('fail')) judged.length = 0;
@@ -377,15 +564,110 @@ export function evaluateLens(input: LensSelectorInput, need: LensNeed, component
     pixelUse: pixelUse !== null ? round(pixelUse, 3) : null,
     fSet,
     checks,
-    status: judged.length === 0 ? 'info' : judged.includes('fail') ? 'fail' : judged.includes('warn') ? 'warn' : 'pass',
+    status: judged.length === 0 ? 'info' : judged.includes('fail') ? 'fail' : judged.includes('warn') || variant ? 'warn' : 'pass',
     unknownCount,
+    accessory: variant?.accessory ?? null,
   };
 }
 
-const STATUS_ORDER: Record<Check['status'], number> = { pass: 0, warn: 1, info: 2, fail: 3 };
+type AccessoryStock = {
+  tubes: { lengthMm: number; mount: string | null; component: Component | null }[];
+  converters: { factor: number; mount: string | null; maxFormat: string | null; component: Component | null }[];
+};
+
+function accessoryStock(catalog: readonly Component[]): AccessoryStock {
+  return {
+    tubes: catalog
+      .filter((c) => c.kind === 'tube')
+      .map((c) => ({ lengthMm: specNumber(c.spec, 'length_mm') ?? 0, mount: specString(c.spec, 'mount'), component: c }))
+      .filter((t) => t.lengthMm > 0),
+    converters: catalog
+      .filter((c) => c.kind === 'converter')
+      .map((c) => ({ factor: specNumber(c.spec, 'factor') ?? 0, mount: specString(c.spec, 'mount'), maxFormat: specString(c.spec, 'max_format'), component: c }))
+      .filter((c) => c.factor > 1),
+  };
+}
 
 /**
- * Lọc + xếp hạng cả kho ống kính. Xếp: đạt → cảnh báo → chưa kiểm được → loại;
+ * Ống bị LOẠI: thử ống nối (chỉ khi loại DUY NHẤT vì MOD) hoặc bộ nhân (chỉ khi loại vì
+ * pixel thô / vòng ảnh nhỏ). Chạy lại toàn bộ phép kiểm với phụ kiện; còn LOẠI thì bỏ.
+ */
+function tryAccessory(input: LensSelectorInput, need: LensNeed, component: Component, base: LensCandidate, params: Params, stock: AccessoryStock): LensCandidate | null {
+  const lens = base.lens;
+  const wd = input.workingDistanceMm;
+  const f = lens.focalLengthMm;
+  if (base.status !== 'fail' || lens.lensType === 'telecentric' || f === null || wd === null || lens.mount === null) return null;
+  const mount = lens.mount;
+  const fails = base.checks.filter((c) => c.status === 'fail').map((c) => c.noteKey);
+
+  // ── OPT-010: ống nối ──
+  if (fails.length > 0 && fails.every((key) => key === 'wdBelowMod') && lens.wdMinMm !== null) {
+    const range = tubeLengthRange(f, lens.wdMinMm, wd);
+    if (!range) return null;
+    let pieces = chooseTubeStack(stock.tubes.filter((t) => t.mount === mount), range.minMm, range.maxMm);
+    let inStock = true;
+    if (!pieces) {
+      if (!STANDARD_ACCESSORY_MOUNTS.includes(mount)) return null;
+      pieces = chooseTubeStack(STANDARD_TUBE_LENGTHS_MM.map((lengthMm) => ({ lengthMm, mount, component: null })), range.minMm, range.maxMm);
+      inStock = false;
+    }
+    if (!pieces) return null;
+    const totalMm = pieces.reduce((sum, p) => sum + p.lengthMm, 0);
+    const focus = tubeFocusRange(f, lens.wdMinMm, totalMm);
+    const accessory: TubeAccessory = {
+      kind: 'tube',
+      mount,
+      pieces: pieces.map((p) => ({ lengthMm: p.lengthMm, component: p.component })),
+      totalMm,
+      needMinMm: range.minMm,
+      needMaxMm: range.maxMm,
+      wdMinMm: focus.wdMinMm,
+      wdMaxMm: focus.wdMaxMm,
+      inStock,
+    };
+    const result = evaluateLens(input, need, component, params, { kind: 'tube', accessory, checks: tubeChecks(accessory, f, range.betaWd, params) });
+    return result.status === 'fail' ? null : result;
+  }
+
+  // ── OPT-011: bộ nhân ──
+  if (fails.length > 0 && fails.every((key) => key === 'pixelTooCoarse' || key === 'imageCircleTooSmall')) {
+    const needs: { factor: number; reason: ConverterAccessory['reason'] }[] = [];
+    if (fails.includes('pixelTooCoarse') && base.mmPerPx !== null && input.targetMmPerPx !== null) {
+      needs.push({ factor: base.mmPerPx / input.targetMmPerPx, reason: 'pixel' });
+    }
+    if (fails.includes('imageCircleTooSmall')) {
+      const circle = lens.imageCircleMm ?? sensorDiagonalMm(lens.imageCircleFormat);
+      if (circle === null || !(circle > 0)) return null;
+      needs.push({ factor: (need.sensorDiagonalMm * (1 - params.imageCircleTolerance)) / circle, reason: 'imageCircle' });
+    }
+    if (needs.length === 0) return null;
+    const driving = needs.reduce((a, b) => (b.factor > a.factor ? b : a));
+    if (driving.factor > params.converterMaxFactor + EPS) return null;
+    const sensorDiag = need.sensorDiagonalMm;
+    const fitsFormat = (format: string | null) => format === null || (sensorDiagonalMm(format) ?? Infinity) >= sensorDiag * (1 - params.imageCircleTolerance);
+    const usable = stock.converters
+      .filter((c) => c.mount === mount && c.factor >= driving.factor - EPS && c.factor <= params.converterMaxFactor + EPS && fitsFormat(c.maxFormat))
+      .sort((a, b) => a.factor - b.factor);
+    let pick: { factor: number; component: Component | null } | null = usable[0] ?? null;
+    let inStock = pick !== null;
+    if (!pick && STANDARD_ACCESSORY_MOUNTS.includes(mount)) {
+      const factor = STANDARD_CONVERTER_FACTORS.find((k) => k >= driving.factor - EPS && k <= params.converterMaxFactor + EPS);
+      pick = factor !== undefined ? { factor, component: null } : null;
+      inStock = false;
+    }
+    if (!pick) return null;
+    const accessory: ConverterAccessory = { kind: 'converter', mount, factor: pick.factor, needFactor: driving.factor, reason: driving.reason, component: pick.component, inStock };
+    const result = evaluateLens(input, need, component, params, { kind: 'converter', factor: pick.factor, accessory, checks: converterChecks(accessory, lens, params) });
+    return result.status === 'fail' ? null : result;
+  }
+  return null;
+}
+
+/** Thứ tự: đạt trơn → cảnh báo → đạt nhờ phụ kiện → chưa kiểm được → loại. */
+const rank = (c: LensCandidate) => (c.status === 'pass' ? 0 : c.status === 'warn' ? (c.accessory ? 2 : 1) : c.status === 'info' ? 3 : 4);
+
+/**
+ * Lọc + xếp hạng cả kho ống kính. Xếp: đạt → cảnh báo → đạt nhờ phụ kiện → chưa kiểm được → loại;
  * trong cùng nhóm, ống dùng nhiều pixel nhất (vùng nhìn sát vật nhất) lên trước,
  * rồi ống ít thông số chưa khai hơn.
  */
@@ -396,14 +678,18 @@ export function selectLenses(
 ): { need: LensNeed | null; candidates: LensCandidate[] } {
   const need = lensNeed(input);
   if (!need) return { need: null, candidates: [] };
+  const stock = accessoryStock(catalog);
   const candidates = catalog
     .filter((component) => component.kind === 'lens')
     .map((component) => ({ component, lens: lensFromComponent(component) }))
     .filter(({ lens }) => matchesKind(lens, input.lensKind))
-    .map(({ component }) => evaluateLens(input, need, component, params))
+    .map(({ component }) => {
+      const base = evaluateLens(input, need, component, params);
+      return tryAccessory(input, need, component, base, params, stock) ?? base;
+    })
     .sort(
       (a, b) =>
-        STATUS_ORDER[a.status] - STATUS_ORDER[b.status] ||
+        rank(a) - rank(b) ||
         (b.pixelUse ?? -1) - (a.pixelUse ?? -1) ||
         a.unknownCount - b.unknownCount ||
         a.component.id.localeCompare(b.component.id)

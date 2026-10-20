@@ -20,6 +20,7 @@ import { CYCLE_DEFAULTS, DOF_FASTEST_PRACTICAL_F } from '@/lib/vision/configurat
 import type { EngineParamKey } from '@/lib/vision/engineParams';
 import { UNKNOWN_SCORE } from '@/lib/vision/feasibility';
 import { K_STITCH } from '@/lib/vision/mechanics';
+import { STANDARD_CONVERTER_FACTORS, STANDARD_TUBE_LENGTHS_MM } from '@/lib/vision/lensSelector';
 import { DEFAULT_CIRCLE_OF_CONFUSION_PX, WAVELENGTH_UM } from '@/lib/vision/optics';
 import { K_BLUR, STROBE_EXPOSURE_LIMIT_US, BYTES_PER_PX } from '@/lib/vision/requirementAnalysis';
 import { DEFAULT_PX_PER_DEFECT, GRR_DIVISOR, K_SUBPIXEL } from '@/lib/vision/resolution';
@@ -621,12 +622,58 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
         title: 'Xếp hạng ống',
         formula: [
           'pixel dùng = diện tích vật ÷ diện tích vùng nhìn thật',
-          'xếp: Đạt → Cảnh báo → Chưa kiểm được → Loại; cùng nhóm: pixel dùng giảm dần, rồi ít thông số thiếu hơn',
+          'xếp: Đạt → Cảnh báo → Đạt nhờ phụ kiện (OPT-010/011) → Chưa kiểm được → Loại; cùng nhóm: pixel dùng giảm dần, rồi ít thông số thiếu hơn',
           'tab M12: chỉ ống ngàm M12 · tab ống thường: bỏ M12 · tab telecentric: chỉ telecentric (WD tuỳ chọn)',
         ],
         evidence: 'calculated',
         usedIn: ['lens'],
         source: 'vision/lensSelector.ts : selectLenses',
+      },
+      {
+        id: 'OPT-010',
+        title: 'Ống nối (extension tube) — khi MOD không đạt',
+        rules: ['OPT-010'],
+        formula: [
+          'chỉ thử khi ống thường bị LOẠI DUY NHẤT vì WD < MOD (không áp telecentric, không ghép với bộ nhân)',
+          'β_WD = f ÷ (WD − f) — ở cùng WD độ phóng đại KHÔNG đổi; ống nối chỉ cho tới được WD đó',
+          'β_MOD = f ÷ (MOD − f); thêm ống e → lấy nét được β ∈ [e ÷ f; e ÷ f + β_MOD]',
+          'e cần ∈ [f × (β_WD − β_MOD); f × β_WD] → tổ hợp ống trong kho ít khúc nhất, rồi ngắn nhất (tối đa 4 khúc)',
+          'dải WD sau khi lắp = [f × (1 + 1 ÷ (e/f + β_MOD)); f × (1 + f ÷ e)]',
+          'mất sáng = 2 × log₂(1 + β_WD) stop',
+          'chạy lại toàn bộ OPT-001…005; còn LOẠI thì bỏ phương án',
+        ],
+        verdict: [
+          'đạt → CẢNH BÁO, xếp sau ống đạt trơn',
+          'β_WD ≥ ngưỡng macro → cảnh báo chất lượng (khuyên ống macro)',
+          'mất sáng ≥ ngưỡng stop → cảnh báo tối',
+          'e > hệ số × f → cảnh báo cơ khí (đòn bẩy, rung)',
+          'số khúc > ngưỡng → cảnh báo đồng trục',
+          'kho chưa có ống ngàm C/CS phù hợp → gợi ý bộ chuẩn, ghi "chưa có trong kho"',
+        ],
+        params: ['accessoryMacroBetaWarn', 'accessoryLightLossStopsWarn', 'tubeLengthToFocalWarn', 'tubeMaxSegments'],
+        constants: [{ name: 'bộ ống nối chuẩn gợi ý (mm)', value: STANDARD_TUBE_LENGTHS_MM.join(' / ') }],
+        evidence: 'calculated',
+        usedIn: ['lens', 'oldSelector'],
+        source: 'vision/lensSelector.ts : tubeLengthRange, tubeFocusRange, chooseTubeStack, tryAccessory · components/match.ts : pickTube',
+      },
+      {
+        id: 'OPT-011',
+        title: 'Bộ nhân tiêu cự (rear converter) ×k',
+        rules: ['OPT-011'],
+        formula: [
+          'chỉ thử khi ống thường bị LOẠI chỉ vì pixel thô và/hoặc vòng ảnh nhỏ (MOD không cứu được: MOD không đổi)',
+          'pixel: k ≥ mm/px thật ÷ mm/px cần · vòng ảnh: k ≥ đường chéo cảm biến × (1 − dung sai) ÷ Ø vòng ảnh ống',
+          'chọn k nhỏ nhất ≥ k cần, ≤ k tối đa, cùng ngàm, cỡ cảm biến tối đa của bộ nhân phủ cảm biến',
+          'sau khi lắp: β = k × f ÷ (WD − f) · F# × k · Ø vòng ảnh × k · lp/mm ÷ k',
+          'mất sáng = 2 × log₂ k stop',
+          'chạy lại toàn bộ OPT-001…005 với các số đã nhân; còn LOẠI thì bỏ phương án',
+        ],
+        verdict: ['đạt → CẢNH BÁO, xếp sau ống đạt trơn', 'mất sáng ≥ ngưỡng stop → cảnh báo tối', 'luôn nhắc: giảm tương phản, thấu kính sau nhô ra có thể không lắp được'],
+        params: ['converterMaxFactor', 'accessoryLightLossStopsWarn'],
+        constants: [{ name: 'hệ số chuẩn gợi ý khi kho chưa có', value: STANDARD_CONVERTER_FACTORS.join(' / ') }],
+        evidence: 'calculated',
+        usedIn: ['lens'],
+        source: 'vision/lensSelector.ts : convertLens, converterChecks, tryAccessory',
       },
     ],
   },

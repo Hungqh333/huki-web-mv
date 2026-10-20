@@ -1,3 +1,4 @@
+import { tubeLengthRange } from '@/lib/vision/lensSelector';
 import { pickCard, pickPc } from './pc';
 import {
   cameraLanes,
@@ -308,8 +309,10 @@ export function pickController(
 export type TubeFit = {
   /** Có cần tube không — và vì sao. */
   needed: boolean;
-  /** Chiều dài nối thêm cần thiết (mm), xấp xỉ. */
+  /** Chiều dài nối thêm NGẮN NHẤT còn lấy nét được ở WD (mm). */
   requiredLengthMm: number | null;
+  /** Chiều dài nối thêm DÀI NHẤT còn lấy nét được ở WD (mm) — dài hơn thì nét gần hơn WD. */
+  requiredMaxMm: number | null;
   lensMinWdMm: number | null;
 };
 
@@ -336,12 +339,18 @@ export function pickTube(
   const needed =
     lensMinWd !== null && req.workingDistanceMm !== null && req.workingDistanceMm < lensMinWd;
 
-  const requiredLengthMm =
-    needed && focal !== null && req.magnification !== null
-      ? Math.round(req.magnification * focal * 10) / 10
+  /* Sửa 2026-10-20 (OPT-010): trước đây lấy β mục tiêu × f rồi chọn tube GẦN nhất —
+     tube đó có thể không lấy nét được ở WD (f 25, MOD 150, WD 100: β 0,4 × 25 = 10 mm →
+     dải nét 67–88 mm, trượt 100 mm). Đúng là dải e ∈ [f·(β_WD − β_MOD); f·β_WD] tính từ
+     chính WD (thấu kính mỏng). `magnification` không còn dùng — giữ tham số cho chỗ gọi cũ. */
+  const range =
+    needed && focal !== null && lensMinWd !== null && req.workingDistanceMm !== null
+      ? tubeLengthRange(focal, lensMinWd, req.workingDistanceMm)
       : null;
+  const requiredLengthMm = range ? Math.ceil(range.minMm * 10) / 10 : null;
+  const requiredMaxMm = range ? Math.floor(range.maxMm * 10) / 10 : null;
 
-  const fit: TubeFit = { needed, requiredLengthMm, lensMinWdMm: lensMinWd };
+  const fit: TubeFit = { needed, requiredLengthMm, requiredMaxMm, lensMinWdMm: lensMinWd };
 
   if (!needed) return { chosen: null, alternatives: [], fit };
 
@@ -350,14 +359,18 @@ export function pickTube(
     (tube) => !lensMount || specString(tube.spec, 'mount') === lensMount
   );
 
+  // Tube nằm TRONG dải lên trước (ngắn trước); ngoài dải xếp theo khoảng cách tới dải.
+  const miss = (tube: Component) => {
+    const length = specNumber(tube.spec, 'length_mm') ?? Infinity;
+    if (range === null) return 0;
+    return length < range.minMm ? range.minMm - length : length > range.maxMm ? length - range.maxMm : 0;
+  };
   const ranked = [...usable].sort((a, b) => {
-    if (requiredLengthMm !== null) {
-      const diff = (tube: Component) =>
-        Math.abs((specNumber(tube.spec, 'length_mm') ?? Infinity) - requiredLengthMm);
-      const d = diff(a) - diff(b);
-      if (d !== 0) return d;
-    }
-    return a.sort_order - b.sort_order;
+    const d = miss(a) - miss(b);
+    if (d !== 0) return d;
+    const la = specNumber(a.spec, 'length_mm') ?? Infinity;
+    const lb = specNumber(b.spec, 'length_mm') ?? Infinity;
+    return la - lb || a.sort_order - b.sort_order;
   });
 
   return { chosen: ranked[0] ?? null, alternatives: ranked.slice(1), fit };

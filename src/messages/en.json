@@ -500,7 +500,7 @@
       "computed": "Computed",
       "suggested": "Suggested",
       "tubeNotNeeded": "Not needed — the working distance is within the lens range.",
-      "fitTube": "Lens needs at least {min} mm, mechanics allow only {actual} mm -> add about {length} mm",
+      "fitTube": "Lens needs at least {min} mm, mechanics allow only {actual} mm -> add {length} mm of extension (shorter will not reach, longer focuses closer than {actual} mm)",
       "fitCableCamera": "Connector follows the {connector} standard",
       "fitLightController": "{lights} lights → {channels} channels needed · {strobe}",
       "strobeRequired": "strobing required (exposure < 1 ms)",
@@ -1227,6 +1227,7 @@
         "controller": "Computer",
         "accessory": "Accessory",
         "tube": "Extension tube",
+        "converter": "Rear converter",
         "cable": "Cable",
         "light_controller": "Light controller",
         "interface_card": "Interface card",
@@ -1285,6 +1286,8 @@
         "pcie_slots": "PCIe slots",
         "max_bandwidth_mbytes_s": "Max total bandwidth",
         "length_mm": "Length",
+        "factor": "Magnification factor",
+        "max_format": "Max sensor format",
         "cable_for": "Cable for",
         "connector": "Connector",
         "length_m": "Cable length",
@@ -1378,6 +1381,11 @@
         "telecentricPracticalMaxMm": "Telecentric — field side still reasonably priced",
         "telecentricFeasibleMaxMm": "Telecentric — largest feasible field side",
         "dofDiffractionTolerance": "Depth of field — F needed at most this × F#max",
+        "accessoryMacroBetaWarn": "Accessories — warn on image quality when β exceeds this on a standard lens (suggest a macro lens)",
+        "accessoryLightLossStopsWarn": "Accessories — warn when light loss exceeds this many stops",
+        "tubeLengthToFocalWarn": "Extension tube — mechanical warning when longer than this × focal length",
+        "tubeMaxSegments": "Extension tube — warn when stacking more segments than this",
+        "converterMaxFactor": "Rear converter — maximum factor suggested",
         "cycleMinMargin": "Minimum headroom versus takt (ratio)",
         "processMs": "Assumed processing time — traditional",
         "processDeepLearningMs": "Assumed processing time — deep learning",
@@ -2486,7 +2494,11 @@
       "details": "Details",
       "hide": "Hide",
       "unknownCount": "{n} specs not declared",
-      "datasheet": "Datasheet"
+      "datasheet": "Datasheet",
+      "withTube": "+ extension tube {pieces}{total} mm",
+      "withConverter": "+ rear converter {k}×",
+      "notInStock": "not in stock",
+      "accessoryHint": "Lenses rejected for MOD, image circle or coarse pixels are retried with an extension tube or a rear converter — ranked after plain passes, always at Warning. Open Details for the impact."
     },
     "status": {
       "pass": "Pass",
@@ -2502,7 +2514,9 @@
       "pixel": "mm/px",
       "resolution": "Lens resolution",
       "diffraction": "Diffraction",
-      "depth": "Depth of field"
+      "depth": "Depth of field",
+      "tube": "Extension tube",
+      "converter": "Rear converter"
     },
     "notes": {
       "mountUnknown": "Lens or camera mount not declared.",
@@ -2528,7 +2542,17 @@
       "dofTradeoff": "Needs F/{f}, slightly past the diffraction limit F/{fMax}: mild blur, acceptable if a test shot passes.",
       "dofSetAperture": "Set the aperture around F/{f} (diffraction limit F/{fMax}).",
       "wdFromLens": "Working distance set by the lens: {min}–{max} mm.",
-      "wdMissing": "No working distance entered."
+      "wdMissing": "No working distance entered.",
+      "wdWithTube": "In focus thanks to a {total} mm extension tube.",
+      "tubeChosen": "Add a {total} mm extension tube: focus range becomes {wdMin}–{wdMax} mm, no infinity focus. At the same WD the magnification does not change — the tube only lets the lens reach this WD. Recalibrate after fitting.",
+      "accessoryNotInStock": "No suitable {mount}-mount accessory in stock — this is a suggested standard size to order.",
+      "tubeMacro": "β {beta} ≥ {limit}: standard lenses are designed for distant objects; close up, corners soften and distortion grows — consider a macro lens.",
+      "accessoryLight": "About {stops} stops darker (limit {limit}) — add light or expose longer, watch for motion blur.",
+      "tubeLong": "A {total} mm tube is longer than {ratio}× the focal length — leverage on the mount, prone to vibration: support the lens.",
+      "tubeSegments": "Stacking {n} segments (limit {max}) — alignment error grows and joints loosen: use longer segments.",
+      "converterForPixel": "Add a {k}× rear converter to reach the required mm/px: the FOV shrinks {k}×. MOD is unchanged ({mod} mm). Diffraction, lens resolution and depth of field are rechecked with the multiplied F# and lp/mm.",
+      "converterForCircle": "Add a {k}× rear converter so the image circle covers the sensor: the FOV shrinks {k}×. MOD is unchanged ({mod} mm). Diffraction, lens resolution and depth of field are rechecked with the multiplied F# and lp/mm.",
+      "converterFit": "Extra glass lowers contrast; some lenses have a protruding rear element and cannot take a converter — check both datasheets."
     },
     "reset": "Reset",
     "tabs": {

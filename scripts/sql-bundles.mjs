@@ -64,6 +64,12 @@ export const BUNDLES = {
       ['PHAN 1/1: MIGRATION — bang chieu sang + gia dinh mac dinh sua qua admin (chi Admin ghi, nguoi dang nhap doc)', 'supabase/migrations/20261016000001_engine_tables.sql'],
     ],
   },
+  'converter-kind': {
+    out: 'CHAY-BUOC-NAY-BO-NHAN.sql',
+    parts: [
+      ['PHAN 1/1: MIGRATION — them loai linh kien "converter" (bo nhan tieu cu) vao danh sach hop le', 'supabase/migrations/20261020000001_converter_kind.sql'],
+    ],
+  },
   projects: {
     out: 'CHAY-BUOC-NAY-DUAN.sql',
     parts: [

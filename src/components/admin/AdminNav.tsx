@@ -23,10 +23,13 @@ export type AdminNavItem = {
 export function AdminNav({ items, label }: { items: AdminNavItem[]; label: string }) {
   const pathname = usePathname();
 
+  /* Màn hình rộng: menu đứng yên khi cuộn trang dài (Sổ tay công thức, danh sách linh kiện) —
+     chốt 2026-10-20. self-start để thanh không kéo dài bằng cột nội dung (sticky mới có tác
+     dụng); max-h + cuộn trong để màn hình thấp vẫn thấy hết mục. Điện thoại giữ thanh ngang. */
   return (
     <nav
       aria-label={label}
-      className="-mx-4 flex gap-2 overflow-x-auto px-4 lg:mx-0 lg:flex-col lg:gap-1 lg:overflow-visible lg:px-0"
+      className="-mx-4 flex gap-2 overflow-x-auto px-4 lg:sticky lg:top-6 lg:mx-0 lg:max-h-[calc(100vh-3rem)] lg:flex-col lg:gap-1 lg:self-start lg:overflow-y-auto lg:overflow-x-visible lg:px-0"
     >
       {items.map((item) => {
         // Trang con (/admin/chi-tieu/he-so) vẫn phải sáng mục cha.

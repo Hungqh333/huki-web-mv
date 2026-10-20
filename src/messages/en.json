@@ -1310,7 +1310,6 @@
     "formulas": {
       "title": "Formula handbook",
       "meta": "{count} entries",
-      "toc": "Contents",
       "reviewedAt": "Last checked against the code: {date}.",
       "expandAll": "Expand all",
       "collapseAll": "Collapse all",

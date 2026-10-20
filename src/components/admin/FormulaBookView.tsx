@@ -36,22 +36,9 @@ export async function FormulaBookView({ loaded }: { loaded: LoadedEngineParams }
         actions={<FormulaBookControls expandLabel={t('expandAll')} collapseLabel={t('collapseAll')} />}
       />
 
-      {/* Mục lục — bấm vào thì phần tương ứng tự mở (FormulaBookControls). */}
-      <nav aria-label={t('toc')} className="mt-4 flex flex-wrap gap-2">
-        {FORMULA_BOOK.map((section) => (
-          <a
-            key={section.key}
-            href={`#${section.key}`}
-            className="rounded-full border border-slate-300 bg-white px-3 py-1 text-xs font-medium text-slate-700 hover:border-sky-400 hover:text-sky-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
-          >
-            {section.title}
-          </a>
-        ))}
-      </nav>
-
       {/* Mỗi phần là một <details> (HTML gốc, không cần JavaScript): mặc định thu gọn để nhìn
-          tổng quát 13 phần; dòng tóm tắt vẫn hiện số mục và các mã luật trong phần. */}
-      <div className="mt-6 space-y-3">
+          tổng quát 13 phần; dòng tóm tắt hiện số mục (chốt 2026-10-20: bỏ mục lục và dòng mã luật). */}
+      <div className="mt-4 space-y-3">
         {FORMULA_BOOK.map((section) => (
           <details
             key={section.key}
@@ -65,9 +52,6 @@ export async function FormulaBookView({ loaded }: { loaded: LoadedEngineParams }
               </span>
               <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">{section.title}</h2>
               <span className={NOTE_CLASS}>{t('entries', { count: section.entries.length })}</span>
-              <span className="w-full pl-6 font-mono text-[11px] text-slate-400 sm:w-auto sm:pl-0">
-                {section.entries.map((entry) => entry.id).join(' · ')}
-              </span>
             </summary>
             <div className="border-t border-slate-200 px-4 pb-4 pt-3 dark:border-slate-800">
               {section.intro ? <p className={`max-w-3xl ${NOTE_CLASS}`}>{section.intro}</p> : null}

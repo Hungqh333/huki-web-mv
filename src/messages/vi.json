@@ -1310,7 +1310,6 @@
     "formulas": {
       "title": "Sổ tay công thức",
       "meta": "{count} mục",
-      "toc": "Mục lục",
       "reviewedAt": "Đối chiếu với code lần cuối: {date}.",
       "expandAll": "Mở tất cả",
       "collapseAll": "Thu gọn tất cả",

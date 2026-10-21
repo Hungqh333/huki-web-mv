@@ -56,7 +56,23 @@ export type LensSelectorInput = {
   /** mm/px cần (tuỳ chọn). Có thì ống cho mm/px thô hơn bị loại. */
   targetMmPerPx: number | null;
   lensKind: LensKindFilter;
+  /**
+   * Phụ kiện anh tự khai (chốt 2026-10-20, Q1–Q4): áp cho MỌI ống thường (chỉ tab ống
+   * thường), tắt gợi ý tự động; khai được cả hai, kèm cảnh báo mất sáng cộng dồn.
+   */
+  fixedAccessory?: FixedAccessory | null;
 };
+
+export type FixedAccessory = { tubeMm: number | null; converterFactor: number | null };
+
+/** Phụ kiện khai tay có hiệu lực: chỉ tab ống thường, ống nối > 0 mm, bộ nhân > 1×. */
+export function activeFixedAccessory(input: Pick<LensSelectorInput, 'lensKind' | 'fixedAccessory'>): { tubeMm: number | null; converterFactor: number | null } | null {
+  const fa = input.fixedAccessory;
+  if (input.lensKind !== 'fixed' || !fa) return null;
+  const tubeMm = fa.tubeMm !== null && fa.tubeMm > 0 ? fa.tubeMm : null;
+  const converterFactor = fa.converterFactor !== null && fa.converterFactor > 1 ? fa.converterFactor : null;
+  return tubeMm === null && converterFactor === null ? null : { tubeMm, converterFactor };
+}
 
 export type LensParams = Pick<
   EngineParams,
@@ -96,6 +112,8 @@ export type LensNeed = {
   telecentricStatus: 'pass' | 'warn' | 'fail' | null;
   /** mm/px với β lý tưởng thô hơn mức cần → camera thiếu pixel, không ống nào cứu được. */
   cameraTooCoarse: boolean;
+  /** Bộ nhân anh khai (×k) — khi có, tiêu cự lý tưởng và F#max là của ống GỐC. */
+  converterFactor: number | null;
 };
 
 export type LensCheckKey = 'mount' | 'imageCircle' | 'workingDistance' | 'fov' | 'pixel' | 'resolution' | 'diffraction' | 'depth' | 'tube' | 'converter';
@@ -167,9 +185,18 @@ export type ConverterAccessory = {
 
 export type LensAccessory = TubeAccessory | ConverterAccessory;
 
-type LensVariant =
-  | { kind: 'tube'; accessory: TubeAccessory; checks: LensCheck[] }
-  | { kind: 'converter'; factor: number; accessory: ConverterAccessory; checks: LensCheck[] };
+/**
+ * Ống kèm phụ kiện. `tube`: tổng ống nối + dải WD lấy nét (wdMinMm null = ống chưa khai MOD).
+ * `accessory`: phụ kiện engine TỰ gợi ý (null khi anh tự khai) — có thì ống luôn ở mức CẢNH BÁO.
+ * Thứ tự lắp giả định: ống kính → ống nối → bộ nhân → camera (ống nối dịch dải nét của ống
+ * gốc; bộ nhân nhân k độ phóng đại cả hệ).
+ */
+type LensVariant = {
+  tube: { totalMm: number; wdMinMm: number | null; wdMaxMm: number } | null;
+  converterFactor: number | null;
+  accessory: LensAccessory | null;
+  checks: LensCheck[];
+};
 
 /** Dải chiều dài ống nối cần để ống tiêu cự f (MOD đã biết) lấy nét được ở WD. */
 export function tubeLengthRange(focalMm: number, modMm: number, wdMm: number): { minMm: number; maxMm: number; betaWd: number; betaMod: number } | null {
@@ -312,6 +339,8 @@ export function lensNeed(input: LensSelectorInput): LensNeed | null {
   });
   if (!fit) return null;
   const beta = fit.beta;
+  // Bộ nhân khai tay ×k: cả hệ cần β → ống gốc cần β ÷ k (OPT-011).
+  const k = activeFixedAccessory(input)?.converterFactor ?? 1;
   const pitch = camera.pixelSizeUm;
   const mmPerPx = pitch !== null ? pitch / 1000 / beta : null;
   const c = pitch !== null ? (DEFAULT_CIRCLE_OF_CONFUSION_PX * pitch) / 1000 : null;
@@ -333,13 +362,14 @@ export function lensNeed(input: LensSelectorInput): LensNeed | null {
     sensorDiagonalMm: round(cameraDiagonal(camera, sensor.diagonalMm), 3),
     beta: round(beta, 5),
     betaFormula: fit.formula,
-    focalIdealMm: wd !== null && !tele ? round(focalLengthFor(beta, wd), 2) : null,
+    focalIdealMm: wd !== null && !tele ? round(focalLengthFor(beta / k, wd), 2) : null,
     aovLongDeg: aovLong !== null ? round(aovLong, 2) : null,
     aovShortDeg: aovShort !== null ? round(aovShort, 2) : null,
     fovLongMm: round(actualLong, 1),
     fovShortMm: round(actualShort, 1),
     mmPerPx: mmPerPx !== null ? round(mmPerPx, 5) : null,
-    fMaxRing: pitch !== null ? round(maxRingFNumber(pitch, beta, tele ? 'telecentric' : null), 2) : null,
+    // Vòng khẩu của ống gốc: F# cả hệ = k × F# ống gốc.
+    fMaxRing: pitch !== null ? round(maxRingFNumber(pitch, beta, tele ? 'telecentric' : null) / k, 2) : null,
     lpPerMm: pitch !== null ? requiredLpPerMm(pitch) : null,
     fNeedDepth:
       input.heightVariationMm !== null && input.heightVariationMm > 0 && c !== null
@@ -349,6 +379,7 @@ export function lensNeed(input: LensSelectorInput): LensNeed | null {
     telecentricStatus:
       front === null ? null : teleSide <= TELECENTRIC_PRACTICAL_MAX_MM ? 'pass' : teleSide <= TELECENTRIC_FEASIBLE_MAX_MM ? 'warn' : 'fail',
     cameraTooCoarse: mmPerPx !== null && input.targetMmPerPx !== null && mmPerPx > input.targetMmPerPx * (1 + EPS),
+    converterFactor: k > 1 ? k : null,
   };
 }
 
@@ -367,7 +398,7 @@ export function evaluateLens(
   variant: LensVariant | null = null
 ): LensCandidate {
   const baseLens = lensFromComponent(component);
-  const lens = variant?.kind === 'converter' ? convertLens(baseLens, variant.factor) : baseLens;
+  const lens = variant?.converterFactor ? convertLens(baseLens, variant.converterFactor) : baseLens;
   const { camera, workingDistanceMm: wd } = input;
   const pitch = camera.pixelSizeUm;
   const line = camera.cameraType === 'line';
@@ -433,19 +464,23 @@ export function evaluateLens(
   } else if (lens.focalLengthMm !== null && wd !== null) {
     beta = entocentricMagnification(lens.focalLengthMm, wd);
     // Bộ nhân ×k: độ phóng đại cả hệ = k × β của ống gốc ở cùng WD (OPT-011).
-    if (beta !== null && variant?.kind === 'converter') beta *= variant.factor;
+    if (beta !== null && variant?.converterFactor) beta *= variant.converterFactor;
     if (beta === null) {
       checks.push({ key: 'workingDistance', status: 'fail', formula: `WD ${fmt(wd)} mm ≤ f ${fmt(lens.focalLengthMm, 1)} mm`, noteKey: 'wdBelowFocal' });
-    } else if (variant?.kind === 'tube') {
-      // Ống nối: WD nằm trong dải lấy nét mới (OPT-010) — MOD gốc không còn là giới hạn.
-      const acc = variant.accessory;
-      checks.push({
-        key: 'workingDistance',
-        status: 'pass',
-        formula: `WD ${fmt(wd)} mm ∈ [${fmt(acc.wdMinMm, 0)}; ${Number.isFinite(acc.wdMaxMm) ? fmt(acc.wdMaxMm, 0) : '∞'}] mm`,
-        noteKey: 'wdWithTube',
-        noteValues: { total: round(acc.totalMm, 1) },
-      });
+    } else if (variant?.tube) {
+      // Ống nối: WD phải nằm trong dải lấy nét MỚI (OPT-010) — MOD gốc không còn là giới hạn.
+      const tube = variant.tube;
+      const max = Number.isFinite(tube.wdMaxMm) ? fmt(tube.wdMaxMm, 0) : '∞';
+      const values = { total: round(tube.totalMm, 1), wdMin: tube.wdMinMm !== null ? Math.round(tube.wdMinMm) : '—', wdMax: max };
+      if (wd > tube.wdMaxMm + EPS) {
+        checks.push({ key: 'workingDistance', status: 'fail', formula: `WD ${fmt(wd)} mm > ${max} mm`, noteKey: 'tubeTooLong', noteValues: values });
+      } else if (tube.wdMinMm === null) {
+        unknown('workingDistance', `WD ${fmt(wd)} mm ≤ ${max} mm`, 'tubeModUnknown', values);
+      } else if (wd < tube.wdMinMm - EPS) {
+        checks.push({ key: 'workingDistance', status: 'fail', formula: `WD ${fmt(wd)} mm < ${fmt(tube.wdMinMm, 0)} mm`, noteKey: 'tubeTooShort', noteValues: values });
+      } else {
+        checks.push({ key: 'workingDistance', status: 'pass', formula: `WD ${fmt(wd)} mm ∈ [${fmt(tube.wdMinMm, 0)}; ${max}] mm`, noteKey: 'wdWithTube', noteValues: values });
+      }
     } else if (lens.wdMinMm !== null) {
       const ok = wd >= lens.wdMinMm - EPS;
       checks.push({
@@ -470,7 +505,7 @@ export function evaluateLens(
     const covers = fovLong >= needLong * (1 - EPS) && (line || fovShort >= needShort * (1 - EPS));
     const optic = fixedMagnification
       ? `β ${fmt(beta, 4)}×`
-      : `β = ${variant?.kind === 'converter' ? `${fmt(variant.factor, 2)} × ` : ''}${fmt(lens.focalLengthMm!, 1)} ÷ (${fmt(wd!)} − ${fmt(lens.focalLengthMm!, 1)}) = ${fmt(beta, 4)}`;
+      : `β = ${variant?.converterFactor ? `${fmt(variant.converterFactor, 2)} × ` : ''}${fmt(lens.focalLengthMm!, 1)} ÷ (${fmt(wd!)} − ${fmt(lens.focalLengthMm!, 1)}) = ${fmt(beta, 4)}`;
     checks.push({
       key: 'fov',
       status: covers ? 'pass' : 'fail',
@@ -564,7 +599,8 @@ export function evaluateLens(
     pixelUse: pixelUse !== null ? round(pixelUse, 3) : null,
     fSet,
     checks,
-    status: judged.length === 0 ? 'info' : judged.includes('fail') ? 'fail' : judged.includes('warn') || variant ? 'warn' : 'pass',
+    // Phụ kiện engine TỰ gợi ý → luôn CẢNH BÁO; phụ kiện anh tự khai → theo đúng các phép kiểm.
+    status: judged.length === 0 ? 'info' : judged.includes('fail') ? 'fail' : judged.includes('warn') || variant?.accessory ? 'warn' : 'pass',
     unknownCount,
     accessory: variant?.accessory ?? null,
   };
@@ -625,7 +661,12 @@ function tryAccessory(input: LensSelectorInput, need: LensNeed, component: Compo
       wdMaxMm: focus.wdMaxMm,
       inStock,
     };
-    const result = evaluateLens(input, need, component, params, { kind: 'tube', accessory, checks: tubeChecks(accessory, f, range.betaWd, params) });
+    const result = evaluateLens(input, need, component, params, {
+      tube: { totalMm, wdMinMm: focus.wdMinMm, wdMaxMm: focus.wdMaxMm },
+      converterFactor: null,
+      accessory,
+      checks: tubeChecks(accessory, f, range.betaWd, params),
+    });
     return result.status === 'fail' ? null : result;
   }
 
@@ -657,10 +698,80 @@ function tryAccessory(input: LensSelectorInput, need: LensNeed, component: Compo
     }
     if (!pick) return null;
     const accessory: ConverterAccessory = { kind: 'converter', mount, factor: pick.factor, needFactor: driving.factor, reason: driving.reason, component: pick.component, inStock };
-    const result = evaluateLens(input, need, component, params, { kind: 'converter', factor: pick.factor, accessory, checks: converterChecks(accessory, lens, params) });
+    const result = evaluateLens(input, need, component, params, { tube: null, converterFactor: pick.factor, accessory, checks: converterChecks(accessory, lens, params) });
     return result.status === 'fail' ? null : result;
   }
   return null;
+}
+
+/**
+ * Phụ kiện anh tự khai cho MỘT ống thường: dải lấy nét khi có ống nối, hệ số bộ nhân, và các
+ * dòng cảnh báo (OPT-010 / OPT-011). Không chọn từ kho — anh đã chọn; chỉ kiểm hệ quả.
+ */
+function manualVariant(lens: ConfigLens, wd: number | null, fixed: { tubeMm: number | null; converterFactor: number | null }, params: Params): LensVariant {
+  const f = lens.focalLengthMm;
+  const k = fixed.converterFactor;
+  const checks: LensCheck[] = [];
+  let tube: LensVariant['tube'] = null;
+  // β của ống GỐC ở WD (thấu kính mỏng) — ống nối không đổi β ở cùng WD.
+  const betaPrime = f !== null && wd !== null && wd > f ? f / (wd - f) : null;
+
+  if (fixed.tubeMm !== null && f !== null) {
+    const e = fixed.tubeMm;
+    const hasMod = lens.wdMinMm !== null && lens.wdMinMm > f;
+    const range = hasMod ? tubeFocusRange(f, lens.wdMinMm!, e) : { wdMinMm: null, wdMaxMm: f * (1 + f / e) };
+    tube = { totalMm: e, wdMinMm: range.wdMinMm, wdMaxMm: range.wdMaxMm };
+    checks.push({
+      key: 'tube',
+      status: 'info',
+      formula: `e ${fmt(e, 1)} mm · WD [${range.wdMinMm !== null ? fmt(range.wdMinMm, 0) : '?'}; ${fmt(range.wdMaxMm, 0)}] mm`,
+      noteKey: 'tubeManual',
+      noteValues: { total: round(e, 1), wdMin: range.wdMinMm !== null ? Math.round(range.wdMinMm) : '—', wdMax: Math.round(range.wdMaxMm) },
+    });
+    if (betaPrime !== null && betaPrime >= params.accessoryMacroBetaWarn) {
+      checks.push({ key: 'tube', status: 'warn', formula: `β ${fmt(betaPrime, 3)} ≥ ${params.accessoryMacroBetaWarn}`, noteKey: 'tubeMacro', noteValues: { beta: round(betaPrime, 3), limit: params.accessoryMacroBetaWarn } });
+    }
+    if (e > params.tubeLengthToFocalWarn * f) {
+      checks.push({ key: 'tube', status: 'warn', formula: `${fmt(e, 1)} mm > ${params.tubeLengthToFocalWarn} × ${fmt(f, 1)} mm`, noteKey: 'tubeLong', noteValues: { total: round(e, 1), ratio: params.tubeLengthToFocalWarn } });
+    }
+  }
+
+  if (k !== null) {
+    checks.push({
+      key: 'converter',
+      status: 'info',
+      formula:
+        `${fmt(k, 2)}×` +
+        (f !== null ? ` · f ${fmt(f, 1)} → ${fmt(f * k, 1)} mm` : '') +
+        (lens.fNumberMin !== null ? ` · F/${fmt(lens.fNumberMin, 1)} → F/${fmt(lens.fNumberMin * k, 1)}` : ''),
+      noteKey: 'converterManual',
+      noteValues: { k, mod: lens.wdMinMm ?? '—' },
+    });
+    if (k > params.converterMaxFactor + EPS) {
+      checks.push({ key: 'converter', status: 'warn', formula: `${fmt(k, 2)}× > ${params.converterMaxFactor}×`, noteKey: 'converterAboveMax', noteValues: { k, max: params.converterMaxFactor } });
+    }
+    checks.push({ key: 'converter', status: 'info', formula: '—', noteKey: 'converterFit' });
+  }
+
+  // Mất sáng: ống nối 2·log₂(1 + β), bộ nhân 2·log₂ k — có cả hai thì cảnh báo CỘNG DỒN (Q2).
+  const tubeStops = tube && betaPrime !== null ? stopsLost(1 + betaPrime) : 0;
+  const convStops = k !== null ? stopsLost(k) : 0;
+  const total = tubeStops + convStops;
+  if (total >= params.accessoryLightLossStopsWarn) {
+    const both = tube !== null && k !== null;
+    checks.push({
+      key: both ? 'converter' : tube ? 'tube' : 'converter',
+      status: 'warn',
+      formula: both
+        ? `2 × log₂(1 + ${fmt(betaPrime ?? 0, 3)}) + 2 × log₂(${fmt(k!, 2)}) = ${fmt(total, 2)} stop`
+        : tube
+          ? `2 × log₂(1 + ${fmt(betaPrime ?? 0, 3)}) = ${fmt(total, 2)} stop`
+          : `2 × log₂(${fmt(k!, 2)}) = ${fmt(total, 2)} stop`,
+      noteKey: both ? 'accessoryLightTotal' : 'accessoryLight',
+      noteValues: { stops: round(total, 1), limit: params.accessoryLightLossStopsWarn },
+    });
+  }
+  return { tube, converterFactor: k, accessory: null, checks };
 }
 
 /** Thứ tự: đạt trơn → cảnh báo → đạt nhờ phụ kiện → chưa kiểm được → loại. */
@@ -679,11 +790,14 @@ export function selectLenses(
   const need = lensNeed(input);
   if (!need) return { need: null, candidates: [] };
   const stock = accessoryStock(catalog);
+  const fixed = activeFixedAccessory(input);
   const candidates = catalog
     .filter((component) => component.kind === 'lens')
     .map((component) => ({ component, lens: lensFromComponent(component) }))
     .filter(({ lens }) => matchesKind(lens, input.lensKind))
-    .map(({ component }) => {
+    .map(({ component, lens }) => {
+      // Anh đã khai phụ kiện → mọi ống kiểm với đúng cấu hình đó, KHÔNG tự gợi ý thêm (Q1).
+      if (fixed) return evaluateLens(input, need, component, params, manualVariant(lens, input.workingDistanceMm, fixed, params));
       const base = evaluateLens(input, need, component, params);
       return tryAccessory(input, need, component, base, params, stock) ?? base;
     })
@@ -728,8 +842,11 @@ export function solveGeometry(input: {
   workingDistanceMm: number | null;
   fovWidthMm: number | null;
   fovHeightMm: number | null;
+  /** Bộ nhân anh khai ×k: tiêu cự nhập / tính ra là của ống GỐC, β cả hệ = k × β ống gốc. */
+  converterFactor?: number | null;
 }): SolvedGeometry | null {
   const sensor = sensorOf(input.camera);
+  const k = input.converterFactor && input.converterFactor > 1 ? input.converterFactor : 1;
   if (!sensor) return null;
   const line = input.camera.cameraType === 'line';
   const { focalLengthMm: f, workingDistanceMm: wd, fovWidthMm: fw } = input;
@@ -744,16 +861,17 @@ export function solveGeometry(input: {
   if (input.mode === 'fov-wd') {
     const m = fit();
     if (!m || wd === null || !(wd > 0)) return null;
-    return { fovWidthMm: fw!, fovHeightMm: fh!, workingDistanceMm: wd, focalLengthMm: focalLengthFor(m.beta, wd), beta: m.beta };
+    return { fovWidthMm: fw!, fovHeightMm: fh!, workingDistanceMm: wd, focalLengthMm: focalLengthFor(m.beta / k, wd), beta: m.beta };
   }
   if (input.mode === 'focal-wd') {
     if (f === null || wd === null) return null;
-    const beta = entocentricMagnification(f, wd);
-    if (beta === null) return null;
+    const prime = entocentricMagnification(f, wd);
+    if (prime === null) return null;
+    const beta = prime * k;
     const long = sensor.longMm / beta;
     return { fovWidthMm: long, fovHeightMm: line ? long : sensor.shortMm / beta, workingDistanceMm: wd, focalLengthMm: f, beta };
   }
   const m = fit();
   if (!m || f === null || !(f > 0)) return null;
-  return { fovWidthMm: fw!, fovHeightMm: fh!, workingDistanceMm: f * (1 + 1 / m.beta), focalLengthMm: f, beta: m.beta };
+  return { fovWidthMm: fw!, fovHeightMm: fh!, workingDistanceMm: f * (1 + 1 / (m.beta / k)), focalLengthMm: f, beta: m.beta };
 }

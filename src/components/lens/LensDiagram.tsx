@@ -110,13 +110,33 @@ const LENS_SHAPE: Record<'fixed' | 'telecentric', { segments: [Station, Station]
   },
 };
 
+/** Phụ kiện lắp giữa camera và ống (OPT-010 / OPT-011, 2026-10-20) — vẽ minh hoạ, không theo tỉ lệ. */
+export type AccessoryKind = 'tube' | 'converter';
+/** Phụ kiện trên sơ đồ, theo thứ tự lắp từ ống kính ra camera: ống nối rồi bộ nhân (2026-10-20). */
+export type DiagramAccessory = { kinds: AccessoryKind[]; labels: string[] };
+const ACCESSORY_SHAPE = { tube: { r: 15, length: 26 }, converter: { r: 19, length: 24 } } as const;
+
 /** Camera + ống ở một chế độ. Hướng nhìn của phép chiếu thấy các mặt +x, −y, −z của hộp. */
-function rig(telecentric: boolean) {
+function rig(telecentric: boolean, kinds: readonly AccessoryKind[] = []) {
   const shape = LENS_SHAPE[telecentric ? 'telecentric' : 'fixed'];
   const front = shape.segments[shape.segments.length - 1][1];
   const length = -shape.segments[0][0].z;
+  // Phụ kiện chen giữa ngàm ống và camera: ống kính giữ chỗ (tia không đổi), camera lùi ra sau.
+  // Lắp nối tiếp từ ống kính ra: khúc đầu sát ống kính (z lớn hơn), khúc sau sát camera.
+  let cursor = -length;
+  const pieces = kinds.map((kind) => {
+    const { r, length: len } = ACCESSORY_SHAPE[kind];
+    const z1 = cursor;
+    const z0 = cursor - len;
+    cursor = z0;
+    return { kind, r, z0, z1 };
+  });
+  const gap = -length - cursor;
+  const accZ0 = cursor;
+  const accZ1 = -length;
+  const rMax = Math.max(0, ...pieces.map((p) => p.r));
   // Camera công nghiệp ~29 × 29 mm, dài ~40 mm — cỡ ngang đường kính ống thường.
-  const box = { half: 15, z0: -(length + 42), z1: -length };
+  const box = { half: 15, z0: -(length + gap + 42), z1: -(length + gap) };
   const b = (x: number, y: number, z: number) => P(x * box.half, y * box.half, z);
   return {
     lens: { rFront: front.r, length },
@@ -128,10 +148,42 @@ function rig(telecentric: boolean) {
     top: [b(-1, -1, box.z0), b(-1, -1, box.z1), b(1, -1, box.z1), b(1, -1, box.z0)],
     side: [b(1, -1, box.z0), b(1, -1, box.z1), b(1, 1, box.z1), b(1, 1, box.z0)],
     backCenter: P(0, 0, box.z0),
+    accessory: pieces.length
+      ? {
+          // Vẽ từ khúc xa người xem (sát ống kính) tới khúc gần (sát camera).
+          pieces: pieces.map((p) => ({
+            kind: p.kind,
+            body: hull([...circle(p.r, p.z0), ...circle(p.r, p.z1)]),
+            seams: [visibleArc(p.r, p.z0), visibleArc(p.r, p.z1)],
+          })),
+          /* Nhãn ở khoảng trống phía TRÊN-TRÁI ống kính (dưới ô cảm biến, trái chùm tia), có đường
+             dẫn xuống khúc phụ kiện. Đặt sát trên khúc thì chữ đè đỉnh thân ống (ống dốc lên về phía
+             phải); phía dưới đã có nhãn tiêu cự và đường gióng WD — máy dò va chạm bắt cả hai. */
+          // Chữ BẮT ĐẦU ngay phải đường nét đứt từ ô cảm biến xuống camera (x = tâm mặt sau hộp).
+          labelAt: [P(0, 0, box.z0)[0] + 7, P(0, -52, (accZ0 + accZ1) / 2)[1]] as Pt,
+          leader: [P(0, -47, (accZ0 + accZ1) / 2), P(0, -rMax - 1, (accZ0 + accZ1) / 2)] as const,
+        }
+      : null,
   };
 }
 
-const RIGS = { fixed: rig(false), telecentric: rig(true) };
+const RIGS = {
+  fixed: rig(false),
+  telecentric: rig(true),
+  tube: rig(false, ['tube']),
+  converter: rig(false, ['converter']),
+  'tube+converter': rig(false, ['tube', 'converter']),
+};
+const rigKey = (kinds: readonly AccessoryKind[]) =>
+  (kinds.includes('tube') && kinds.includes('converter') ? 'tube+converter' : kinds.includes('tube') ? 'tube' : 'converter') as 'tube' | 'converter' | 'tube+converter';
+const ACC_FILL: Record<AccessoryKind, string> = {
+  tube: 'fill-amber-300 stroke-amber-700 dark:fill-amber-700 dark:stroke-amber-300',
+  converter: 'fill-violet-300 stroke-violet-700 dark:fill-violet-700 dark:stroke-violet-300',
+};
+const ACC_SEAM: Record<AccessoryKind, string> = {
+  tube: 'stroke-amber-800 dark:stroke-amber-200',
+  converter: 'stroke-violet-800 dark:stroke-violet-200',
+};
 
 /** Mặt vùng nhìn: nửa rộng × nửa cao (đơn vị hình) tại z = WD_LEN. */
 const PLANE = { fixed: { hw: 120, hh: 95 }, telecentric: { hw: 45, hh: 35 } };
@@ -159,6 +211,7 @@ export function LensDiagram({
   fovShortMm,
   telecentric,
   highlight,
+  accessory = null,
 }: {
   sensorLongMm: number | null;
   sensorShortMm: number | null;
@@ -172,10 +225,15 @@ export function LensDiagram({
   fovShortMm: number | null;
   telecentric: boolean;
   highlight: DiagramField | null;
+  /** Phụ kiện của ống đang mở Chi tiết; null = không vẽ. Telecentric không có phụ kiện. */
+  accessory?: DiagramAccessory | null;
 }) {
   const t = useTranslations('lensSelector.diagram');
   const mode = telecentric ? 'telecentric' : 'fixed';
-  const r = RIGS[mode];
+  const r = !telecentric && accessory && accessory.kinds.length > 0 ? RIGS[rigKey(accessory.kinds)] : RIGS[mode];
+  // Hai dòng nhãn: hạ cả khối xuống một chút để dòng trên không chạm khung cảm biến (đường gióng ngắn lại tương ứng).
+  const accShift = accessory && accessory.labels.length > 1 ? 6 : 0;
+  const accTone = !accessory ? 'tube' : accessory.kinds.length > 1 ? 'both' : accessory.kinds[0];
   const { hw, hh } = PLANE[mode];
   const [p1, p2, p3, p4] = corners(hw, hh, WD_LEN);
 
@@ -259,6 +317,18 @@ export function LensDiagram({
       ))}
       {/* Miệng ống: mặt trước quay về phía vùng nhìn (người xem không thấy mặt kính) — chỉ vẽ vành. */}
       <polyline points={poly(r.rim)} fill="none" className="stroke-slate-700 dark:stroke-slate-200" strokeWidth="1.25" />
+
+      {/* ── Phụ kiện (ống nối / bộ nhân) giữa ống và camera: gần người xem hơn ống → vẽ sau ống, trước hộp ── */}
+      {r.accessory
+        ? r.accessory.pieces.map((piece) => (
+            <g key={piece.kind}>
+              <polygon points={poly(piece.body)} className={ACC_FILL[piece.kind]} strokeWidth="1" strokeLinejoin="round" />
+              {piece.seams.map((seam, i) => (
+                <polyline key={i} points={poly(seam)} fill="none" className={ACC_SEAM[piece.kind]} strokeWidth="1" />
+              ))}
+            </g>
+          ))
+        : null}
 
       {/* ── Hộp camera: mặt sau, mặt trên, mặt phải ── */}
       <polygon points={poly(r.top)} className="fill-slate-200 stroke-slate-500 dark:fill-slate-600 dark:stroke-slate-400" strokeWidth="1" />
@@ -346,6 +416,35 @@ export function LensDiagram({
       >
         WD {wdMm === null ? (telecentric ? t('wdFromLens') : '—') : `${fmt(wdMm, 0)} mm`}
       </text>
+
+      {/* ── Nhãn phụ kiện ── */}
+      {r.accessory && accessory ? (
+        <line
+          x1={r.accessory.leader[0][0]}
+          y1={r1(r.accessory.leader[0][1] + accShift)}
+          x2={r.accessory.leader[1][0]}
+          y2={r.accessory.leader[1][1]}
+          className={accTone === 'converter' ? 'stroke-violet-600 dark:stroke-violet-300' : accTone === 'both' ? 'stroke-slate-500 dark:stroke-slate-300' : 'stroke-amber-600 dark:stroke-amber-300'}
+          strokeWidth="1"
+        />
+      ) : null}
+      {/* Mỗi phụ kiện một dòng, màu theo khúc; dòng cuối sát đầu đường gióng, các dòng trước xếp lên trên. */}
+      {r.accessory && accessory
+        ? accessory.labels.map((text, i) => (
+            <text
+              key={i}
+              x={r.accessory!.labelAt[0]}
+              y={r1(r.accessory!.labelAt[1] + accShift - (accessory.labels.length - 1 - i) * 19)}
+              textAnchor="start"
+              paintOrder="stroke"
+              strokeWidth="4"
+              strokeLinejoin="round"
+              className={`font-semibold ${accessory.kinds[i] === 'converter' ? 'fill-violet-700 dark:fill-violet-300' : 'fill-amber-700 dark:fill-amber-300'} ${halo}`}
+            >
+              {text}
+            </text>
+          ))
+        : null}
 
       {/* ── Tiêu cự ── */}
       {!telecentric ? (

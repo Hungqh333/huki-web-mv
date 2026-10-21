@@ -351,3 +351,71 @@ test('phụ kiện: không cứu ống telecentric, không ghép hai phụ kiệ
   const order = selectLenses(INPUT, [mod, plain]).candidates.map((c) => c.component.model);
   assert.deepEqual(order, ['plain12', 'mod16']);
 });
+
+// ─────────────────────── PHỤ KIỆN ANH TỰ KHAI (chốt 2026-10-20, Q1–Q4) ──
+
+test('[OPT-010 khai tay] ống nối 5 mm áp cho mọi ống: vừa → đạt; quá dài / quá ngắn → loại có lý do', () => {
+  const tube5 = { tubeMm: 5, converterFactor: null };
+  // f 25, MOD 200, WD 100: dải nét [97,92; 150] → 100 nằm trong → đạt (cảnh báo macro β 0,333)
+  const a = selectLenses({ ...INPUT, fovWidthMm: 20, fovHeightMm: 18, workingDistanceMm: 100, fixedAccessory: tube5 }, [lens({ focal_length_mm: 25, wd_min_mm: 200 })]).candidates[0];
+  assert.equal(a.checks.find((k) => k.key === 'workingDistance')!.noteKey, 'wdWithTube');
+  assert.ok(a.checks.some((k) => k.noteKey === 'tubeMacro'));
+  assert.equal(a.status, 'warn');
+  assert.equal(a.accessory, null, 'khai tay: không gắn phụ kiện tự gợi ý');
+  // f 16, WD 300: lắp 5 mm thì nét xa nhất 16 × (1 + 16 ÷ 5) = 67,2 mm < 300 → ống nối quá dài
+  const b = selectLenses({ ...INPUT, fixedAccessory: tube5 }, [lens({ focal_length_mm: 16 })]).candidates[0];
+  const wdB = b.checks.find((k) => k.key === 'workingDistance')!;
+  assert.equal(wdB.noteKey, 'tubeTooLong');
+  assert.equal(b.status, 'fail');
+  // f 25, MOD 200, ống 1 mm: nét gần nhất 25 × (1 + 1 ÷ (0,04 + 0,142857)) = 161,7 > 100 → vẫn quá ngắn
+  const c = selectLenses({ ...INPUT, fovWidthMm: 20, fovHeightMm: 18, workingDistanceMm: 100, fixedAccessory: { tubeMm: 1, converterFactor: null } }, [lens({ focal_length_mm: 25, wd_min_mm: 200 })]).candidates[0];
+  assert.equal(c.checks.find((k) => k.key === 'workingDistance')!.noteKey, 'tubeTooShort');
+  // Ống chưa khai MOD: chỉ biết giới hạn xa 150 mm ≥ 100 → chưa kiểm được cận dưới
+  const d = selectLenses({ ...INPUT, fovWidthMm: 20, fovHeightMm: 18, workingDistanceMm: 100, fixedAccessory: tube5 }, [lens({ focal_length_mm: 25, wd_min_mm: null })]).candidates[0];
+  assert.equal(d.checks.find((k) => k.key === 'workingDistance')!.noteKey, 'tubeModUnknown');
+});
+
+test('[OPT-011 khai tay] bộ nhân 2× cho mọi ống: tiêu cự lý tưởng là của ống gốc', () => {
+  const input = { ...INPUT, fovWidthMm: 60, fovHeightMm: 50, fixedAccessory: { tubeMm: null, converterFactor: 2 } };
+  // β cần = min(8,4456 ÷ 60 ; 7,0656 ÷ 50) = 0,14076 → ống gốc 0,07038 → f = 300 × 0,07038 ÷ 1,07038 = 19,73
+  const need = lensNeed(input)!;
+  close(need.focalIdealMm, 19.73, 0.01, 'f ống gốc');
+  // F#max vòng khẩu ống gốc = 5,1416 ÷ 1,14076 ÷ 2 = 2,254
+  close(need.fMaxRing, 2.25, 0.01, 'F#max ống gốc');
+  assert.equal(need.converterFactor, 2);
+  const c = selectLenses(input, [lens({ focal_length_mm: 16 })]).candidates[0];
+  close(c.beta, 0.11268, 1e-5, 'β cả hệ');
+  assert.ok(c.checks.some((k) => k.noteKey === 'converterManual'));
+  assert.ok(c.checks.some((k) => k.noteKey === 'accessoryLight'), '2 stop');
+  assert.equal(c.accessory, null);
+});
+
+test('[khai tay] cả hai: cảnh báo mất sáng CỘNG DỒN; tắt gợi ý tự động; chỉ tab ống thường', () => {
+  // ống 25 (MOD 200) ở WD 100 + ống nối 5 + bộ nhân 2×: β = 2 × 0,3333 = 0,6667 → vùng nhìn 12,7 × 10,6 ⊇ 10 × 8
+  const both = selectLenses(
+    { ...INPUT, fovWidthMm: 10, fovHeightMm: 8, workingDistanceMm: 100, fixedAccessory: { tubeMm: 5, converterFactor: 2 } },
+    [lens({ focal_length_mm: 25, wd_min_mm: 200 })]
+  ).candidates[0];
+  close(both.beta, 0.66667, 1e-4, 'β cả hệ');
+  // 2 log₂(1,3333) + 2 log₂ 2 = 0,830 + 2 = 2,83 stop
+  const light = both.checks.find((k) => k.noteKey === 'accessoryLightTotal')!;
+  close(Number(light.noteValues!.stops), 2.8, 0.05, 'stop cộng dồn');
+  assert.equal(both.checks.filter((k) => k.noteKey === 'accessoryLight').length, 0, 'không lặp dòng riêng lẻ');
+  assert.notEqual(both.status, 'fail', JSON.stringify(both.checks.filter((k) => k.status === 'fail')));
+  // Đã khai bộ nhân → ống MOD 400 ở WD 300 KHÔNG được tự gợi ý ống nối nữa (Q1)
+  const noAuto = selectLenses({ ...INPUT, fixedAccessory: { tubeMm: null, converterFactor: 1.4 } }, [lens({ focal_length_mm: 12, wd_min_mm: 400 })]).candidates[0];
+  assert.equal(noAuto.checks.find((k) => k.key === 'workingDistance')!.noteKey, 'wdBelowMod');
+  assert.equal(noAuto.accessory, null);
+  // Tab M12: khai tay bị bỏ qua (Q4)
+  const m12 = selectLenses({ ...INPUT, lensKind: 'm12', fixedAccessory: { tubeMm: 5, converterFactor: 2 } }, [lens({ focal_length_mm: 8, mount: 'M12', image_circle: '2/3' })]).candidates[0];
+  assert.ok(!m12.checks.some((k) => k.key === 'tube' || k.key === 'converter'));
+});
+
+test('[khai tay] biết 2 trong 3 với bộ nhân 2×: tiêu cự là của ống gốc', () => {
+  const base = { camera: CAMERA, focalLengthMm: null, workingDistanceMm: null, fovWidthMm: null, fovHeightMm: null, converterFactor: 2 };
+  close(solveGeometry({ ...base, mode: 'fov-wd', fovWidthMm: 60, fovHeightMm: 50, workingDistanceMm: 300 })!.focalLengthMm, 19.73, 0.01, 'f');
+  // f 16 ở WD 300 → β cả hệ 2 × 0,056338 = 0,11268 → vùng nhìn 8,4456 ÷ 0,11268 = 74,95
+  close(solveGeometry({ ...base, mode: 'focal-wd', focalLengthMm: 16, workingDistanceMm: 300 })!.fovWidthMm, 74.95, 0.01, 'vùng nhìn');
+  // f 16, vùng nhìn 60 × 50 → β ống gốc 0,07038 → WD = 16 × (1 + 1 ÷ 0,07038) = 243,3
+  close(solveGeometry({ ...base, mode: 'focal-fov', focalLengthMm: 16, fovWidthMm: 60, fovHeightMm: 50 })!.workingDistanceMm, 243.3, 0.1, 'WD');
+});

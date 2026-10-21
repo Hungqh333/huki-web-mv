@@ -2476,7 +2476,11 @@
       "aovNote": "Computed at the working distance. Datasheets usually quote the angle at infinity, so expect a few % difference.",
       "betaMax": "Maximum β",
       "betaMaxNote": "A telecentric lens with magnification ≤ this covers the whole part.",
-      "fMaxNoteTele": "Working F# (telecentric datasheets quote it directly): Airy disk within 2 pixels."
+      "fMaxNoteTele": "Working F# (telecentric datasheets quote it directly): Airy disk within 2 pixels.",
+      "focalPrime": "Ideal prime focal length",
+      "focalGivenPrime": "Prime focal length entered",
+      "focalPrimeNote": "Focal length of the lens before the {k}× converter — the system is {k}× longer. Thin-lens estimate.",
+      "fMaxNotePrime": "Prime lens ring setting: system F# = {k} × N, effective F# within 2 Airy pixels."
     },
     "list": {
       "title": "Lenses in stock",
@@ -2498,7 +2502,10 @@
       "withTube": "+ extension tube {pieces}{total} mm",
       "withConverter": "+ rear converter {k}×",
       "notInStock": "not in stock",
-      "accessoryHint": "Lenses rejected for MOD, image circle or coarse pixels are retried with an extension tube or a rear converter — ranked after plain passes, always at Warning. Open Details for the impact."
+      "accessoryHint": "Lenses rejected for MOD, image circle or coarse pixels are retried with an extension tube or a rear converter — ranked after plain passes, always at Warning. Open Details for the impact.",
+      "metaAccessory": "{n} need an accessory",
+      "onlyAccessory": "Only lenses needing an accessory",
+      "manualHint": "Checking every lens with the declared {desc} — automatic accessory suggestions are off. Open Details to see the impact."
     },
     "status": {
       "pass": "Pass",
@@ -2552,7 +2559,14 @@
       "tubeSegments": "Stacking {n} segments (limit {max}) — alignment error grows and joints loosen: use longer segments.",
       "converterForPixel": "Add a {k}× rear converter to reach the required mm/px: the FOV shrinks {k}×. MOD is unchanged ({mod} mm). Diffraction, lens resolution and depth of field are rechecked with the multiplied F# and lp/mm.",
       "converterForCircle": "Add a {k}× rear converter so the image circle covers the sensor: the FOV shrinks {k}×. MOD is unchanged ({mod} mm). Diffraction, lens resolution and depth of field are rechecked with the multiplied F# and lp/mm.",
-      "converterFit": "Extra glass lowers contrast; some lenses have a protruding rear element and cannot take a converter — check both datasheets."
+      "converterFit": "Extra glass lowers contrast; some lenses have a protruding rear element and cannot take a converter — check both datasheets.",
+      "tubeManual": "Declared {total} mm extension tube: focus range becomes {wdMin}–{wdMax} mm, no infinity focus. At the same WD the magnification does not change. Recalibrate after fitting.",
+      "tubeTooLong": "With a {total} mm tube the lens focuses no farther than {wdMax} mm — this WD is too far: use a shorter tube or none.",
+      "tubeTooShort": "With a {total} mm tube the closest focus is {wdMin} mm — this WD is still too close: a longer tube is needed.",
+      "tubeModUnknown": "Lens MOD not declared — the near limit with a {total} mm tube cannot be computed (farthest {wdMax} mm). Check the datasheet.",
+      "converterManual": "Declared {k}× converter: focal length, F# and image circle ×{k}, lp/mm ÷{k}, FOV {k}× narrower. MOD is unchanged ({mod} mm).",
+      "converterAboveMax": "A {k}× converter exceeds the {max}× maximum — noticeably softer and darker.",
+      "accessoryLightTotal": "Tube + converter together cost about {stops} stops (limit {limit}) — add light or expose longer, watch for motion blur."
     },
     "reset": "Reset",
     "tabs": {
@@ -2577,7 +2591,20 @@
       "sensor": "Sensor",
       "pixel": "Pixel",
       "fov": "FOV",
-      "wdFromLens": "per lens"
+      "wdFromLens": "per lens",
+      "tube": "Tube {mm} mm",
+      "converter": "Converter {k}×"
+    },
+    "accessory": {
+      "title": "Accessories (optional)",
+      "intro": "Enter an extension tube and/or rear converter you already have: every lens in the list is checked with exactly this setup, and automatic accessory suggestions turn off. Leave blank for none.",
+      "tube": "Extension tube (mm)",
+      "tubeHint": "Total length — add up stacked segments.",
+      "converter": "Rear converter (×)",
+      "converterHint": "Factor above 1, e.g. 1.4 or 2. The focal length above is the prime lens.",
+      "none": "None",
+      "fromStock": "In stock:",
+      "standard": "Standard:"
     }
   }
 }

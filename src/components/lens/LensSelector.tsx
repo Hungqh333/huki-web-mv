@@ -6,6 +6,9 @@ import { NOTE_CLASS, Panel } from '@/components/ui/PanelHeader';
 import { MOUNTS, SENSOR_FORMAT_KEYS, specNumber, specString, type Component } from '@/lib/components/specs';
 import { cameraFromComponent, lensFromComponent, type ConfigCamera } from '@/lib/vision/configurationRules';
 import {
+  STANDARD_CONVERTER_FACTORS,
+  STANDARD_TUBE_LENGTHS_MM,
+  activeFixedAccessory,
   selectLenses,
   solveGeometry,
   type GeometryMode,
@@ -16,7 +19,7 @@ import {
 } from '@/lib/vision/lensSelector';
 import { renderFormula } from '@/lib/vision/formulaTerms';
 import type { CheckStatus } from '@/lib/vision/types';
-import { LensDiagram, type DiagramField } from './LensDiagram';
+import { LensDiagram, type AccessoryKind, type DiagramAccessory, type DiagramField } from './LensDiagram';
 
 /**
  * Giao diện Bộ chọn ống kính. Không tính gì ở đây — mọi con số đến từ
@@ -42,6 +45,17 @@ const PAGE = 30;
 const TABS: LensKindFilter[] = ['fixed', 'telecentric', 'm12'];
 const MODES: GeometryMode[] = ['fov-wd', 'focal-wd', 'focal-fov'];
 const EMPTY_TASK = { f: '', wd: '', fovW: '', fovH: '', dh: '', mmpx: '' };
+const EMPTY_ACCESSORY = { tube: '', converter: '' };
+
+/** Giá trị phụ kiện có trong kho (khác nhau, tăng dần) — chọn nhanh trong ô Phụ kiện. */
+function stockValues(components: Component[], kind: 'tube' | 'converter'): number[] {
+  const key = kind === 'tube' ? 'length_mm' : 'factor';
+  const values = components
+    .filter((c) => c.kind === kind)
+    .map((c) => specNumber(c.spec, key))
+    .filter((v): v is number => v !== null && (kind === 'tube' ? v > 0 : v > 1));
+  return [...new Set(values)].sort((a, b) => a - b);
+}
 
 const num = (value: string): number | null => {
   const n = Number(value.replace(',', '.'));
@@ -87,10 +101,16 @@ export function LensSelector({
   const [task, setTask] = useState(EMPTY_TASK);
   const [focus, setFocus] = useState<DiagramField | null>(null);
   const [showRejected, setShowRejected] = useState(false);
+  const [onlyAccessory, setOnlyAccessory] = useState(false);
   const [limit, setLimit] = useState(PAGE);
   const [open, setOpen] = useState<string | null>(null);
+  // Phụ kiện khai tay (chốt 2026-10-20, Q1–Q4): chỉ tab ống thường, để trống = không dùng.
+  const [acc, setAcc] = useState(EMPTY_ACCESSORY);
+  const [accOpen, setAccOpen] = useState(false);
 
   const tele = tab === 'telecentric';
+  const tubeStock = useMemo(() => stockValues(components, 'tube'), [components]);
+  const converterStock = useMemo(() => stockValues(components, 'converter'), [components]);
 
   const filteredCameras = useMemo(() => {
     const words = search.toLowerCase().split(/\s+/).filter(Boolean);
@@ -130,6 +150,9 @@ export function LensSelector({
   const fovH = num(task.fovH);
   const dh = num(task.dh);
   const mmpx = num(task.mmpx);
+  const fixedAccessory = activeFixedAccessory({ lensKind: tab, fixedAccessory: { tubeMm: num(acc.tube), converterFactor: num(acc.converter) } });
+  const accTube = fixedAccessory?.tubeMm ?? null;
+  const accK = fixedAccessory?.converterFactor ?? null;
 
   /* Ống thường / M12: "biết 2 trong 3" quy về một cặp (vùng nhìn, WD). Telecentric:
      vùng nhìn + WD tuỳ chọn, không có tiêu cự. */
@@ -143,9 +166,10 @@ export function LensSelector({
             workingDistanceMm: mode === 'focal-fov' ? null : wd,
             fovWidthMm: mode === 'focal-wd' ? null : fovW,
             fovHeightMm: mode === 'focal-wd' ? null : fovH,
+            converterFactor: accK,
           })
         : null,
-    [camera, tele, mode, f, wd, fovW, fovH]
+    [camera, tele, mode, f, wd, fovW, fovH, accK]
   );
 
   const input = useMemo<LensSelectorInput | null>(() => {
@@ -157,9 +181,18 @@ export function LensSelector({
         : null;
     }
     return geometry
-      ? { camera, fovWidthMm: geometry.fovWidthMm, fovHeightMm: geometry.fovHeightMm, workingDistanceMm: geometry.workingDistanceMm, heightVariationMm: dh, targetMmPerPx: mmpx, lensKind: tab }
+      ? {
+          camera,
+          fovWidthMm: geometry.fovWidthMm,
+          fovHeightMm: geometry.fovHeightMm,
+          workingDistanceMm: geometry.workingDistanceMm,
+          heightVariationMm: dh,
+          targetMmPerPx: mmpx,
+          lensKind: tab,
+          fixedAccessory: accTube !== null || accK !== null ? { tubeMm: accTube, converterFactor: accK } : null,
+        }
       : null;
-  }, [camera, tele, line, geometry, fovW, fovH, wd, dh, mmpx, tab]);
+  }, [camera, tele, line, geometry, fovW, fovH, wd, dh, mmpx, tab, accTube, accK]);
 
   const result = useMemo(() => (input ? selectLenses(input, lenses, params) : null), [input, lenses, params]);
 
@@ -167,7 +200,27 @@ export function LensSelector({
   const all = result?.candidates ?? [];
   const counts = { pass: 0, warn: 0, info: 0, fail: 0 } as Record<CheckStatus, number>;
   for (const c of all) counts[c.status]++;
-  const visible = showRejected ? all : all.filter((c) => c.status !== 'fail');
+  // Ống đạt nhờ phụ kiện (OPT-010/011) — đếm riêng và lọc riêng được (2026-10-20).
+  const accessoryCount = all.filter((c) => c.accessory).length;
+  const filterAccessory = onlyAccessory && accessoryCount > 0;
+  const visible = filterAccessory ? all.filter((c) => c.accessory) : showRejected ? all : all.filter((c) => c.status !== 'fail');
+  // Ống đang mở Chi tiết: có phụ kiện thì sơ đồ vẽ thêm ống nối / bộ nhân.
+  const openCandidate = all.find((c) => c.component.id === open) ?? null;
+  const openAccessory = openCandidate?.accessory ?? null;
+
+  const tubeLabel = (mm: number) => t('diagram.tube', { mm: show(mm, 1) });
+  const converterLabel = (k: number) => t('diagram.converter', { k: show(k, 2) });
+  /* Sơ đồ: phụ kiện khai tay luôn vẽ (áp cho mọi ống); không khai thì vẽ phụ kiện gợi ý
+     của ống đang mở Chi tiết. */
+  const manualKinds: AccessoryKind[] = [...(accTube !== null ? (['tube'] as const) : []), ...(accK !== null ? (['converter'] as const) : [])];
+  const manualDesc = [accTube !== null ? tubeLabel(accTube) : null, accK !== null ? converterLabel(accK) : null].filter(Boolean).join(' + ');
+  const diagramAccessory: DiagramAccessory | null = fixedAccessory
+    ? { kinds: manualKinds, labels: manualKinds.map((kind) => (kind === 'tube' ? tubeLabel(accTube!) : converterLabel(accK!))) }
+    : openAccessory === null
+      ? null
+      : openAccessory.kind === 'tube'
+        ? { kinds: ['tube'], labels: [tubeLabel(openAccessory.totalMm)] }
+        : { kinds: ['converter'], labels: [converterLabel(openAccessory.factor)] };
 
   const setTaskValue = (key: keyof typeof task) => (value: string) => {
     setTask((prev) => ({ ...prev, [key]: value }));
@@ -191,6 +244,9 @@ export function LensSelector({
     setCameraId('');
     setManual({ type: 'area', widthPx: '', heightPx: '', pitch: '', format: '', mount: 'C' });
     setShowRejected(false);
+    setOnlyAccessory(false);
+    setAcc(EMPTY_ACCESSORY);
+    setAccOpen(false);
     setLimit(PAGE);
     setOpen(null);
   };
@@ -208,6 +264,13 @@ export function LensSelector({
     fovLongMm: need?.fovLongMm ?? null,
     fovShortMm: line ? null : (need?.fovShortMm ?? null),
   };
+  /* Đang mở Chi tiết một ống: sơ đồ ghi số của CHÍNH ống đó (tiêu cự gốc, vùng nhìn thật kể cả
+     khi có bộ nhân) thay cho số lý tưởng — để nhãn khớp với phụ kiện đang vẽ (2026-10-20). */
+  if (openCandidate && openCandidate.fovLongMm !== null) {
+    diagram.focalMm = tele ? null : openCandidate.lens.focalLengthMm;
+    diagram.fovLongMm = openCandidate.fovLongMm;
+    diagram.fovShortMm = line ? null : openCandidate.fovShortMm;
+  }
 
   return (
     <div className="space-y-6">
@@ -387,13 +450,64 @@ export function LensSelector({
             <NumberInput id="lens-dh" label={t('task.heightVariation')} hint={t('task.heightVariationHint')} value={task.dh} onChange={setTaskValue('dh')} />
             <NumberInput id="lens-mmpx" label={t('task.targetMmPerPx')} hint={t('task.targetMmPerPxHint')} value={task.mmpx} onChange={setTaskValue('mmpx')} step="0.001" />
           </div>
+          {tab === 'fixed' ? (
+            <div className="mt-4 rounded-lg border border-slate-200 dark:border-slate-700">
+              <button
+                type="button"
+                onClick={() => setAccOpen(!accOpen)}
+                aria-expanded={accOpen || fixedAccessory !== null}
+                aria-controls="lens-accessory"
+                className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800/60"
+              >
+                <span>
+                  {t('accessory.title')}
+                  {fixedAccessory ? (
+                    <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900 dark:bg-amber-950/60 dark:text-amber-200">{manualDesc}</span>
+                  ) : null}
+                </span>
+                <span aria-hidden="true" className="text-xs text-slate-500">{accOpen || fixedAccessory ? '▲' : '▼'}</span>
+              </button>
+              {accOpen || fixedAccessory ? (
+                <div id="lens-accessory" className="space-y-3 border-t border-slate-200 px-3 py-3 dark:border-slate-700">
+                  <p className={NOTE_CLASS}>{t('accessory.intro')}</p>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div>
+                      <NumberInput id="lens-acc-tube" label={t('accessory.tube')} hint={t('accessory.tubeHint')} value={acc.tube} onChange={(v) => setAcc((prev) => ({ ...prev, tube: v }))} step="0.5" />
+                      <QuickPick
+                        values={tubeStock.length ? tubeStock : [...STANDARD_TUBE_LENGTHS_MM]}
+                        fromStock={tubeStock.length > 0}
+                        current={accTube}
+                        format={(v) => `${show(v, 1)} mm`}
+                        onPick={(v) => setAcc((prev) => ({ ...prev, tube: v === null ? '' : String(v) }))}
+                      />
+                    </div>
+                    <div>
+                      <NumberInput id="lens-acc-conv" label={t('accessory.converter')} hint={t('accessory.converterHint')} value={acc.converter} onChange={(v) => setAcc((prev) => ({ ...prev, converter: v }))} step="0.1" />
+                      <QuickPick
+                        values={converterStock.length ? converterStock : [...STANDARD_CONVERTER_FACTORS]}
+                        fromStock={converterStock.length > 0}
+                        current={accK}
+                        format={(v) => `${show(v, 2)}×`}
+                        onPick={(v) => setAcc((prev) => ({ ...prev, converter: v === null ? '' : String(v) }))}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
         </Panel>
       </div>
 
       {/* ── Sơ đồ + thông số cần ── */}
       <Panel id="lens-need" title={t('need.title')}>
         <div className="grid gap-6 lg:grid-cols-2">
-          <LensDiagram {...diagram} telecentric={tele} highlight={focus} />
+          <LensDiagram
+            {...diagram}
+            telecentric={tele}
+            highlight={focus}
+            accessory={diagramAccessory}
+          />
           {!input ? (
             <p className={`self-center ${NOTE_CLASS}`}>{t(tele ? 'need.missingTele' : `need.missing.${mode}`)}</p>
           ) : !need ? (
@@ -409,17 +523,23 @@ export function LensSelector({
                 />
                 {!tele && geometry ? (
                   <NeedItem
-                    label={t(mode === 'fov-wd' ? 'need.focal' : 'need.focalGiven')}
+                    label={t(mode === 'fov-wd' ? (accK ? 'need.focalPrime' : 'need.focal') : accK ? 'need.focalGivenPrime' : 'need.focalGiven')}
                     value={`${show(geometry.focalLengthMm, 1)} mm`}
-                    formula={mode === 'fov-wd' ? `${show(geometry.workingDistanceMm, 0)} × ${show(need.beta, 4)} ÷ (1 + ${show(need.beta, 4)})` : undefined}
-                    note={mode === 'fov-wd' ? t('need.focalNote') : undefined}
+                    formula={
+                      mode !== 'fov-wd'
+                        ? undefined
+                        : accK
+                          ? `${show(geometry.workingDistanceMm, 0)} × (${show(need.beta, 4)} ÷ ${show(accK, 2)}) ÷ (1 + ${show(need.beta, 4)} ÷ ${show(accK, 2)})`
+                          : `${show(geometry.workingDistanceMm, 0)} × ${show(need.beta, 4)} ÷ (1 + ${show(need.beta, 4)})`
+                    }
+                    note={accK ? t('need.focalPrimeNote', { k: show(accK, 2) }) : mode === 'fov-wd' ? t('need.focalNote') : undefined}
                   />
                 ) : null}
                 {!tele && geometry && mode === 'focal-fov' ? (
                   <NeedItem
                     label={t('need.wdComputed')}
                     value={`${show(geometry.workingDistanceMm, 0)} mm`}
-                    formula={`${show(geometry.focalLengthMm, 1)} × (1 + 1 ÷ ${show(need.beta, 4)})`}
+                    formula={accK ? `${show(geometry.focalLengthMm, 1)} × (1 + ${show(accK, 2)} ÷ ${show(need.beta, 4)})` : `${show(geometry.focalLengthMm, 1)} × (1 + 1 ÷ ${show(need.beta, 4)})`}
                     note={t('need.wdComputedNote')}
                   />
                 ) : null}
@@ -432,7 +552,7 @@ export function LensSelector({
                   />
                 ) : null}
                 <NeedItem label={t('need.mmPerPx')} value={show(need.mmPerPx, 4)} />
-                <NeedItem label={t('need.fMax')} value={need.fMaxRing !== null ? `F/${show(need.fMaxRing, 1)}` : '—'} note={t(tele ? 'need.fMaxNoteTele' : 'need.fMaxNote')} />
+                <NeedItem label={t('need.fMax')} value={need.fMaxRing !== null ? `F/${show(need.fMaxRing, 1)}` : '—'} note={tele ? t('need.fMaxNoteTele') : accK ? t('need.fMaxNotePrime', { k: show(accK, 2) }) : t('need.fMaxNote')} />
                 <NeedItem label={t('need.lp')} value={need.lpPerMm !== null ? `${show(need.lpPerMm, 0)} lp/mm` : '—'} />
                 <NeedItem label={t('need.circle')} value={`Ø ${show(need.sensorDiagonalMm, 1)} mm`} note={t('need.circleNote')} />
                 {need.fNeedDepth !== null && !tele ? (
@@ -467,13 +587,29 @@ export function LensSelector({
         <Panel
           id="lens-list"
           title={t('list.title')}
-          meta={t('list.meta', counts)}
-          note={all.some((c) => c.accessory) ? t('list.accessoryHint') : undefined}
+          meta={`${t('list.meta', counts)}${accessoryCount > 0 ? ` · ${t('list.metaAccessory', { n: accessoryCount })}` : ''}`}
+          note={fixedAccessory ? t('list.manualHint', { desc: manualDesc }) : all.some((c) => c.accessory) ? t('list.accessoryHint') : undefined}
           actions={
-            <label className="inline-flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
-              <input type="checkbox" checked={showRejected} onChange={(e) => setShowRejected(e.target.checked)} className="size-4 rounded border-slate-300 text-sky-600 dark:border-slate-600" />
-              {t('list.showRejected')}
-            </label>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+              {accessoryCount > 0 ? (
+                <label className="inline-flex items-center gap-2 text-xs font-medium text-amber-800 dark:text-amber-300">
+                  <input
+                    type="checkbox"
+                    checked={onlyAccessory}
+                    onChange={(e) => {
+                      setOnlyAccessory(e.target.checked);
+                      setLimit(PAGE);
+                    }}
+                    className="size-4 rounded border-amber-400 text-amber-600 dark:border-amber-700"
+                  />
+                  {t('list.onlyAccessory')}
+                </label>
+              ) : null}
+              <label className={`inline-flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300 ${filterAccessory ? 'opacity-40' : ''}`}>
+                <input type="checkbox" checked={showRejected} disabled={filterAccessory} onChange={(e) => setShowRejected(e.target.checked)} className="size-4 rounded border-slate-300 text-sky-600 dark:border-slate-600" />
+                {t('list.showRejected')}
+              </label>
+            </div>
           }
           bodyClassName=""
         >
@@ -557,6 +693,38 @@ function NumberInput({
         className={`mt-1.5 ${inputClass}`}
       />
       {hint ? <p className={`mt-1 ${NOTE_CLASS}`}>{hint}</p> : null}
+    </div>
+  );
+}
+
+/** Nút chọn nhanh phụ kiện: giá trị trong kho, kho chưa có thì mức chuẩn; kèm nút Không dùng. */
+function QuickPick({
+  values,
+  fromStock,
+  current,
+  format,
+  onPick,
+}: {
+  values: number[];
+  fromStock: boolean;
+  current: number | null;
+  format: (value: number) => string;
+  onPick: (value: number | null) => void;
+}) {
+  const t = useTranslations('lensSelector.accessory');
+  const chip = (active: boolean) =>
+    `rounded-full border px-2.5 py-0.5 text-xs font-medium ${active ? 'border-amber-500 bg-amber-50 text-amber-900 dark:border-amber-700 dark:bg-amber-950/50 dark:text-amber-200' : 'border-slate-300 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800'}`;
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-1.5">
+      <span className="text-xs text-slate-500 dark:text-slate-400">{t(fromStock ? 'fromStock' : 'standard')}</span>
+      <button type="button" onClick={() => onPick(null)} aria-pressed={current === null} className={chip(current === null)}>
+        {t('none')}
+      </button>
+      {values.map((v) => (
+        <button key={v} type="button" onClick={() => onPick(v)} aria-pressed={current !== null && Math.abs(current - v) < 1e-9} className={chip(current !== null && Math.abs(current - v) < 1e-9)}>
+          {format(v)}
+        </button>
+      ))}
     </div>
   );
 }

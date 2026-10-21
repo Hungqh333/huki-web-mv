@@ -2476,7 +2476,11 @@
       "aovNote": "Tính tại khoảng cách làm việc. Datasheet thường ghi góc ở vô cực nên lệch vài %.",
       "betaMax": "β tối đa",
       "betaMaxNote": "Ống telecentric có độ phóng đại ≤ số này thì phủ hết vật.",
-      "fMaxNoteTele": "F# làm việc (telecentric ghi sẵn trên datasheet): đĩa Airy không quá 2 pixel."
+      "fMaxNoteTele": "F# làm việc (telecentric ghi sẵn trên datasheet): đĩa Airy không quá 2 pixel.",
+      "focalPrime": "Tiêu cự ống gốc lý tưởng",
+      "focalGivenPrime": "Tiêu cự ống gốc đã nhập",
+      "focalPrimeNote": "Tiêu cự của ống trước bộ nhân {k}× — cả hệ dài gấp {k}. Ước lượng thấu kính mỏng.",
+      "fMaxNotePrime": "Số trên vòng khẩu ống gốc: F# cả hệ = {k} × N, F# hiệu dụng không quá 2 pixel Airy."
     },
     "list": {
       "title": "Ống kính trong kho",
@@ -2498,7 +2502,10 @@
       "withTube": "+ ống nối {pieces}{total} mm",
       "withConverter": "+ bộ nhân {k}×",
       "notInStock": "chưa có trong kho",
-      "accessoryHint": "Ống bị loại vì MOD, vòng ảnh hay pixel thô được thử thêm ống nối hoặc bộ nhân — xếp sau ống đạt trơn, luôn ở mức Cảnh báo. Mở Chi tiết để xem ảnh hưởng."
+      "accessoryHint": "Ống bị loại vì MOD, vòng ảnh hay pixel thô được thử thêm ống nối hoặc bộ nhân — xếp sau ống đạt trơn, luôn ở mức Cảnh báo. Mở Chi tiết để xem ảnh hưởng.",
+      "metaAccessory": "{n} cần phụ kiện",
+      "onlyAccessory": "Chỉ ống cần phụ kiện",
+      "manualHint": "Đang kiểm mọi ống với {desc} đã khai — gợi ý phụ kiện tự động tắt. Mở Chi tiết để xem ảnh hưởng."
     },
     "status": {
       "pass": "Đạt",
@@ -2552,7 +2559,14 @@
       "tubeSegments": "Ghép {n} khúc (ngưỡng {max}) — sai số đồng trục tăng, dễ lỏng: dùng khúc dài hơn.",
       "converterForPixel": "Thêm bộ nhân {k}× để đạt mm/px cần: vùng nhìn hẹp lại {k} lần. MOD không đổi ({mod} mm). Nhiễu xạ, độ phân giải ống và độ sâu trường ảnh đã tính lại với F# và lp/mm sau khi nhân.",
       "converterForCircle": "Thêm bộ nhân {k}× để vòng ảnh phủ cảm biến: vùng nhìn hẹp lại {k} lần. MOD không đổi ({mod} mm). Nhiễu xạ, độ phân giải ống và độ sâu trường ảnh đã tính lại với F# và lp/mm sau khi nhân.",
-      "converterFit": "Thêm kính nên giảm tương phản; một số ống có thấu kính sau nhô ra không lắp được bộ nhân — kiểm datasheet cả hai."
+      "converterFit": "Thêm kính nên giảm tương phản; một số ống có thấu kính sau nhô ra không lắp được bộ nhân — kiểm datasheet cả hai.",
+      "tubeManual": "Ống nối {total} mm đã khai: dải lấy nét còn {wdMin}–{wdMax} mm, không lấy nét về vô cực. Ở cùng WD độ phóng đại không đổi. Hiệu chuẩn lại sau khi lắp.",
+      "tubeTooLong": "Với ống nối {total} mm, ống chỉ lấy nét xa nhất {wdMax} mm — WD này xa quá: dùng ống nối ngắn hơn hoặc bỏ.",
+      "tubeTooShort": "Với ống nối {total} mm, ống lấy nét gần nhất {wdMin} mm — WD này vẫn gần quá: cần ống nối dài hơn.",
+      "tubeModUnknown": "Ống chưa khai MOD — không tính được giới hạn gần khi có ống nối {total} mm (xa nhất {wdMax} mm). Kiểm datasheet.",
+      "converterManual": "Bộ nhân {k}× đã khai: tiêu cự, F# và vòng ảnh nhân {k}, lp/mm chia {k}, vùng nhìn hẹp lại {k} lần. MOD không đổi ({mod} mm).",
+      "converterAboveMax": "Bộ nhân {k}× vượt mức tối đa {max}× — ảnh mềm và tối rõ rệt.",
+      "accessoryLightTotal": "Ống nối + bộ nhân cộng dồn tối đi khoảng {stops} stop (ngưỡng {limit}) — tăng đèn hoặc phơi sáng lâu hơn, coi chừng nhoè chuyển động."
     },
     "reset": "Đặt lại",
     "tabs": {
@@ -2577,7 +2591,20 @@
       "sensor": "Cảm biến",
       "pixel": "Pixel",
       "fov": "Vùng nhìn",
-      "wdFromLens": "theo ống"
+      "wdFromLens": "theo ống",
+      "tube": "Ống nối {mm} mm",
+      "converter": "Bộ nhân {k}×"
+    },
+    "accessory": {
+      "title": "Phụ kiện (tuỳ chọn)",
+      "intro": "Khai ống nối và/hoặc bộ nhân đã có: mọi ống trong danh sách được kiểm với đúng cấu hình này, gợi ý phụ kiện tự động tắt. Để trống là không dùng.",
+      "tube": "Ống nối (mm)",
+      "tubeHint": "Tổng chiều dài — ghép nhiều khúc thì cộng lại.",
+      "converter": "Bộ nhân (×)",
+      "converterHint": "Hệ số lớn hơn 1, ví dụ 1,4 hoặc 2. Tiêu cự ở trên là của ống gốc.",
+      "none": "Không dùng",
+      "fromStock": "Trong kho:",
+      "standard": "Mức chuẩn:"
     }
   }
 }

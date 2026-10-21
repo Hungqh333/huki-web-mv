@@ -54,7 +54,7 @@ const requirement = Object.entries({
 }).reduce((req, [path, value]) => withFieldValue(req, path, value), emptyRequirement('AppearanceInspection'));
 const bom = bomForRequirement(requirement, CATALOG, emptySelection('recommended'));
 
-const docOf = (locale: 'vi' | 'en', overrides: { bom?: typeof bom; rule_version?: string | null } = {}) =>
+const docOf = (locale: 'vi' | 'en', overrides: { bom?: typeof bom; rule_version?: string | null; withFormulas?: boolean } = {}) =>
   buildConceptDocument({
     projectName: 'Kiểm tra nắp nhựa',
     revision: {
@@ -69,6 +69,7 @@ const docOf = (locale: 'vi' | 'en', overrides: { bom?: typeof bom; rule_version?
     now: new Date('2026-09-18T04:00:00Z'),
     formatDate: (date) => date.toISOString().slice(0, 16),
     t: translator(locale),
+    withFormulas: overrides.withFormulas,
   });
 
 test('mô hình tài liệu: đủ phần theo spec §11.1, BOM lấy nguyên ảnh chụp', () => {
@@ -92,6 +93,13 @@ test('mô hình tài liệu: đủ phần theo spec §11.1, BOM lấy nguyên �
   assert.equal(doc.exclusions.length, 4);
   assert.equal(doc.rulesetChanged, false);
   assert.deepEqual(missing, [], missing.join('\n'));
+});
+
+test('bảo vệ công thức (2026-10-21, Q5): mặc định không in công thức, chỉ admin mới có', () => {
+  const plain = docOf('vi');
+  assert.ok(plain.analysis.every((g) => g.rows.every((r) => r.formula === '' && r.ruleId && r.status)), 'khach VIP: ma luat + ket qua, khong cong thuc');
+  const admin = docOf('vi', { withFormulas: true });
+  assert.ok(admin.analysis.some((g) => g.rows.some((r) => r.formula !== '')), 'admin van co cong thuc');
 });
 
 test('phiên bản luật lúc lưu khác bây giờ → ghi rõ; revision chưa chọn phương án → không có BOM', () => {

@@ -15,7 +15,7 @@ import { GOLDEN_CASES } from './golden/cases';
 import type { Component, ComponentKind } from '../src/lib/components/specs';
 import { emptyRequirement, withFieldValue } from '../src/lib/requirement/fields';
 import { filterEquipment } from '../src/lib/vision/equipmentFilter';
-import { FORMULA_TERMS, renderFormula } from '../src/lib/vision/formulaTerms';
+import { FORMULA_TERMS, formulaResult, renderFormula } from '../src/lib/vision/formulaTerms';
 import { analyseRequirement } from '../src/lib/vision/requirementAnalysis';
 import { DEFAULT_APPEARANCE_INPUT, analyseAppearance, type AppearanceInput } from '../src/lib/vision';
 import { deriveMetrics } from '../src/lib/selector/derive';
@@ -133,4 +133,11 @@ test('mọi nơi hiển thị công thức đều dịch thẻ (hoặc nhận ch
   assert.deepEqual(offenders, []);
   for (const file of preTranslated) assert.ok(readFileSync(file, 'utf8').includes('.formula'), `${file} khong con hien cong thuc — bo khoi danh sach`);
   assert.ok(readFileSync('src/app/api/bao-cao/[historyId]/route.tsx', 'utf8').includes('renderFormula'), 'route bao cao cu phai dich the truoc khi dung PDF');
+});
+
+test('formulaResult: người không phải admin chỉ thấy phần sau dấu = / ≈ cuối (2026-10-21)', () => {
+  assert.equal(formulaResult('2448 px ÷ 60 mm = 40.8 px/mm'), '40.8 px/mm');
+  assert.equal(formulaResult('2 MP × 1 B × 30 fps ≈ 60 MB/s'), '60 MB/s');
+  assert.equal(formulaResult('max(a = 1, b = 2) = 2 mm'), '2 mm');
+  assert.equal(formulaResult('WD 100 mm ≥ MOD 50 mm'), null);
 });

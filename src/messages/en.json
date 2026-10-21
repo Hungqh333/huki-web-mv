@@ -1320,6 +1320,7 @@
       "subtitle": "Every equipment calculation on one page — admins only. Thresholds and tables show the values IN USE; yellow marks a threshold changed from its default. A test ties this handbook to the engine: a new rule or threshold without an entry here fails the build checks."
     },
     "engine": {
+      "serviceKeyMissing": "The server has no SUPABASE_SERVICE_ROLE_KEY: the threshold tables are now admin-only, so Members and VIPs are computing with the DEFAULT thresholds, not the values on this page. Add the key to the server environment (Vercel) and redeploy.",
       "title": "Vision Engineer engine thresholds",
       "subtitle": "Judgement thresholds owned by the engineering team. Physical constants and measurement conventions (wavelength, Gage R&R ÷ 10, 1/3 subpixel, 3/4/5 px per defect) are deliberately NOT editable here.",
       "version": "Ruleset version in use: {version}",
@@ -2511,6 +2512,7 @@
       "pass": "Pass",
       "warn": "Warning",
       "info": "Not checked",
+      "declared": "Declared",
       "fail": "Rejected"
     },
     "checks": {

@@ -176,6 +176,16 @@ const MUTATIONS = [
             for all to authenticated using (true) with check (true);`,
   },
   {
+    name: 'Nguong engine: cho moi tai khoan dang nhap doc lai (truoc 2026-10-21)',
+    sql: `create policy "engine_parameters_select_authenticated" on public.engine_parameters
+            for select to authenticated using (true);`,
+  },
+  {
+    name: 'Bang engine: cho moi tai khoan dang nhap doc lai (truoc 2026-10-21)',
+    sql: `create policy "engine_tables_select_authenticated" on public.engine_tables
+            for select to authenticated using (true);`,
+  },
+  {
     name: 'Bang engine: cho khach doc',
     sql: `grant select on public.engine_tables to anon;
           create policy "engine_tables_select_anon" on public.engine_tables for select to anon using (true);`,

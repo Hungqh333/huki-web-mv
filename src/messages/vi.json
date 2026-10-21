@@ -1320,6 +1320,7 @@
       "subtitle": "Mọi phép tính thiết bị trên một trang — chỉ admin xem. Ngưỡng và bảng hiện giá trị ĐANG CHẠY; ô vàng là ngưỡng đã sửa khác mặc định. Sổ tay có test ràng buộc: thêm luật hoặc ngưỡng mới mà quên ghi vào đây thì test báo đỏ."
     },
     "engine": {
+      "serviceKeyMissing": "Máy chủ chưa có khoá SUPABASE_SERVICE_ROLE_KEY: bảng ngưỡng giờ chỉ admin đọc được, nên Member và VIP đang tính bằng ngưỡng MẶC ĐỊNH, không phải số trên trang này. Điền khoá vào biến môi trường của máy chủ (Vercel) rồi triển khai lại.",
       "title": "Ngưỡng engine Vision Engineer",
       "subtitle": "Các ngưỡng phán đoán của phòng kỹ thuật. Hằng số vật lý và quy ước đo (bước sóng, Gage R&R ÷ 10, subpixel 1/3, số pixel phủ lỗi 3/4/5) cố ý KHÔNG mở ở đây.",
       "version": "Phiên bản bộ luật đang dùng: {version}",
@@ -2511,6 +2512,7 @@
       "pass": "Đạt",
       "warn": "Cảnh báo",
       "info": "Chưa kiểm được",
+      "declared": "Đã khai",
       "fail": "Loại"
     },
     "checks": {

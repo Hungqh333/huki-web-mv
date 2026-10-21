@@ -15,7 +15,7 @@ export default async function DevFormulaBookPage() {
         Trang xem trước chỉ có ở máy local, giá trị mặc định (không đọc ngưỡng đã sửa). Trang thật: /admin/cong-thuc.
       </p>
       <FormulaBookView
-        loaded={{ params: DEFAULT_ENGINE_PARAMS, overridden: [], rejected: false, stored: {}, tables: DEFAULT_ENGINE_TABLES, tableRejected: [], tableStored: {} }}
+        loaded={{ params: DEFAULT_ENGINE_PARAMS, overridden: [], rejected: false, stored: {}, tables: DEFAULT_ENGINE_TABLES, tableRejected: [], tableStored: {}, serviceKeyMissing: false }}
       />
     </section>
   );

@@ -2,7 +2,8 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { SelectorForm } from '@/components/selector/SelectorForm';
-import { canUseSelector, getSessionContext, hasAdvancedFeatures } from '@/lib/auth';
+import { canUseSelector, getSessionContext, hasAdvancedFeatures, isAdmin } from '@/lib/auth';
+import { FormulaVisibilityProvider } from '@/components/ui/FormulaVisibility';
 import { getFieldDefs, getUnknownFieldKeys } from '@/lib/selector/fields';
 import { hasSupabaseEnv } from '@/lib/supabase/env';
 import { createClient } from '@/lib/supabase/server';
@@ -74,11 +75,13 @@ export default async function SelectorTaskPage({
             {t('noFields')}
           </p>
         ) : (
-          <SelectorForm
-            taskSlug={task.slug}
-            fields={fields}
-            canExport={hasAdvancedFeatures(role)}
-          />
+          <FormulaVisibilityProvider show={isAdmin(role)}>
+            <SelectorForm
+              taskSlug={task.slug}
+              fields={fields}
+              canExport={hasAdvancedFeatures(role)}
+            />
+          </FormulaVisibilityProvider>
         )}
       </div>
     </section>

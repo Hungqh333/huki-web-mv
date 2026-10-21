@@ -94,6 +94,11 @@ test('dữ kiện: đủ 5 phần của màn 6 + xếp hạng, số lấy từ e
   const text = whyFactsToText(recommended, statusLabel('vi'));
   assert.doesNotMatch(text, /12345678|12\.345\.678|Nhà phân phối/, 'chot Q3: khong gui gia / nha cung cap');
   assert.match(text, /\[OPT-001\] \(ĐẠT\)/);
+  // Bảo vệ công thức (chốt 2026-10-21): dòng kết quả luật chỉ có mã + trạng thái + tên, không trọng số.
+  const ruleLines = text.split('\n').filter((line) => /^- \[[A-Z]{2,3}-\d{3}\] \(/.test(line));
+  assert.ok(ruleLines.length > 0);
+  assert.ok(ruleLines.every((line) => !line.includes(' — ')), 'khong gui cong thuc / ghi chu cua dong luat');
+  assert.doesNotMatch(text, /trọng số/, 'khong gui trong so diem thanh phan');
   assert.deepEqual(missing, [], missing.join('\n'));
 });
 

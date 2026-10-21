@@ -1,10 +1,10 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { getFormatter, getLocale, getTranslations } from 'next-intl/server';
 import { renderToBuffer } from '@react-pdf/renderer';
-import { getSessionContext, hasAdvancedFeatures } from '@/lib/auth';
+import { getSessionContext, hasAdvancedFeatures, isAdmin } from '@/lib/auth';
 import { registerPdfFonts } from '@/lib/pdf/fonts';
 import { SelectorReport, type ReportData } from '@/lib/pdf/selector/SelectorReport';
-import { renderFormula } from '@/lib/vision/formulaTerms';
+import { formulaResult, renderFormula } from '@/lib/vision/formulaTerms';
 import { FIELD_CATALOG } from '@/lib/selector/fields';
 import type { SelectorInput, SelectorResult } from '@/lib/selector/types';
 import { createClient } from '@/lib/supabase/server';
@@ -102,10 +102,12 @@ export async function GET(
   /* Công thức engine ghi thẻ ⟦…⟧ (C9) — dịch trước khi vào PDF, vì SelectorReport
      chỉ nhận chữ đã dựng sẵn. Lịch sử lưu trước C9 không có thẻ nên không đổi gì. */
   const tTerms = await getTranslations('selector.vision.formulaTerms');
-  const derived = (history.result_json?.derived ?? []).map((metric) => ({
-    ...metric,
-    formula: renderFormula(metric.formula, (key) => tTerms(key)),
-  }));
+  // Bảo vệ công thức (chốt 2026-10-21): người không phải admin chỉ thấy kết quả, không thấy cách tính.
+  const showFormulas = isAdmin(session.profile?.role);
+  const derived = (history.result_json?.derived ?? []).map((metric) => {
+    const rendered = renderFormula(metric.formula, (key) => tTerms(key));
+    return { ...metric, formula: showFormulas ? rendered : (formulaResult(rendered) ?? '—') };
+  });
 
   const reportData: ReportData = {
     taskName:

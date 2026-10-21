@@ -6,6 +6,7 @@ import type { ExplainResult } from '@/app/actions/explainSolution';
 import { KnowledgeLink } from '@/components/knowledge/KnowledgeLink';
 import type { CheckStatus } from '@/lib/vision/types';
 import type { WhyFacts } from '@/lib/vision/whyFacts';
+import { useShowFormulas } from '@/components/ui/FormulaVisibility';
 
 /**
  * Khối "Vì sao chọn?" của một phương án — V1c mục C7 (UI_CONTENT màn 6).
@@ -31,6 +32,7 @@ const STATUS_MARK: Record<CheckStatus, { mark: string; className: string }> = {
 export function WhyPanel({ facts, explainer, onClose }: { facts: WhyFacts; explainer: Explainer | null; onClose: () => void }) {
   const t = useTranslations('designer.requirement.solutions.why');
   const tv = useTranslations('selector.vision.status');
+  const showFormulas = useShowFormulas();
 
   return (
     <section
@@ -54,7 +56,7 @@ export function WhyPanel({ facts, explainer, onClose }: { facts: WhyFacts; expla
           <div key={section.id} className={section.id === 'requirement' || section.id === 'limits' ? 'md:col-span-2' : ''}>
             <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{section.title}</h4>
             <ul className="mt-1 space-y-1 text-xs">
-              {section.rows.map((row, index) => (
+              {section.rows.filter((row) => showFormulas || !row.secret || row.ruleId).map((row, index) => (
                 <li key={index} className="break-words">
                   {row.status ? (
                     <span className={`mr-1 ${STATUS_MARK[row.status].className}`} title={tv(row.status)}>
@@ -63,7 +65,7 @@ export function WhyPanel({ facts, explainer, onClose }: { facts: WhyFacts; expla
                   ) : null}
                   {row.ruleId ? <span className="mr-1.5 font-mono text-slate-500 dark:text-slate-400">{row.ruleId}</span> : null}
                   <span className={row.status ? '' : 'font-medium'}>{row.label}</span>
-                  {row.detail ? <span className="ml-1.5 font-mono text-[11px] text-slate-600 dark:text-slate-300">{row.detail}</span> : null}
+                  {row.detail && (showFormulas || !row.secret) ? <span className="ml-1.5 font-mono text-[11px] text-slate-600 dark:text-slate-300">{row.detail}</span> : null}
                   {row.note ? <span className="block text-slate-600 dark:text-slate-400">{row.note}</span> : null}
                   {/* Dòng kết quả luật (có trạng thái) — không phải dòng giả định gom nhiều mã. */}
                   {row.ruleId && row.status ? (

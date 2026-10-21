@@ -1,10 +1,12 @@
 import 'server-only';
 
 import type { createClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/service';
 import { DEFAULT_ENGINE_PARAMS, resolveEngineParams, type EngineParamKey, type EngineParams } from '@/lib/vision/engineParams';
 import { DEFAULT_ENGINE_TABLES, resolveEngineTables, type EngineTables, type TableRowError } from '@/lib/vision/engineTables';
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
+type Reader = Pick<Supabase, 'from'>;
 
 export type LoadedEngineParams = {
   params: EngineParams;
@@ -20,10 +22,15 @@ export type LoadedEngineParams = {
   tableRejected: TableRowError[];
   /** Người sửa gần nhất từng dòng bảng — khoá `${table}.${row}`. */
   tableStored: Record<string, { updatedBy: string | null; updatedAt: string }>;
+  /**
+   * Máy chủ chưa có khoá service_role: hai bảng chỉ admin đọc được (2026-10-21), nên
+   * Member/VIP đang tính bằng ngưỡng MẶC ĐỊNH. Trang admin hiện cảnh báo.
+   */
+  serviceKeyMissing: boolean;
 };
 
 /** Bảng engine_tables (migration 20261016000001). Chưa có bảng / lỗi → mặc định. */
-async function loadTables(supabase: Supabase): Promise<Pick<LoadedEngineParams, 'tables' | 'tableRejected' | 'tableStored'>> {
+async function loadTables(supabase: Reader): Promise<Pick<LoadedEngineParams, 'tables' | 'tableRejected' | 'tableStored'>> {
   const fallback = { tables: DEFAULT_ENGINE_TABLES, tableRejected: [], tableStored: {} };
   try {
     const { data, error } = await supabase.from('engine_tables').select('table_key, row_key, data, updated_by, updated_at');
@@ -50,9 +57,15 @@ async function loadTables(supabase: Supabase): Promise<Pick<LoadedEngineParams, 
  * Bảng chưa có (chưa dán SQL), lỗi mạng hay không đọc được → MẶC ĐỊNH, ghi log —
  * trang vẫn chạy, chỉ là chưa áp ngưỡng đã sửa.
  */
-export async function loadEngineParams(supabase: Supabase): Promise<LoadedEngineParams> {
+export async function loadEngineParams(userClient: Supabase): Promise<LoadedEngineParams> {
+  // Hai bảng chỉ admin đọc được (migration 20261021000001) → máy chủ đọc bằng khoá service_role
+  // để Member/VIP cũng tính bằng ngưỡng đã chỉnh. Chưa có khoá → client người dùng (admin vẫn đọc được).
+  const service = createServiceClient();
+  if (!service) console.warn('[engine-params] thieu SUPABASE_SERVICE_ROLE_KEY — nguoi khong phai admin dang dung nguong mac dinh');
+  const supabase: Reader = service ?? userClient;
+  const serviceKeyMissing = service === null;
   const tables = await loadTables(supabase);
-  const fallback: LoadedEngineParams = { params: DEFAULT_ENGINE_PARAMS, overridden: [], rejected: false, stored: {}, ...tables };
+  const fallback: LoadedEngineParams = { params: DEFAULT_ENGINE_PARAMS, overridden: [], rejected: false, stored: {}, ...tables, serviceKeyMissing };
   try {
     const { data, error } = await supabase.from('engine_parameters').select('key, value, updated_by, updated_at');
     if (error) {
@@ -65,6 +78,7 @@ export async function loadEngineParams(supabase: Supabase): Promise<LoadedEngine
     return {
       ...resolved,
       ...tables,
+      serviceKeyMissing,
       stored: Object.fromEntries(rows.map((row) => [row.key, { value: Number(row.value), updatedBy: row.updated_by, updatedAt: row.updated_at }])),
     };
   } catch (error) {

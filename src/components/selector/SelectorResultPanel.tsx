@@ -1,7 +1,8 @@
 'use client';
 
 import { useLocale, useTranslations } from 'next-intl';
-import { renderFormula } from '@/lib/vision/formulaTerms';
+import { formulaResult, renderFormula } from '@/lib/vision/formulaTerms';
+import { useShowFormulas } from '@/components/ui/FormulaVisibility';
 import { IconBadge, type BadgeTone, type IconName } from '@/components/ui/Icon';
 import { NOTE_CLASS, Panel } from '@/components/ui/PanelHeader';
 import type { Component } from '@/lib/components/specs';
@@ -55,6 +56,7 @@ export function SelectorResultPanel({
   const tApproach = useTranslations('selector.approach');
   // Công thức engine ghi thẻ ⟦…⟧ (C9) — thay bằng từ theo ngôn ngữ đang xem.
   const tTerms = useTranslations('selector.vision.formulaTerms');
+  const showFormulas = useShowFormulas();
   const locale = useLocale();
   const pickNote = (note: { vi: string; en: string }) => (locale === 'en' ? note.en : note.vi);
 
@@ -179,7 +181,9 @@ export function SelectorResultPanel({
                   {t(`metrics.${metric.key}`)}
                 </span>
                 <code className="mt-0.5 block overflow-x-auto rounded bg-slate-50 px-2 py-1 text-xs text-slate-700 dark:bg-slate-900 dark:text-slate-300">
-                  {renderFormula(metric.formula, (key) => tTerms(key))}
+                  {showFormulas
+                    ? renderFormula(metric.formula, (key) => tTerms(key))
+                    : (formulaResult(renderFormula(metric.formula, (key) => tTerms(key))) ?? '—')}
                 </code>
               </li>
             ))}

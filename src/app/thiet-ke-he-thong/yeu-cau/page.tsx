@@ -11,6 +11,7 @@ import { hasSupabaseEnv } from '@/lib/supabase/env';
 import { createClient } from '@/lib/supabase/server';
 import { loadEngineParams } from '@/lib/engineParamsLoad';
 import { fetchAllRows } from '@/lib/components/fetchAll';
+import { FormulaVisibilityProvider } from '@/components/ui/FormulaVisibility';
 
 /**
  * Bước 1 của Vision Engineer — bảng tóm tắt yêu cầu (spec V1.1 §10.2).
@@ -62,6 +63,7 @@ export default async function RequirementPage({ searchParams }: PageProps<'/thie
       <p className="text-xs font-semibold uppercase tracking-wide text-sky-700 dark:text-sky-400">{t('step')}</p>
       <h1 className="mt-2 text-3xl font-bold tracking-tight">{t('title')}</h1>
 
+      <FormulaVisibilityProvider show={isAdmin(session?.profile?.role ?? null)}>
       <div className="mt-8 space-y-6">
         <ProjectSaveBar canExportPdf={hasAdvancedFeatures(session?.profile?.role ?? null)} />
         <RequirementSummary initialApp={isApplicationType(appParam) ? appParam : null} catalog={(catalog ?? []) as Component[]}
@@ -71,6 +73,7 @@ export default async function RequirementPage({ searchParams }: PageProps<'/thie
           engineTables={engineTables}
         />
       </div>
+      </FormulaVisibilityProvider>
     </section>
   );
 }

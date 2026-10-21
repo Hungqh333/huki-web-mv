@@ -29,6 +29,11 @@ export type WhyRow = {
   /** Công thức đã thay số, hoặc giá trị. */
   detail: string;
   note: string | null;
+  /**
+   * Dòng lộ cách tính (bảo vệ công thức, chốt 2026-10-21): kết quả luật (detail là công thức
+   * đã thay số) và điểm thành phần (lộ trọng số). Chỉ admin thấy detail; không gửi cho Gemini.
+   */
+  secret?: boolean;
 };
 
 export const WHY_SECTIONS = ['requirement', 'camera', 'lens', 'light', 'pc', 'assumptions', 'limits', 'ranking'] as const;
@@ -55,6 +60,7 @@ export function buildWhyFacts(input: {
     label: t(`selector.vision.checks.${result.key}`),
     detail: result.formula === '—' ? '' : renderFormula(result.formula, (key) => t(`selector.vision.formulaTerms.${key}`)),
     note: result.noteKey ? t(`selector.vision.${noteMessageKey(result.noteKey)}`, result.noteValues ?? {}) : null,
+    secret: true,
   });
   const nameOf = (candidate: Candidate) => `${candidate.component.brand} ${candidate.component.model}`;
   const headRow = (label: string, detail: string): WhyRow => ({ ruleId: null, status: null, label, detail, note: null });
@@ -100,13 +106,16 @@ export function buildWhyFacts(input: {
   const rankingRows = level.score
     ? [
         headRow(t(`${WHY}.scoreTotal`), t(`${WHY}.scoreValue`, { score: level.score.total })),
-        ...level.score.parts.map((part) =>
-          headRow(
-            t(`designer.requirement.solutions.criteria.${part.criterion}`),
-            part.hasData
-              ? t(`${WHY}.scorePart`, { value: fmt(part.value, 2), weight: fmt(part.weight, 2) })
-              : t(`${WHY}.scoreNoData`, { weight: fmt(part.weight, 2) })
-          )
+        ...level.score.parts.map(
+          (part): WhyRow => ({
+            ...headRow(
+              t(`designer.requirement.solutions.criteria.${part.criterion}`),
+              part.hasData
+                ? t(`${WHY}.scorePart`, { value: fmt(part.value, 2), weight: fmt(part.weight, 2) })
+                : t(`${WHY}.scoreNoData`, { weight: fmt(part.weight, 2) })
+            ),
+            secret: true,
+          })
         ),
       ]
     : [];
@@ -136,12 +145,17 @@ export function buildWhyFacts(input: {
  * được phép thấy trong đoạn văn trả về.
  */
 export function whyFactsToText(facts: WhyFacts, statusLabel: (status: CheckStatus) => string): string {
+  // Bảo vệ công thức (chốt 2026-10-21, đợt 1): Gemini gói miễn phí — Google được dùng dữ liệu.
+  // Dòng kết quả luật chỉ gửi mã luật + trạng thái + tên kiểm tra (không công thức, không ghi chú
+  // có ngưỡng); điểm thành phần (lộ trọng số) không gửi.
   const lines = [facts.title];
   for (const section of facts.sections) {
+    const rows = section.rows.filter((row) => !row.secret || row.ruleId);
+    if (rows.length === 0) continue;
     lines.push('', `## ${section.title}`);
-    for (const row of section.rows) {
+    for (const row of rows) {
       const head = [row.ruleId ? `[${row.ruleId}]` : null, row.status ? `(${statusLabel(row.status)})` : null, row.label].filter(Boolean).join(' ');
-      lines.push(`- ${[head, row.detail, row.note].filter(Boolean).join(' — ')}`);
+      lines.push(`- ${(row.secret ? [head] : [head, row.detail, row.note]).filter(Boolean).join(' — ')}`);
     }
   }
   return lines.join('\n');

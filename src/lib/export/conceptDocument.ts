@@ -98,6 +98,11 @@ export function buildConceptDocument(input: {
   params?: EngineParams;
   /** Bảng chiếu sáng + giả định mặc định đang dùng (admin). */
   tables?: EngineTables;
+  /**
+   * In dòng công thức trong bảng phân tích — CHỈ cho admin (bảo vệ công thức, chốt 2026-10-21 Q5).
+   * Mặc định không in: khách VIP chỉ thấy mã luật, kết quả và ghi chú.
+   */
+  withFormulas?: boolean;
 }): ConceptDocument {
   const { revision, t } = input;
   const requirement = revision.requirement;
@@ -213,7 +218,7 @@ export function buildConceptDocument(input: {
           ruleId: r.ruleId,
           check: t(`selector.vision.checks.${r.key}`),
           status: t(`selector.vision.status.${r.status}`),
-          formula: r.formula === '—' ? '' : renderFormula(r.formula, (key) => t(`selector.vision.formulaTerms.${key}`)),
+          formula: !input.withFormulas || r.formula === '—' ? '' : renderFormula(r.formula, (key) => t(`selector.vision.formulaTerms.${key}`)),
           note: noteOf(r),
         })),
     })).filter((group) => group.rows.length > 0),

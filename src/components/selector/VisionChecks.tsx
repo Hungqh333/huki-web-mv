@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { Panel } from '@/components/ui/PanelHeader';
 import { renderFormula } from '@/lib/vision/formulaTerms';
+import { useShowFormulas } from '@/components/ui/FormulaVisibility';
 import { worstStatus, type AppearanceAnalysis, type Check, type CheckStatus } from '@/lib/vision';
 
 /**
@@ -113,6 +114,7 @@ export function VisionChecks({
 
 function CheckRow({ check }: { check: Check }) {
   const t = useTranslations('selector.vision');
+  const showFormulas = useShowFormulas();
 
   return (
     <li className="px-3 py-2.5">
@@ -122,9 +124,11 @@ function CheckRow({ check }: { check: Check }) {
         {check.status === 'info' ? null : <StatusBadge status={check.status} />}
       </div>
 
-      <code className="mt-1 block overflow-x-auto rounded bg-slate-50 px-2 py-1 text-xs text-slate-700 dark:bg-slate-900 dark:text-slate-300">
-        {renderFormula(check.formula, (key) => t(`formulaTerms.${key}`))}
-      </code>
+      {showFormulas ? (
+        <code className="mt-1 block overflow-x-auto rounded bg-slate-50 px-2 py-1 text-xs text-slate-700 dark:bg-slate-900 dark:text-slate-300">
+          {renderFormula(check.formula, (key) => t(`formulaTerms.${key}`))}
+        </code>
+      ) : null}
 
       {check.noteKey ? (
         <p className="mt-1 text-xs leading-relaxed text-slate-500 dark:text-slate-400">

@@ -19,6 +19,7 @@ import {
 } from '@/lib/vision/lensSelector';
 import { renderFormula } from '@/lib/vision/formulaTerms';
 import type { CheckStatus } from '@/lib/vision/types';
+import { useShowFormulas } from '@/components/ui/FormulaVisibility';
 import { LensDiagram, type AccessoryKind, type DiagramAccessory, type DiagramField } from './LensDiagram';
 
 /**
@@ -74,9 +75,12 @@ function cameraLabel(component: Component): string {
   return `${component.brand} ${component.model}${parts.length ? ` · ${parts.join(' · ')}` : ''}`;
 }
 
-function StatusBadge({ status }: { status: CheckStatus }) {
+/** Dòng thông tin về phụ kiện người dùng tự khai: không phải phép kiểm, ghi "Đã khai" thay cho "Chưa kiểm được". */
+const DECLARED_NOTES = new Set(['tubeManual', 'converterManual']);
+
+function StatusBadge({ status, declared = false }: { status: CheckStatus; declared?: boolean }) {
   const t = useTranslations('lensSelector.status');
-  return <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${STATUS_CLASS[status]}`}>{t(status)}</span>;
+  return <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${STATUS_CLASS[status]}`}>{t(declared ? 'declared' : status)}</span>;
 }
 
 export function LensSelector({
@@ -87,6 +91,7 @@ export function LensSelector({
   params?: LensParams;
 }) {
   const t = useTranslations('lensSelector');
+  const showFormulas = useShowFormulas();
 
   const cameras = useMemo(() => components.filter((c) => c.kind === 'camera'), [components]);
   // Ống kính + phụ kiện (ống nối, bộ nhân) — engine tự thử phụ kiện cho ống bị loại (OPT-010/011).
@@ -518,7 +523,7 @@ export function LensSelector({
                 <NeedItem
                   label={t(tele ? 'need.betaMax' : 'need.beta')}
                   value={show(need.beta, 4)}
-                  formula={need.betaFormula}
+                  formula={showFormulas ? need.betaFormula : undefined}
                   note={t(tele ? 'need.betaMaxNote' : 'need.betaNote')}
                 />
                 {!tele && geometry ? (
@@ -526,7 +531,7 @@ export function LensSelector({
                     label={t(mode === 'fov-wd' ? (accK ? 'need.focalPrime' : 'need.focal') : accK ? 'need.focalGivenPrime' : 'need.focalGiven')}
                     value={`${show(geometry.focalLengthMm, 1)} mm`}
                     formula={
-                      mode !== 'fov-wd'
+                      !showFormulas || mode !== 'fov-wd'
                         ? undefined
                         : accK
                           ? `${show(geometry.workingDistanceMm, 0)} × (${show(need.beta, 4)} ÷ ${show(accK, 2)}) ÷ (1 + ${show(need.beta, 4)} ÷ ${show(accK, 2)})`
@@ -539,7 +544,7 @@ export function LensSelector({
                   <NeedItem
                     label={t('need.wdComputed')}
                     value={`${show(geometry.workingDistanceMm, 0)} mm`}
-                    formula={accK ? `${show(geometry.focalLengthMm, 1)} × (1 + ${show(accK, 2)} ÷ ${show(need.beta, 4)})` : `${show(geometry.focalLengthMm, 1)} × (1 + 1 ÷ ${show(need.beta, 4)})`}
+                    formula={!showFormulas ? undefined : accK ? `${show(geometry.focalLengthMm, 1)} × (1 + ${show(accK, 2)} ÷ ${show(need.beta, 4)})` : `${show(geometry.focalLengthMm, 1)} × (1 + 1 ÷ ${show(need.beta, 4)})`}
                     note={t('need.wdComputedNote')}
                   />
                 ) : null}
@@ -746,6 +751,7 @@ function NeedItem({ label, value, formula, note, status }: { label: string; valu
 function LensRow({ candidate: c, line, open, onToggle }: { candidate: LensCandidate; line: boolean; open: boolean; onToggle: () => void }) {
   const t = useTranslations('lensSelector');
   const tv = useTranslations('selector.vision');
+  const showFormulas = useShowFormulas();
   // Thông số hiển thị là của ống GỐC; c.lens đã nhân hệ số bộ nhân (nếu có) để kiểm.
   const lens = lensFromComponent(c.component);
   const acc = c.accessory;
@@ -800,9 +806,9 @@ function LensRow({ candidate: c, line, open, onToggle }: { candidate: LensCandid
             <ul className="space-y-2">
               {c.checks.map((check, i) => (
                 <li key={`${check.key}-${i}`} className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                  <StatusBadge status={check.status} />
+                  <StatusBadge status={check.status} declared={check.status === 'info' && DECLARED_NOTES.has(check.noteKey ?? '')} />
                   <span className="text-sm font-medium text-slate-800 dark:text-slate-200">{t(`checks.${check.key}`)}</span>
-                  <span className="font-mono text-xs text-slate-500 dark:text-slate-400">{renderFormula(check.formula, (key) => tv(`formulaTerms.${key}`))}</span>
+                  {showFormulas ? <span className="font-mono text-xs text-slate-500 dark:text-slate-400">{renderFormula(check.formula, (key) => tv(`formulaTerms.${key}`))}</span> : null}
                   {check.noteKey ? <span className="w-full text-sm text-slate-600 dark:text-slate-300">{t(`notes.${check.noteKey}`, check.noteValues ?? {})}</span> : null}
                 </li>
               ))}

@@ -8,6 +8,7 @@ import type { Requirement } from '@/lib/requirement/types';
 import { assessFeasibility, type DimensionStatus, type FeasibilityStatus } from '@/lib/vision/feasibility';
 import { analyseRequirement } from '@/lib/vision/requirementAnalysis';
 import { renderFormula } from '@/lib/vision/formulaTerms';
+import { useShowFormulas } from '@/components/ui/FormulaVisibility';
 import { FEASIBILITY_DIMENSIONS, type RuleResult } from '@/lib/vision/rules';
 import type { CheckStatus } from '@/lib/vision/types';
 import { DEFAULT_ENGINE_PARAMS, type EngineParams } from '@/lib/vision/engineParams';
@@ -224,6 +225,7 @@ function ResultRow({
 }) {
   const t = useTranslations('designer.requirement.analysis');
   const tv = useTranslations('selector.vision');
+  const showFormulas = useShowFormulas();
   const needsCameraCount = result.noteKey === 'cameraCountMissing';
 
   return (
@@ -240,7 +242,7 @@ function ResultRow({
           <span className="rounded-full bg-violet-100 px-2 py-0.5 text-xs text-violet-800 dark:bg-violet-500/15 dark:text-violet-300">{t('needsSample')}</span>
         ) : null}
       </div>
-      {result.formula && result.formula !== '—' ? (
+      {showFormulas && result.formula && result.formula !== '—' ? (
         <code className="mt-1 block overflow-x-auto rounded bg-slate-50 px-2 py-1 text-xs text-slate-700 dark:bg-slate-900 dark:text-slate-300">
           {renderFormula(result.formula, (key) => tv(`formulaTerms.${key}`))}
         </code>

@@ -52,6 +52,10 @@ update public.profiles set role = 'member' where id = 'aaaaaaaa-0000-4000-8000-0
 update public.profiles set role = 'vip'    where id = 'aaaaaaaa-0000-4000-8000-000000000003';
 update public.profiles set role = 'admin'  where id = 'aaaaaaaa-0000-4000-8000-000000000004';
 
+-- Một dòng ngưỡng + một dòng bảng engine có sẵn, để kiểm "Member không thấy" có ý nghĩa (2026-10-21).
+insert into public.engine_parameters (key, value) values ('rlsSeedKey', 2);
+insert into public.engine_tables (table_key, row_key, data) values ('lighting', 'rlsSeed', '{}'::jsonb);
+
 -- 4 bài viết, mỗi tier một bài + 1 bản nháp.
 insert into public.articles (slug, title_vi, title_en, content_vi, content_en, access_tier, published_at)
 values
@@ -216,9 +220,10 @@ begin
   end if;
   raise notice 'PASS: Member bị chặn sửa bài viết';
 
-  -- Ngưỡng engine (2026-10-12): member đọc được (trang Yêu cầu cần), không ghi được.
-  perform count(*) from public.engine_parameters;
-  raise notice 'PASS: Member đọc được engine_parameters';
+  -- Ngưỡng engine: từ 2026-10-21 chỉ Admin đọc (máy chủ đọc bằng service_role), member không ghi được.
+  perform pg_temp.assert_eq(
+    (select count(*) from public.engine_parameters), 0,
+    'Member KHÔNG đọc được engine_parameters');
   begin
     insert into public.engine_parameters (key, value) values ('rlsTestKey', 1);
     raise exception 'FAIL: Member ghi được engine_parameters';
@@ -226,9 +231,10 @@ begin
     raise notice 'PASS: Member bị chặn ghi engine_parameters';
   end;
 
-  -- Bảng engine (2026-10-16): member đọc được, không ghi được.
-  perform count(*) from public.engine_tables;
-  raise notice 'PASS: Member đọc được engine_tables';
+  -- Bảng engine: từ 2026-10-21 chỉ Admin đọc, member không ghi được.
+  perform pg_temp.assert_eq(
+    (select count(*) from public.engine_tables), 0,
+    'Member KHÔNG đọc được engine_tables');
   begin
     insert into public.engine_tables (table_key, row_key, data) values ('lighting', 'scratch', '{}'::jsonb);
     raise exception 'FAIL: Member ghi được engine_tables';

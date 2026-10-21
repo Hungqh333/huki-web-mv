@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { LensSelector } from '@/components/lens/LensSelector';
-import { canUseSelector, getSessionContext } from '@/lib/auth';
+import { canUseSelector, getSessionContext, isAdmin } from '@/lib/auth';
+import { FormulaVisibilityProvider } from '@/components/ui/FormulaVisibility';
 import { contactMailto } from '@/lib/contact';
 import type { Component } from '@/lib/components/specs';
 import { fetchAllRows } from '@/lib/components/fetchAll';
@@ -79,10 +80,13 @@ export default async function LensSelectorPage() {
       <p className="mt-4 max-w-3xl text-xs text-slate-500 dark:text-slate-400">{t('why')}</p>
       <div className="mt-8">
         {hasLens ? (
-          <LensSelector
-            components={components}
-            params={engine.params}
-          />
+          // Công thức chỉ admin thấy (bảo vệ công thức, chốt 2026-10-21).
+          <FormulaVisibilityProvider show={isAdmin(role)}>
+            <LensSelector
+              components={components}
+              params={engine.params}
+            />
+          </FormulaVisibilityProvider>
         ) : (
           <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
             {t('emptyCatalog')}

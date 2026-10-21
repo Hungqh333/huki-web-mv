@@ -62,6 +62,15 @@ export const term = (key: FormulaTerm) => `⟦${key}⟧`;
 
 const TOKEN = /⟦(\w+)⟧/g;
 
+/**
+ * Phần KẾT QUẢ của một công thức đã thay số — sau dấu "=" hoặc "≈" cuối cùng. Người không phải
+ * admin chỉ thấy phần này (bảo vệ công thức, chốt 2026-10-21). Không có dấu bằng → null.
+ */
+export function formulaResult(formula: string): string | null {
+  const at = Math.max(formula.lastIndexOf(' = '), formula.lastIndexOf(' ≈ '));
+  return at < 0 ? null : formula.slice(at + 3).trim() || null;
+}
+
 /** Thay thẻ bằng từ đúng ngôn ngữ. Thẻ lạ (không có trong bảng) để nguyên tên khoá, không ném lỗi. */
 export function renderFormula(formula: string, translate: (key: FormulaTerm) => string): string {
   return formula.replace(TOKEN, (_, key: string) => ((FORMULA_TERMS as readonly string[]).includes(key) ? translate(key as FormulaTerm) : key));

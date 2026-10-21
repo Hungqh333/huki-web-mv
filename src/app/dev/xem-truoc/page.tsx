@@ -4,6 +4,7 @@ import { SelectorForm } from '@/components/selector/SelectorForm';
 import type { Component } from '@/lib/components/specs';
 import { getFieldDefs } from '@/lib/selector/fields';
 import type { SelectorInput, SelectorResult } from '@/lib/selector/types';
+import { FormulaVisibilityProvider } from '@/components/ui/FormulaVisibility';
 
 /**
  * Trang xem trước CHỈ CHẠY Ở MÁY LOCAL, đổ dữ liệu giả, không cần đăng nhập.
@@ -203,9 +204,11 @@ const COMPONENTS: Component[] = [
   }, 1250),
 ];
 
-export default function DevPreviewPage() {
+export default async function DevPreviewPage({ searchParams }: PageProps<'/dev/xem-truoc'>) {
   // Chặn ở production. Trang này là công cụ phát triển, không phải tính năng.
   if (process.env.NODE_ENV === 'production') notFound();
+  // ?cong-thuc=an — xem như người không phải admin (bảo vệ công thức, 2026-10-21).
+  const hide = (await searchParams)['cong-thuc'] === 'an';
 
   const fields = getFieldDefs(APPEARANCE_FIELDS);
 
@@ -214,6 +217,13 @@ export default function DevPreviewPage() {
       <p className="mb-6 rounded-md bg-amber-100 px-3 py-2 text-sm text-amber-900 dark:bg-amber-950/50 dark:text-amber-200">
         Trang xem trước chỉ có ở máy local. Dữ liệu bịa, không đọc database.
       </p>
+      <p className="mb-6 -mt-4 text-xs text-slate-500 dark:text-slate-400">
+        {hide ? 'Đang xem như Member: công thức ẩn. ' : 'Đang xem như admin: có công thức. '}
+        <a href={hide ? '?' : '?cong-thuc=an'} className="text-sky-700 hover:underline dark:text-sky-400">
+          {hide ? 'Hiện công thức' : 'Xem như Member (ẩn công thức)'}
+        </a>
+      </p>
+      <FormulaVisibilityProvider show={!hide}>
 
       <h1 className="text-2xl font-bold tracking-tight">Kiểm tra ngoại quan — xem trước bố cục</h1>
 
@@ -253,6 +263,7 @@ export default function DevPreviewPage() {
           initialState={{ result: RESULT, input: INPUT, components: COMPONENTS, historySaved: false }}
         />
       </div>
+      </FormulaVisibilityProvider>
     </section>
   );
 }

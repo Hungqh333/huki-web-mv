@@ -1,7 +1,7 @@
 import 'server-only';
 
 import { getFormatter, getLocale, getTranslations } from 'next-intl/server';
-import { canUseSelector, getSessionContext, hasAdvancedFeatures } from '@/lib/auth';
+import { canUseSelector, getSessionContext, hasAdvancedFeatures, isAdmin } from '@/lib/auth';
 import { revisionToDraft } from '@/lib/projects/model';
 import { createClient } from '@/lib/supabase/server';
 import type { BomSnapshot } from '@/lib/vision/bom';
@@ -80,6 +80,7 @@ export async function loadRevisionForExport(projectId: string, revisionId: strin
     formatDate: (date) => formatter.dateTime(date, { dateStyle: 'medium', timeStyle: 'short' }),
     t,
     locale: await getLocale(),
+    withFormulas: isAdmin(role),
     ...(await loadEngineParams(supabase).then(({ params, tables }) => ({ params, tables }))),
   });
 

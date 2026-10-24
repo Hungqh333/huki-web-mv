@@ -27,13 +27,15 @@ import { DEFAULT_PX_PER_DEFECT, GRR_DIVISOR, K_SUBPIXEL } from '@/lib/vision/res
 import type { Evidence } from '@/lib/vision/rules';
 import { LEAD_TIME_ZERO_DAYS, MARGIN_FULL_SCORE, PRIOR_USE_FULL } from '@/lib/vision/solutionLevels';
 import { TIME_BUDGET_SAFETY } from '@/lib/vision/timing';
+import { LIGHT_WAVELENGTH_NM } from '@/lib/vision/lightColor';
 
 /** Trang dùng công thức. */
-export type FormulaPage = 'design' | 'lens' | 'oldSelector' | 'pc' | 'kpi';
+export type FormulaPage = 'design' | 'lens' | 'light' | 'oldSelector' | 'pc' | 'kpi';
 
 export const PAGE_LABEL: Record<FormulaPage, { label: string; href: string }> = {
   design: { label: 'Thiết kế hệ thống', href: '/thiet-ke-he-thong/yeu-cau' },
   lens: { label: 'Chọn ống kính', href: '/chon-ong-kinh' },
+  light: { label: 'Chọn đèn', href: '/chon-den' },
   oldSelector: { label: 'Bộ chọn thiết bị (cũ)', href: '/cong-cu-chon-thiet-bi' },
   pc: { label: 'Máy tính (PC)', href: '/cong-cu-may-tinh' },
   kpi: { label: 'Bộ tính chỉ tiêu', href: '/cong-cu-chi-tieu' },
@@ -65,7 +67,7 @@ export type FormulaEntry = {
   /** File : hàm trong mã nguồn. */
   source: string;
   /** Mục có bảng sống đọc từ database (vẽ riêng trên trang). */
-  liveTable?: 'defaults' | 'lighting';
+  liveTable?: 'defaults' | 'lighting' | 'lightColor' | 'lightMatrix';
 };
 
 export type FormulaSection = { key: string; title: string; intro?: string; entries: FormulaEntry[] };
@@ -389,23 +391,81 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
         formula: [
           'bề mặt bóng / kim loại / trong suốt LẤN ÁT loại lỗi; còn lại tra theo loại lỗi',
           'mã luật: bề mặt phản xạ → LGT-001 · trong suốt → LGT-004 · biên dạng/lỗ/bavia → LGT-003 · xước, lõm nông → LGT-002 · còn lại → LGT-001',
-          'lọc đèn: sai kiểu → LOẠI; kích thước ≥ cạnh dài ô (ring / dome / darkfield: ≥ đường chéo ô)',
+          'lỗi in / sai màu → thanh (thay: vòng khuếch tán) — chốt 2026-10-22 (nháp F3)',
+          'cỡ đèn tối thiểu: vòng / dome / góc thấp ≥ đường chéo vùng nhìn (ô); loại khác ≥ cạnh dài',
+          'lọc đèn: sai kiểu → LOẠI; nhỏ hơn cỡ tối thiểu → LOẠI',
         ],
         verdict: ['Luôn CẢNH BÁO (phải chụp mẫu)'],
         liveTable: 'lighting',
         evidence: 'requires-sample-test',
         usedIn: ['design', 'oldSelector'],
-        source: 'vision/lighting.ts : suggestLighting · vision/equipmentFilter.ts : lightChecks',
+        source: 'vision/lighting.ts : suggestLighting, lightingRuleId, minLightSizeMm · vision/equipmentFilter.ts : lightChecks',
+      },
+      {
+        id: 'LGT-017..023',
+        title: 'Kiểu đèn (trang Chọn đèn bản 2)',
+        rules: ['LGT-017', 'LGT-018', 'LGT-019', 'LGT-020', 'LGT-021', 'LGT-022', 'LGT-023'],
+        formula: [
+          'nhập 5 bước: bài toán → cần thấy gì → vật liệu (chỉ điền sẵn) → bề mặt + hình dạng → màu chi tiết + màu nền',
+          'thứ tự xét (dòng đầu tiên khớp quyết định):',
+          'LGT-017 · đo / căn chỉnh / có-không + đường bao hoặc lỗ xuyên + đặt được đèn phía sau → đèn nền',
+          'LGT-018 · kiểm lỗi + trong suốt: bọt / dị vật / nứt (bên trong) → đèn nền; lỗi trên mặt → góc thấp · mờ đục: chỉ lỗi bên trong',
+          'LGT-019 · bóng phẳng như gương → đồng trục; kiểm xước / dị vật → góc thấp',
+          'LGT-020 · bóng cong → vòm; móp → nhiều hướng / đèn sọc',
+          'LGT-021 · nhiều bậc cao thấp → vòm / vòng nhiều tầng; dấu định vị → đồng trục',
+          'LGT-022 · kiểm lỗi còn lại → ma trận lỗi × bề mặt (mờ / bán bóng / có vân; chưa chọn hoặc mờ đục → như mờ; móp rất nông → dòng riêng)',
+          'LGT-023 · bài toán khác → bảng bài toán × cần thấy gì',
+          'cỡ đèn tối thiểu: vòng / vòm / góc thấp / vòng nhiều tầng ≥ đường chéo vùng nhìn; loại khác ≥ cạnh dài',
+          'lọc đèn: sai kiểu → LOẠI; nhỏ hơn cỡ tối thiểu → LOẠI',
+        ],
+        verdict: [
+          'kiểu đèn: luôn CẢNH BÁO (phải chụp mẫu)',
+          'đo + đèn nền → nhắc đèn nền song song + telecentric · đo không soi xuyên → CẢNH BÁO kém chính xác',
+          'cao su / màu đen → LGT-005',
+        ],
+        notes: ['Nguồn: Opto Engineering, KEYENCE, Advanced Illumination, Edmund Optics — xem docs/NHAP_CHON_DEN_V2.md mục 6–7.'],
+        liveTable: 'lightMatrix',
+        evidence: 'requires-sample-test',
+        usedIn: ['light'],
+        source: 'vision/lightMatrix.ts : pickLightType · vision/lightSelector.ts : selectLights, reasonKeyFor · vision/lighting.ts : minLightSizeMm',
+      },
+      {
+        id: 'LGT-009..016',
+        title: 'Màu đèn / bước sóng (trang Chọn đèn bản 2)',
+        rules: ['LGT-009', 'LGT-010', 'LGT-011', 'LGT-012', 'LGT-013', 'LGT-014', 'LGT-015', 'LGT-016'],
+        formula: [
+          'bảng phản xạ 3 mức (0 tối · 1 vừa · 2 sáng) của 13 màu dưới đèn đỏ / lục / lam; đèn trắng = trung bình ba kênh',
+          'thứ tự xét (luật đầu tiên khớp chọn màu chính):',
+          '1. huỳnh quang → UV 365–395 nm (LGT-014) · 2. nhìn xuyên lớp in → IR 850 nm (LGT-012)',
+          '3. camera màu → trắng (LGT-009)',
+          '4. camera đơn sắc + màu chi tiết + màu nền → đèn cho |chi tiết − nền| lớn nhất (LGT-010); hoà → đỏ, lục, lam rồi mới trắng',
+          '   chênh = 0 → LGT-011 cảnh báo, trắng · cả hai trung tính (trắng / xám / đen) → LGT-011, trắng (thay: đỏ)',
+          '   chưa có màu nền → đèn làm chi tiết sáng nhất (LGT-010); chi tiết trung tính → trắng',
+          '5. camera đơn sắc + bài đo / chi tiết nhỏ → xanh lam 450–470 nm (LGT-013) · 6. còn lại → trắng',
+          'kèm: ánh sáng ngoài thay đổi → đèn đơn sắc + lọc băng hẹp cùng bước sóng; đèn trắng → che chắn / strobe (LGT-015)',
+          'kèm: đèn IR → camera màu LOẠI (lọc IR-cut); camera đơn sắc cảnh báo QE ở 850 nm (LGT-016) · đèn UV → lọc chặn UV',
+          'lọc đèn trong kho: màu đèn ∉ {màu chính, màu thay thế} → LOẠI',
+          'hình B: độ sáng chi tiết / nền / chênh dưới đỏ, lục, lam, trắng — đọc thẳng từ bảng phản xạ',
+        ],
+        verdict: ['màu chính: THÔNG TIN; LGT-011 (chênh 0) / LGT-015 / LGT-016 / lọc UV: CẢNH BÁO; camera màu + IR: LOẠI'],
+        notes: ['Bước sóng chỉ để ghi chú: nhiễu xạ (OPT-004) vẫn tính ở 550 nm (chốt 2026-10-22 Q2).', 'Nguồn: wenglor; Advanced Illumination — xem docs/NHAP_CHON_DEN_V2.md mục 5.'],
+        constants: Object.entries(LIGHT_WAVELENGTH_NM)
+          .filter(([, nm]) => nm !== null)
+          .map(([color, nm]) => ({ name: `bước sóng ${color} (nm)`, value: nm! })),
+        liveTable: 'lightColor',
+        evidence: 'requires-sample-test',
+        usedIn: ['light'],
+        source: 'vision/lightColor.ts : suggestLightColor, levelUnder, colorTableFromRows · vision/lightSelector.ts : selectLights',
       },
       {
         id: 'LGT-005',
         title: 'Bề mặt đen',
         rules: ['LGT-005'],
-        formula: ['bề mặt đen → nhắc đèn mạnh / góc thấp, chụp mẫu'],
+        formula: ['bề mặt đen → nhắc đèn mạnh / góc thấp, chụp mẫu', 'trang Chọn đèn: vật liệu cao su hoặc màu chi tiết / nền đen → nhắc như trên'],
         verdict: ['CẢNH BÁO'],
         evidence: 'requires-sample-test',
-        usedIn: DESIGN_ONLY,
-        source: 'vision/requirementAnalysis.ts : LGT-005',
+        usedIn: ['design', 'light'],
+        source: 'vision/requirementAnalysis.ts : LGT-005 · vision/lightSelector.ts : selectLights',
       },
       {
         id: 'LGT-006',

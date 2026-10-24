@@ -23,22 +23,20 @@ export type LightingSuggestion = {
   customReason?: { vi: string; en: string };
 };
 
-/** Loại lỗi ngoại quan — dùng làm giá trị của trường nhập defect_type. */
-export const DEFECT_TYPES = [
-  'scratch',
-  'glossy_curved',
-  'print_color',
-  'profile_hole_burr',
-  'shallow_dent',
-  'transparent',
-] as const;
-
+/**
+ * Loại lỗi ngoại quan của bảng Yêu cầu / bộ chọn cũ — giá trị trường defect_type. Trang Chọn đèn
+ * dùng danh sách mới ở lightOptions.ts (chốt 2026-10-22); hai danh sách tách nhau tới khi chuyển
+ * dữ liệu dự án cũ (Q6).
+ */
+export const DEFECT_TYPES = ['scratch', 'glossy_curved', 'print_color', 'profile_hole_burr', 'shallow_dent', 'transparent'] as const;
 export type DefectType = (typeof DEFECT_TYPES)[number];
 
 const BY_DEFECT: Record<DefectType, LightingSuggestion> = {
   scratch: { lightType: 'darkfield', reasonKey: 'scratch' },
   glossy_curved: { lightType: 'dome', reasonKey: 'glossy_curved' },
-  print_color: { lightType: 'coaxial', reasonKey: 'print_color', alternativeType: 'bar' },
+  /* Chốt 2026-10-22 (nháp F3): mực in / màu trên bề mặt mờ cần chiếu đều, khuếch tán — đồng trục
+     không thêm tương phản mà dễ loá điểm. Đồng trục chỉ đúng cho mặt PHẲNG như gương (trang Chọn đèn có lựa chọn này). */
+  print_color: { lightType: 'bar', reasonKey: 'print_color', alternativeType: 'ring' },
   profile_hole_burr: { lightType: 'backlight', reasonKey: 'profile_hole_burr' },
   // Lõm lồi rất nông: một hướng chiếu không đủ, cần chụp nhiều hướng rồi dựng
   // lại pháp tuyến bề mặt.
@@ -67,6 +65,27 @@ export const DEFAULT_LIGHTING_ROWS: Record<LightingRowKey, LightingSuggestion> =
   surface_transparent: SURFACE_OVERRIDE.transparent,
   surface_reflective: SURFACE_OVERRIDE.reflective,
 };
+
+/**
+ * Mã luật của gợi ý kiểu đèn: bề mặt phản xạ → LGT-001 · trong suốt →
+ * LGT-004 · biên dạng/lỗ/bavia → LGT-003 · xước, lõm nông → LGT-002 · còn lại → LGT-001.
+ */
+export function lightingRuleId(surfaceKey: string | null, suggestion: Pick<LightingSuggestion, 'reasonKey'>): string {
+  if (surfaceKey === 'reflective') return 'LGT-001';
+  if (surfaceKey === 'transparent' || suggestion.reasonKey === 'transparent') return 'LGT-004';
+  if (suggestion.reasonKey === 'profile_hole_burr') return 'LGT-003';
+  if (suggestion.reasonKey === 'scratch' || suggestion.reasonKey === 'shallow_dent') return 'LGT-002';
+  return 'LGT-001';
+}
+
+/** Đèn chiếu từ quanh trục (vòng, vòm, góc thấp) phải phủ ĐƯỜNG CHÉO vùng nhìn; đèn khác phủ cạnh dài. */
+export const DIAGONAL_LIGHT_TYPES: readonly string[] = ['ring', 'dome', 'darkfield', 'multi_angle_ring'];
+
+/** Cỡ đèn tối thiểu (mm) cho một vùng nhìn — cùng phép tính bước lọc thiết bị (LGT-001…004). */
+export function minLightSizeMm(lightType: string, widthMm: number, heightMm: number): { mm: number; diagonal: boolean } {
+  const diagonal = DIAGONAL_LIGHT_TYPES.includes(lightType);
+  return { mm: diagonal ? Math.hypot(widthMm, heightMm) : Math.max(widthMm, heightMm), diagonal };
+}
 
 /** Bảng admin truyền vào: chỉ cần đèn chính, đèn thay thế, câu lý do. */
 export type LightingTable = Readonly<

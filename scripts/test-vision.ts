@@ -276,7 +276,8 @@ test('chiều sâu trường ảnh giảm rất nhanh khi độ phóng đại t�
 test('bảng gợi ý chiếu sáng theo loại lỗi', () => {
   assert.equal(suggestLighting({ defectType: 'scratch', surface: null })?.lightType, 'darkfield');
   assert.equal(suggestLighting({ defectType: 'glossy_curved', surface: null })?.lightType, 'dome');
-  assert.equal(suggestLighting({ defectType: 'print_color', surface: null })?.lightType, 'coaxial');
+  // Chốt 2026-10-22 (nháp F3): lỗi in trên bề mặt mờ → thanh / vòng khuếch tán (đồng trục cho mặt phẳng như gương ở trang Chọn đèn).
+  assert.equal(suggestLighting({ defectType: 'print_color', surface: null })?.lightType, 'bar');
   assert.equal(
     suggestLighting({ defectType: 'profile_hole_burr', surface: null })?.lightType,
     'backlight'

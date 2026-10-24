@@ -35,6 +35,8 @@ const equipmentItems = [
   { href: '/cong-cu-chon-thiet-bi', key: 'selectorVision' },
   // Chọn ống kính ra MÓN HÀNG (ống trong kho) → Thiết bị, không phải Công cụ (2026-10-17).
   { href: '/chon-ong-kinh', key: 'lens' },
+  // Chọn đèn ra món hàng (đèn trong kho) → Thiết bị (2026-10-22).
+  { href: '/chon-den', key: 'light' },
   { href: '/cong-cu-may-tinh', key: 'pc' },
 ] as const;
 

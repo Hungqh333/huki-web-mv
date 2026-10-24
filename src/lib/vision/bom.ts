@@ -32,7 +32,8 @@ export { emptySelection, isBomSelection, type BomSelection } from './bomSelectio
  */
 
 /** Phiên bản bộ luật — ghi vào revision (spec §11.3). Đổi khi đổi luật / ngưỡng. */
-export const RULESET_VERSION = 'v1c-2026.09.18';
+// 2026-10-22: lỗi in / sai màu → thanh / vòng khuếch tán (nháp F3) — kết quả chiếu sáng đổi.
+export const RULESET_VERSION = 'v1c-2026.10.22';
 
 export const BOM_CATEGORIES = ['vision', 'lighting', 'cabling', 'computing', 'software', 'accessory', 'mechanical'] as const;
 export type BomCategory = (typeof BOM_CATEGORIES)[number];

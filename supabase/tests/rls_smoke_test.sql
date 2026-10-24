@@ -56,6 +56,10 @@ update public.profiles set role = 'admin'  where id = 'aaaaaaaa-0000-4000-8000-0
 insert into public.engine_parameters (key, value) values ('rlsSeedKey', 2);
 insert into public.engine_tables (table_key, row_key, data) values ('lighting', 'rlsSeed', '{}'::jsonb);
 
+-- Một ảnh mẫu chiếu sáng có sẵn (2026-10-22): kiểm Member xem được, Registered không.
+insert into storage.objects (bucket_id, name) values ('lighting-samples', 'scratch/darkfield/rls-test.jpg');
+insert into public.lighting_samples (defect_type, light_type, storage_path) values ('scratch', 'darkfield', 'scratch/darkfield/rls-test.jpg');
+
 -- 4 bài viết, mỗi tier một bài + 1 bản nháp.
 insert into public.articles (slug, title_vi, title_en, content_vi, content_en, access_tier, published_at)
 values
@@ -138,6 +142,11 @@ begin
   perform pg_temp.assert_eq(
     (select count(*) from public.selector_rules), 0,
     'Registered KHÔNG đọc được bảng luật bộ chọn thiết bị');
+
+  perform pg_temp.assert_eq((select count(*) from public.lighting_samples), 0, 'Registered KHÔNG thấy ảnh mẫu chiếu sáng');
+  perform pg_temp.assert_eq(
+    (select count(*) from storage.objects where bucket_id = 'lighting-samples'), 0,
+    'Registered KHÔNG đọc được file trong kho ảnh mẫu');
 
   perform pg_temp.assert_eq(
     (select count(*) from public.profiles), 1,
@@ -240,6 +249,24 @@ begin
     raise exception 'FAIL: Member ghi được engine_tables';
   exception when insufficient_privilege then
     raise notice 'PASS: Member bị chặn ghi engine_tables';
+  end;
+
+  -- Ảnh mẫu chiếu sáng (2026-10-22): Member xem được, không tải lên được.
+  perform pg_temp.assert_eq((select count(*) from public.lighting_samples), 1, 'Member thấy ảnh mẫu chiếu sáng');
+  perform pg_temp.assert_eq(
+    (select count(*) from storage.objects where bucket_id = 'lighting-samples'), 1,
+    'Member đọc được file trong kho ảnh mẫu');
+  begin
+    insert into storage.objects (bucket_id, name) values ('lighting-samples', 'scratch/ring/hack.jpg');
+    raise exception 'FAIL: Member tải lên được kho ảnh mẫu';
+  exception when insufficient_privilege then
+    raise notice 'PASS: Member bị chặn tải lên kho ảnh mẫu';
+  end;
+  begin
+    insert into public.lighting_samples (defect_type, light_type, storage_path) values ('scratch', 'ring', 'scratch/ring/hack.jpg');
+    raise exception 'FAIL: Member ghi được lighting_samples';
+  exception when insufficient_privilege then
+    raise notice 'PASS: Member bị chặn ghi lighting_samples';
   end;
 
   -- Ghi chú luật nháp (C8, seed_rule_notes.sql) chỉ Admin thấy — chưa duyệt thì không lộ ra.
@@ -355,6 +382,35 @@ begin
     (select count(*) from public.engine_tables where table_key = 'lighting' and row_key = 'scratch'), 1,
     'Admin ghi được engine_tables');
   delete from public.engine_tables where table_key = 'lighting' and row_key = 'scratch';
+
+  -- Bảng của trang Chọn đèn (2026-10-22): table_key 'lightColor', 'lightMatrix' hợp lệ, Admin ghi được.
+  insert into public.engine_tables (table_key, row_key, data, updated_by)
+    values ('lightColor', 'refl_red', '{"r":2,"g":0,"b":1}'::jsonb, 'Admin RLS'),
+           ('lightMatrix', 'm_scratch_matte', '{"lightType":"bar"}'::jsonb, 'Admin RLS');
+  perform pg_temp.assert_eq(
+    (select count(*) from public.engine_tables where table_key in ('lightColor', 'lightMatrix')), 2,
+    'Admin ghi được bảng màu đèn và bảng kiểu đèn');
+  delete from public.engine_tables where table_key in ('lightColor', 'lightMatrix');
+
+  -- Ảnh mẫu chiếu sáng: Admin tải lên / ghi / xoá được.
+  insert into storage.objects (bucket_id, name) values ('lighting-samples', 'scratch/ring/admin.jpg');
+  insert into public.lighting_samples (defect_type, light_type, storage_path) values ('scratch', 'ring', 'scratch/ring/admin.jpg');
+  -- Nhãn + thông số setting (2026-10-23): khoá đúng thì ghi được, khoá lạ bị chặn; ảnh tham khảo chung không cần defect_type.
+  insert into public.lighting_samples (task, defect_type, material, finish, shape, feature_color, background_color, light_type, light_color,
+                                       light_model, angle_note, distance_mm, exposure_us, camera, lens, source, storage_path)
+    values ('inspect', 'solder', 'pcb', 'semi_gloss', 'stepped', 'gray', 'green', 'dome', 'white',
+            'HPD2', 'vòm', 80, 2000, 'mono 5 MP', 'f25', 'tự chụp', 'solder/dome/admin.jpg'),
+           (null, null, 'metal_cast', 'matte', null, null, 'gray', 'ring', null, null, null, null, null, null, null, 'tự chụp', 'general/ring/admin.jpg');
+  begin
+    insert into public.lighting_samples (material, light_type, storage_path) values ('kim_loai', 'ring', 'bad/ring/admin.jpg');
+    raise exception 'FAIL: lighting_samples nhận vật liệu lạ';
+  exception when check_violation then
+    raise notice 'PASS: lighting_samples chặn khoá vật liệu lạ';
+  end;
+  delete from public.lighting_samples where storage_path in ('solder/dome/admin.jpg', 'general/ring/admin.jpg');
+  perform pg_temp.assert_eq((select count(*) from public.lighting_samples), 2, 'Admin ghi được ảnh mẫu chiếu sáng');
+  delete from public.lighting_samples where storage_path = 'scratch/ring/admin.jpg';
+  delete from storage.objects where name = 'scratch/ring/admin.jpg';
 end $$;
 
 reset role;

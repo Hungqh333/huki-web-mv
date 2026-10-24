@@ -14,6 +14,7 @@ const NAV: { href: string; key: string; icon: IconName; tone: BadgeTone }[] = [
   { href: '/admin/linh-kien', key: 'components', icon: 'camera', tone: 'slate' },
   { href: '/admin/nguong-engine', key: 'engine', icon: 'ruler', tone: 'sky' },
   { href: '/admin/bang-chieu-sang', key: 'lighting', icon: 'sun', tone: 'amber' },
+  { href: '/admin/anh-mau-chieu-sang', key: 'samples', icon: 'camera', tone: 'amber' },
   { href: '/admin/gia-dinh-mac-dinh', key: 'defaults', icon: 'rules', tone: 'violet' },
   { href: '/admin/cong-thuc', key: 'formulas', icon: 'handbook', tone: 'slate' },
 ];

@@ -7,7 +7,7 @@ import { getSessionContext, isAdmin, type UserRole } from '@/lib/auth';
 import { sanitizeArticleHtml } from '@/lib/html';
 import { parseKnowledgeFields } from '@/lib/knowledge';
 import { parseEngineParamsForm } from '@/lib/vision/engineParams';
-import { parseTableForm } from '@/lib/vision/engineTables';
+import { parseTableForm, type EngineTableKey } from '@/lib/vision/engineTables';
 import { FEASIBILITY_DIMENSIONS, RULES } from '@/lib/vision/rules';
 import { validateCondition } from '@/lib/selector/conditions';
 import { dbError } from '@/lib/db-error';
@@ -318,7 +318,7 @@ export type EngineTableState = AdminState & { saved?: boolean };
  * bằng parseTableForm (cùng hàm engine dùng khi đọc bảng); bảng chỉ giữ dòng khác
  * mặc định. Ô form tên `${dòng}__${trường}`. RLS chỉ cho Admin ghi.
  */
-async function saveEngineTable(table: 'lighting' | 'defaults', formData: FormData): Promise<EngineTableState> {
+async function saveEngineTable(table: EngineTableKey, formData: FormData): Promise<EngineTableState> {
   const t = await getTranslations('admin.errors');
   const te = await getTranslations('admin.tables.errors');
   const session = await requireAdmin();
@@ -350,7 +350,8 @@ async function saveEngineTable(table: 'lighting' | 'defaults', formData: FormDat
     if (error) return { error: await dbError(error, `saveEngineTable:${table}:delete`) };
   }
 
-  revalidatePath(table === 'lighting' ? '/admin/bang-chieu-sang' : '/admin/gia-dinh-mac-dinh');
+  revalidatePath(table === 'defaults' ? '/admin/gia-dinh-mac-dinh' : '/admin/bang-chieu-sang');
+  if (table === 'lightColor' || table === 'lightMatrix') revalidatePath('/chon-den');
   revalidatePath('/admin/nguong-engine');
   revalidatePath('/thiet-ke-he-thong/yeu-cau');
   return { notice: te('saved'), saved: true };
@@ -358,6 +359,16 @@ async function saveEngineTable(table: 'lighting' | 'defaults', formData: FormDat
 
 export async function saveLightingTableAction(_prev: EngineTableState, formData: FormData): Promise<EngineTableState> {
   return saveEngineTable('lighting', formData);
+}
+
+/** Bảng kiểu đèn của trang Chọn đèn (LGT-017…023) — chốt 2026-10-22, bản 2. */
+export async function saveLightMatrixTableAction(_prev: EngineTableState, formData: FormData): Promise<EngineTableState> {
+  return saveEngineTable('lightMatrix', formData);
+}
+
+/** Bảng màu đèn (LGT-010…014) — chốt 2026-10-22 Q5. */
+export async function saveLightColorTableAction(_prev: EngineTableState, formData: FormData): Promise<EngineTableState> {
+  return saveEngineTable('lightColor', formData);
 }
 
 export async function saveDefaultsTableAction(_prev: EngineTableState, formData: FormData): Promise<EngineTableState> {

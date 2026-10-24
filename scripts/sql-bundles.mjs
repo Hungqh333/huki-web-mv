@@ -70,6 +70,18 @@ export const BUNDLES = {
       ['PHAN 1/1: MIGRATION — bang nguong engine + bang chieu sang: CHI ADMIN doc (may chu doc bang khoa service_role)', 'supabase/migrations/20261021000001_engine_admin_read.sql'],
     ],
   },
+  'light-color': {
+    out: 'CHAY-BUOC-NAY-MAU-DEN.sql',
+    parts: [
+      ['PHAN 1/1: MIGRATION — them bang mau den (lightColor) va bang kieu den (lightMatrix) vao engine_tables, sua qua admin', 'supabase/migrations/20261022000001_light_color_table.sql'],
+    ],
+  },
+  'lighting-samples': {
+    out: 'CHAY-BUOC-NAY-ANH-MAU-DEN.sql',
+    parts: [
+      ['PHAN 1/1: MIGRATION — kho anh mau chieu sang (Storage rieng) + bang lighting_samples: Member+ xem, Admin tai len', 'supabase/migrations/20261022000002_lighting_samples.sql'],
+    ],
+  },
   'converter-kind': {
     out: 'CHAY-BUOC-NAY-BO-NHAN.sql',
     parts: [

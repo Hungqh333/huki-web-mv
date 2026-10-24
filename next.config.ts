@@ -14,6 +14,13 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     '/api/bao-cao/[historyId]': ['./assets/fonts/*.ttf'],
   },
+  /**
+   * Ảnh mẫu chiếu sáng tải lên qua server action (2026-10-22): mặc định chỉ 1 MB. Vercel chặn
+   * thân yêu cầu > 4,5 MB nên ảnh giới hạn 4 MB (lightingSamples.ts : SAMPLE_MAX_BYTES).
+   */
+  experimental: {
+    serverActions: { bodySizeLimit: '4.5mb' },
+  },
 };
 
 export default withNextIntl(nextConfig);

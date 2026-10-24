@@ -186,6 +186,17 @@ const MUTATIONS = [
             for select to authenticated using (true);`,
   },
   {
+    name: 'Anh mau chieu sang: cho moi tai khoan dang nhap xem',
+    sql: `drop policy "lighting_samples_select_member" on public.lighting_samples;
+          create policy "lighting_samples_select_member" on public.lighting_samples for select to authenticated using (true);`,
+  },
+  {
+    name: 'Kho anh mau: cho moi tai khoan tai len',
+    sql: `drop policy "lighting_samples_insert_admin" on storage.objects;
+          create policy "lighting_samples_insert_admin" on storage.objects for insert to authenticated
+            with check (bucket_id = 'lighting-samples');`,
+  },
+  {
     name: 'Bang engine: cho khach doc',
     sql: `grant select on public.engine_tables to anon;
           create policy "engine_tables_select_anon" on public.engine_tables for select to anon using (true);`,

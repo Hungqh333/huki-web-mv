@@ -61,3 +61,6 @@ docs/mockup.png
 
 # Cau hinh cuc bo cua Claude Code (launch.json...), khong commit
 .claude/
+
+# Tài liệu / ảnh tham khảo của các hãng — có bản quyền, chỉ xem ở máy, KHÔNG commit (2026-10-23)
+docs/tham-khao-hang/

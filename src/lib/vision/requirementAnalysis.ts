@@ -2,7 +2,7 @@ import { resolveAssumptions } from '@/lib/requirement/assumptions';
 import { fieldsFor, readField } from '@/lib/requirement/fields';
 import type { Assumption, DefectContrast, Requirement } from '@/lib/requirement/types';
 import { CYCLE_DEFAULTS } from './configurationRules';
-import { suggestLighting } from './lighting';
+import { lightingRuleId, suggestLighting } from './lighting';
 import { DEFAULT_ENGINE_TABLES, type EngineTables } from './engineTables';
 import { DEFAULT_ENGINE_PARAMS, type EngineParams, interfaceBandwidthFor, pxPerDefectFor } from './engineParams';
 import { perspectiveCheck, perspectiveErrorMm, telecentricCheck } from './optics';
@@ -450,16 +450,7 @@ export function analyseRequirement(
   const lighting = suggestLighting({ defectType, surface: surfaceKey }, tables.lighting);
   let lightingOut: RequirementAnalysis['lighting'] = null;
   if (lighting) {
-    const ruleId =
-      surfaceKey === 'reflective'
-        ? 'LGT-001'
-        : surfaceKey === 'transparent' || lighting.reasonKey === 'transparent'
-          ? 'LGT-004'
-          : lighting.reasonKey === 'profile_hole_burr'
-            ? 'LGT-003'
-            : lighting.reasonKey === 'scratch' || lighting.reasonKey === 'shallow_dent'
-              ? 'LGT-002'
-              : 'LGT-001';
+    const ruleId = lightingRuleId(surfaceKey, lighting);
     lightingOut = { ruleId, types: lighting.alternativeType ? [lighting.lightType, lighting.alternativeType] : [lighting.lightType] };
     push(
       ruleId,

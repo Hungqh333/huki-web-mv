@@ -12,6 +12,7 @@ import type { RequirementAnalysis } from './requirementAnalysis';
 import { toRuleResult, type Evidence, type RuleResult } from './rules';
 import { fmt, round, type Check } from './types';
 import { term } from './formulaTerms';
+import { minLightSizeMm } from './lighting';
 
 /**
  * Lọc cứng thiết bị — V1c mục C3 (spec V1.1 §8.1).
@@ -64,8 +65,6 @@ export type EquipmentFilter = {
 export const HIGH_TEMP_CAMERA_MIN_C = DEFAULT_ENGINE_PARAMS.highTempCameraMinC;
 
 const IP_LEVEL: Record<string, number> = { ip54: 54, ip65: 65, ip67: 67 };
-/** Đèn đo theo ĐƯỜNG CHÉO vùng nhìn (vòng sáng bao quanh); các loại khác đo theo cạnh dài. */
-const DIAGONAL_LIGHTS = ['ring', 'dome', 'darkfield'];
 /** Chuẩn cần frame grabber — mỗi card coi như 4 kênh khi tính khe PCIe cho máy tính. */
 const GRABBER_INTERFACES = ['CXP-6', 'CXP-12', 'CameraLink-Base', 'CameraLink-Medium', 'CameraLink-Full', 'CameraLink-Deca'];
 
@@ -249,8 +248,8 @@ export function lightChecks(analysis: RequirementAnalysis, component: Component)
 
   const tile = analysis.tile;
   if (tile && type) {
-    const diagonal = DIAGONAL_LIGHTS.includes(type);
-    const needMm = diagonal ? 2 * tile.halfDiagonalMm : Math.max(tile.widthMm, tile.heightMm);
+    // Vòng / vòm / góc thấp phủ ĐƯỜNG CHÉO ô; loại khác phủ cạnh dài (lighting.ts, dùng chung trang Chọn đèn).
+    const { mm: needMm, diagonal } = minLightSizeMm(type, tile.widthMm, tile.heightMm);
     const size = specNumber(spec, 'size_mm');
     if (size === null) {
       results.push(make(ruleId, { key: 'lightFit', status: 'info', formula: '—', noteKey: 'lightSizeUnknown', noteValues: { need: round(needMm, 0) } }, 'unknown', {}));

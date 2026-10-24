@@ -272,7 +272,11 @@ export type LightSpec = {
     | 'coaxial'
     | 'darkfield'
     /** Cần bốn đèn chiếu bốn hướng, không phải một thiết bị đơn lẻ. */
-    | 'photometric_stereo';
+    | 'photometric_stereo'
+    /** Trang Chọn đèn bản 2 (2026-10-22): vòng nhiều tầng góc, đèn sọc (deflectometry), đèn line. */
+    | 'multi_angle_ring'
+    | 'structured_stripe'
+    | 'line';
   color: 'white' | 'red' | 'blue' | 'green' | 'ir' | 'uv';
   /** Kích thước danh nghĩa (mm) — so với FOV để biết có phủ đủ không. */
   size_mm?: number;
@@ -544,7 +548,8 @@ export const SPEC_FIELDS: Record<ComponentKind, SpecFieldDef[]> = {
     {
       key: 'light_type',
       type: 'select',
-      options: ['ring', 'dome', 'backlight', 'bar', 'coaxial', 'darkfield', 'photometric_stereo'],
+      // 3 kiểu cuối thêm 2026-10-22 (trang Chọn đèn bản 2): vòng nhiều tầng góc, đèn sọc, đèn line.
+      options: ['ring', 'dome', 'backlight', 'bar', 'coaxial', 'darkfield', 'photometric_stereo', 'multi_angle_ring', 'structured_stripe', 'line'],
       required: true,
     },
     {

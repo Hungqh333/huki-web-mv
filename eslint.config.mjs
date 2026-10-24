@@ -32,6 +32,28 @@ const eslintConfig = defineConfig([
       ],
     },
   },
+  {
+    /*
+     * Trang Chọn đèn tính trên máy chủ (chốt 2026-10-22 Q1, bảo vệ công thức): giao diện chỉ
+     * được import danh sách lựa chọn (lightOptions) và KIỂU dữ liệu — không kéo bảng luật hay
+     * engine xuống trình duyệt.
+     */
+    files: ["src/components/light/**/*.{ts,tsx}"],
+    rules: {
+      "@typescript-eslint/no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["@/lib/vision/*", "!@/lib/vision/lightOptions", "!@/lib/vision/types", "!@/lib/vision/formulaTerms"],
+              allowTypeImports: true,
+              message: "Chọn đèn tính trên máy chủ: chỉ import lightOptions hoặc kiểu dữ liệu (import type).",
+            },
+          ],
+        },
+      ],
+    },
+  },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:

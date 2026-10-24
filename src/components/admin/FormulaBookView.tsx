@@ -7,6 +7,9 @@ import type { LoadedEngineParams } from '@/lib/engineParamsLoad';
 import { DEFAULT_ROW_DEFS, DEFAULT_ENGINE_TABLES } from '@/lib/vision/engineTables';
 import { DEFAULT_ENGINE_PARAMS, ENGINE_PARAMS } from '@/lib/vision/engineParams';
 import { LIGHTING_ROW_KEYS } from '@/lib/vision/lighting';
+import { COLOR_ROW_KEYS, isReflectanceKey, type ColorRow, type Reflectance } from '@/lib/vision/lightColor';
+import { MATRIX_ROW_KEYS } from '@/lib/vision/lightMatrix';
+import { lightRowLabels } from '@/lib/lightRowLabels';
 
 /**
  * Thân trang Sổ tay công thức (chốt 2026-10-20). SERVER COMPONENT — không được thêm
@@ -21,6 +24,7 @@ export async function FormulaBookView({ loaded }: { loaded: LoadedEngineParams }
   const t = await getTranslations('admin.formulas');
   const tParams = await getTranslations('admin.engine.params');
   const tTables = await getTranslations('admin.tables');
+  const rowLabels = await lightRowLabels();
   const tOptions = await getTranslations('designer.requirement.options');
   const overridden = new Set<string>(loaded.overridden);
 
@@ -66,6 +70,8 @@ export async function FormulaBookView({ loaded }: { loaded: LoadedEngineParams }
                     tables={{
                       lightingRow: (key) => tTables(`lighting.rows.${key}`),
                       lightType: (key) => tTables(`lightTypes.${key}`),
+                      lightRow: (key) => rowLabels[key] ?? key,
+                      lightColor: (key) => tTables(`lightColors.${key}`),
                       defaultRow: (key) => tTables(`defaults.rows.${key}`),
                       option: (group, value) => tOptions(`${group}.${value}` as never),
                     }}
@@ -83,6 +89,8 @@ export async function FormulaBookView({ loaded }: { loaded: LoadedEngineParams }
 type TableLabels = {
   lightingRow: (key: string) => string;
   lightType: (key: string) => string;
+  lightRow: (key: string) => string;
+  lightColor: (key: string) => string;
   defaultRow: (key: string) => string;
   option: (group: 'contrast' | 'motion', value: string) => string;
 };
@@ -171,6 +179,8 @@ function EntryCard({
 
         {entry.liveTable === 'defaults' ? <DefaultsTable loaded={loaded} labels={tables} /> : null}
         {entry.liveTable === 'lighting' ? <LightingTable loaded={loaded} labels={tables} /> : null}
+        {entry.liveTable === 'lightColor' ? <LightColorTable loaded={loaded} labels={tables} /> : null}
+        {entry.liveTable === 'lightMatrix' ? <LightMatrixTable loaded={loaded} labels={tables} /> : null}
 
         {entry.notes?.map((note) => (
           <p key={note} className={NOTE_CLASS}>
@@ -196,6 +206,62 @@ function DefaultsTable({ loaded, labels }: { loaded: LoadedEngineParams; labels:
             <tr key={def.key}>
               <td className="py-1 pr-3 text-slate-600 dark:text-slate-300">{labels.defaultRow(def.key)}</td>
               <td className="py-1 text-right font-mono text-slate-900 dark:text-slate-100">{value}</td>
+              <td className="py-1 pl-3 text-xs">{changed ? <span className="rounded bg-amber-100 px-1.5 py-0.5 text-amber-900 dark:bg-amber-950/60 dark:text-amber-200">đã sửa</span> : null}</td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  );
+}
+
+function LightColorTable({ loaded, labels }: { loaded: LoadedEngineParams; labels: TableLabels }) {
+  const badge = <span className="rounded bg-amber-100 px-1.5 py-0.5 text-amber-900 dark:bg-amber-950/60 dark:text-amber-200">đã sửa</span>;
+  return (
+    <table className="w-full max-w-2xl text-left text-sm">
+      <thead className="text-xs text-slate-500 dark:text-slate-400">
+        <tr>
+          <th className="py-1 pr-3 font-medium" />
+          <th className="py-1 pr-3 font-medium">R · G · B / đèn</th>
+          <th />
+        </tr>
+      </thead>
+      <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+        {COLOR_ROW_KEYS.map((key) => {
+          const row = loaded.tables.lightColor[key];
+          const changed = JSON.stringify(row) !== JSON.stringify(DEFAULT_ENGINE_TABLES.lightColor[key]);
+          return (
+            <tr key={key}>
+              <td className="py-1 pr-3 text-slate-600 dark:text-slate-300">{labels.lightRow(key)}</td>
+              <td className="py-1 font-mono text-slate-900 dark:text-slate-100">
+                {isReflectanceKey(key)
+                  ? `${(row as Reflectance).r} · ${(row as Reflectance).g} · ${(row as Reflectance).b}`
+                  : `${labels.lightColor((row as ColorRow).color)}${(row as ColorRow).alternative ? ` / ${labels.lightColor((row as ColorRow).alternative!)}` : ''}`}
+              </td>
+              <td className="py-1 pl-3 text-xs">{changed ? badge : null}</td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  );
+}
+
+function LightMatrixTable({ loaded, labels }: { loaded: LoadedEngineParams; labels: TableLabels }) {
+  return (
+    <table className="w-full max-w-3xl text-left text-sm">
+      <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+        {MATRIX_ROW_KEYS.map((key) => {
+          const row = loaded.tables.lightMatrix[key];
+          const base = DEFAULT_ENGINE_TABLES.lightMatrix[key];
+          const changed = row.lightType !== base.lightType || row.alternativeType !== base.alternativeType;
+          return (
+            <tr key={key}>
+              <td className="py-1 pr-3 text-slate-600 dark:text-slate-300">{labels.lightRow(key)}</td>
+              <td className="py-1 font-mono text-slate-900 dark:text-slate-100">
+                {labels.lightType(row.lightType)}
+                {row.alternativeType ? ` / ${labels.lightType(row.alternativeType)}` : ''}
+              </td>
               <td className="py-1 pl-3 text-xs">{changed ? <span className="rounded bg-amber-100 px-1.5 py-0.5 text-amber-900 dark:bg-amber-950/60 dark:text-amber-200">đã sửa</span> : null}</td>
             </tr>
           );

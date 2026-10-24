@@ -86,6 +86,7 @@ export const RULES: readonly RuleDefinition[] = [
   // Phụ kiện trên trang Chọn ống kính (chốt 2026-10-20): ống nối, bộ nhân tiêu cự.
   { id: 'OPT-010', version: '1.0.0', category: 'OPT', dimension: 'Optics' },
   { id: 'OPT-011', version: '1.0.0', category: 'OPT', dimension: 'Optics' },
+  { id: 'OPT-012', version: '1.0.0', category: 'OPT', dimension: 'Optics' },
   { id: 'LGT-001', version: '1.0.0', category: 'LGT', dimension: 'Lighting' },
   { id: 'LGT-002', version: '1.0.0', category: 'LGT', dimension: 'Lighting' },
   { id: 'LGT-003', version: '1.0.0', category: 'LGT', dimension: 'Lighting' },

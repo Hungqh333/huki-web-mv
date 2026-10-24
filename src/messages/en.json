@@ -2786,7 +2786,14 @@
       "accessoryHint": "Lenses rejected for MOD, image circle or coarse pixels are retried with an extension tube or a rear converter — ranked after plain passes, always at Warning. Open Details for the impact.",
       "metaAccessory": "{n} need an accessory",
       "onlyAccessory": "Only lenses needing an accessory",
-      "manualHint": "Checking every lens with the declared {desc} — automatic accessory suggestions are off. Open Details to see the impact."
+      "manualHint": "Checking every lens with the declared {desc} — automatic accessory suggestions are off. Open Details to see the impact.",
+      "colRealWd": "Real WD",
+      "realWdNote": "Real WD: the distance at which this lens fits the required field of view exactly (OPT-012). Thin-lens estimate measured from the lens principal plane, so measure again when mounting. For mechanical layout only; it does not change Pass / Reject.",
+      "realWdDelta": "{delta} mm vs. the entered WD",
+      "realWdSame": "same as the entered WD",
+      "realWdFixed": "per vendor (fixed β)",
+      "realWdBelowMod": "below MOD {mod} mm",
+      "realWdOutsideTube": "outside the focus range with the extension tube ({min}–{max} mm)"
     },
     "status": {
       "pass": "Pass",

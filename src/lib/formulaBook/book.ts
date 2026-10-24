@@ -775,6 +775,25 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
         usedIn: ['lens'],
         source: 'vision/lensSelector.ts : convertLens, converterChecks, tryAccessory, manualVariant, lensNeed, solveGeometry',
       },
+      {
+        id: 'OPT-012',
+        title: 'WD thật để vừa khít vùng nhìn',
+        rules: ['OPT-012'],
+        formula: [
+          'β_cần = min(cạnh dài cảm biến ÷ cạnh dài vùng nhìn, cạnh ngắn cảm biến ÷ cạnh ngắn vùng nhìn) · line scan: chỉ cạnh dài',
+          'WD_thật = f × (1 + k ÷ β_cần) — k = hệ số bộ nhân (OPT-011), không có thì 1; ống nối không đổi β ở cùng WD nên tính như ống trơn',
+          'chênh = WD_thật − WD đã nhập (chưa nhập WD → chỉ hiện WD_thật)',
+          'telecentric / ống chỉ khai β: WD = WD danh định / dải hãng ghi',
+        ],
+        verdict: [
+          'chỉ để bố trí cơ khí — KHÔNG đổi Đạt / Loại (vẫn kiểm theo WD đã nhập)',
+          'ống trơn / bộ nhân: WD_thật < MOD → chữ đỏ "dưới MOD" · ống nối: ngoài dải lấy nét sau khi lắp → chữ đỏ',
+        ],
+        notes: ['Ước lượng thấu kính mỏng, đo từ mặt phẳng chính của ống — đo lại khi lắp. Chốt 2026-10-24 (Q1–Q6).'],
+        evidence: 'calculated',
+        usedIn: ['lens'],
+        source: 'vision/lensSelector.ts : betaToFit, realWorkingDistanceMm, evaluateLens',
+      },
     ],
   },
 

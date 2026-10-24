@@ -76,6 +76,37 @@ function cameraLabel(component: Component): string {
   return `${component.brand} ${component.model}${parts.length ? ` · ${parts.join(' · ')}` : ''}`;
 }
 
+/** Ô "WD thật" (OPT-012): khoảng cách để ống vừa khít vùng nhìn cần; chênh so với WD đã nhập; vượt MOD / dải ống nối thì chữ đỏ. */
+function RealWdCell({ realWd }: { realWd: LensCandidate['realWd'] }) {
+  const t = useTranslations('lensSelector.list');
+  if (!realWd) return <>—</>;
+  if (realWd.kind === 'fixed') {
+    return (
+      <>
+        {realWd.minMm === realWd.maxMm ? `${show(realWd.minMm, 0)} mm` : `${show(realWd.minMm, 0)}–${show(realWd.maxMm, 0)} mm`}
+        <div className={NOTE_CLASS}>{t('realWdFixed')}</div>
+      </>
+    );
+  }
+  const delta = realWd.deltaMm;
+  return (
+    <>
+      ≈ {show(realWd.mm, 0)} mm
+      {delta !== null && Math.round(delta) !== 0 ? <div className={NOTE_CLASS}>{t('realWdDelta', { delta: `${delta > 0 ? '+' : '−'}${show(Math.abs(delta), 0)}` })}</div> : null}
+      {delta !== null && Math.round(delta) === 0 ? <div className={NOTE_CLASS}>{t('realWdSame')}</div> : null}
+      {realWd.belowModMm !== null ? <div className="text-xs font-medium text-red-700 dark:text-red-400">{t('realWdBelowMod', { mod: show(realWd.belowModMm, 0) })}</div> : null}
+      {realWd.outsideTube ? (
+        <div className="text-xs font-medium text-red-700 dark:text-red-400">
+          {t('realWdOutsideTube', {
+            min: realWd.outsideTube.minMm !== null ? show(realWd.outsideTube.minMm, 0) : '?',
+            max: Number.isFinite(realWd.outsideTube.maxMm) ? show(realWd.outsideTube.maxMm, 0) : '∞',
+          })}
+        </div>
+      ) : null}
+    </>
+  );
+}
+
 /** Dòng thông tin về phụ kiện người dùng tự khai: không phải phép kiểm, ghi "Đã khai" thay cho "Chưa kiểm được". */
 const DECLARED_NOTES = new Set(['tubeManual', 'converterManual']);
 
@@ -629,6 +660,9 @@ export function LensSelector({
                     <th scope="col" className="py-2 pl-4 pr-3 font-medium">{t('list.colLens')}</th>
                     <th scope="col" className="py-2 pr-3 font-medium">{t('list.colOptic')}</th>
                     <th scope="col" className="py-2 pr-3 font-medium">{t('list.colFov')}</th>
+                    <th scope="col" className="py-2 pr-3 font-medium" title={t('list.realWdNote')}>
+                      {t('list.colRealWd')}
+                    </th>
                     <th scope="col" className="py-2 pr-3 font-medium">{t('list.colMmPerPx')}</th>
                     <th scope="col" className="py-2 pr-3 font-medium">{t('list.colPixelUse')}</th>
                     <th scope="col" className="py-2 pr-3 font-medium">{t('list.colFSet')}</th>
@@ -643,6 +677,7 @@ export function LensSelector({
               </table>
             </div>
           )}
+          {visible.length > 0 ? <p className={`border-t border-slate-100 px-4 py-2 sm:px-5 dark:border-slate-800 ${NOTE_CLASS}`}>{t('list.realWdNote')}</p> : null}
           {visible.length > limit ? (
             <div className="border-t border-slate-100 px-4 py-3 sm:px-5 dark:border-slate-800">
               <button type="button" onClick={() => setLimit(limit + PAGE)} className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800">
@@ -789,6 +824,9 @@ function LensRow({ candidate: c, line, open, onToggle }: { candidate: LensCandid
           {c.beta !== null && lens.lensType !== 'telecentric' && lens.focalLengthMm !== null ? <div className={NOTE_CLASS}>β {show(c.beta, 4)}</div> : null}
         </td>
         <td className="py-2 pr-3 tabular-nums">{c.fovLongMm === null ? '—' : line ? `${show(c.fovLongMm, 1)} mm` : `${show(c.fovLongMm, 1)} × ${show(c.fovShortMm, 1)}`}</td>
+        <td className="py-2 pr-3 tabular-nums">
+          <RealWdCell realWd={c.realWd} />
+        </td>
         <td className="py-2 pr-3 tabular-nums">{show(c.mmPerPx, 4)}</td>
         <td className="py-2 pr-3 tabular-nums">{c.pixelUse === null ? '—' : `${Math.round(c.pixelUse * 100)}%`}</td>
         <td className="py-2 pr-3 tabular-nums">{c.fSet === null ? '—' : `F/${show(c.fSet, 1)}`}</td>
@@ -803,8 +841,15 @@ function LensRow({ candidate: c, line, open, onToggle }: { candidate: LensCandid
       </tr>
       {open ? (
         <tr className="bg-slate-50/60 dark:bg-slate-900/60">
-          <td colSpan={7} className="px-4 py-3">
+          <td colSpan={8} className="px-4 py-3">
             <ul className="space-y-2">
+              {c.realWd?.kind === 'focal' ? (
+                <li className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                  <span className="text-sm font-medium text-slate-800 dark:text-slate-200">{t('list.colRealWd')} · OPT-012</span>
+                  {showFormulas ? <span className="font-mono text-xs text-slate-500 dark:text-slate-400">{renderFormula(c.realWd.formula, (key) => tv(`formulaTerms.${key}`))}</span> : null}
+                  <span className="w-full text-sm text-slate-600 dark:text-slate-300">{t('list.realWdNote')}</span>
+                </li>
+              ) : null}
               {c.checks.map((check, i) => (
                 <li key={`${check.key}-${i}`} className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                   <StatusBadge status={check.status} declared={check.status === 'info' && DECLARED_NOTES.has(check.noteKey ?? '')} />

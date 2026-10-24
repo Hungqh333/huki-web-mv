@@ -2786,7 +2786,14 @@
       "accessoryHint": "Ống bị loại vì MOD, vòng ảnh hay pixel thô được thử thêm ống nối hoặc bộ nhân — xếp sau ống đạt trơn, luôn ở mức Cảnh báo. Mở Chi tiết để xem ảnh hưởng.",
       "metaAccessory": "{n} cần phụ kiện",
       "onlyAccessory": "Chỉ ống cần phụ kiện",
-      "manualHint": "Đang kiểm mọi ống với {desc} đã khai — gợi ý phụ kiện tự động tắt. Mở Chi tiết để xem ảnh hưởng."
+      "manualHint": "Đang kiểm mọi ống với {desc} đã khai — gợi ý phụ kiện tự động tắt. Mở Chi tiết để xem ảnh hưởng.",
+      "colRealWd": "WD thật",
+      "realWdNote": "WD thật: khoảng cách đặt ống để vừa khít vùng nhìn cần (OPT-012). Ước lượng thấu kính mỏng, tính từ mặt phẳng chính của ống, nên đo lại khi lắp. Chỉ để bố trí cơ khí, không đổi kết luận Đạt / Loại.",
+      "realWdDelta": "{delta} mm so với WD đã nhập",
+      "realWdSame": "bằng WD đã nhập",
+      "realWdFixed": "theo hãng (β cố định)",
+      "realWdBelowMod": "dưới MOD {mod} mm",
+      "realWdOutsideTube": "ngoài dải lấy nét khi lắp ống nối ({min}–{max} mm)"
     },
     "status": {
       "pass": "Đạt",

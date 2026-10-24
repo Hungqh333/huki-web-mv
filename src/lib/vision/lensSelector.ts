@@ -137,7 +137,51 @@ export type LensCandidate = {
   unknownCount: number;
   /** Phụ kiện giúp ống này đạt (OPT-010 / OPT-011); null = dùng ống trơn. */
   accessory: LensAccessory | null;
+  /** WD thật (OPT-012): khoảng cách để ống này cho vừa khít vùng nhìn cần; null = thiếu tiêu cự / dải WD. */
+  realWd: RealWd | null;
 };
+
+/**
+ * OPT-012 WD thật — chốt 2026-10-24 (Q1–Q6). Ống tiêu cự có sẵn hiếm khi đúng tiêu cự lý tưởng,
+ * nên ở WD đã nhập vùng nhìn thường rộng / hẹp hơn cần. WD thật là khoảng cách phải đặt để ống
+ * cho VỪA KHÍT vùng nhìn (trục chặt hơn của cảm biến quyết định):
+ *
+ *   β_cần   = min(cạnh dài cảm biến ÷ cạnh dài vùng nhìn, cạnh ngắn cảm biến ÷ cạnh ngắn vùng nhìn)
+ *   WD_thật = f × (1 + k ÷ β_cần)      k = hệ số bộ nhân (OPT-011), không có thì 1
+ *
+ * Thấu kính mỏng, đo từ mặt phẳng chính của ống — đo lại khi lắp. Ống nối (OPT-010) không đổi β ở
+ * cùng WD nên WD thật như ống trơn, chỉ kiểm thêm có nằm trong dải lấy nét sau khi lắp không.
+ * Telecentric: β cố định → WD là WD danh định / dải hãng ghi. CHỈ để tham khảo bố trí cơ khí:
+ * không đổi Đạt / Loại (vẫn kiểm theo WD đã nhập, Q4).
+ */
+export type RealWd =
+  | {
+      kind: 'focal';
+      mm: number;
+      /** WD thật − WD đã nhập; null khi chưa nhập WD. */
+      deltaMm: number | null;
+      formula: string;
+      /** MOD của ống khi WD thật gần hơn MOD (ống trơn / bộ nhân). */
+      belowModMm: number | null;
+      /** Dải lấy nét sau khi lắp ống nối, khi WD thật nằm ngoài dải đó. */
+      outsideTube: { minMm: number | null; maxMm: number } | null;
+    }
+  | { kind: 'fixed'; minMm: number; maxMm: number };
+
+/** β để vùng nhìn của ống vừa khít vùng nhìn cần trên cả hai trục (line scan: chỉ cạnh dài). */
+export function betaToFit(sensorLongMm: number, sensorShortMm: number, fovWidthMm: number, fovHeightMm: number, line: boolean): number | null {
+  const needLong = line ? fovWidthMm : Math.max(fovWidthMm, fovHeightMm);
+  const needShort = Math.min(fovWidthMm, fovHeightMm);
+  if (!(needLong > 0) || !(sensorLongMm > 0)) return null;
+  const long = sensorLongMm / needLong;
+  if (line || !(needShort > 0) || !(sensorShortMm > 0)) return long;
+  return Math.min(long, sensorShortMm / needShort);
+}
+
+/** OPT-012: WD = f × (1 + k ÷ β) — thấu kính mỏng. */
+export function realWorkingDistanceMm(focalMm: number, beta: number, converterFactor = 1): number {
+  return focalMm * (1 + converterFactor / beta);
+}
 
 // ───────────────────────── PHỤ KIỆN — chốt 2026-10-20 (Q1–Q5) ──────────────────────────
 /*
@@ -586,6 +630,28 @@ export function evaluateLens(
 
   if (variant) checks.push(...variant.checks);
 
+  // ── WD thật (OPT-012) — chỉ để bố trí cơ khí, không vào phép kiểm ──
+  let realWd: RealWd | null = null;
+  if (fixedMagnification) {
+    if (lens.wdMinMm !== null || lens.wdMaxMm !== null) realWd = { kind: 'fixed', minMm: lens.wdMinMm ?? lens.wdMaxMm!, maxMm: lens.wdMaxMm ?? lens.wdMinMm! };
+  } else if (lens.focalLengthMm !== null) {
+    const fit = betaToFit(need.sensorLongMm, need.sensorShortMm, input.fovWidthMm, input.fovHeightMm, line);
+    if (fit !== null && fit > 0) {
+      const k = variant?.converterFactor ?? 1;
+      const mm = realWorkingDistanceMm(lens.focalLengthMm, fit, k);
+      const tube = variant?.tube ?? null;
+      const outside = tube !== null && (mm > tube.wdMaxMm + EPS || (tube.wdMinMm !== null && mm < tube.wdMinMm - EPS));
+      realWd = {
+        kind: 'focal',
+        mm: round(mm, 1),
+        deltaMm: wd !== null ? round(mm - wd, 1) : null,
+        formula: `β = ${fmt(fit, 4)} · WD = ${fmt(lens.focalLengthMm, 1)} × (1 + ${fmt(k, 2)} ÷ ${fmt(fit, 4)}) = ${fmt(mm, 0)} mm`,
+        belowModMm: tube === null && lens.wdMinMm !== null && mm < lens.wdMinMm - EPS ? lens.wdMinMm : null,
+        outsideTube: outside ? { minMm: tube.wdMinMm, maxMm: tube.wdMaxMm } : null,
+      };
+    }
+  }
+
   const judged = checks.filter((c) => c.status !== 'info').map((c) => c.status);
   // Ống chưa khai đủ để biết vùng nhìn thì không được xếp "đạt" chỉ nhờ ngàm khớp.
   if (beta === null && !judged.includes('fail')) judged.length = 0;
@@ -603,6 +669,7 @@ export function evaluateLens(
     status: judged.length === 0 ? 'info' : judged.includes('fail') ? 'fail' : judged.includes('warn') || variant?.accessory ? 'warn' : 'pass',
     unknownCount,
     accessory: variant?.accessory ?? null,
+    realWd,
   };
 }
 

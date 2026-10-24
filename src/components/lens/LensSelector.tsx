@@ -1,5 +1,6 @@
 'use client';
 
+import { ActionLink } from '@/components/ui/ActionLink';
 import { Fragment, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { NOTE_CLASS, Panel } from '@/components/ui/PanelHeader';
@@ -814,9 +815,9 @@ function LensRow({ candidate: c, line, open, onToggle }: { candidate: LensCandid
               ))}
             </ul>
             {c.component.datasheet_url ? (
-              <a href={c.component.datasheet_url} target="_blank" rel="noreferrer" className="mt-3 inline-block text-xs text-sky-700 hover:underline dark:text-sky-400">
-                {t('list.datasheet')} ↗
-              </a>
+              <ActionLink href={c.component.datasheet_url} external variant="text" className="mt-3">
+                {t('list.datasheet')}
+              </ActionLink>
             ) : null}
           </td>
         </tr>

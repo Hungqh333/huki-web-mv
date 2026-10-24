@@ -17,10 +17,13 @@ export function DeleteButton({
   action,
   id,
   itemName,
+  extra,
 }: {
   action: (formData: FormData) => void;
   id: string;
   itemName: string;
+  /** Ô ẩn thêm cho action cần biết bản ghi cha (vd experiment_id). */
+  extra?: Record<string, string>;
 }) {
   const t = useTranslations('admin.common');
 
@@ -34,6 +37,9 @@ export function DeleteButton({
       }}
     >
       <input type="hidden" name="id" value={id} />
+      {Object.entries(extra ?? {}).map(([name, value]) => (
+        <input key={name} type="hidden" name={name} value={value} />
+      ))}
       <button
         type="submit"
         className="rounded px-2 py-1.5 text-xs text-red-600 hover:bg-red-50 hover:underline dark:text-red-400 dark:hover:bg-red-950/40"

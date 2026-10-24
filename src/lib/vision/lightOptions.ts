@@ -14,10 +14,10 @@ export type LightTask = (typeof LIGHT_TASKS)[number];
 
 /** Bước 2 — cần thấy gì, theo bài toán (mục 2 của nháp). */
 export const TASK_FEATURES = {
-  inspect: ['scratch', 'crack_chip', 'dent_bump', 'burr', 'stain', 'particle', 'void', 'coating', 'print', 'wrinkle', 'solder'],
+  inspect: ['scratch', 'crack_chip', 'dent_bump', 'burr', 'stain', 'particle', 'void', 'coating', 'print', 'wrinkle', 'solder', 'thread'],
   presence: ['raised', 'flat_color', 'hole', 'transparent_part', 'shiny_part', 'wire'],
   align: ['outline', 'fiducial', 'hole', 'corner'],
-  measure: ['outline', 'hole', 'surface_edge'],
+  measure: ['outline', 'hole', 'surface_edge', 'thread'],
   code: ['ink_label', 'dpm', 'curved_print'],
   color: ['color_match', 'color_shading'],
 } as const satisfies Record<LightTask, readonly string[]>;

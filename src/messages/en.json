@@ -890,7 +890,8 @@
       "lighting": "Lighting table",
       "defaults": "Default assumptions",
       "formulas": "Formula handbook",
-      "samples": "Lighting samples"
+      "samples": "Lighting samples",
+      "experiments": "Test projects"
     },
     "users": {
       "title": "User management",
@@ -1615,6 +1616,162 @@
         "done": "Done: {ok}/{total} images uploaded.",
         "missing": "no selected image has this file name"
       }
+    },
+    "experiments": {
+      "title": "Test projects",
+      "subtitle": "Each project is one test report from the team: check items → lighting options → captured / processed images → results. Published ones appear on the Test projects page (button at the top of the Light selector) for Members and above. Drafts are admin-only.",
+      "create": {
+        "title": "New test project",
+        "submit": "Create and continue"
+      },
+      "listTitle": "Projects ({n})",
+      "empty": "No test projects yet.",
+      "editNote": "Fill in from the test report. Record the project code only, not the customer name. Each box saves separately.",
+      "back": "List",
+      "saved": "Saved.",
+      "saveGeneral": "Save general info",
+      "unknown": "— Not recorded —",
+      "choose": "— Choose —",
+      "sameAsExperiment": "— Same as project —",
+      "deleteNote": "Deleting the project also deletes all its items, options, images and the report file.",
+      "status": {
+        "draft": "Draft",
+        "published": "Published"
+      },
+      "verdict": {
+        "pass": "Pass",
+        "conditional": "Conditional pass",
+        "fail": "Not yet passing",
+        "none": "— Not assessed —"
+      },
+      "groups": {
+        "general": "General",
+        "product": "Product",
+        "object": "Object, surface and colour (Light selector keys)",
+        "objectNote": "Reports usually leave these out. Set them here so the Light selector can find this project. Each item can override them.",
+        "conclusion": "Conclusion and report"
+      },
+      "fields": {
+        "code": "Project / report code",
+        "title": "Name",
+        "titlePlaceholder": "Lenmount inspection machine",
+        "status": "Status",
+        "engineer": "Engineer",
+        "testedOn": "Test date",
+        "productName": "Product name",
+        "productWidth": "Width (mm)",
+        "productHeight": "Height (mm)",
+        "modelCount": "Models",
+        "minDefect": "Smallest defect (mm)",
+        "material": "Material",
+        "finish": "Surface",
+        "shape": "Shape",
+        "featureColor": "Feature colour",
+        "backgroundColor": "Background colour",
+        "conclusionVi": "Conclusion (Vietnamese)",
+        "conclusionEn": "Conclusion (English)",
+        "reportUrl": "Or a link to the report on the internal drive",
+        "itemName": "Item name",
+        "itemNameEn": "English name",
+        "itemNamePlaceholder": "Chipping on the inner edge of the bore",
+        "sortOrder": "Order",
+        "target": "Task — what to see",
+        "targetNone": "— Not set —",
+        "materialOverride": "Material (this item)",
+        "finishOverride": "Surface (this item)",
+        "shapeOverride": "Shape (this item)",
+        "requirement": "Requirement",
+        "isChosen": "Chosen option",
+        "label": "Option name",
+        "labelPlaceholder": "Station 2 — ring light",
+        "lightType": "Light type",
+        "lightColor": "Light colour",
+        "lightModel": "Light model",
+        "angle": "Angle / layout",
+        "anglePlaceholder": "camera tilted 30°",
+        "distance": "Light-to-part distance (mm)",
+        "backdrop": "Backdrop under the part",
+        "backdropPlaceholder": "white backdrop",
+        "camera": "Camera",
+        "lens": "Lens",
+        "accessory": "Accessory",
+        "accessoryPlaceholder": "camera–lens extension tube",
+        "captureMs": "Capture time (ms)",
+        "processMs": "Processing time (ms)",
+        "verdict": "Assessment",
+        "measuredError": "Measurement error (mm)",
+        "okSamples": "OK samples",
+        "ngSamples": "NG samples",
+        "tp": "TP (NG classified NG)",
+        "tn": "TN (OK classified OK)",
+        "fp": "FP (OK classified NG)",
+        "fn": "FN (NG classified OK)",
+        "note": "Note",
+        "notePlaceholder": "Tested on OK samples only, no NG samples received yet"
+      },
+      "product": {
+        "title": "Product photo",
+        "empty": "No product photo yet.",
+        "upload": "Upload photo"
+      },
+      "report": {
+        "title": "Report file",
+        "empty": "No report file yet.",
+        "download": "Download report",
+        "remove": "Remove file",
+        "hint": "PDF or PPTX, up to 50 MB. Choosing a file uploads it straight away and replaces the old one.",
+        "uploading": "Uploading… large files can take a while."
+      },
+      "items": {
+        "title": "Items ({n})",
+        "heading": "Item {n}",
+        "count": "Items working",
+        "working": "{ok}/{total}",
+        "save": "Save item",
+        "add": "Add item",
+        "addSubmit": "Add item",
+        "firstLight": "Light type used"
+      },
+      "trials": {
+        "heading": "Option: {label}",
+        "groupSetup": "Setup",
+        "groupResult": "Result",
+        "rates": "Leakage {leakage} · overkill {overkill} (over {total} classifications)",
+        "save": "Save option",
+        "addLight": "Add an option to compare",
+        "add": "Add option"
+      },
+      "images": {
+        "title": "Captured / processed images",
+        "empty": "No images yet. Up to 3 per kind.",
+        "kind": {
+          "raw": "Captured",
+          "processed": "Processed"
+        },
+        "kindLabel": "Image kind",
+        "file": "Image (JPEG, PNG, WebP, up to 4 MB)",
+        "caption": "Caption",
+        "upload": "Upload image"
+      },
+      "errors": {
+        "text": "A field is longer than allowed.",
+        "required": "Fill in all required fields.",
+        "number": "A number field is invalid (must be positive; sample counts must be whole numbers).",
+        "label": "A choice is invalid. Pick again from the list.",
+        "missing": "Record not found.",
+        "url": "The report link must start with http:// or https://.",
+        "date": "Invalid test date.",
+        "duplicate": "This project code already exists.",
+        "db": "Could not save. Try again later.",
+        "file": "Choose an image file.",
+        "type": "Images must be JPEG, PNG or WebP.",
+        "size": "The image is larger than 4 MB. Shrink it and upload again.",
+        "reportType": "Reports must be PDF or PPTX.",
+        "reportSize": "The report file is larger than 50 MB.",
+        "notAdmin": "Only admins can edit experiments.",
+        "light": "Choose a light type.",
+        "tooMany": "This kind already has 3 images. Delete one before adding more."
+      }
     }
   },
   "errors": {
@@ -2250,7 +2407,7 @@
         "marginRange": "Resolution headroom {range}",
         "blocked": "NOT AVAILABLE",
         "blockedNote": "The system does not propose a configuration with known technical risks:",
-        "whatToRelax": "See what to relax →",
+        "whatToRelax": "See what to relax",
         "empty": "The catalog has no camera + lens pair in this headroom range.",
         "camera": "Camera",
         "lens": "Lens",
@@ -2955,7 +3112,8 @@
       "dpm": "Laser-etched / dot-peened on metal (DPM)",
       "curved_print": "Inkjet print on a curved surface",
       "color_match": "Right colour / colour sorting",
-      "color_shading": "Uneven or off shade"
+      "color_shading": "Uneven or off shade",
+      "thread": "Thread / thread pitch"
     },
     "depths": {
       "visible": "Clear — visible by eye",
@@ -3052,7 +3210,65 @@
       "t_code_dpm": "Etched / peened codes on metal: low angle makes dots and grooves stand out; flat glossy surfaces use coaxial.",
       "t_code_curved_print": "Inkjet on curved surfaces: a dome avoids glare on the curve.",
       "t_color_color_match": "Colour check: even, high-CRI white light and a colour camera.",
-      "t_color_color_shading": "Uneven shade: very even light (dome), white, colour camera."
+      "t_color_color_shading": "Uneven shade: very even light (dome), white, colour camera.",
+      "defect_thread": "Thread in a hole: coaxial light along the hole axis shows crests and roots as alternating bright and dark bands for counting pitches (from the team’s own tests).",
+      "t_measure_thread": "Measuring thread pitch: coaxial light along the hole axis gives sharp crests (from the team’s own tests)."
+    },
+    "experiments": {
+      "verified": "Tested with {type}:",
+      "verdict": {
+        "pass": "Pass",
+        "conditional": "Conditional pass",
+        "fail": "Not yet passing",
+        "none": "Not assessed"
+      },
+      "error": "Measurement error {mm} mm",
+      "raw": "Captured image",
+      "processed": "Processed image",
+      "backToSelector": "Light selector",
+      "pageTitle": "Test projects",
+      "pageSubtitle": "Projects where the Vision team tested lighting on real parts. Each item records the lighting option, captured and processed images and the result, with the original report. Opened from the Light selector, the list is pre-filtered by the current \"what to see\".",
+      "filterTarget": "Task — what to see",
+      "filterMaterial": "Material",
+      "filterLight": "Light type tried",
+      "filterAll": "— All —",
+      "filterApply": "Filter",
+      "count": "{n} projects",
+      "listEmpty": "No project matches the filter.",
+      "working": "{ok}/{total} items working",
+      "backToList": "All test projects",
+      "draftNote": "Draft: visible to admins only.",
+      "requirementTitle": "Requirement",
+      "product": "Product",
+      "size": "Size",
+      "models": "Models",
+      "minDefect": "Smallest defect",
+      "engineer": "Engineer",
+      "testedOn": "Test date",
+      "object": "Material · surface · shape",
+      "colors": "Feature / background colour",
+      "setup": {
+        "light": "Light",
+        "model": "Light model",
+        "angle": "Angle / layout",
+        "distance": "Light-to-part distance",
+        "backdrop": "Backdrop",
+        "camera": "Camera",
+        "lens": "Lens",
+        "time": "Timing",
+        "timeValue": "capture {capture} ms · processing {process} ms"
+      },
+      "chosen": "Chosen option",
+      "samples": "Sample set: {ok} OK · {ng} NG",
+      "leakage": "Leakage {value} (target < {limit})",
+      "overkill": "overkill {value} (target < {limit})",
+      "ratesNote": "over {total} classifications",
+      "conclusionTitle": "Assessment and conclusion",
+      "noConclusion": "No conclusion recorded.",
+      "downloadReport": "Download report {name}",
+      "openReportLink": "Open report on the internal drive",
+      "button": "Test projects",
+      "matched": "{n} match"
     }
   }
 }

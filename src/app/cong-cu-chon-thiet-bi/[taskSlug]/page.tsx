@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { ActionLink } from '@/components/ui/ActionLink';
 import { notFound, redirect } from 'next/navigation';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { SelectorForm } from '@/components/selector/SelectorForm';
@@ -51,12 +51,9 @@ export default async function SelectorTaskPage({
 
   return (
     <section className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6">
-      <Link
-        href="/cong-cu-chon-thiet-bi"
-        className="text-sm text-slate-500 hover:text-sky-700 dark:text-slate-400 dark:hover:text-sky-400"
-      >
-        ← {t('backToTasks')}
-      </Link>
+      <ActionLink href="/cong-cu-chon-thiet-bi" variant="back">
+        {t('backToTasks')}
+      </ActionLink>
 
       <h1 className="mt-3 text-3xl font-bold tracking-tight">{name}</h1>
       {description ? (

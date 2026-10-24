@@ -96,6 +96,16 @@ export type LightSelection = {
     };
     source: string | null;
   }[];
+  /**
+   * Dự án thực nghiệm của phòng Vision khớp bài toán (chốt 2026-10-24). Hàm thuần luôn trả rỗng —
+   * server action điền từ database (RLS: Member+ thấy bản đã công bố).
+   */
+  experiments: {
+    /** Huy hiệu cạnh kiểu đèn gợi ý / thay thế: hạng mục trùng "cần thấy gì" đã thử đúng kiểu đèn đó. */
+    verified: { lightType: string; pass: number; conditional: number; fail: number }[];
+    /** Số dự án có hạng mục trùng "cần thấy gì" — hiện trên nút "Dự án thực nghiệm". */
+    matched: number;
+  };
   /** Kho có bao nhiêu đèn đúng kiểu / đúng màu — để báo "kho chưa có". */
   stock: { total: number; typeMatch: number; colorMatch: number; both: number };
 };
@@ -242,6 +252,7 @@ export function selectLights(input: LightSelectorInput, catalog: readonly Compon
     candidates,
     preview: colorResult.preview,
     samples: [],
+    experiments: { verified: [], matched: 0 },
     stock: {
       total: lights.length,
       typeMatch: lights.filter(typeOk).length,

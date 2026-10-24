@@ -1,6 +1,7 @@
 'use client';
 
 import { Fragment, useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { NOTE_CLASS, Panel } from '@/components/ui/PanelHeader';
 import type { LightSelectResponse } from '@/app/actions/lights';
@@ -23,6 +24,8 @@ import type { LightCandidate, LightCheck, LightSelection, LightSelectorInput } f
 import type { CheckStatus } from '@/lib/vision/types';
 import { CameraView, LightingSection, RAY_HEX, TopView } from './LightingIllustrations';
 import { COLOR_REFERENCES, GENERAL_REFERENCES, TYPE_REFERENCES, photoReferenceFor, type LightingReference } from './references';
+import { VerdictBadge } from './VerdictBadge';
+import { ActionLink, ExternalMark } from '@/components/ui/ActionLink';
 
 /**
  * Giao diện Bộ chọn đèn (chốt 2026-10-22). KHÔNG tính gì ở trình duyệt: mỗi lần đổi ô nhập
@@ -219,9 +222,23 @@ export function LightSelector({ run }: { run: (input: LightSelectorInput) => Pro
     ...GENERAL_REFERENCES,
   ].filter((ref, i, list) => list.findIndex((r) => r.url === ref.url) === i);
 
+  // Dự án thực nghiệm (chốt 2026-10-24): nút trên cùng mở trang riêng, lọc sẵn theo "cần thấy gì" đang chọn.
+  const experimentsHref = form.task && form.feature ? `/chon-den/thuc-nghiem?target=${form.task}:${form.feature}` : '/chon-den/thuc-nghiem';
+  const matchedProjects = form.feature ? (selection?.experiments.matched ?? 0) : 0;
+
   return (
     <div className="space-y-6">
-      <div className="flex justify-end">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <ActionLink href={experimentsHref}>
+          <span className="inline-flex items-center gap-2">
+            {t('experiments.button')}
+            {matchedProjects > 0 ? (
+              <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-semibold text-sky-700 ring-1 ring-sky-200 dark:bg-sky-900 dark:text-sky-200 dark:ring-sky-700">
+                {t('experiments.matched', { n: matchedProjects })}
+              </span>
+            ) : null}
+          </span>
+        </ActionLink>
         <button
           type="button"
           onClick={() => {
@@ -353,6 +370,19 @@ export function LightSelector({ run }: { run: (input: LightSelectorInput) => Pro
                 <dd className={`mt-0.5 ${NOTE_CLASS}`}>
                   {type ? t(`reasons.${type.reasonKey}` as never) : t('suggestion.typeMissing')}
                 </dd>
+                {/* Đã thực nghiệm (chốt 2026-10-24 Q5): chỉ thông tin, không đổi gợi ý. */}
+                {selection.experiments.verified
+                  .filter((v) => v.pass + v.conditional + v.fail > 0)
+                  .map((v) => (
+                    <dd key={v.lightType} className="mt-1">
+                      <Link href={experimentsHref} className="inline-flex flex-wrap items-center gap-1 text-xs text-slate-700 hover:underline dark:text-slate-200">
+                        {t('experiments.verified', { type: typeName(v.lightType) })}
+                        {v.pass ? <VerdictBadge verdict="pass" label={`${v.pass} ${t('experiments.verdict.pass')}`} /> : null}
+                        {v.conditional ? <VerdictBadge verdict="conditional" label={`${v.conditional} ${t('experiments.verdict.conditional')}`} /> : null}
+                        {v.fail ? <VerdictBadge verdict="fail" label={`${v.fail} ${t('experiments.verdict.fail')}`} /> : null}
+                      </Link>
+                    </dd>
+                  ))}
               </div>
               <div>
                 <dt className="text-xs font-medium text-slate-500 dark:text-slate-400">
@@ -421,14 +451,9 @@ export function LightSelector({ run }: { run: (input: LightSelectorInput) => Pro
               </p>
               {/* Ảnh chụp thật của hãng cho kiểu đèn đang vẽ — chỉ đặt link (ảnh có bản quyền của hãng). */}
               {photoReferenceFor(shownType) ? (
-                <a
-                  href={photoReferenceFor(shownType)!.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-3 inline-flex items-center gap-1.5 self-start rounded-md border border-sky-300 bg-sky-50 px-3 py-1.5 text-sm font-medium text-sky-800 hover:bg-sky-100 dark:border-sky-800 dark:bg-sky-950/40 dark:text-sky-300 dark:hover:bg-sky-950"
-                >
-                  {t('illus.photoButton', { publisher: photoReferenceFor(shownType)!.publisher })} ↗
-                </a>
+                <ActionLink href={photoReferenceFor(shownType)!.url} external className="mt-3 self-start">
+                  {t('illus.photoButton', { publisher: photoReferenceFor(shownType)!.publisher })}
+                </ActionLink>
               ) : null}
             </IllusCard>
             <IllusCard title={t('illus.viewTitle')} className="lg:col-span-2">
@@ -567,7 +592,8 @@ export function LightSelector({ run }: { run: (input: LightSelectorInput) => Pro
               {references.map((ref) => (
                 <li key={ref.url}>
                   <a href={ref.url} target="_blank" rel="noreferrer" className="text-sky-700 hover:underline dark:text-sky-400">
-                    {ref.publisher} — {ref.title} ↗
+                    {ref.publisher} — {ref.title}
+                    <ExternalMark />
                   </a>
                   {ref.photos ? (
                     <span className="ml-2 rounded-full bg-sky-100 px-2 py-0.5 text-[11px] font-medium text-sky-800 dark:bg-sky-950/60 dark:text-sky-300">{t('illus.hasPhotos')}</span>
@@ -752,9 +778,9 @@ function LightRow({
               ))}
             </ul>
             {c.datasheetUrl ? (
-              <a href={c.datasheetUrl} target="_blank" rel="noreferrer" className="mt-3 inline-block text-xs text-sky-700 hover:underline dark:text-sky-400">
-                {t('list.datasheet')} ↗
-              </a>
+              <ActionLink href={c.datasheetUrl} external variant="text" className="mt-3">
+                {t('list.datasheet')}
+              </ActionLink>
             ) : null}
           </td>
         </tr>

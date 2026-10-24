@@ -29,9 +29,16 @@ export type IconName =
   | 'robotArm'
   | 'barcode'
   | 'blocks'
-  | 'more';
+  | 'more'
+  | 'arrowRight'
+  | 'arrowLeft'
+  | 'external';
 
 const PATHS: Record<IconName, React.ReactNode> = {
+  // Mũi tên cho nút / link (2026-10-24) — thay ký tự → ← ↗ trong chữ.
+  arrowRight: <path d="M5 12h14M13 6l6 6-6 6" />,
+  arrowLeft: <path d="M19 12H5M11 6l-6 6 6 6" />,
+  external: <path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" />,
   handbook: (
     <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v15H5.5A1.5 1.5 0 0 0 4 20.5V5.5ZM20 5.5A1.5 1.5 0 0 0 18.5 4H13v15h5.5a1.5 1.5 0 0 1 1.5 1.5V5.5Z" />
   ),

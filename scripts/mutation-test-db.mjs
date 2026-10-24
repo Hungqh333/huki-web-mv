@@ -197,6 +197,23 @@ const MUTATIONS = [
             with check (bucket_id = 'lighting-samples');`,
   },
   {
+    name: 'Thuc nghiem chieu sang: Member thay ca ban nhap',
+    sql: `drop policy "light_experiments_select" on public.light_experiments;
+          create policy "light_experiments_select" on public.light_experiments for select to authenticated
+            using (public.is_member_plus());`,
+  },
+  {
+    name: 'Phuong an thuc nghiem: cho moi tai khoan dang nhap xem',
+    sql: `drop policy "light_experiment_trials_select" on public.light_experiment_trials;
+          create policy "light_experiment_trials_select" on public.light_experiment_trials for select to authenticated using (true);`,
+  },
+  {
+    name: 'Kho thuc nghiem: cho moi tai khoan tai len',
+    sql: `drop policy "light_experiments_insert_admin" on storage.objects;
+          create policy "light_experiments_insert_admin" on storage.objects for insert to authenticated
+            with check (bucket_id = 'light-experiments');`,
+  },
+  {
     name: 'Bang engine: cho khach doc',
     sql: `grant select on public.engine_tables to anon;
           create policy "engine_tables_select_anon" on public.engine_tables for select to anon using (true);`,

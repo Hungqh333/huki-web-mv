@@ -1,5 +1,6 @@
 'use client';
 
+import { ActionLink } from '@/components/ui/ActionLink';
 import { useState } from 'react';
 import { useTranslations, useFormatter } from 'next-intl';
 import { PanelHeader } from '@/components/ui/PanelHeader';
@@ -152,9 +153,9 @@ function LevelCard({
               </li>
             ))}
           </ul>
-          <a href="#analysis-title" className="mt-2 inline-block text-xs font-medium text-sky-700 hover:underline dark:text-sky-400">
+          <ActionLink href="#analysis-title" variant="text" className="mt-2">
             {t('whatToRelax')}
-          </a>
+          </ActionLink>
         </div>
       ) : level.status === 'empty' ? (
         <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">{t('empty')}</p>

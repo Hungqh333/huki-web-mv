@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { ActionLink } from '@/components/ui/ActionLink';
 import { notFound, redirect } from 'next/navigation';
 import { getFormatter, getTranslations } from 'next-intl/server';
 import { Panel } from '@/components/ui/PanelHeader';
@@ -64,12 +64,9 @@ export default async function ProjectPage({ params }: PageProps<'/du-an/[id]'>) 
 
   return (
     <section className="mx-auto w-full max-w-4xl px-4 py-12 sm:px-6">
-      <Link
-        href={PROJECTS_ROUTE}
-        className="text-sm text-slate-500 hover:text-sky-700 dark:text-slate-400 dark:hover:text-sky-400"
-      >
-        ← {t('detail.back')}
-      </Link>
+      <ActionLink href={PROJECTS_ROUTE} variant="back">
+        {t('detail.back')}
+      </ActionLink>
 
       <h1 className="mt-4 text-3xl font-bold tracking-tight">{project.name}</h1>
       <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">

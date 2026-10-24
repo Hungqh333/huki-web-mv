@@ -28,6 +28,7 @@ import type { Evidence } from '@/lib/vision/rules';
 import { LEAD_TIME_ZERO_DAYS, MARGIN_FULL_SCORE, PRIOR_USE_FULL } from '@/lib/vision/solutionLevels';
 import { TIME_BUDGET_SAFETY } from '@/lib/vision/timing';
 import { LIGHT_WAVELENGTH_NM } from '@/lib/vision/lightColor';
+import { LEAKAGE_LIMIT, OVERKILL_LIMIT } from '@/lib/vision/experimentMetrics';
 
 /** Trang dùng công thức. */
 export type FormulaPage = 'design' | 'lens' | 'light' | 'oldSelector' | 'pc' | 'kpi';
@@ -423,7 +424,10 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
           'đo + đèn nền → nhắc đèn nền song song + telecentric · đo không soi xuyên → CẢNH BÁO kém chính xác',
           'cao su / màu đen → LGT-005',
         ],
-        notes: ['Nguồn: Opto Engineering, KEYENCE, Advanced Illumination, Edmund Optics — xem docs/NHAP_CHON_DEN_V2.md mục 6–7.'],
+        notes: [
+          'Nguồn: Opto Engineering, KEYENCE, Advanced Illumination, Edmund Optics — xem docs/NHAP_CHON_DEN_V2.md mục 6–7.',
+          'Ren / bước ren (kiểm lỗi và đo) → đồng trục, chưa có đèn thay thế — chốt 2026-10-24 theo thực nghiệm MC1626-01 (cụm 1, 3).',
+        ],
         liveTable: 'lightMatrix',
         evidence: 'requires-sample-test',
         usedIn: ['light'],
@@ -456,6 +460,26 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
         evidence: 'requires-sample-test',
         usedIn: ['light'],
         source: 'vision/lightColor.ts : suggestLightColor, levelUnder, colorTableFromRows · vision/lightSelector.ts : selectLights',
+      },
+      {
+        id: 'EXP-001..002',
+        title: 'Dự án thực nghiệm: tỉ lệ bỏ sót / hao phí',
+        formula: [
+          'EXP-001 · tỉ lệ bỏ sót = FN / (TP + TN + FP + FN) — hàng lỗi bị xếp thành OK',
+          'EXP-002 · tỉ lệ hao phí = FP / (TP + TN + FP + FN) — hàng OK bị xếp thành NG',
+          'thiếu một trong bốn số hoặc tổng = 0 → không tính',
+          'hạng mục "kiểm được" = phương án được chọn Đạt hoặc Đạt có điều kiện; lần thực nghiệm ghi số kiểm được / tổng hạng mục',
+          'trang Chọn đèn: nút "Dự án thực nghiệm" đếm số dự án có hạng mục trùng "cần thấy gì" (như ảnh mẫu); huy hiệu "đã thực nghiệm" đếm hạng mục trùng đúng kiểu đèn gợi ý (không đổi gợi ý)',
+        ],
+        verdict: ['so với tiêu chí của báo cáo: bỏ sót < giới hạn, hao phí < giới hạn → ghi ✓, vượt → ghi ✗ (chỉ hiển thị, Đạt / Không đạt do kỹ sư ghi)'],
+        constants: [
+          { name: 'giới hạn bỏ sót', value: `${LEAKAGE_LIMIT * 100} %` },
+          { name: 'giới hạn hao phí', value: `${OVERKILL_LIMIT * 100} %` },
+        ],
+        notes: ['Chốt 2026-10-24 Q10, theo mục IV của báo cáo test MC1626-01 (Lenmount).'],
+        evidence: 'calculated',
+        usedIn: ['light'],
+        source: 'vision/experimentMetrics.ts : trialRates · vision/experimentMatch.ts : isWorking, verifiedCounts, chosenTrial',
       },
       {
         id: 'LGT-005',

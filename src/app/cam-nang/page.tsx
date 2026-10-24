@@ -1,3 +1,4 @@
+import { ActionLink } from '@/components/ui/ActionLink';
 import Link from 'next/link';
 import { getFormatter, getLocale, getTranslations } from 'next-intl/server';
 import { TierBadge } from '@/components/handbook/TierBadge';
@@ -107,19 +108,13 @@ export default async function HandbookPage({ searchParams }: PageProps<'/cam-nan
 
                 <div className="mt-4">
                   {article.is_locked ? (
-                    <Link
-                      href={session ? '/cam-nang/' + article.slug : '/dang-nhap'}
-                      className="text-sm font-medium text-sky-700 hover:underline dark:text-sky-400"
-                    >
-                      {session ? t('lockedCtaSignedIn') : t('lockedCtaGuest')} →
-                    </Link>
+                    <ActionLink href={session ? '/cam-nang/' + article.slug : '/dang-nhap'} variant="text">
+                      {session ? t('lockedCtaSignedIn') : t('lockedCtaGuest')}
+                    </ActionLink>
                   ) : (
-                    <Link
-                      href={`/cam-nang/${article.slug}`}
-                      className="text-sm font-medium text-sky-700 hover:underline dark:text-sky-400"
-                    >
-                      {t('readMore')} →
-                    </Link>
+                    <ActionLink href={`/cam-nang/${article.slug}`} variant="text">
+                      {t('readMore')}
+                    </ActionLink>
                   )}
                 </div>
               </li>

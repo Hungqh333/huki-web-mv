@@ -6,6 +6,7 @@ import type { Component } from '@/lib/components/specs';
 import { fetchAllRows } from '@/lib/components/fetchAll';
 import { seedCatalog } from '@/lib/devSeedCatalog';
 import { loadEngineParams } from '@/lib/engineParamsLoad';
+import { experimentsForQuery } from '@/lib/lightExperiments';
 import { loadSampleRows, withSignedUrls } from '@/lib/lightingSamples';
 import { rankSamples } from '@/lib/vision/sampleMatch';
 import { getLocale } from 'next-intl/server';
@@ -71,20 +72,23 @@ export async function selectLightsAction(raw: LightSelectorInput): Promise<Light
   // Ảnh mẫu khớp bài toán (chốt 2026-10-23 Q2): trùng "cần thấy gì" trước, rồi theo số nhãn trùng;
   // không có thì ảnh cùng vật liệu + bề mặt ("tham khảo chung"). Chỉ ký link cho ảnh được chọn.
   const locale = await getLocale();
-  const ranked = rankSamples(
-    (await loadSampleRows(supabase)).map((r) => ({ ...r, feature: r.defect_type, lightType: r.light_type })),
-    {
-      task: parsed.data.task,
-      feature: parsed.data.feature,
-      material: parsed.data.material,
-      finish: parsed.data.finish,
-      shape: parsed.data.shape,
-      lightTypes: computed.type ? [computed.type.lightType, ...(computed.type.alternativeType ? [computed.type.alternativeType] : [])] : [],
-    }
-  );
+  const query = {
+    task: parsed.data.task,
+    feature: parsed.data.feature,
+    material: parsed.data.material,
+    finish: parsed.data.finish,
+    shape: parsed.data.shape,
+    lightTypes: computed.type ? [computed.type.lightType, ...(computed.type.alternativeType ? [computed.type.alternativeType] : [])] : [],
+  };
+  // Dự án thực nghiệm (chốt 2026-10-24): cùng cách khớp như ảnh mẫu; chỉ đếm, không đổi gợi ý (Q5).
+  const [ranked, experiments] = await Promise.all([
+    loadSampleRows(supabase).then((rows) => rankSamples(rows.map((r) => ({ ...r, feature: r.defect_type, lightType: r.light_type })), query)),
+    experimentsForQuery(supabase, query),
+  ]);
   const signed = await withSignedUrls(supabase, ranked);
   const selection = {
     ...computed,
+    experiments,
     samples: signed.map((s) => ({
       id: s.id,
       lightType: s.light_type,

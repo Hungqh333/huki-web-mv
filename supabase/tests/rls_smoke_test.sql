@@ -60,6 +60,21 @@ insert into public.engine_tables (table_key, row_key, data) values ('lighting', 
 insert into storage.objects (bucket_id, name) values ('lighting-samples', 'scratch/darkfield/rls-test.jpg');
 insert into public.lighting_samples (defect_type, light_type, storage_path) values ('scratch', 'darkfield', 'scratch/darkfield/rls-test.jpg');
 
+-- Thực nghiệm chiếu sáng (2026-10-24): một bản đã công bố + một bản nháp, mỗi bản 1 hạng mục / 1 phương án / 1 ảnh.
+insert into public.light_experiments (id, code, title, status) values
+  ('cccccccc-0000-4000-8000-000000000001', 'RLS-TN-1', 'Thực nghiệm đã công bố', 'published'),
+  ('cccccccc-0000-4000-8000-000000000002', 'RLS-TN-2', 'Thực nghiệm nháp', 'draft');
+insert into public.light_experiment_items (id, experiment_id, name_vi, task, feature) values
+  ('cccccccc-0000-4000-8000-000000000011', 'cccccccc-0000-4000-8000-000000000001', 'Bước ren', 'inspect', 'thread'),
+  ('cccccccc-0000-4000-8000-000000000012', 'cccccccc-0000-4000-8000-000000000002', 'Sứt mẻ', 'inspect', 'crack_chip');
+insert into public.light_experiment_trials (id, experiment_id, item_id, light_type, verdict) values
+  ('cccccccc-0000-4000-8000-000000000021', 'cccccccc-0000-4000-8000-000000000001', 'cccccccc-0000-4000-8000-000000000011', 'coaxial', 'pass'),
+  ('cccccccc-0000-4000-8000-000000000022', 'cccccccc-0000-4000-8000-000000000002', 'cccccccc-0000-4000-8000-000000000012', 'ring', null);
+insert into storage.objects (bucket_id, name) values ('light-experiments', 'rls/raw.jpg');
+insert into public.light_experiment_images (experiment_id, trial_id, kind, storage_path) values
+  ('cccccccc-0000-4000-8000-000000000001', 'cccccccc-0000-4000-8000-000000000021', 'raw', 'rls/raw.jpg'),
+  ('cccccccc-0000-4000-8000-000000000002', 'cccccccc-0000-4000-8000-000000000022', 'raw', 'rls/draft.jpg');
+
 -- 4 bài viết, mỗi tier một bài + 1 bản nháp.
 insert into public.articles (slug, title_vi, title_en, content_vi, content_en, access_tier, published_at)
 values
@@ -147,6 +162,11 @@ begin
   perform pg_temp.assert_eq(
     (select count(*) from storage.objects where bucket_id = 'lighting-samples'), 0,
     'Registered KHÔNG đọc được file trong kho ảnh mẫu');
+  perform pg_temp.assert_eq((select count(*) from public.light_experiments), 0, 'Registered KHÔNG thấy thực nghiệm chiếu sáng');
+  perform pg_temp.assert_eq((select count(*) from public.light_experiment_trials), 0, 'Registered KHÔNG thấy phương án thực nghiệm');
+  perform pg_temp.assert_eq(
+    (select count(*) from storage.objects where bucket_id = 'light-experiments'), 0,
+    'Registered KHÔNG đọc được file thực nghiệm');
 
   perform pg_temp.assert_eq(
     (select count(*) from public.profiles), 1,
@@ -267,6 +287,31 @@ begin
     raise exception 'FAIL: Member ghi được lighting_samples';
   exception when insufficient_privilege then
     raise notice 'PASS: Member bị chặn ghi lighting_samples';
+  end;
+
+  -- Thực nghiệm chiếu sáng (2026-10-24): Member chỉ thấy bản đã công bố, kể cả bảng con; không ghi được.
+  perform pg_temp.assert_eq((select count(*) from public.light_experiments), 1, 'Member chỉ thấy thực nghiệm đã công bố');
+  perform pg_temp.assert_eq((select count(*) from public.light_experiment_items), 1, 'Member chỉ thấy hạng mục của bản đã công bố');
+  perform pg_temp.assert_eq((select count(*) from public.light_experiment_trials), 1, 'Member chỉ thấy phương án của bản đã công bố');
+  perform pg_temp.assert_eq((select count(*) from public.light_experiment_images), 1, 'Member chỉ thấy ảnh của bản đã công bố');
+  perform pg_temp.assert_eq(
+    (select count(*) from storage.objects where bucket_id = 'light-experiments'), 1,
+    'Member đọc được file trong kho thực nghiệm');
+  begin
+    insert into public.light_experiments (code, title) values ('HACK', 'hack');
+    raise exception 'FAIL: Member ghi được light_experiments';
+  exception when insufficient_privilege then
+    raise notice 'PASS: Member bị chặn ghi light_experiments';
+  end;
+  update public.light_experiment_trials set verdict = 'fail' where id = 'cccccccc-0000-4000-8000-000000000021';
+  perform pg_temp.assert_eq(
+    (select count(*) from public.light_experiment_trials where verdict = 'pass'), 1,
+    'Member không sửa được kết quả thực nghiệm');
+  begin
+    insert into storage.objects (bucket_id, name) values ('light-experiments', 'hack/report.pdf');
+    raise exception 'FAIL: Member tải lên được kho thực nghiệm';
+  exception when insufficient_privilege then
+    raise notice 'PASS: Member bị chặn tải lên kho thực nghiệm';
   end;
 
   -- Ghi chú luật nháp (C8, seed_rule_notes.sql) chỉ Admin thấy — chưa duyệt thì không lộ ra.
@@ -411,6 +456,42 @@ begin
   perform pg_temp.assert_eq((select count(*) from public.lighting_samples), 2, 'Admin ghi được ảnh mẫu chiếu sáng');
   delete from public.lighting_samples where storage_path = 'scratch/ring/admin.jpg';
   delete from storage.objects where name = 'scratch/ring/admin.jpg';
+  -- Q9: ảnh mẫu nhận khoá "ren".
+  insert into public.lighting_samples (task, defect_type, light_type, storage_path) values ('inspect', 'thread', 'coaxial', 'thread/coaxial/admin.jpg');
+  delete from public.lighting_samples where storage_path = 'thread/coaxial/admin.jpg';
+
+  -- Thực nghiệm chiếu sáng: Admin thấy cả bản nháp, ghi được; khoá lạ / phương án sai lần thực nghiệm bị chặn.
+  perform pg_temp.assert_eq((select count(*) from public.light_experiments), 2, 'Admin thấy cả thực nghiệm nháp');
+  perform pg_temp.assert_eq((select count(*) from public.light_experiment_trials), 2, 'Admin thấy mọi phương án');
+  update public.light_experiments set status = 'published' where id = 'cccccccc-0000-4000-8000-000000000002';
+  insert into public.light_experiment_trials (experiment_id, item_id, light_type, verdict, tp, tn, fp, fn)
+    values ('cccccccc-0000-4000-8000-000000000002', 'cccccccc-0000-4000-8000-000000000012', 'darkfield', 'conditional', 5, 90, 3, 2);
+  perform pg_temp.assert_eq((select count(*) from public.light_experiment_trials), 3, 'Admin ghi được phương án thực nghiệm');
+  begin
+    insert into public.light_experiment_trials (experiment_id, item_id, light_type)
+      values ('cccccccc-0000-4000-8000-000000000001', 'cccccccc-0000-4000-8000-000000000012', 'ring');
+    raise exception 'FAIL: phương án gắn được vào hạng mục của lần thực nghiệm khác';
+  exception when foreign_key_violation then
+    raise notice 'PASS: phương án phải cùng lần thực nghiệm với hạng mục';
+  end;
+  begin
+    insert into public.light_experiment_trials (experiment_id, item_id, light_type, verdict)
+      values ('cccccccc-0000-4000-8000-000000000001', 'cccccccc-0000-4000-8000-000000000011', 'ring', 'ok');
+    raise exception 'FAIL: light_experiment_trials nhận kết quả lạ';
+  exception when check_violation then
+    raise notice 'PASS: light_experiment_trials chặn kết quả lạ';
+  end;
+  begin
+    update public.light_experiments set report_url = 'javascript:alert(1)' where id = 'cccccccc-0000-4000-8000-000000000001';
+    raise exception 'FAIL: light_experiments nhận link báo cáo không phải http';
+  exception when check_violation then
+    raise notice 'PASS: light_experiments chặn link báo cáo không phải http';
+  end;
+  insert into storage.objects (bucket_id, name) values ('light-experiments', 'admin/report.pdf');
+  delete from storage.objects where name = 'admin/report.pdf';
+  -- Xoá lần thực nghiệm kéo theo hạng mục, phương án, ảnh.
+  delete from public.light_experiments where id = 'cccccccc-0000-4000-8000-000000000002';
+  perform pg_temp.assert_eq((select count(*) from public.light_experiment_images), 1, 'Xoá lần thực nghiệm xoá luôn ảnh của nó');
 end $$;
 
 reset role;

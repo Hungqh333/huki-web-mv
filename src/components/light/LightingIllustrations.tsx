@@ -398,6 +398,15 @@ function FeatureMark({ feature, style }: { feature: string | null; style: ViewSt
             ))}
         </>
       );
+    case 'thread':
+      // Ren nhìn dọc trục lỗ: các vòng đỉnh ren đồng tâm.
+      return (
+        <>
+          {[30, 24, 18, 12].map((r) => (
+            <circle key={r} cx={100} cy={70} r={r} {...line} />
+          ))}
+        </>
+      );
     case 'color_match':
     case 'color_shading':
       return <rect x={56} y={40} width={88} height={60} rx={6} fill={c} opacity={0.35} />;

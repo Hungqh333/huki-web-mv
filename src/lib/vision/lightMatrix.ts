@@ -21,7 +21,7 @@ export type MatrixRow = { lightType: LightTypeV2; alternativeType: LightTypeV2 |
 const row = (lightType: LightTypeV2, alternativeType: LightTypeV2 | null = null): MatrixRow => ({ lightType, alternativeType });
 
 /** Lỗi trong ma trận (móp tách theo độ sâu). */
-const MATRIX_DEFECTS = ['scratch', 'crack_chip', 'dent_bump', 'dent_shallow', 'burr', 'stain', 'particle', 'void', 'coating', 'print', 'wrinkle', 'solder'] as const;
+const MATRIX_DEFECTS = ['scratch', 'crack_chip', 'dent_bump', 'dent_shallow', 'burr', 'stain', 'particle', 'void', 'coating', 'print', 'wrinkle', 'solder', 'thread'] as const;
 /** Ba bề mặt của ma trận — bóng phẳng / bóng cong / trong suốt đã xét trước (LGT-018…020). */
 const MATRIX_FINISHES = ['matte', 'semi_gloss', 'textured'] as const;
 
@@ -75,6 +75,10 @@ export const DEFAULT_MATRIX_ROWS = {
   m_solder_matte: row('dome', 'multi_angle_ring'),
   m_solder_semi_gloss: row('dome', 'multi_angle_ring'),
   m_solder_textured: row('dome', 'multi_angle_ring'),
+  // Ren / bước ren → đồng trục (chốt 2026-10-24 Q9, theo thực nghiệm MC1626-01 Lenmount cụm 1, 3).
+  m_thread_matte: row('coaxial'),
+  m_thread_semi_gloss: row('coaxial'),
+  m_thread_textured: row('coaxial'),
 
   // ── Bài toán khác (mục 2.2–2.6) ──
   t_presence_raised: row('bar', 'ring'),
@@ -90,6 +94,7 @@ export const DEFAULT_MATRIX_ROWS = {
   t_measure_outline: row('ring', 'coaxial'),
   t_measure_hole: row('coaxial', 'ring'),
   t_measure_surface_edge: row('bar', 'coaxial'),
+  t_measure_thread: row('coaxial'),
   t_code_ink_label: row('ring', 'bar'),
   t_code_dpm: row('darkfield', 'dome'),
   t_code_curved_print: row('dome', 'ring'),

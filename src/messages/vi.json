@@ -890,7 +890,8 @@
       "lighting": "Bảng chiếu sáng",
       "defaults": "Giả định mặc định",
       "formulas": "Sổ tay công thức",
-      "samples": "Ảnh mẫu chiếu sáng"
+      "samples": "Ảnh mẫu chiếu sáng",
+      "experiments": "Dự án thực nghiệm"
     },
     "users": {
       "title": "Quản lý người dùng",
@@ -1615,6 +1616,162 @@
         "done": "Xong: {ok}/{total} ảnh đã tải lên.",
         "missing": "không thấy ảnh cùng tên trong các ảnh đã chọn"
       }
+    },
+    "experiments": {
+      "title": "Dự án thực nghiệm",
+      "subtitle": "Mỗi dự án là một báo cáo test của phòng: hạng mục → phương án đèn → ảnh chụp / ảnh xử lý → kết quả. Bản đã công bố hiện ở trang Dự án thực nghiệm (nút trên cùng trang Chọn đèn) cho Member trở lên. Bản nháp chỉ admin thấy.",
+      "create": {
+        "title": "Tạo dự án thực nghiệm mới",
+        "submit": "Tạo và điền tiếp"
+      },
+      "listTitle": "Các dự án ({n})",
+      "empty": "Chưa có dự án thực nghiệm nào.",
+      "editNote": "Điền theo báo cáo test. Chỉ ghi mã dự án, không ghi tên khách hàng. Mỗi khung lưu riêng.",
+      "back": "Danh sách",
+      "saved": "Đã lưu.",
+      "saveGeneral": "Lưu thông tin chung",
+      "unknown": "— Không ghi —",
+      "choose": "— Chọn —",
+      "sameAsExperiment": "— Như dự án —",
+      "deleteNote": "Xoá dự án sẽ xoá luôn mọi hạng mục, phương án, ảnh và file báo cáo.",
+      "status": {
+        "draft": "Nháp",
+        "published": "Đã công bố"
+      },
+      "verdict": {
+        "pass": "Đạt",
+        "conditional": "Đạt có điều kiện",
+        "fail": "Chưa đạt",
+        "none": "— Chưa đánh giá —"
+      },
+      "groups": {
+        "general": "Thông tin chung",
+        "product": "Sản phẩm",
+        "object": "Vật, bề mặt và màu (khoá trang Chọn đèn)",
+        "objectNote": "Báo cáo thường không ghi các ô này. Chọn ở đây để trang Chọn đèn tìm ra dự án. Từng hạng mục có thể chọn khác.",
+        "conclusion": "Kết luận và báo cáo"
+      },
+      "fields": {
+        "code": "Mã dự án / báo cáo",
+        "title": "Tên",
+        "titlePlaceholder": "Máy kiểm tra Lenmount",
+        "status": "Trạng thái",
+        "engineer": "Kỹ sư thực hiện",
+        "testedOn": "Ngày test",
+        "productName": "Tên sản phẩm",
+        "productWidth": "Rộng (mm)",
+        "productHeight": "Cao (mm)",
+        "modelCount": "Số model",
+        "minDefect": "Lỗi nhỏ nhất (mm)",
+        "material": "Vật liệu",
+        "finish": "Bề mặt",
+        "shape": "Hình dạng",
+        "featureColor": "Màu chi tiết",
+        "backgroundColor": "Màu nền",
+        "conclusionVi": "Kết luận (tiếng Việt)",
+        "conclusionEn": "Kết luận (tiếng Anh)",
+        "reportUrl": "Hoặc link báo cáo trên ổ nội bộ",
+        "itemName": "Tên hạng mục",
+        "itemNameEn": "Tên tiếng Anh",
+        "itemNamePlaceholder": "Kiểm tra sứt mẻ cạnh trong của lỗ",
+        "sortOrder": "Thứ tự",
+        "target": "Bài toán — cần thấy gì",
+        "targetNone": "— Chưa gắn —",
+        "materialOverride": "Vật liệu (riêng hạng mục)",
+        "finishOverride": "Bề mặt (riêng hạng mục)",
+        "shapeOverride": "Hình dạng (riêng hạng mục)",
+        "requirement": "Yêu cầu",
+        "isChosen": "Phương án được chọn",
+        "label": "Tên phương án",
+        "labelPlaceholder": "Cụm 2 — đèn vòng",
+        "lightType": "Kiểu đèn",
+        "lightColor": "Màu đèn",
+        "lightModel": "Model đèn",
+        "angle": "Góc / bố trí",
+        "anglePlaceholder": "camera nghiêng 30°",
+        "distance": "Khoảng cách đèn – vật (mm)",
+        "backdrop": "Nền đặt dưới vật",
+        "backdropPlaceholder": "nền trắng",
+        "camera": "Camera",
+        "lens": "Ống kính",
+        "accessory": "Phụ kiện",
+        "accessoryPlaceholder": "tube nối camera – ống kính",
+        "captureMs": "Thời gian chụp (ms)",
+        "processMs": "Thời gian xử lý (ms)",
+        "verdict": "Đánh giá",
+        "measuredError": "Sai số đo (mm)",
+        "okSamples": "Số mẫu OK",
+        "ngSamples": "Số mẫu NG",
+        "tp": "TP (NG xếp đúng NG)",
+        "tn": "TN (OK xếp đúng OK)",
+        "fp": "FP (OK xếp thành NG)",
+        "fn": "FN (NG xếp thành OK)",
+        "note": "Ghi chú",
+        "notePlaceholder": "Kết quả trên tập mẫu OK, chưa nhận được mẫu NG"
+      },
+      "product": {
+        "title": "Ảnh sản phẩm",
+        "empty": "Chưa có ảnh sản phẩm.",
+        "upload": "Tải ảnh lên"
+      },
+      "report": {
+        "title": "File báo cáo",
+        "empty": "Chưa có file báo cáo.",
+        "download": "Tải báo cáo",
+        "remove": "Gỡ file",
+        "hint": "PDF hoặc PPTX, tối đa 50 MB. Chọn file là tải lên ngay, thay file cũ.",
+        "uploading": "Đang tải lên… file lớn có thể mất một lúc."
+      },
+      "items": {
+        "title": "Hạng mục ({n})",
+        "heading": "Hạng mục {n}",
+        "count": "Hạng mục kiểm được",
+        "working": "{ok}/{total}",
+        "save": "Lưu hạng mục",
+        "add": "Thêm hạng mục",
+        "addSubmit": "Thêm hạng mục",
+        "firstLight": "Kiểu đèn đã dùng"
+      },
+      "trials": {
+        "heading": "Phương án: {label}",
+        "groupSetup": "Cấu hình",
+        "groupResult": "Kết quả",
+        "rates": "Tỉ lệ bỏ sót {leakage} · tỉ lệ hao phí {overkill} (trên {total} lần phân loại)",
+        "save": "Lưu phương án",
+        "addLight": "Thêm phương án so sánh",
+        "add": "Thêm phương án"
+      },
+      "images": {
+        "title": "Ảnh Vision chụp / ảnh Vision xử lý",
+        "empty": "Chưa có ảnh. Tối đa 3 ảnh mỗi loại.",
+        "kind": {
+          "raw": "Ảnh chụp",
+          "processed": "Ảnh xử lý"
+        },
+        "kindLabel": "Loại ảnh",
+        "file": "Ảnh (JPEG, PNG, WebP, tối đa 4 MB)",
+        "caption": "Chú thích",
+        "upload": "Tải ảnh lên"
+      },
+      "errors": {
+        "text": "Có ô dài quá giới hạn.",
+        "required": "Điền đủ các ô bắt buộc.",
+        "number": "Có ô số không hợp lệ (phải là số dương, số mẫu phải là số nguyên).",
+        "label": "Có lựa chọn không hợp lệ, hãy chọn lại từ danh sách.",
+        "missing": "Không tìm thấy bản ghi.",
+        "url": "Link báo cáo phải bắt đầu bằng http:// hoặc https://.",
+        "date": "Ngày test không hợp lệ.",
+        "duplicate": "Mã dự án này đã có.",
+        "db": "Không lưu được. Thử lại sau.",
+        "file": "Chọn một file ảnh.",
+        "type": "Ảnh chỉ nhận JPEG, PNG hoặc WebP.",
+        "size": "Ảnh lớn hơn 4 MB, hãy thu nhỏ rồi tải lại.",
+        "reportType": "Báo cáo chỉ nhận PDF hoặc PPTX.",
+        "reportSize": "File báo cáo lớn hơn 50 MB.",
+        "notAdmin": "Chỉ admin được sửa thực nghiệm.",
+        "light": "Chọn kiểu đèn.",
+        "tooMany": "Đã đủ 3 ảnh loại này, hãy xoá bớt trước khi tải thêm."
+      }
     }
   },
   "errors": {
@@ -2250,7 +2407,7 @@
         "marginRange": "Dư độ phân giải {range}",
         "blocked": "KHÔNG KHẢ DỤNG",
         "blockedNote": "Hệ thống không đề xuất cấu hình có rủi ro kỹ thuật đã biết:",
-        "whatToRelax": "Xem cần nới gì →",
+        "whatToRelax": "Xem cần nới gì",
         "empty": "Kho chưa có cặp camera + ống kính nào trong khoảng dư độ phân giải này.",
         "camera": "Camera",
         "lens": "Ống kính",
@@ -2955,7 +3112,8 @@
       "dpm": "Khắc laser / dập trên kim loại (DPM)",
       "curved_print": "In phun trên bề mặt cong",
       "color_match": "Đúng màu / phân loại màu",
-      "color_shading": "Loang màu, sai sắc"
+      "color_shading": "Loang màu, sai sắc",
+      "thread": "Ren / bước ren"
     },
     "depths": {
       "visible": "Rõ — nhìn thấy bằng mắt",
@@ -3052,7 +3210,65 @@
       "t_code_dpm": "Mã khắc / dập trên kim loại: góc thấp làm chấm / rãnh nổi lên; bề mặt phẳng bóng thì đồng trục.",
       "t_code_curved_print": "In phun trên mặt cong: vòm để mặt cong không loá.",
       "t_color_color_match": "Kiểm màu: chiếu đều bằng đèn trắng chỉ số hoàn màu cao, camera màu.",
-      "t_color_color_shading": "Loang màu, sai sắc: chiếu thật đều (vòm), đèn trắng, camera màu."
+      "t_color_color_shading": "Loang màu, sai sắc: chiếu thật đều (vòm), đèn trắng, camera màu.",
+      "defect_thread": "Ren trong lỗ: đèn đồng trục chiếu dọc trục lỗ, đỉnh và chân ren hiện sáng tối xen kẽ để đếm bước ren (theo thực nghiệm của phòng).",
+      "t_measure_thread": "Đo bước ren: đèn đồng trục chiếu dọc trục lỗ cho đỉnh ren rõ (theo thực nghiệm của phòng)."
+    },
+    "experiments": {
+      "verified": "Đã thực nghiệm với {type}:",
+      "verdict": {
+        "pass": "Đạt",
+        "conditional": "Đạt có điều kiện",
+        "fail": "Chưa đạt",
+        "none": "Chưa đánh giá"
+      },
+      "error": "Sai số đo {mm} mm",
+      "raw": "Ảnh Vision chụp",
+      "processed": "Ảnh Vision xử lý",
+      "backToSelector": "Chọn đèn",
+      "pageTitle": "Dự án thực nghiệm",
+      "pageSubtitle": "Các dự án phòng Vision đã test chiếu sáng trên sản phẩm thật. Mỗi hạng mục ghi phương án đèn, ảnh chụp, ảnh xử lý và kết quả, kèm báo cáo gốc. Mở từ trang Chọn đèn thì danh sách đã lọc sẵn theo \"cần thấy gì\" đang chọn.",
+      "filterTarget": "Bài toán — cần thấy gì",
+      "filterMaterial": "Vật liệu",
+      "filterLight": "Kiểu đèn đã thử",
+      "filterAll": "— Tất cả —",
+      "filterApply": "Lọc",
+      "count": "{n} dự án",
+      "listEmpty": "Không có dự án nào khớp bộ lọc.",
+      "working": "Kiểm được {ok}/{total} hạng mục",
+      "backToList": "Tất cả dự án thực nghiệm",
+      "draftNote": "Bản nháp: chỉ admin thấy.",
+      "requirementTitle": "Yêu cầu bài toán",
+      "product": "Sản phẩm",
+      "size": "Kích thước",
+      "models": "Số model",
+      "minDefect": "Lỗi nhỏ nhất",
+      "engineer": "Kỹ sư thực hiện",
+      "testedOn": "Ngày test",
+      "object": "Vật liệu · bề mặt · hình dạng",
+      "colors": "Màu chi tiết / nền",
+      "setup": {
+        "light": "Đèn",
+        "model": "Model đèn",
+        "angle": "Góc / bố trí",
+        "distance": "Khoảng cách đèn – vật",
+        "backdrop": "Nền",
+        "camera": "Camera",
+        "lens": "Ống kính",
+        "time": "Thời gian",
+        "timeValue": "chụp {capture} ms · xử lý {process} ms"
+      },
+      "chosen": "Phương án được chọn",
+      "samples": "Tập mẫu: {ok} OK · {ng} NG",
+      "leakage": "Tỉ lệ bỏ sót {value} (tiêu chí < {limit})",
+      "overkill": "tỉ lệ hao phí {value} (tiêu chí < {limit})",
+      "ratesNote": "trên {total} lần phân loại",
+      "conclusionTitle": "Đánh giá và kết luận",
+      "noConclusion": "Chưa ghi kết luận.",
+      "downloadReport": "Tải báo cáo {name}",
+      "openReportLink": "Mở báo cáo trên ổ nội bộ",
+      "button": "Dự án thực nghiệm",
+      "matched": "{n} khớp bài toán"
     }
   }
 }

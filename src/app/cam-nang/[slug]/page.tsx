@@ -1,3 +1,4 @@
+import { ActionLink } from '@/components/ui/ActionLink';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getFormatter, getLocale, getTranslations } from 'next-intl/server';
@@ -36,12 +37,9 @@ export default async function ArticlePage({ params }: PageProps<'/cam-nang/[slug
 
     return (
       <article className="mx-auto w-full max-w-3xl px-4 py-12 sm:px-6">
-        <Link
-          href="/cam-nang"
-          className="text-sm text-slate-500 hover:text-sky-700 dark:text-slate-400 dark:hover:text-sky-400"
-        >
-          ← {t('backToList')}
-        </Link>
+        <ActionLink href="/cam-nang" variant="back">
+          {t('backToList')}
+        </ActionLink>
 
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <TierBadge tier={article.access_tier} />
@@ -112,12 +110,9 @@ export default async function ArticlePage({ params }: PageProps<'/cam-nang/[slug
 
   return (
     <article className="mx-auto w-full max-w-3xl px-4 py-12 sm:px-6">
-      <Link
-        href="/cam-nang"
-        className="text-sm text-slate-500 hover:text-sky-700 dark:text-slate-400 dark:hover:text-sky-400"
-      >
-        ← {t('backToList')}
-      </Link>
+      <ActionLink href="/cam-nang" variant="back">
+        {t('backToList')}
+      </ActionLink>
 
       <div className="mt-4 flex flex-wrap items-center gap-3">
         <TierBadge tier={preview.access_tier} locked />

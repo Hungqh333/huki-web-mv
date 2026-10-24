@@ -1,7 +1,7 @@
 'use client';
 
+import { ActionLink } from '@/components/ui/ActionLink';
 import { Fragment, useState } from 'react';
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { Panel } from '@/components/ui/PanelHeader';
 import {
@@ -660,13 +660,9 @@ export function ComponentPicker({
             <dd className="font-semibold">{needsGpu ? t('yes') : t('no')}</dd>
           </div>
         </dl>
-        <Link
-          href={`/cong-cu-may-tinh?${pcHandoff}`}
-          className="mt-3 inline-flex items-center gap-1 rounded-md bg-sky-600 px-3 py-2 text-sm font-medium text-white hover:bg-sky-700"
-        >
+        <ActionLink href={`/cong-cu-may-tinh?${pcHandoff}`} variant="primary" className="mt-3">
           {t('pcMovedCta')}
-          <span aria-hidden="true">→</span>
-        </Link>
+        </ActionLink>
       </div>
       </Panel>
 

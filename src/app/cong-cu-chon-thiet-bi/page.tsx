@@ -1,3 +1,4 @@
+import { ActionCue } from '@/components/ui/ActionLink';
 import Link from 'next/link';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { Panel } from '@/components/ui/PanelHeader';
@@ -106,11 +107,8 @@ export default async function SelectorHomePage() {
                     <span className="mt-2 flex-1 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
                       {pickDesc(task)}
                     </span>
-                    <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-sky-700 dark:text-sky-400">
-                      {t('openTask')}
-                      <span aria-hidden="true" className="transition group-hover:translate-x-0.5">
-                        →
-                      </span>
+                    <span className="mt-4">
+                      <ActionCue>{t('openTask')}</ActionCue>
                     </span>
                   </Link>
                 </li>
@@ -132,11 +130,8 @@ export default async function SelectorHomePage() {
               <span className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
                 {t('pcCardDesc')}
               </span>
-              <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-sky-700 dark:text-sky-400">
-                {t('openTask')}
-                <span aria-hidden="true" className="transition group-hover:translate-x-0.5">
-                  →
-                </span>
+              <span className="mt-4">
+                <ActionCue>{t('openTask')}</ActionCue>
               </span>
             </Link>
           </div>
@@ -158,11 +153,9 @@ export default async function SelectorHomePage() {
                     <li key={task.slug}>
                       <Link
                         href={`/cong-cu-chon-thiet-bi/${task.slug}`}
-                        className="flex items-center gap-2 rounded-lg px-2 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                        className="group flex items-center gap-2 rounded-lg px-2 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
                       >
-                        <span aria-hidden="true" className="text-slate-400">
-                          →
-                        </span>
+                        <Icon name="arrowRight" className="size-4 shrink-0 text-slate-400 transition-transform group-hover:translate-x-0.5 group-hover:text-sky-600" />
                         {pickName(task)}
                       </Link>
                     </li>

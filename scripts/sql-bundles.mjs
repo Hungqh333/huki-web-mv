@@ -82,6 +82,12 @@ export const BUNDLES = {
       ['PHAN 1/1: MIGRATION — kho anh mau chieu sang (Storage rieng) + bang lighting_samples: Member+ xem, Admin tai len', 'supabase/migrations/20261022000002_lighting_samples.sql'],
     ],
   },
+  'light-experiments': {
+    out: 'CHAY-BUOC-NAY-THUC-NGHIEM-DEN.sql',
+    parts: [
+      ['PHAN 1/1: MIGRATION — kho + 4 bang thuc nghiem chieu sang (Member+ xem ban cong bo, Admin ghi) + khoa "ren" cho anh mau', 'supabase/migrations/20261024000001_light_experiments.sql'],
+    ],
+  },
   'converter-kind': {
     out: 'CHAY-BUOC-NAY-BO-NHAN.sql',
     parts: [

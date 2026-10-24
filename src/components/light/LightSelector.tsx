@@ -212,6 +212,7 @@ export function LightSelector({ run }: { run: (input: LightSelectorInput) => Pro
       : shownSize
         ? { mm: shownSize.mm, shortMm: null, name: null }
         : null;
+  const hasTop = Boolean(topLight && fov.fovWidthMm && fov.fovHeightMm);
   const references: LightingReference[] = [
     ...(shownType ? (TYPE_REFERENCES[shownType] ?? []) : []),
     ...(color && color.color !== 'white' ? COLOR_REFERENCES : []),
@@ -408,106 +409,104 @@ export function LightSelector({ run }: { run: (input: LightSelectorInput) => Pro
             ) : undefined
           }
         >
-          <div className="grid gap-6 lg:grid-cols-2">
-            <figure>
+          {/* Hàng 1: cách lắp đèn (rộng) + camera thấy gì; hàng 2: nhìn từ trên + camera đơn sắc khi đủ dữ liệu.
+              Mỗi hình một khung có tiêu đề ở trên; khung cùng hàng cao bằng nhau. */}
+          <div className="grid gap-4 lg:grid-cols-5">
+            <IllusCard title={t('illus.sectionTitle')} className="lg:col-span-3">
               <LightingSection lightType={shownType} lightColor={color?.color ?? 'white'} idPrefix="light-section" />
-              <figcaption className="mt-1 space-y-0.5">
-                <p className="text-sm text-slate-700 dark:text-slate-200">{t(`illus.caption.${shownType}` as never)}</p>
-                <p className={NOTE_CLASS}>
-                  <span style={{ color: RAY_HEX[color?.color ?? 'white'] }}>━</span> {t('illus.legendLight')} ·{' '}
-                  <span className="text-slate-500">┅</span> {t('illus.legendBack')} · <span className="text-sky-500">┈</span> {t('illus.legendFov')}
-                </p>
-                {/* Ảnh chụp thật của hãng cho kiểu đèn đang vẽ — chỉ đặt link (ảnh có bản quyền của hãng). */}
-                {photoReferenceFor(shownType) ? (
-                  <a
-                    href={photoReferenceFor(shownType)!.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="mt-2 inline-flex items-center gap-1.5 rounded-md border border-sky-300 bg-sky-50 px-3 py-1.5 text-sm font-medium text-sky-800 hover:bg-sky-100 dark:border-sky-800 dark:bg-sky-950/40 dark:text-sky-300 dark:hover:bg-sky-950"
-                  >
-                    {t('illus.photoButton', { publisher: photoReferenceFor(shownType)!.publisher })} ↗
-                  </a>
-                ) : null}
-              </figcaption>
-            </figure>
-            <figure>
-              <div className="mx-auto max-w-[280px]">
+              <p className="mt-2 text-sm text-slate-700 dark:text-slate-200">{t(`illus.caption.${shownType}` as never)}</p>
+              <p className={`mt-1 ${NOTE_CLASS}`}>
+                <span style={{ color: RAY_HEX[color?.color ?? 'white'] }}>━</span> {t('illus.legendLight')} ·{' '}
+                <span className="text-slate-500">┅</span> {t('illus.legendBack')} · <span className="text-sky-500">┈</span> {t('illus.legendFov')}
+              </p>
+              {/* Ảnh chụp thật của hãng cho kiểu đèn đang vẽ — chỉ đặt link (ảnh có bản quyền của hãng). */}
+              {photoReferenceFor(shownType) ? (
+                <a
+                  href={photoReferenceFor(shownType)!.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-3 inline-flex items-center gap-1.5 self-start rounded-md border border-sky-300 bg-sky-50 px-3 py-1.5 text-sm font-medium text-sky-800 hover:bg-sky-100 dark:border-sky-800 dark:bg-sky-950/40 dark:text-sky-300 dark:hover:bg-sky-950"
+                >
+                  {t('illus.photoButton', { publisher: photoReferenceFor(shownType)!.publisher })} ↗
+                </a>
+              ) : null}
+            </IllusCard>
+            <IllusCard title={t('illus.viewTitle')} className="lg:col-span-2">
+              <div className="mx-auto w-full max-w-[320px]">
                 <CameraView lightType={shownType} feature={form.feature || null} finish={form.finish || null} />
               </div>
-              <figcaption className="mt-1 space-y-0.5 text-center">
-                <p className="text-sm text-slate-700 dark:text-slate-200">{t('illus.viewTitle')}</p>
-                <p className={NOTE_CLASS}>{form.feature ? t('illus.viewNote') : t('illus.viewNeedDefect')}</p>
-              </figcaption>
-            </figure>
-            <figure>
-              {topLight && fov.fovWidthMm && fov.fovHeightMm ? (
-                <>
+              <p className={`mt-2 ${NOTE_CLASS}`}>{form.feature ? t('illus.viewNote') : t('illus.viewNeedDefect')}</p>
+            </IllusCard>
+          </div>
+
+          {hasTop || selection.preview ? (
+            <div className={`mt-4 grid gap-4 ${hasTop && selection.preview ? 'lg:grid-cols-2' : ''}`}>
+              {hasTop && topLight ? (
+                <IllusCard title={t('illus.topTitle')}>
                   <TopView
                     lightType={shownType}
                     lightMm={topLight.mm}
                     lightShortMm={topLight.shortMm}
-                    fovW={fov.fovWidthMm}
-                    fovH={fov.fovHeightMm}
+                    fovW={fov.fovWidthMm!}
+                    fovH={fov.fovHeightMm!}
                     lightColor={color?.color ?? 'white'}
                   />
-                  <figcaption className="mt-1 space-y-0.5">
-                    <p className="text-sm text-slate-700 dark:text-slate-200">{t('illus.topTitle')}</p>
-                    <p className={NOTE_CLASS}>
-                      {t('illus.topLegend', {
-                        w: fov.fovWidthMm,
-                        h: fov.fovHeightMm,
-                        type: typeName(shownType),
-                        size: Math.ceil(topLight.mm),
-                        which: topLight.name ?? t('illus.topMinimum'),
-                      })}
-                    </p>
-                  </figcaption>
-                </>
-              ) : (
-                <p className={NOTE_CLASS}>{t('illus.topNeedFov')}</p>
-              )}
-            </figure>
-            <figure>
-              <p className="text-sm text-slate-700 dark:text-slate-200">{t('illus.monoTitle')}</p>
+                  <p className={`mt-2 ${NOTE_CLASS}`}>
+                    {t('illus.topLegend', {
+                      w: fov.fovWidthMm!,
+                      h: fov.fovHeightMm!,
+                      type: typeName(shownType),
+                      size: Math.ceil(topLight.mm),
+                      which: topLight.name ?? t('illus.topMinimum'),
+                    })}
+                  </p>
+                </IllusCard>
+              ) : null}
               {selection.preview ? (
-                <table className="mt-2 w-full text-sm">
-                  <thead className="text-xs text-slate-500 dark:text-slate-400">
-                    <tr>
-                      <th className="py-1 pr-2 text-left font-medium">{t('illus.monoLight')}</th>
-                      <th className="py-1 pr-2 text-left font-medium">
-                        {t('illus.monoFeature')} <ColorChip color={selection.preview.feature} />
-                      </th>
-                      {selection.preview.background ? (
+                <IllusCard title={t('illus.monoTitle')}>
+                  <table className="w-full text-sm">
+                    <thead className="text-xs text-slate-500 dark:text-slate-400">
+                      <tr>
+                        <th className="py-1 pr-2 text-left font-medium">{t('illus.monoLight')}</th>
                         <th className="py-1 pr-2 text-left font-medium">
-                          {t('illus.monoBackground')} <ColorChip color={selection.preview.background} />
+                          {t('illus.monoFeature')} <ColorChip color={selection.preview.feature} />
                         </th>
-                      ) : null}
-                      {selection.preview.background ? <th className="py-1 text-left font-medium">{t('illus.monoContrast')}</th> : null}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {selection.preview.rows.map((r) => (
-                      <tr key={r.light} className={color?.color === r.light ? 'font-semibold text-slate-900 dark:text-slate-100' : 'text-slate-600 dark:text-slate-300'}>
-                        <td className="py-1 pr-2">{colorName(r.light)}</td>
-                        <td className="py-1 pr-2">
-                          <GrayChip level={r.feature} />
-                        </td>
-                        {r.background !== null ? (
-                          <td className="py-1 pr-2">
-                            <GrayChip level={r.background} />
-                          </td>
+                        {selection.preview.background ? (
+                          <th className="py-1 pr-2 text-left font-medium">
+                            {t('illus.monoBackground')} <ColorChip color={selection.preview.background} />
+                          </th>
                         ) : null}
-                        {r.contrast !== null ? <td className="py-1 tabular-nums">{r.contrast}</td> : null}
+                        {selection.preview.background ? <th className="py-1 text-left font-medium">{t('illus.monoContrast')}</th> : null}
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ) : (
-                <p className={`mt-1 ${NOTE_CLASS}`}>{t('illus.monoNeed')}</p>
-              )}
-              <p className={`mt-2 ${NOTE_CLASS}`}>{t('illus.monoNote')}</p>
-            </figure>
-          </div>
+                    </thead>
+                    <tbody>
+                      {selection.preview.rows.map((r) => (
+                        <tr key={r.light} className={color?.color === r.light ? 'font-semibold text-slate-900 dark:text-slate-100' : 'text-slate-600 dark:text-slate-300'}>
+                          <td className="py-1 pr-2">{colorName(r.light)}</td>
+                          <td className="py-1 pr-2">
+                            <GrayChip level={r.feature} />
+                          </td>
+                          {r.background !== null ? (
+                            <td className="py-1 pr-2">
+                              <GrayChip level={r.background} />
+                            </td>
+                          ) : null}
+                          {r.contrast !== null ? <td className="py-1 tabular-nums">{r.contrast}</td> : null}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <p className={`mt-2 ${NOTE_CLASS}`}>{t('illus.monoNote')}</p>
+                </IllusCard>
+              ) : null}
+            </div>
+          ) : null}
+          {/* Hình chưa đủ dữ liệu: gom thành một dòng nhắc, không chiếm chỗ như một hình. */}
+          {!hasTop || !selection.preview ? (
+            <p className={`mt-3 ${NOTE_CLASS}`}>
+              {[!hasTop ? t('illus.topNeedFov') : null, !selection.preview ? t('illus.monoNeed') : null].filter(Boolean).join(' · ')}
+            </p>
+          ) : null}
 
           {/* Ảnh mẫu tự chụp (khung D) — chưa có thì nói rõ; ảnh của hãng chỉ đặt link. */}
           <div className="mt-6 border-t border-slate-100 pt-4 dark:border-slate-800">
@@ -675,6 +674,16 @@ function GrayChip({ level }: { level: number }) {
       <span className="inline-block h-4 w-7 rounded-sm ring-1 ring-slate-300 dark:ring-slate-600" style={{ background: `rgb(${v},${v},${v})` }} />
       <span className="tabular-nums text-xs">{level}</span>
     </span>
+  );
+}
+
+/** Khung một hình minh hoạ: tiêu đề ở trên, nền nhạt, cao bằng khung cùng hàng. */
+function IllusCard({ title, className = '', children }: { title: string; className?: string; children: React.ReactNode }) {
+  return (
+    <figure className={`flex h-full flex-col rounded-xl border border-slate-200 bg-slate-50/60 p-3 sm:p-4 dark:border-slate-800 dark:bg-slate-900/40 ${className}`}>
+      <figcaption className="mb-2 text-sm font-semibold text-slate-800 dark:text-slate-100">{title}</figcaption>
+      {children}
+    </figure>
   );
 }
 

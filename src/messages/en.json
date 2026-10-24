@@ -2905,7 +2905,8 @@
       "settings": "Setup",
       "settingDistance": "light {mm} mm from part",
       "settingExposure": "exposure {us} µs",
-      "sampleSource": "Source: {source}"
+      "sampleSource": "Source: {source}",
+      "sectionTitle": "How the light is mounted (section)"
     },
     "object": {
       "title": "Part, surface and colour",

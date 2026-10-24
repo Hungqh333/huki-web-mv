@@ -2905,7 +2905,8 @@
       "settings": "Setting",
       "settingDistance": "đèn cách vật {mm} mm",
       "settingExposure": "phơi sáng {us} µs",
-      "sampleSource": "Nguồn: {source}"
+      "sampleSource": "Nguồn: {source}",
+      "sectionTitle": "Cách lắp đèn (mặt cắt)"
     },
     "object": {
       "title": "Vật, bề mặt và màu",

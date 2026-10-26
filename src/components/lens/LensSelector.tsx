@@ -658,9 +658,9 @@ export function LensSelector({
                 <thead className="bg-slate-50 text-xs text-slate-500 dark:bg-slate-900 dark:text-slate-400">
                   <tr>
                     <th scope="col" className="py-2 pl-4 pr-3 font-medium">{t('list.colLens')}</th>
-                    <th scope="col" className="py-2 pr-3 font-medium">{t('list.colOptic')}</th>
-                    <th scope="col" className="py-2 pr-3 font-medium">{t('list.colFov')}</th>
-                    <th scope="col" className="py-2 pr-3 font-medium" title={t('list.realWdNote')}>
+                    <th scope="col" className="py-2 pr-6 font-medium">{t('list.colOptic')}</th>
+                    <th scope="col" className="py-2 pr-6 font-medium">{t('list.colFov')}</th>
+                    <th scope="col" className="py-2 pr-6 font-medium" title={t('list.realWdNote')}>
                       {t('list.colRealWd')}
                     </th>
                     <th scope="col" className="py-2 pr-3 font-medium">{t('list.colMmPerPx')}</th>
@@ -819,12 +819,12 @@ function LensRow({ candidate: c, line, open, onToggle }: { candidate: LensCandid
             </div>
           ) : null}
         </td>
-        <td className="py-2 pr-3 tabular-nums">
+        <td className="py-2 pr-6 whitespace-nowrap tabular-nums">
           {optic}
           {c.beta !== null && lens.lensType !== 'telecentric' && lens.focalLengthMm !== null ? <div className={NOTE_CLASS}>β {show(c.beta, 4)}</div> : null}
         </td>
-        <td className="py-2 pr-3 tabular-nums">{c.fovLongMm === null ? '—' : line ? `${show(c.fovLongMm, 1)} mm` : `${show(c.fovLongMm, 1)} × ${show(c.fovShortMm, 1)}`}</td>
-        <td className="py-2 pr-3 tabular-nums">
+        <td className="py-2 pr-6 whitespace-nowrap tabular-nums">{c.fovLongMm === null ? '—' : line ? `${show(c.fovLongMm, 1)} mm` : `${show(c.fovLongMm, 1)} × ${show(c.fovShortMm, 1)}`}</td>
+        <td className="py-2 pr-6 whitespace-nowrap tabular-nums">
           <RealWdCell realWd={c.realWd} />
         </td>
         <td className="py-2 pr-3 tabular-nums">{show(c.mmPerPx, 4)}</td>
@@ -843,11 +843,11 @@ function LensRow({ candidate: c, line, open, onToggle }: { candidate: LensCandid
         <tr className="bg-slate-50/60 dark:bg-slate-900/60">
           <td colSpan={8} className="px-4 py-3">
             <ul className="space-y-2">
-              {c.realWd?.kind === 'focal' ? (
+              {/* Công thức WD thật chỉ cho admin; chú thích đã có ở chân bảng. */}
+              {c.realWd?.kind === 'focal' && showFormulas ? (
                 <li className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                   <span className="text-sm font-medium text-slate-800 dark:text-slate-200">{t('list.colRealWd')} · OPT-012</span>
-                  {showFormulas ? <span className="font-mono text-xs text-slate-500 dark:text-slate-400">{renderFormula(c.realWd.formula, (key) => tv(`formulaTerms.${key}`))}</span> : null}
-                  <span className="w-full text-sm text-slate-600 dark:text-slate-300">{t('list.realWdNote')}</span>
+                  <span className="font-mono text-xs text-slate-500 dark:text-slate-400">{renderFormula(c.realWd.formula, (key) => tv(`formulaTerms.${key}`))}</span>
                 </li>
               ) : null}
               {c.checks.map((check, i) => (

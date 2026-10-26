@@ -52,6 +52,8 @@ export const ENGINE_PARAMS = [
   { key: 'tubeLengthToFocalWarn', group: 'optics', default: 1, min: 0.1, max: 5, step: 0.1, unit: '× f' },
   { key: 'tubeMaxSegments', group: 'optics', default: 3, min: 1, max: 10, step: 1 },
   { key: 'converterMaxFactor', group: 'optics', default: 2, min: 1.1, max: 4, step: 0.1, unit: '×' },
+  // LNS-005 (2026-10-26) — trang Chọn ống kính: vùng nhìn của ống rộng hơn vùng cần quá bấy nhiêu lần (trục sát nhất) thì loại.
+  { key: 'lensFovMaxRatio', group: 'optics', default: 1.5, min: 1.05, max: 10, step: 0.05, unit: '×' },
   // THR-003 — dư dưới tỉ lệ này của nhịp là mỏng; thời gian xử lý giả định khi chưa đo.
   { key: 'cycleMinMargin', group: 'throughput', default: 0.3, min: 0, max: 0.9, step: 0.05 },
   { key: 'processMs', group: 'throughput', default: 300, min: 10, max: 5000, step: 10, unit: 'ms' },

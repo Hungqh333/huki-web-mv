@@ -345,7 +345,7 @@ export function pickTube(
      chính WD (thấu kính mỏng). `magnification` không còn dùng — giữ tham số cho chỗ gọi cũ. */
   const range =
     needed && focal !== null && lensMinWd !== null && req.workingDistanceMm !== null
-      ? tubeLengthRange(focal, lensMinWd, req.workingDistanceMm)
+      ? tubeLengthRange(focal, lensMinWd, req.workingDistanceMm, specNumber(req.lens!.spec, 'front_focal_mm') ?? 0)
       : null;
   const requiredLengthMm = range ? Math.ceil(range.minMm * 10) / 10 : null;
   const requiredMaxMm = range ? Math.floor(range.maxMm * 10) / 10 : null;

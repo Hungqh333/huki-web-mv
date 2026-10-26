@@ -3,6 +3,7 @@ import { getTranslations } from 'next-intl/server';
 import { PanelHeader } from '@/components/ui/PanelHeader';
 import { deleteComponentAction } from '@/app/actions/components';
 import { DeleteButton } from '@/components/admin/DeleteButton';
+import { FrontFocalImport } from '@/components/admin/FrontFocalImport';
 import { COMPONENT_KINDS, SPEC_FIELDS, type Component } from '@/lib/components/specs';
 import { createClient } from '@/lib/supabase/server';
 import { fetchAllRows } from '@/lib/components/fetchAll';
@@ -66,6 +67,9 @@ export default async function AdminComponentsPage({
       {saved ? <Flash tone="ok" text={t('saved')} /> : null}
       {deleted ? <Flash tone="ok" text={t('deleted')} /> : null}
       {error ? <Flash tone="error" text={error.message} /> : null}
+
+      {/* Nhập sF hàng loạt cho ống kính (chốt 2026-10-26 Q2). */}
+      <FrontFocalImport />
 
       <nav aria-label={t('filterLabel')} className="mt-6 flex flex-wrap gap-2">
         <FilterChip href="/admin/linh-kien" active={!activeKind} label={t('allKinds')} />

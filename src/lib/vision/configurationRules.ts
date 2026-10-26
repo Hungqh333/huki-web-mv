@@ -93,6 +93,8 @@ export type ConfigLens = {
   resolutionLpMm: number | null;
   wdMinMm: number | null;
   wdMaxMm: number | null;
+  /** sF: mặt trước ống → tiêu điểm trước (mm, có thể âm); chưa khai → 0 (chốt 2026-10-26). */
+  frontFocalMm?: number | null;
 };
 
 export type ConfigPc = {
@@ -138,6 +140,7 @@ export function lensFromComponent(component: Component): ConfigLens {
     resolutionLpMm: specNumber(spec, 'resolution_lp_mm'),
     wdMinMm: specNumber(spec, 'wd_min_mm'),
     wdMaxMm: specNumber(spec, 'wd_max_mm'),
+    frontFocalMm: specNumber(spec, 'front_focal_mm'),
   };
 }
 
@@ -187,15 +190,38 @@ export function mountFit(lensMount: string, cameraMount: string): 'ok' | 'spacer
   return lensMount === 'C' && cameraMount === 'CS' ? 'spacer' : 'mismatch';
 }
 
-/** Độ phóng đại của ống thường ở khoảng cách làm việc: β = f ÷ (WD − f). */
-export function entocentricMagnification(focalLengthMm: number, workingDistanceMm: number): number | null {
-  if (!(focalLengthMm > 0) || !(workingDistanceMm > focalLengthMm)) return null;
-  return focalLengthMm / (workingDistanceMm - focalLengthMm);
+/*
+ * Độ phóng đại ống thường theo khoảng cách làm việc — chốt 2026-10-26 (Q1–Q6), đối chiếu Edmund
+ * Optics, The Imaging Source, Hikrobot, STEMMER, Schneider, Basler. WD đo từ MẶT TRƯỚC ống (như
+ * datasheet ghi MOD). Công thức Newton:
+ *
+ *   β = f ÷ x,   x = khoảng cách vật → tiêu điểm trước = WD − sF
+ *
+ * sF = mặt trước ống → tiêu điểm trước (Basler ghi "front focal length sF"); ống chưa khai sF → 0
+ * ⇒ β = f ÷ WD — đúng công thức nhanh "f = cảm biến × WD ÷ vùng nhìn" của các hãng.
+ * Trước 2026-10-26 dùng β = f ÷ (WD − f): coi tiêu điểm trước cách mặt trước đúng f → β lớn hơn
+ * thật, vùng nhìn hẹp hơn thật (ống 25 mm ở WD 300 thiếu ~7–12 % so với Hikrobot).
+ */
+export function entocentricMagnification(focalLengthMm: number, workingDistanceMm: number, frontFocalMm = 0): number | null {
+  const x = workingDistanceMm - frontFocalMm;
+  if (!(focalLengthMm > 0) || !(x > 0)) return null;
+  return focalLengthMm / x;
 }
 
-/** Tiêu cự cho độ phóng đại β ở khoảng cách WD: f = WD × β ÷ (1 + β). */
-export function focalLengthFor(beta: number, workingDistanceMm: number): number {
-  return (workingDistanceMm * beta) / (1 + beta);
+/** Tiêu cự cho độ phóng đại β ở khoảng cách WD: f = β × (WD − sF). */
+export function focalLengthFor(beta: number, workingDistanceMm: number, frontFocalMm = 0): number {
+  return beta * (workingDistanceMm - frontFocalMm);
+}
+
+/** Khoảng cách làm việc để ống f cho độ phóng đại β: WD = f ÷ β + sF. */
+export function workingDistanceFor(focalLengthMm: number, beta: number, frontFocalMm = 0): number {
+  return focalLengthMm / beta + frontFocalMm;
+}
+
+/** sF suy từ một cặp số trên datasheet (WD và β ở WD đó): sF = WD − f ÷ β. */
+export function frontFocalFromDatasheet(focalLengthMm: number, workingDistanceMm: number, beta: number): number | null {
+  if (!(focalLengthMm > 0) || !(workingDistanceMm > 0) || !(beta > 0)) return null;
+  return workingDistanceMm - focalLengthMm / beta;
 }
 
 /** F cần để độ sâu trường ảnh đạt DOF: F = DOF × β² ÷ (2 × c × (1 + β)). */
@@ -284,7 +310,7 @@ export function evaluateConfiguration(input: ConfigurationInput): RuleResult[] {
       lens.lensType === 'telecentric'
         ? lens.magnification
         : lens.focalLengthMm !== null && wd !== null
-          ? entocentricMagnification(lens.focalLengthMm, wd)
+          ? entocentricMagnification(lens.focalLengthMm, wd, lens.frontFocalMm ?? 0)
           : null;
     const optic = lens.lensType === 'telecentric' ? `${fmt(lens.magnification ?? 0, 3)}×` : `f ${fmt(lens.focalLengthMm ?? 0, 1)} mm`;
 

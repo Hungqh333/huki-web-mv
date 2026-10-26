@@ -244,7 +244,8 @@ test('ước lượng tiêu cự và khoảng cách làm việc', () => {
   const lens = estimateLens({ sensorSizeMm: 8.8, fovMm: 100, workingDistanceMm: 300 })!;
 
   assert.equal(lens.beta, 0.088);
-  assert.equal(lens.focalLengthMm, 24.26);
+  // f = β × WD (WD từ mặt trước ống, chốt 2026-10-26)
+  assert.equal(lens.focalLengthMm, 26.4);
   // Suy nguoc lai phai ra dung khoang cach ban dau.
   assert.equal(Math.round(lens.workingDistanceMm), 300);
 });
@@ -540,10 +541,10 @@ test('cảm biến 1.1" tính được tiêu cự, không còn rơi khỏi bản
   assert.equal(sensor.widthMm, 14.13);
   assert.equal(sensor.heightMm, 10.35);
 
-  // FOV 380 mm, WD 300 mm -> beta = 14,13/380 = 0,0372; f = 300*beta/(1+beta)
+  // FOV 380 mm, WD 300 mm -> beta = 14,13/380 = 0,0372; f = beta × WD
   const lens = estimateLens({ sensorSizeMm: sensor.widthMm, fovMm: 380, workingDistanceMm: 300 })!;
   assert.equal(lens.beta, 0.0372);
-  assert.equal(lens.focalLengthMm, 10.76);
+  assert.equal(lens.focalLengthMm, 11.16);
 
   /* Quan trọng hơn con số: camera 1.1" đi qua bộ phân tích phải SINH RA phép
      kiểm tiêu cự. Trước đây tra bảng không thấy format thì khối quang học lặng

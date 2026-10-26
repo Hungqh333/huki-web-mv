@@ -3,8 +3,8 @@
  *
  * Bài chuẩn: vật 60 × 50, 1 camera, lỗi 0,2 mm tương phản cao → 0,0667 mm/px, WD 300.
  * Camera 2448 × 2048 × 3,45 µm. Dư độ phân giải theo tiêu cự (β = f ÷ (300 − f)):
- *   dư = 0,0667 × β ÷ 0,00345 → f16 1,09 · f18 1,23 · f20 1,38 · f25 1,76 · f35 2,55
- * → f16 không vào mức nào, f18 Tiết kiệm, f20 + f25 Đề xuất, f35 Hiệu năng cao.
+ *   dư = 0,0667 × β ÷ 0,00345 → f17 1,09 · f19 1,23 · f21 1,38 · f27 1,76 · f40 2,55
+ * → f17 không vào mức nào, f19 Tiết kiệm, f21 + f27 Đề xuất, f40 Hiệu năng cao.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -41,13 +41,13 @@ const CAMERA_SPEC = {
 const lens = (f: number, extra: Partial<Component> = {}, spec: Record<string, unknown> = {}) =>
   make('lens', `f${f}`, { lens_type: 'fixed', focal_length_mm: f, image_circle: '2/3', mount: 'C', f_number_min: 1.4, f_number_max: 16, resolution_lp_mm: 160, ...spec }, extra);
 
-const catalogOf = (overrides: { f18?: Record<string, unknown> } = {}) => [
+const catalogOf = (overrides: { f19?: Record<string, unknown> } = {}) => [
   make('camera', 'cam', CAMERA_SPEC, { price_vnd: 10_000_000, lead_time_days: 0 }),
-  lens(16, { price_vnd: 1_000_000, lead_time_days: 0 }),
-  lens(18, { price_vnd: 3_000_000, lead_time_days: 0 }, overrides.f18),
-  lens(20, { price_vnd: 1_000_000, lead_time_days: 0 }),
-  lens(25, { price_vnd: 5_000_000, lead_time_days: 0 }),
-  lens(35, { price_vnd: 8_000_000, lead_time_days: 0 }),
+  lens(17, { price_vnd: 1_000_000, lead_time_days: 0 }),
+  lens(19, { price_vnd: 3_000_000, lead_time_days: 0 }, overrides.f19),
+  lens(21, { price_vnd: 1_000_000, lead_time_days: 0 }),
+  lens(27, { price_vnd: 5_000_000, lead_time_days: 0 }),
+  lens(40, { price_vnd: 8_000_000, lead_time_days: 0 }),
   make('light', 'dome', { light_type: 'dome', color: 'white', size_mm: 100 }, { price_vnd: 2_000_000 }),
   make('controller', 'pc', { cpu_cores: 8, ram_gb: 32, lan_ports: 4, pcie_slots: 2 }, { price_vnd: 20_000_000 }),
 ];
@@ -71,20 +71,20 @@ test('trọng số §8.2 cộng lại bằng 1', () => {
 
 test('ba mức chia theo khoảng dư độ phân giải trên mm/px; dư < 1,1 không vào mức nào', () => {
   const s = solve();
-  assert.equal(level(s, 'economy').lens?.component.model, 'f18');
-  assert.ok(Math.abs(level(s, 'economy').margin! - 1.233) < 0.005);
-  assert.ok(['f20', 'f25'].includes(level(s, 'recommended').lens!.component.model));
-  assert.equal(level(s, 'highPerformance').lens?.component.model, 'f35');
+  assert.equal(level(s, 'economy').lens?.component.model, 'f19');
+  assert.ok(Math.abs(level(s, 'economy').margin! - 1.224) < 0.005);
+  assert.ok(['f21', 'f27'].includes(level(s, 'recommended').lens!.component.model));
+  assert.equal(level(s, 'highPerformance').lens?.component.model, 'f40');
   const used = s.levels.map((l) => l.lens?.component.model);
-  assert.ok(!used.includes('f16'), 'f16 du 1,09 < 1,1');
+  assert.ok(!used.includes('f17'), 'f17 du 1,095 < 1,1');
   // mm/px thực = 0,0667 ÷ dư
   assert.ok(Math.abs(level(s, 'highPerformance').mmPerPx! - 0.2 / 3 / level(s, 'highPerformance').margin!) < 1e-9);
 });
 
-test('trong một khoảng, điểm mềm quyết định: f20 rẻ hơn thắng f25 dư hơn', () => {
+test('trong một khoảng, điểm mềm quyết định: f21 rẻ hơn thắng f27 dư hơn', () => {
   const s = solve();
   const rec = level(s, 'recommended');
-  assert.equal(rec.lens?.component.model, 'f20');
+  assert.equal(rec.lens?.component.model, 'f21');
   const price = rec.score!.parts.find((p) => p.criterion === 'price')!;
   assert.equal(price.value, 1, 'cap re nhat trong cac cap dat');
   const local = rec.score!.parts.find((p) => p.criterion === 'localSupport')!;
@@ -93,7 +93,7 @@ test('trong một khoảng, điểm mềm quyết định: f20 rẻ hơn thắng
 
 test('chi phí: giá × số lượng; thiếu giá một món thì không cộng tổng', () => {
   const s = solve();
-  // 1 camera: 10 + 1 (f20) + 2 (đèn) + 20 (máy tính) = 33 triệu
+  // 1 camera: 10 + 1 (f21) + 2 (đèn) + 20 (máy tính) = 33 triệu
   assert.equal(level(s, 'recommended').cost?.total, 33_000_000);
   const two = solve({ 'system.cameraCount': 2, 'object.sizeX': 120 });
   const cost = two.levels.find((l) => l.status === 'ok')!.cost!;
@@ -106,7 +106,7 @@ test('chi phí: giá × số lượng; thiếu giá một món thì không cộn
 });
 
 test('Tiết kiệm bị chặn khi cấu hình có MARGINAL (ống lp/mm thấp) — hiện lý do, không hiện phương án', () => {
-  const s = solve({}, catalogOf({ f18: { resolution_lp_mm: 100 } }));
+  const s = solve({}, catalogOf({ f19: { resolution_lp_mm: 100 } }));
   const economy = level(s, 'economy');
   assert.equal(economy.status, 'blocked');
   assert.equal(economy.camera, null, 'khong bay phuong an rui ro');
@@ -115,25 +115,25 @@ test('Tiết kiệm bị chặn khi cấu hình có MARGINAL (ống lp/mm thấp
 });
 
 test('Tiết kiệm chọn cặp KHÔNG rủi ro khi cặp điểm cao nhất có rủi ro (chốt 2026-10-17, kho thật)', () => {
-  // f18 rẻ nhưng lp/mm thấp (MARGINAL) → điểm cao nhất; bản f18 sạch đắt hơn cùng khoảng dư.
+  // f19 rẻ nhưng lp/mm thấp (MARGINAL) → điểm cao nhất; bản f19 sạch đắt hơn cùng khoảng dư.
   const catalog = [
-    ...catalogOf({ f18: { resolution_lp_mm: 100 } }).map((c) => (c.model === 'f18' ? { ...c, price_vnd: 500_000 } : c)),
-    make('lens', 'f18clean', { lens_type: 'fixed', focal_length_mm: 18, image_circle: '2/3', mount: 'C', f_number_min: 1.4, f_number_max: 16, resolution_lp_mm: 160 }, { price_vnd: 9_000_000, lead_time_days: 0 }),
+    ...catalogOf({ f19: { resolution_lp_mm: 100 } }).map((c) => (c.model === 'f19' ? { ...c, price_vnd: 500_000 } : c)),
+    make('lens', 'f19clean', { lens_type: 'fixed', focal_length_mm: 19, image_circle: '2/3', mount: 'C', f_number_min: 1.4, f_number_max: 16, resolution_lp_mm: 160 }, { price_vnd: 9_000_000, lead_time_days: 0 }),
   ];
   const economy = level(solve({}, catalog), 'economy');
   assert.equal(economy.status, 'ok', 'con cap sach thi khong chan');
-  assert.equal(economy.lens?.component.model, 'f18clean');
+  assert.equal(economy.lens?.component.model, 'f19clean');
   assert.ok(!economy.risks.some((r) => r.ruleId === 'OPT-003'));
 });
 
 test('Tiết kiệm dư 1,1–1,2: KHÔNG tự chặn bởi chính hệ số dư OPT-001 (lỗi tìm ra khi chạy thử C9)', () => {
-  // f17 ở 300 mm: β = 17 ÷ 283 → 0,00345 ÷ 0,0601 = 0,0574 mm/px → dư 0,0667 ÷ 0,0574 ≈ 1,16.
+  // f19 ở 300 mm: β = 18 ÷ 300 = 0,06 → 0,00345 ÷ 0,06 = 0,0575 mm/px → dư 0,0667 ÷ 0,0575 ≈ 1,16.
   // Bảng điểm coi 1,0–1,2 là MARGINAL; trước khi sửa, Tiết kiệm hiện "KHÔNG KHẢ DỤNG — OPT-001 Đạt".
-  const catalog = catalogOf().map((c) => (c.model === 'f18' ? lens(17, { price_vnd: 3_000_000, lead_time_days: 0 }) : c));
+  const catalog = catalogOf().map((c) => (c.model === 'f19' ? lens(18, { price_vnd: 3_000_000, lead_time_days: 0 }) : c));
   const economy = level(solve({}, catalog), 'economy');
   assert.ok(Math.abs(economy.margin! - 1.16) < 0.01, String(economy.margin));
   assert.equal(economy.status, 'ok');
-  assert.equal(economy.lens?.component.model, 'f17');
+  assert.equal(economy.lens?.component.model, 'f18');
   assert.ok(!economy.risks.some((r) => r.ruleId === 'OPT-001'), 'OPT-001 dat khong phai rui ro');
 });
 
@@ -148,7 +148,7 @@ test('bảng Yêu cầu có FAIL → Tiết kiệm bị chặn; mức khác mang
 });
 
 test('khoảng không có cặp nào → rỗng, không bịa', () => {
-  const onlyF25 = catalogOf().filter((c) => c.kind !== 'lens' || c.model === 'f25');
+  const onlyF25 = catalogOf().filter((c) => c.kind !== 'lens' || c.model === 'f27');
   const s = solve({}, onlyF25);
   assert.deepEqual(s.levels.map((l) => l.status), ['empty', 'ok', 'empty']);
 });

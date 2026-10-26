@@ -105,10 +105,11 @@ test('sửa ngưỡng đổi đúng phương án: mức Tiết kiệm, thời gi
     const analysis = analyseRequirement(s11, params);
     return buildSolutionLevels(analysis, filterEquipment(analysis, catalog), catalog).levels;
   };
-  const economy = levels(DEFAULT_ENGINE_PARAMS).find((l) => l.key === 'economy')!;
-  assert.equal(economy.status, 'ok', 'S-11 co phuong an Tiet kiem du 1,16');
-  // Nâng cận dưới Tiết kiệm lên 1,2 → cặp dư 1,16 rơi khỏi mức.
-  assert.notEqual(levels(withParams({ levelEconomyMin: 1.2 })).find((l) => l.key === 'economy')!.margin, economy.margin);
+  // S-11 với kho mẫu: Đề xuất dư 1,64 (β = f ÷ WD, chốt 2026-10-26 — Tiết kiệm nay rỗng: cặp gần nhất chỉ dư 1,09).
+  const recommended = levels(DEFAULT_ENGINE_PARAMS).find((l) => l.key === 'recommended')!;
+  assert.equal(recommended.status, 'ok', 'S-11 co phuong an De xuat du 1,64');
+  // Nâng cận dưới Đề xuất lên 1,7 → cặp dư 1,64 rơi khỏi mức.
+  assert.notEqual(levels(withParams({ levelRecommendedMin: 1.7 })).find((l) => l.key === 'recommended')!.margin, recommended.margin);
   // Thời gian xử lý giả định đi thẳng vào công thức THR-003 của phương án.
   const thr = (params: EngineParams) => levels(params).find((l) => l.status === 'ok')!.lens!.results.find((r) => r.ruleId === 'THR-003')!.formula;
   assert.match(thr(DEFAULT_ENGINE_PARAMS), /\+ 300\* \+/);

@@ -1304,7 +1304,8 @@
         "pick_mode": "Cách thêm vào danh mục",
         "accessory_type": "Loại phụ kiện",
         "accessory_for": "Lắp cho",
-        "qty_basis": "Số lượng tính theo"
+        "qty_basis": "Số lượng tính theo",
+        "front_focal_mm": "Tiêu điểm trước sF (từ mặt trước ống)"
       },
       "errors": {
         "notAdmin": "Chỉ admin mới thực hiện được thao tác này.",
@@ -1313,6 +1314,41 @@
         "invalidKind": "Loại linh kiện không hợp lệ.",
         "invalidSource": "Nguồn thông số không hợp lệ.",
         "invalidNumber": "Giá trị phải là số."
+      },
+      "frontFocal": {
+        "title": "Tính sF từ datasheet",
+        "hint": "Nhập WD (từ mặt trước ống) và độ phóng đại β ở WD đó; hoặc WD + vùng nhìn + cạnh cảm biến cùng chiều. sF = WD − f ÷ β. Cần điền tiêu cự ở trên trước.",
+        "wd": "WD (mm)",
+        "beta": "β ở WD đó",
+        "fov": "hoặc vùng nhìn (mm)",
+        "sensor": "+ cạnh cảm biến (mm)",
+        "compute": "Tính sF",
+        "fill": "Điền vào ô sF",
+        "noFocal": "Điền tiêu cự trước."
+      },
+      "frontFocalImport": {
+        "title": "Nhập sF hàng loạt cho ống kính",
+        "hint": "Mỗi dòng một ống: cột ma (mã hoặc model trong kho) và MỘT trong ba cách: sf_mm có sẵn; hoặc wd_mm + beta từ datasheet; hoặc wd_mm + fov_mm + sensor_mm (cạnh cảm biến cùng chiều với vùng nhìn). sF = WD − f ÷ β. WD đo từ mặt trước ống. Ngăn cách bằng dấu phẩy, hoặc chấm phẩy nếu dùng dấu phẩy thập phân.",
+        "example": "ma,sf_mm,wd_mm,beta,fov_mm,sensor_mm\nMVL-MF2518M-5MPE,3.7,,,,\nC125-2522-5M-P,,500,0.048,,\nMA-ONG-TRONG-KHO,,300,,152,8.45",
+        "start": "Nhập",
+        "running": "Đang nhập…",
+        "done": "Đã ghi sF cho {ok} ống · bỏ qua {skipped} dòng",
+        "skippedLine": "Dòng {line} ({key}): {reason}",
+        "reasons": {
+          "noKey": "thiếu mã ống",
+          "noValue": "thiếu số (cần sf_mm, hoặc wd_mm + beta, hoặc wd_mm + fov_mm + sensor_mm)",
+          "badNumber": "số không hợp lệ",
+          "notFound": "không có ống này trong kho",
+          "ambiguous": "model trùng nhiều ống — dùng mã",
+          "noFocal": "ống chưa khai tiêu cự, không tính được sF",
+          "outOfRange": "sF quá lớn (quá ±500 mm) — kiểm lại đơn vị",
+          "db": "không ghi được"
+        },
+        "errors": {
+          "notAdmin": "Chỉ admin được nhập.",
+          "empty": "File trống.",
+          "db": "Không đọc được kho."
+        }
       }
     },
     "formulas": {
@@ -1420,7 +1456,8 @@
         "bwCameraLinkBase": "Camera Link Base",
         "bwCameraLinkMedium": "Camera Link Medium",
         "bwCameraLinkFull": "Camera Link Full",
-        "bwCameraLinkDeca": "Camera Link Deca"
+        "bwCameraLinkDeca": "Camera Link Deca",
+        "lensFovMaxRatio": "Chọn ống kính — vùng nhìn rộng tối đa so với vùng cần"
       },
       "errors": {
         "fix": "Có ô chưa hợp lệ — xem dòng báo đỏ.",
@@ -2683,7 +2720,7 @@
   "lensSelector": {
     "title": "Chọn ống kính",
     "subtitle": "Nhập camera, vùng nhìn và khoảng cách làm việc → tiêu cự cần, F# giới hạn, và các ống kính trong kho lắp được.",
-    "why": "Mọi con số ở đây dùng đúng công thức của Thiết kế hệ thống (luật OPT-001…005), nên một cặp camera + ống kính không bao giờ ra hai kết luận khác nhau ở hai trang. Tiêu cự là ước lượng thấu kính mỏng — trước khi đặt hàng, kiểm lại bảng khoảng cách làm việc trong datasheet.",
+    "why": "Mọi con số ở đây dùng đúng công thức của Thiết kế hệ thống (luật OPT-001…005), nên một cặp camera + ống kính không bao giờ ra hai kết luận khác nhau ở hai trang. WD tính từ mặt trước ống; ống chưa khai tiêu điểm trước sF thì dùng công thức nhanh β = f ÷ WD — trước khi đặt hàng, kiểm lại bảng khoảng cách làm việc trong datasheet.",
     "emptyCatalog": "Kho chưa có ống kính nào. Thêm ở Quản trị → Linh kiện.",
     "camera": {
       "title": "Camera",
@@ -2728,7 +2765,7 @@
       "beta": "Độ phóng đại β",
       "betaNote": "Lấy trục giới hạn để vật lọt trọn khung ảnh.",
       "focal": "Tiêu cự lý tưởng",
-      "focalNote": "Ước lượng thấu kính mỏng; chọn ống ngắn hơn gần nhất.",
+      "focalNote": "Ước lượng f = β × WD; chọn ống ngắn hơn gần nhất.",
       "fov": "Vùng nhìn thật",
       "mmPerPx": "mm/px",
       "fMax": "F# giới hạn nhiễu xạ",
@@ -2752,7 +2789,7 @@
       "missingTele": "Chọn camera và nhập vùng nhìn để tính.",
       "focalGiven": "Tiêu cự đã nhập",
       "wdComputed": "Khoảng cách làm việc",
-      "wdComputedNote": "Ước lượng thấu kính mỏng, tính từ mặt phẳng chính — kiểm lại bảng WD của hãng.",
+      "wdComputedNote": "Ước lượng WD = f ÷ β, tính từ mặt trước ống — kiểm lại bảng WD của hãng.",
       "aov": "Góc nhìn tại WD",
       "aovNote": "Tính tại khoảng cách làm việc. Datasheet thường ghi góc ở vô cực nên lệch vài %.",
       "betaMax": "β tối đa",
@@ -2760,7 +2797,7 @@
       "fMaxNoteTele": "F# làm việc (telecentric ghi sẵn trên datasheet): đĩa Airy không quá 2 pixel.",
       "focalPrime": "Tiêu cự ống gốc lý tưởng",
       "focalGivenPrime": "Tiêu cự ống gốc đã nhập",
-      "focalPrimeNote": "Tiêu cự của ống trước bộ nhân {k}× — cả hệ dài gấp {k}. Ước lượng thấu kính mỏng.",
+      "focalPrimeNote": "Tiêu cự của ống trước bộ nhân {k}× — cả hệ dài gấp {k}. Ước lượng f = β × WD.",
       "fMaxNotePrime": "Số trên vòng khẩu ống gốc: F# cả hệ = {k} × N, F# hiệu dụng không quá 2 pixel Airy."
     },
     "list": {
@@ -2770,30 +2807,38 @@
       "showMore": "Hiện thêm {n}",
       "empty": "Không có ống nào đạt với bộ lọc này.",
       "colLens": "Ống kính",
-      "colOptic": "f / β",
-      "colFov": "Vùng nhìn thật",
       "colMmPerPx": "mm/px",
       "colPixelUse": "Pixel dùng",
       "colFSet": "F nên đặt",
       "colStatus": "Kết luận",
       "details": "Chi tiết",
       "hide": "Ẩn",
-      "unknownCount": "thiếu {n} thông số",
       "datasheet": "Datasheet",
-      "withTube": "+ ống nối {pieces}{total} mm",
-      "withConverter": "+ bộ nhân {k}×",
       "notInStock": "chưa có trong kho",
       "accessoryHint": "Ống bị loại được thử thêm ống nối / bộ nhân — luôn ở mức Cảnh báo, xếp sau ống đạt trơn.",
       "metaAccessory": "{n} cần phụ kiện",
       "onlyAccessory": "Chỉ ống cần phụ kiện",
       "manualHint": "Đang kiểm mọi ống với {desc} đã khai — tắt gợi ý phụ kiện tự động.",
       "colRealWd": "WD thật",
-      "realWdNote": "WD thật: khoảng cách để ống vừa khít vùng nhìn (OPT-012), ước lượng thấu kính mỏng — đo lại khi lắp. Không đổi kết luận.",
+      "realWdNote": "WD thật: khoảng cách từ mặt trước ống để vừa khít vùng nhìn (OPT-012), WD = f ÷ β + sF — đo lại khi lắp. Không đổi kết luận.",
       "realWdDelta": "lệch {delta} mm",
       "realWdSame": "khớp WD nhập",
       "realWdFixed": "theo hãng",
       "realWdBelowMod": "< MOD {mod} mm",
-      "realWdOutsideTube": "ngoài dải ống nối {min}–{max} mm"
+      "realWdOutsideTube": "ngoài dải ống nối {min}–{max} mm",
+      "showResults": "Hiển thị kết quả",
+      "stale": "Thông số đã đổi — bấm Hiển thị kết quả để tính lại.",
+      "colFocal": "Tiêu cự",
+      "colWd": "WD (mm)",
+      "colBeta": "Độ phóng đại",
+      "colTube": "Ống nối (mm)",
+      "colFovW": "Vùng nhìn rộng (mm)",
+      "colFovH": "Vùng nhìn cao (mm)",
+      "colCircle": "Vòng ảnh",
+      "colMount": "Ngàm",
+      "fSetNeedDh": "nhập dải chiều cao vật để tính",
+      "footNote": "Kết quả lý thuyết, nên thử thực tế. Ống nối có thể giảm chất lượng ảnh. ≈ : ống chưa khai sF — vùng nhìn có thể lệch tới ±10 %.",
+      "approxNote": "≈ ống chưa khai sF (tiêu điểm trước) — vùng nhìn tính với sF = 0, có thể lệch tới ±10 % so với số của hãng."
     },
     "status": {
       "pass": "Đạt",
@@ -2822,7 +2867,7 @@
       "imageCircleTooSmall": "Vòng ảnh nhỏ hơn đường chéo cảm biến: góc ảnh bị tối/đen.",
       "wdRangeUnknown": "Ống chưa khai dải khoảng cách làm việc.",
       "wdOutOfRange": "Telecentric chỉ nét trong {min}–{max} mm.",
-      "wdBelowFocal": "Khoảng cách làm việc nhỏ hơn tiêu cự: không lấy nét được.",
+      "wdBelowFocal": "Khoảng cách làm việc không lớn hơn sF (tiêu điểm trước): không lấy nét được.",
       "wdBelowMod": "Gần hơn khoảng cách lấy nét tối thiểu {mod} mm — cần vòng nối (extension tube) hoặc ống macro.",
       "modUnknown": "Ống chưa khai khoảng cách lấy nét tối thiểu.",
       "focalUnknown": "Ống chưa khai tiêu cự hay độ phóng đại.",
@@ -2855,7 +2900,8 @@
       "tubeModUnknown": "Ống chưa khai MOD — không tính được giới hạn gần khi có ống nối {total} mm (xa nhất {wdMax} mm). Kiểm datasheet.",
       "converterManual": "Bộ nhân {k}× đã khai: tiêu cự, F# và vòng ảnh nhân {k}, lp/mm chia {k}, vùng nhìn hẹp lại {k} lần. MOD không đổi ({mod} mm).",
       "converterAboveMax": "Bộ nhân {k}× vượt mức tối đa {max}× — ảnh mềm và tối rõ rệt.",
-      "accessoryLightTotal": "Ống nối + bộ nhân cộng dồn tối đi khoảng {stops} stop (ngưỡng {limit}) — tăng đèn hoặc phơi sáng lâu hơn, coi chừng nhoè chuyển động."
+      "accessoryLightTotal": "Ống nối + bộ nhân cộng dồn tối đi khoảng {stops} stop (ngưỡng {limit}) — tăng đèn hoặc phơi sáng lâu hơn, coi chừng nhoè chuyển động.",
+      "fovTooWide": "Vùng nhìn rộng gấp {ratio}× vùng cần (giới hạn {max}×) — dùng quá ít pixel cho vật; chọn ống tiêu cự dài hơn hoặc đặt gần hơn."
     },
     "reset": "Đặt lại",
     "tabs": {

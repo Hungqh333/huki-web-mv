@@ -1,15 +1,17 @@
 'use client';
 
 import { ActionLink } from '@/components/ui/ActionLink';
+import { Icon } from '@/components/ui/Icon';
 import { Fragment, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { NOTE_CLASS, Panel } from '@/components/ui/PanelHeader';
-import { MOUNTS, SENSOR_FORMAT_KEYS, specNumber, specString, type Component } from '@/lib/components/specs';
+import { MOUNTS, SENSOR_FORMAT_KEYS, sensorDiagonalMm, specNumber, specString, type Component } from '@/lib/components/specs';
 import { cameraFromComponent, lensFromComponent, type ConfigCamera } from '@/lib/vision/configurationRules';
 import {
   STANDARD_CONVERTER_FACTORS,
   STANDARD_TUBE_LENGTHS_MM,
   activeFixedAccessory,
+  lensNeed,
   selectLenses,
   solveGeometry,
   type GeometryMode,
@@ -231,9 +233,21 @@ export function LensSelector({
       : null;
   }, [camera, tele, line, geometry, fovW, fovH, wd, dh, mmpx, tab, accTube, accK]);
 
-  const result = useMemo(() => (input ? selectLenses(input, lenses, params) : null), [input, lenses, params]);
+  /* Khung "Thông số cần" tính ngay khi nhập; BẢNG ống chỉ tính khi bấm "Hiển thị kết quả"
+     (chốt 2026-10-26 Q2–Q3, theo luồng Lens Selector của Hikrobot). Đổi ô sau khi đã có bảng
+     → bảng mờ đi, nhắc bấm lại; không tự xoá. */
+  const need = useMemo(() => (input ? lensNeed(input) : null), [input]);
+  const inputKey = useMemo(() => JSON.stringify(input), [input]);
+  const [shown, setShown] = useState<{ key: string; input: LensSelectorInput } | null>(null);
+  const stale = shown !== null && shown.key !== inputKey;
+  const result = useMemo(() => (shown ? selectLenses(shown.input, lenses, params) : null), [shown, lenses, params]);
+  const showResults = () => {
+    if (!input) return;
+    setShown({ key: inputKey, input });
+    setLimit(PAGE);
+    setOpen(null);
+  };
 
-  const need = result?.need ?? null;
   const all = result?.candidates ?? [];
   const counts = { pass: 0, warn: 0, info: 0, fail: 0 } as Record<CheckStatus, number>;
   for (const c of all) counts[c.status]++;
@@ -286,6 +300,7 @@ export function LensSelector({
     setAccOpen(false);
     setLimit(PAGE);
     setOpen(null);
+    setShown(null);
   };
 
   // Số cho sơ đồ: vùng nhìn THẬT của β lý tưởng (≥ vật), WD và tiêu cự đang dùng.
@@ -619,8 +634,22 @@ export function LensSelector({
         </div>
       </Panel>
 
-      {/* ── Ống kính trong kho ── */}
+      {/* ── Nút Hiển thị kết quả (chốt 2026-10-26 Q2) ── */}
       {need ? (
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={showResults}
+            className="inline-flex items-center gap-2 rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700"
+          >
+            {t('list.showResults')}
+          </button>
+          {stale ? <span className="text-sm text-amber-700 dark:text-amber-300">{t('list.stale')}</span> : null}
+        </div>
+      ) : null}
+
+      {/* ── Ống kính trong kho ── */}
+      {result && shown ? (
         <Panel
           id="lens-list"
           title={t('list.title')}
@@ -648,36 +677,48 @@ export function LensSelector({
               </label>
             </div>
           }
-          bodyClassName=""
+          bodyClassName={stale ? 'opacity-50 transition-opacity' : 'transition-opacity'}
         >
           {visible.length === 0 ? (
             <p className={`px-4 py-4 sm:px-5 ${NOTE_CLASS}`}>{t('list.empty')}</p>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[820px] text-left text-sm">
+              <table className="w-full min-w-[1100px] text-left text-sm">
                 <thead className="bg-slate-50 text-xs text-slate-500 dark:bg-slate-900 dark:text-slate-400">
                   <tr>
-                    <th scope="col" className="py-2 pl-4 pr-3 font-medium">{t('list.colLens')}</th>
-                    <th scope="col" className="py-2 pr-6 font-medium">{t('list.colOptic')}</th>
-                    <th scope="col" className="py-2 pr-6 font-medium">{t('list.colFov')}</th>
-                    <th scope="col" className="py-2 pr-6 font-medium" title={t('list.realWdNote')}>
-                      {t('list.colRealWd')}
-                    </th>
-                    <th scope="col" className="py-2 pr-3 font-medium">{t('list.colMmPerPx')}</th>
-                    <th scope="col" className="py-2 pr-3 font-medium">{t('list.colPixelUse')}</th>
-                    <th scope="col" className="py-2 pr-3 font-medium">{t('list.colFSet')}</th>
+                    {/* Cột theo bảng kết quả của Hikrobot (chốt 2026-10-26 Q1, Q4); F nên đặt chỉ khi có dải chiều cao vật. */}
+                    <th scope="col" className="min-w-48 py-2 pl-4 pr-4 font-medium">{t('list.colLens')}</th>
+                    <th scope="col" className="py-2 pr-4 font-medium">{t('list.colFocal')}</th>
+                    <th scope="col" className="py-2 pr-4 font-medium">{t('list.colWd')}</th>
+                    <th scope="col" className="py-2 pr-4 font-medium">{t('list.colBeta')}</th>
+                    <th scope="col" className="py-2 pr-4 font-medium">{t('list.colTube')}</th>
+                    <th scope="col" className="py-2 pr-4 font-medium">{t('list.colFovW')}</th>
+                    <th scope="col" className="py-2 pr-4 font-medium">{t('list.colFovH')}</th>
+                    <th scope="col" className="py-2 pr-4 font-medium">{t('list.colCircle')}</th>
+                    <th scope="col" className="py-2 pr-4 font-medium">{t('list.colMount')}</th>
+                    <th scope="col" className="py-2 pr-4 font-medium">{t('list.colMmPerPx')}</th>
+                    {shown.input.heightVariationMm !== null ? <th scope="col" className="py-2 pr-4 font-medium">{t('list.colFSet')}</th> : null}
                     <th scope="col" className="py-2 pr-4 font-medium">{t('list.colStatus')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {visible.slice(0, limit).map((c) => (
-                    <LensRow key={c.component.id} candidate={c} line={line} open={open === c.component.id} onToggle={() => setOpen(open === c.component.id ? null : c.component.id)} />
+                    <LensRow
+                      key={c.component.id}
+                      candidate={c}
+                      line={shown.input.camera.cameraType === 'line'}
+                      wdMm={shown.input.workingDistanceMm}
+                      manualTubeMm={shown.input.fixedAccessory?.tubeMm ?? null}
+                      showFSet={shown.input.heightVariationMm !== null}
+                      open={open === c.component.id}
+                      onToggle={() => setOpen(open === c.component.id ? null : c.component.id)}
+                    />
                   ))}
                 </tbody>
               </table>
             </div>
           )}
-          {visible.length > 0 ? <p className={`border-t border-slate-100 px-4 py-2 sm:px-5 dark:border-slate-800 ${NOTE_CLASS}`}>{t('list.realWdNote')}</p> : null}
+          {visible.length > 0 ? <p className={`border-t border-slate-100 px-4 py-2 sm:px-5 dark:border-slate-800 ${NOTE_CLASS}`}>{t('list.footNote')}</p> : null}
           {visible.length > limit ? (
             <div className="border-t border-slate-100 px-4 py-3 sm:px-5 dark:border-slate-800">
               <button type="button" onClick={() => setLimit(limit + PAGE)} className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800">
@@ -784,66 +825,110 @@ function NeedItem({ label, value, formula, note, status }: { label: string; valu
   );
 }
 
-function LensRow({ candidate: c, line, open, onToggle }: { candidate: LensCandidate; line: boolean; open: boolean; onToggle: () => void }) {
+function LensRow({
+  candidate: c,
+  line,
+  wdMm,
+  manualTubeMm,
+  showFSet,
+  open,
+  onToggle,
+}: {
+  candidate: LensCandidate;
+  line: boolean;
+  /** WD đang dùng để tính (nhập hoặc tự tính) — cột WD của bảng (Q1). */
+  wdMm: number | null;
+  /** Ống nối anh khai tay (áp cho mọi ống). */
+  manualTubeMm: number | null;
+  showFSet: boolean;
+  open: boolean;
+  onToggle: () => void;
+}) {
   const t = useTranslations('lensSelector');
   const tv = useTranslations('selector.vision');
   const showFormulas = useShowFormulas();
   // Thông số hiển thị là của ống GỐC; c.lens đã nhân hệ số bộ nhân (nếu có) để kiểm.
   const lens = lensFromComponent(c.component);
   const acc = c.accessory;
-  const optic =
-    lens.lensType === 'telecentric' || (lens.focalLengthMm === null && lens.magnification !== null)
-      ? `${show(lens.magnification, 3)}×`
-      : lens.focalLengthMm !== null
-        ? `${show(lens.focalLengthMm, 1)} mm${acc?.kind === 'converter' ? ` × ${show(acc.factor, 2)}` : ''}`
-        : '—';
+  const fixedBeta = lens.lensType === 'telecentric' || (lens.focalLengthMm === null && lens.magnification !== null);
+  const focal = fixedBeta ? '—' : lens.focalLengthMm !== null ? `${show(lens.focalLengthMm, 1)} mm${acc?.kind === 'converter' ? ` × ${show(acc.factor, 2)}` : ''}` : '—';
+  // Telecentric chưa nhập WD → dải WD của hãng.
+  const wd = wdMm !== null ? `${show(wdMm, 0)}` : c.realWd?.kind === 'fixed' ? (c.realWd.minMm === c.realWd.maxMm ? show(c.realWd.minMm, 0) : `${show(c.realWd.minMm, 0)}–${show(c.realWd.maxMm, 0)}`) : '—';
+  const tube = acc?.kind === 'tube' ? acc.totalMm : manualTubeMm;
+  const circleMm = lens.imageCircleMm ?? sensorDiagonalMm(lens.imageCircleFormat);
+  const circle = circleMm !== null ? `Φ${show(circleMm, 1)} mm${lens.imageCircleFormat ? ` (${lens.imageCircleFormat}")` : ''}` : '—';
+  // Ống chưa khai sF: vùng nhìn tính với sF = 0 → ghi "≈" (chốt 2026-10-26 Q3, lệch tới ±10 % so với dữ liệu hãng).
+  const approx = !fixedBeta && lens.focalLengthMm !== null && (lens.frontFocalMm ?? null) === null && c.fovLongMm !== null ? '≈ ' : '';
+  const cell = 'py-2 pr-4 whitespace-nowrap tabular-nums';
   return (
     <Fragment>
       <tr className={c.status === 'fail' ? 'opacity-60' : undefined}>
-        <td className="py-2 pl-4 pr-3">
+        <td className="py-2 pl-4 pr-4">
           <button type="button" onClick={onToggle} aria-expanded={open} className="text-left font-medium text-slate-900 hover:text-sky-700 dark:text-slate-100 dark:hover:text-sky-400">
             {c.component.brand} {c.component.model}
           </button>
-          <div className={NOTE_CLASS}>
-            {[lens.mount, lens.imageCircleFormat ? `${lens.imageCircleFormat}"` : lens.imageCircleMm ? `Ø${lens.imageCircleMm}` : null, lens.fNumberMin ? `F/${lens.fNumberMin}` : null]
-              .filter(Boolean)
-              .join(' · ')}
-            {c.unknownCount > 0 ? ` · ${t('list.unknownCount', { n: c.unknownCount })}` : ''}
-          </div>
-          {acc ? (
-            <div className="mt-1 inline-flex flex-wrap items-center gap-1.5 rounded-md bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-900 ring-1 ring-inset ring-amber-200 dark:bg-amber-950/40 dark:text-amber-200 dark:ring-amber-900">
-              {acc.kind === 'tube'
-                ? t('list.withTube', { pieces: acc.pieces.length > 1 ? `${acc.pieces.map((p) => show(p.lengthMm, 1)).join(' + ')} = ` : '', total: show(acc.totalMm, 1) })
-                : t('list.withConverter', { k: show(acc.factor, 2) })}
-              {!acc.inStock ? <span className="font-normal opacity-80">· {t('list.notInStock')}</span> : null}
-            </div>
-          ) : null}
+          {lens.fNumberMin ? <div className={NOTE_CLASS}>F/{lens.fNumberMin}</div> : null}
         </td>
-        <td className="py-2 pr-6 whitespace-nowrap tabular-nums">
-          {optic}
-          {c.beta !== null && lens.lensType !== 'telecentric' && lens.focalLengthMm !== null ? <div className={NOTE_CLASS}>β {show(c.beta, 4)}</div> : null}
+        <td className={cell}>
+          {focal}
+          {acc?.kind === 'converter' && !acc.inStock ? <div className={NOTE_CLASS}>{t('list.notInStock')}</div> : null}
         </td>
-        <td className="py-2 pr-6 whitespace-nowrap tabular-nums">{c.fovLongMm === null ? '—' : line ? `${show(c.fovLongMm, 1)} mm` : `${show(c.fovLongMm, 1)} × ${show(c.fovShortMm, 1)}`}</td>
-        <td className="py-2 pr-6 whitespace-nowrap tabular-nums">
-          <RealWdCell realWd={c.realWd} />
+        <td className={cell}>{wd}</td>
+        <td className={cell}>{c.beta !== null ? show(c.beta, 4) : '—'}</td>
+        <td className={cell}>
+          {tube !== null ? (acc?.kind === 'tube' && acc.pieces.length > 1 ? `${acc.pieces.map((p) => show(p.lengthMm, 1)).join(' + ')} = ${show(tube, 1)}` : show(tube, 1)) : '0'}
+          {acc?.kind === 'tube' && !acc.inStock ? <div className={NOTE_CLASS}>{t('list.notInStock')}</div> : null}
         </td>
-        <td className="py-2 pr-3 tabular-nums">{show(c.mmPerPx, 4)}</td>
-        <td className="py-2 pr-3 tabular-nums">{c.pixelUse === null ? '—' : `${Math.round(c.pixelUse * 100)}%`}</td>
-        <td className="py-2 pr-3 tabular-nums">{c.fSet === null ? '—' : `F/${show(c.fSet, 1)}`}</td>
+        <td className={cell} title={approx ? t('list.approxNote') : undefined}>
+          {approx}
+          {show(c.fovLongMm, 1)}
+        </td>
+        <td className={cell} title={approx ? t('list.approxNote') : undefined}>
+          {line ? '—' : `${approx}${show(c.fovShortMm, 1)}`}
+        </td>
+        <td className={cell}>{circle}</td>
+        <td className={cell}>{lens.mount ?? '—'}</td>
+        <td className={cell}>{show(c.mmPerPx, 4)}</td>
+        {showFSet ? <td className={cell}>{c.fSet === null ? '—' : `F/${show(c.fSet, 1)}`}</td> : null}
         <td className="py-2 pr-4">
           <div className="flex items-center gap-2">
             <StatusBadge status={c.status} />
-            <button type="button" onClick={onToggle} className="text-xs text-sky-700 hover:underline dark:text-sky-400">
-              {open ? t('list.hide') : t('list.details')}
+            {/* Mở / đóng chi tiết: mũi tên thay chữ (2026-10-26). */}
+            <button
+              type="button"
+              onClick={onToggle}
+              aria-expanded={open}
+              aria-label={open ? t('list.hide') : t('list.details')}
+              title={open ? t('list.hide') : t('list.details')}
+              className="inline-flex size-6 items-center justify-center rounded-full text-sky-700 hover:bg-sky-50 dark:text-sky-400 dark:hover:bg-sky-950"
+            >
+              <Icon name="arrowRight" className={`size-4 transition-transform ${open ? 'rotate-90' : ''}`} />
             </button>
           </div>
         </td>
       </tr>
       {open ? (
         <tr className="bg-slate-50/60 dark:bg-slate-900/60">
-          <td colSpan={8} className="px-4 py-3">
+          <td colSpan={showFSet ? 12 : 11} className="px-4 py-3">
+            {/* Số chuyển từ bảng vào Chi tiết (Q1, Q4): WD thật, pixel dùng, F nên đặt. */}
+            <dl className="mb-3 grid gap-x-6 gap-y-2 sm:grid-cols-3">
+              <div>
+                <dt className="text-xs font-medium text-slate-500 dark:text-slate-400">{t('list.colRealWd')}</dt>
+                <dd className="text-sm text-slate-900 dark:text-slate-100">
+                  <RealWdCell realWd={c.realWd} />
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs font-medium text-slate-500 dark:text-slate-400">{t('list.colPixelUse')}</dt>
+                <dd className="text-sm text-slate-900 dark:text-slate-100">{c.pixelUse === null ? '—' : `${Math.round(c.pixelUse * 100)}%`}</dd>
+              </div>
+              <div>
+                <dt className="text-xs font-medium text-slate-500 dark:text-slate-400">{t('list.colFSet')}</dt>
+                <dd className="text-sm text-slate-900 dark:text-slate-100">{c.fSet === null ? t('list.fSetNeedDh') : `F/${show(c.fSet, 1)}`}</dd>
+              </div>
+            </dl>
+            <p className={`mb-3 ${NOTE_CLASS}`}>{t('list.realWdNote')}</p>
             <ul className="space-y-2">
-              {/* Công thức WD thật chỉ cho admin; chú thích đã có ở chân bảng. */}
               {c.realWd?.kind === 'focal' && showFormulas ? (
                 <li className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                   <span className="text-sm font-medium text-slate-800 dark:text-slate-200">{t('list.colRealWd')} · OPT-012</span>

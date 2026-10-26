@@ -51,7 +51,7 @@ const CATALOG: Component[] = [
     camera_type: 'area', resolution_w_px: 2448, resolution_h_px: 2048, pixel_size_um: 3.45, sensor_format: '2/3',
     mount: 'C', interface: 'GigE', max_fps: 23, color: 'mono', shutter: 'global', trigger_io: 'yes',
   }),
-  make('lens', 'f20', { lens_type: 'fixed', focal_length_mm: 20, image_circle: '2/3', mount: 'C', f_number_min: 1.4, f_number_max: 16, resolution_lp_mm: 160 }),
+  make('lens', 'f21', { lens_type: 'fixed', focal_length_mm: 21, image_circle: '2/3', mount: 'C', f_number_min: 1.4, f_number_max: 16, resolution_lp_mm: 160 }),
   make('light', 'dome', { light_type: 'dome', color: 'white', size_mm: 100 }),
   make('controller', 'pc', { cpu_cores: 8, ram_gb: 32, lan_ports: 4, pcie_slots: 2 }),
 ];
@@ -83,12 +83,12 @@ test('dữ kiện: đủ 5 phần của màn 6 + xếp hạng, số lấy từ e
   assert.ok(section('requirement').rows.some((r) => r.ruleId === 'RES-003'), 'luat quyet dinh do phan giai');
   const cameraHead = section('camera').rows[0];
   assert.equal(cameraHead.label, 'Hãng cam');
-  assert.match(cameraHead.detail, /2448 × 2048 px → 0\.0483 mm\/px thực, dư 1\.38× so với mục tiêu 0\.06667 mm\/px/);
+  assert.match(cameraHead.detail, /2448 × 2048 px → 0\.0493 mm\/px thực, dư 1\.35× so với mục tiêu 0\.06667 mm\/px/);
   assert.ok(section('lens').rows.some((r) => r.ruleId === 'OPT-001' && r.status === 'pass'));
   assert.ok(section('pc').rows.filter((r) => r.ruleId === 'THR-004').length === 3);
   assert.ok(section('assumptions').rows.length > 0 && section('assumptions').rows.every((r) => r.label && r.note));
   assert.ok(section('limits').rows.some((r) => r.ruleId === 'LGT-001'), 'chieu sang be mat bong la rui ro');
-  assert.equal(section('ranking').rows[0].detail, '47/100');
+  assert.equal(section('ranking').rows[0].detail, '46/100');
   assert.ok(section('ranking').rows.some((r) => r.detail === 'chưa có dữ liệu (trọng số 0.1)'));
 
   const text = whyFactsToText(recommended, statusLabel('vi'));

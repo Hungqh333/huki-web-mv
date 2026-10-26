@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useActionState, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { AdminField } from './AdminField';
+import { FrontFocalHelper } from './FrontFocalHelper';
 import { saveComponentAction, type ComponentState } from '@/app/actions/components';
 import {
   COMPONENT_KINDS,
@@ -172,6 +173,8 @@ export function ComponentForm({ draft }: { draft: ComponentDraft }) {
             })}
           </div>
         )}
+        {/* Ống kính: tính giúp sF từ datasheet (chốt 2026-10-26 Q2). */}
+        {kind === 'lens' ? <FrontFocalHelper /> : null}
       </fieldset>
 
       <div className="grid gap-4 sm:grid-cols-2">

@@ -1304,7 +1304,8 @@
         "pick_mode": "How it is added",
         "accessory_type": "Accessory type",
         "accessory_for": "Fits",
-        "qty_basis": "Quantity per"
+        "qty_basis": "Quantity per",
+        "front_focal_mm": "Front focal distance sF (from lens front)"
       },
       "errors": {
         "notAdmin": "Only an admin can perform this action.",
@@ -1313,6 +1314,41 @@
         "invalidKind": "Invalid component kind.",
         "invalidSource": "Invalid spec source.",
         "invalidNumber": "The value must be a number."
+      },
+      "frontFocal": {
+        "title": "Compute sF from the datasheet",
+        "hint": "Enter WD (from the lens front) and the magnification β at that WD, or WD + field of view + the matching sensor side. sF = WD − f ÷ β. Fill in the focal length above first.",
+        "wd": "WD (mm)",
+        "beta": "β at that WD",
+        "fov": "or field of view (mm)",
+        "sensor": "+ sensor side (mm)",
+        "compute": "Compute sF",
+        "fill": "Fill the sF field",
+        "noFocal": "Fill in the focal length first."
+      },
+      "frontFocalImport": {
+        "title": "Bulk import sF for lenses",
+        "hint": "One lens per line: column ma (code or model in stock) and ONE of three ways: sf_mm given; or wd_mm + beta from the datasheet; or wd_mm + fov_mm + sensor_mm (sensor side matching the field of view). sF = WD − f ÷ β. WD is measured from the lens front. Comma-separated, or semicolon-separated with decimal commas.",
+        "example": "ma,sf_mm,wd_mm,beta,fov_mm,sensor_mm\nMVL-MF2518M-5MPE,3.7,,,,\nC125-2522-5M-P,,500,0.048,,\nMA-ONG-TRONG-KHO,,300,,152,8.45",
+        "start": "Import",
+        "running": "Importing…",
+        "done": "Wrote sF for {ok} lenses · skipped {skipped} lines",
+        "skippedLine": "Line {line} ({key}): {reason}",
+        "reasons": {
+          "noKey": "missing lens code",
+          "noValue": "missing numbers (need sf_mm, or wd_mm + beta, or wd_mm + fov_mm + sensor_mm)",
+          "badNumber": "invalid number",
+          "notFound": "lens not in stock",
+          "ambiguous": "model matches several lenses — use the code",
+          "noFocal": "lens has no focal length, cannot compute sF",
+          "outOfRange": "sF too large (beyond ±500 mm) — check units",
+          "db": "could not save"
+        },
+        "errors": {
+          "notAdmin": "Admins only.",
+          "empty": "Empty file.",
+          "db": "Could not read the stock."
+        }
       }
     },
     "formulas": {
@@ -1420,7 +1456,8 @@
         "bwCameraLinkBase": "Camera Link Base",
         "bwCameraLinkMedium": "Camera Link Medium",
         "bwCameraLinkFull": "Camera Link Full",
-        "bwCameraLinkDeca": "Camera Link Deca"
+        "bwCameraLinkDeca": "Camera Link Deca",
+        "lensFovMaxRatio": "Lens selector — maximum field of view relative to the required one"
       },
       "errors": {
         "fix": "Some fields are invalid — see the red lines.",
@@ -2683,7 +2720,7 @@
   "lensSelector": {
     "title": "Lens selector",
     "subtitle": "Enter camera, field of view and working distance → required focal length, diffraction-limited F#, and the lenses in stock that fit.",
-    "why": "Every number here uses the same formulas as System design (rules OPT-001…005), so a camera + lens pair never gets two different verdicts on two pages. Focal length is a thin-lens estimate — check the working-distance table in the datasheet before ordering.",
+    "why": "Every number here uses the same formulas as System design (rules OPT-001…005), so a camera + lens pair never gets two different verdicts on two pages. WD is measured from the lens front; lenses without a front focal distance sF use the quick formula β = f ÷ WD — check the working-distance table in the datasheet before ordering.",
     "emptyCatalog": "No lenses in stock yet. Add them under Admin → Components.",
     "camera": {
       "title": "Camera",
@@ -2728,7 +2765,7 @@
       "beta": "Magnification β",
       "betaNote": "Limiting axis, so the whole part fits in the frame.",
       "focal": "Ideal focal length",
-      "focalNote": "Thin-lens estimate; pick the nearest shorter lens.",
+      "focalNote": "Estimate f = β × WD; pick the nearest shorter lens.",
       "fov": "Actual field of view",
       "mmPerPx": "mm/px",
       "fMax": "Diffraction-limited F#",
@@ -2752,7 +2789,7 @@
       "missingTele": "Choose a camera and enter the FOV.",
       "focalGiven": "Focal length entered",
       "wdComputed": "Working distance",
-      "wdComputedNote": "Thin-lens estimate from the principal plane — check the vendor WD table.",
+      "wdComputedNote": "Estimate WD = f ÷ β from the lens front — check the vendor WD table.",
       "aov": "Angle of view at WD",
       "aovNote": "Computed at the working distance. Datasheets usually quote the angle at infinity, so expect a few % difference.",
       "betaMax": "Maximum β",
@@ -2760,7 +2797,7 @@
       "fMaxNoteTele": "Working F# (telecentric datasheets quote it directly): Airy disk within 2 pixels.",
       "focalPrime": "Ideal prime focal length",
       "focalGivenPrime": "Prime focal length entered",
-      "focalPrimeNote": "Focal length of the lens before the {k}× converter — the system is {k}× longer. Thin-lens estimate.",
+      "focalPrimeNote": "Focal length of the lens before the {k}× converter — the system is {k}× longer. Estimate f = β × WD.",
       "fMaxNotePrime": "Prime lens ring setting: system F# = {k} × N, effective F# within 2 Airy pixels."
     },
     "list": {
@@ -2770,30 +2807,38 @@
       "showMore": "Show {n} more",
       "empty": "No lens passes with this filter.",
       "colLens": "Lens",
-      "colOptic": "f / β",
-      "colFov": "Actual FOV",
       "colMmPerPx": "mm/px",
       "colPixelUse": "Pixels used",
       "colFSet": "Set F",
       "colStatus": "Verdict",
       "details": "Details",
       "hide": "Hide",
-      "unknownCount": "{n} spec(s) missing",
       "datasheet": "Datasheet",
-      "withTube": "+ extension tube {pieces}{total} mm",
-      "withConverter": "+ rear converter {k}×",
       "notInStock": "not in stock",
       "accessoryHint": "Rejected lenses are retried with an extension tube / converter — always Warning, listed after plain passes.",
       "metaAccessory": "{n} need an accessory",
       "onlyAccessory": "Only lenses needing an accessory",
       "manualHint": "Checking every lens with the declared {desc} — automatic accessory suggestions are off.",
       "colRealWd": "Real WD",
-      "realWdNote": "Real WD: distance at which the lens fits the field of view exactly (OPT-012), thin-lens estimate — measure when mounting. Does not change the verdict.",
+      "realWdNote": "Real WD: distance from the lens front at which the field of view fits exactly (OPT-012), WD = f ÷ β + sF — measure when mounting. Does not change the verdict.",
       "realWdDelta": "off by {delta} mm",
       "realWdSame": "matches entered WD",
       "realWdFixed": "per vendor",
       "realWdBelowMod": "< MOD {mod} mm",
-      "realWdOutsideTube": "outside tube range {min}–{max} mm"
+      "realWdOutsideTube": "outside tube range {min}–{max} mm",
+      "showResults": "Show results",
+      "stale": "Inputs changed — press Show results to recalculate.",
+      "colFocal": "Focal length",
+      "colWd": "WD (mm)",
+      "colBeta": "Magnification",
+      "colTube": "Extension (mm)",
+      "colFovW": "FOV width (mm)",
+      "colFovH": "FOV height (mm)",
+      "colCircle": "Image circle",
+      "colMount": "Mount",
+      "fSetNeedDh": "enter the object height range to calculate",
+      "footNote": "Theoretical results — test before committing. Extension tubes can reduce image quality. ≈ : lens without sF — field of view may differ by up to ±10 %.",
+      "approxNote": "≈ lens has no front focal distance sF — field of view uses sF = 0 and may differ by up to ±10 % from vendor data."
     },
     "status": {
       "pass": "Pass",
@@ -2822,7 +2867,7 @@
       "imageCircleTooSmall": "Image circle smaller than the sensor diagonal: dark/black corners.",
       "wdRangeUnknown": "Lens working-distance range not declared.",
       "wdOutOfRange": "This telecentric lens is only in focus at {min}–{max} mm.",
-      "wdBelowFocal": "Working distance shorter than the focal length: cannot focus.",
+      "wdBelowFocal": "Working distance not beyond sF (front focal point): cannot focus.",
       "wdBelowMod": "Closer than the minimum focus distance {mod} mm — needs an extension tube or a macro lens.",
       "modUnknown": "Lens minimum focus distance not declared.",
       "focalUnknown": "Lens focal length or magnification not declared.",
@@ -2855,7 +2900,8 @@
       "tubeModUnknown": "Lens MOD not declared — the near limit with a {total} mm tube cannot be computed (farthest {wdMax} mm). Check the datasheet.",
       "converterManual": "Declared {k}× converter: focal length, F# and image circle ×{k}, lp/mm ÷{k}, FOV {k}× narrower. MOD is unchanged ({mod} mm).",
       "converterAboveMax": "A {k}× converter exceeds the {max}× maximum — noticeably softer and darker.",
-      "accessoryLightTotal": "Tube + converter together cost about {stops} stops (limit {limit}) — add light or expose longer, watch for motion blur."
+      "accessoryLightTotal": "Tube + converter together cost about {stops} stops (limit {limit}) — add light or expose longer, watch for motion blur.",
+      "fovTooWide": "Field of view is {ratio}× the required one (limit {max}×) — too few pixels on the part; pick a longer focal length or move closer."
     },
     "reset": "Reset",
     "tabs": {

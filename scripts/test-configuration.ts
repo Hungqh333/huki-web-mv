@@ -102,9 +102,11 @@ test('danh mục: OPT-001..005, OPT-009, THR-003/004 đã khai, đúng nhóm kh�
 });
 
 test('công thức nền: β, tiêu cự, F#max, F cho độ sâu', () => {
-  assert.ok(Math.abs(entocentricMagnification(25, 300)! - 25 / 275) < 1e-12);
-  assert.equal(entocentricMagnification(300, 300), null, 'WD phai lon hon f');
-  assert.ok(Math.abs(focalLengthFor(0.2, 300) - 50) < 1e-9, '300 × 0,2 ÷ 1,2 = 50');
+  // Newton, WD từ mặt trước ống, sF chưa khai = 0 (chốt 2026-10-26): β = f ÷ WD
+  assert.ok(Math.abs(entocentricMagnification(25, 300)! - 25 / 300) < 1e-12);
+  assert.ok(Math.abs(entocentricMagnification(25, 300, 10)! - 25 / 290) < 1e-12, 'co sF: f ÷ (WD − sF)');
+  assert.equal(entocentricMagnification(25, 10, 10), null, 'WD phai vuot sF');
+  assert.ok(Math.abs(focalLengthFor(0.2, 300) - 60) < 1e-9, '0,2 × 300 = 60');
   // 2 × 3,45 ÷ (2,44 × 0,55) = 5,14
   assert.ok(Math.abs(maxFNumber(3.45) - 5.1416) < 1e-3);
   // Pitch 2,2 µm → spec §4.2 ghi F#max ≈ 3,3
@@ -116,10 +118,10 @@ test('công thức nền: β, tiêu cự, F#max, F cho độ sâu', () => {
 test('OPT-001: ống 25 mm ở 300 mm phủ đủ 60 × 50 và đạt 0,0667 mm/px', () => {
   const r = find(run(), 'OPT-001');
   assert.equal(r.status, 'pass');
-  // β = 25/275 = 0,0909 → 0,00345 ÷ 0,0909 = 0,03795 mm/px → dư 0,0667/0,03795 = 1,757
-  assert.ok(Math.abs(r.marginRatio! - 1.757) < 0.005, String(r.marginRatio));
-  // β phủ = min(8,446/60, 7,066/50) = 0,14076 → f = 300 × 0,14076 ÷ 1,14076 = 37,0 mm
-  assert.equal(r.noteValues?.fIdeal, 37);
+  // β = 25/300 = 0,0833 → 0,00345 ÷ 0,0833 = 0,0414 mm/px → dư 0,0667/0,0414 = 1,610
+  assert.ok(Math.abs(r.marginRatio! - 1.61) < 0.005, String(r.marginRatio));
+  // β phủ = min(8,446/60, 7,066/50) = 0,14076 → f = 0,14076 × 300 = 42,2 mm
+  assert.equal(r.noteValues?.fIdeal, 42.2);
   assert.ok(r.inputsUsed.some((i) => i.path === 'lens.focal_length_mm' && i.value === 25));
   assert.ok(r.inputsUsed.some((i) => i.path === 'system.workingDistance'));
 });
@@ -128,7 +130,7 @@ test('OPT-001: tiêu cự dài quá → vùng nhìn hụt; ngắn quá → thô;
   assert.equal(find(run({ lens: { focalLengthMm: 50 } }), 'OPT-001').noteKey, 'lensFovTooSmall', 'β 0,2 > 0,1408');
   const coarse = find(run({ lens: { focalLengthMm: 8 } }), 'OPT-001');
   assert.equal(coarse.status, 'fail');
-  assert.equal(coarse.noteKey, 'lensTooCoarse', '0,00345 ÷ (8/292) = 0,126 > 0,0667');
+  assert.equal(coarse.noteKey, 'lensTooCoarse', '0,00345 ÷ (8/300) = 0,129 > 0,0667');
   const few = find(run({ camera: { widthPx: 640, heightPx: 480, sensorFormat: '1/3' } }), 'OPT-001');
   assert.equal(few.noteKey, 'cameraTooFewPixels', 'β can 0,0518 > β phu 0,0331');
 });
@@ -185,9 +187,9 @@ test('OPT-005: độ sâu ↔ nhiễu xạ — ≤ F#max đạt, ≤ 1,5× cản
   assert.equal(ok.status, 'pass');
   assert.equal(ok.noteValues?.f, 1.4, 'F can 1,1 < F nho nhat cua ong 1,4 → dat F/1,4');
 
-  // Δh 12 → F = 12 × 0,0909² ÷ (2 × 0,0069 × 1,0909) = 6,59 → 1,28 × F#max
+  // Δh 12 → F = 12 × 0,0833² ÷ (2 × 0,0069 × 1,0833) = 5,57 → 1,17 × F#max 4,75
   assert.equal(find(run({ analysis: { 'object.heightVariation': 12 } }), 'OPT-005').status, 'warn');
-  // Δh 20 → F 10,98 → 2,13 × F#max. Bài CÓ đo (dung sai) → xung đột, loại ống.
+  // Δh 20 → F 9,29 → 1,96 × F#max. Bài CÓ đo (dung sai) → xung đột, loại ống.
   const measured = { 'object.heightVariation': 20, 'measurement.0.tolerance': 0.5 };
   const conflict = find(run({ analysis: measured }), 'OPT-005');
   assert.deepEqual([conflict.status, conflict.noteKey], ['fail', 'dofConflict']);
@@ -197,8 +199,8 @@ test('OPT-005: độ sâu ↔ nhiễu xạ — ≤ F#max đạt, ≤ 1,5× cản
   const detection = find(run({ analysis: { 'object.heightVariation': 20 } }), 'OPT-005');
   assert.deepEqual([detection.status, detection.noteKey, detection.evidence], ['warn', 'dofConflictDetection', 'calculated']);
   assert.equal(scoreResult(detection).status, 'MARGINAL', 'chan muc Tiet kiem, hien trong rui ro');
-  // Δh 12 cần F/6,6 (trong dung sai nhiễu xạ) mà ống chỉ khép tới F/5,6 → không đạt vì ống
-  assert.equal(find(run({ analysis: { 'object.heightVariation': 12 }, lens: { fNumberMax: 5.6 } }), 'OPT-005').noteKey, 'dofBeyondLensAperture');
+  // Δh 13 cần F/6,0 (trong dung sai nhiễu xạ) mà ống chỉ khép tới F/5,6 → không đạt vì ống
+  assert.equal(find(run({ analysis: { 'object.heightVariation': 13 }, lens: { fNumberMax: 5.6 } }), 'OPT-005').noteKey, 'dofBeyondLensAperture');
 });
 
 test('OPT-005: F cần nhỏ hơn khẩu mở nhất (hoặc F/1 khi ống chưa khai) → "khẩu nào cũng đủ", không in F/0.3', () => {
@@ -321,7 +323,7 @@ test('mọi khoá tên bước và câu diễn giải của tầng Cấu hình c
     run({ lens: { focalLengthMm: null, imageCircleFormat: '1/2' } }),
     run({ analysis: { 'object.heightVariation': 12, 'production.partsPerMinute': 120 } }),
     run({ analysis: { 'object.heightVariation': 20, 'production.partsPerMinute': 200, 'detection.0.variability': 'high' }, pc: { cpuCores: 3, ramGb: 8, lanPorts: 1 } }),
-    run({ analysis: { 'object.heightVariation': 12 }, lens: { fNumberMax: 5.6 }, pc: { cpuCores: 2, pcieSlots: 0 }, cards: 1 }),
+    run({ analysis: { 'object.heightVariation': 13 }, lens: { fNumberMax: 5.6 }, pc: { cpuCores: 2, pcieSlots: 0 }, cards: 1 }),
     run({ analysis: { 'system.cameraTiltDeg': 30 }, pc: { cpuCores: null } }),
     run({ analysis: { 'object.heightVariation': 20, 'measurement.0.tolerance': 0.5 } }),
     run({ analysis: { 'system.cameraTiltDeg': 30, 'measurement.0.tolerance': 0.5 } }),

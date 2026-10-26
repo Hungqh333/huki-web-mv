@@ -49,13 +49,17 @@ const close = (actual: number | null | undefined, expected: number, tol: number,
 
 // --------------------------------------------------------- HÌNH HỌC ỐNG KÍNH --
 
-test('[TL] tiêu cự và độ phóng đại: hai chiều khớp nhau', () => {
-  // β = 8,8 ÷ 100 = 0,088 ; f = 300 × 0,088 ÷ 1,088 = 24,264 mm
-  close(focalLengthFor(0.088, 300), 24.264, 1e-3, 'f');
-  // Ngược lại: ống 25 mm ở WD 300 → β = 25 ÷ 275 = 0,0909
-  close(entocentricMagnification(25, 300), 0.090909, 1e-6, 'β');
-  // Chụp cận: ống 25 mm ở WD 75 → β = 25 ÷ 50 = 0,5
-  close(entocentricMagnification(25, 75), 0.5, 1e-9, 'β cận');
+test('[TL] tiêu cự và độ phóng đại: hai chiều khớp nhau (Newton, WD từ mặt trước — chốt 2026-10-26)', () => {
+  // β = 8,8 ÷ 100 = 0,088 ; f = β × WD = 0,088 × 300 = 26,4 mm (sF chưa khai = 0)
+  close(focalLengthFor(0.088, 300), 26.4, 1e-9, 'f');
+  // Ngược lại: ống 25 mm ở WD 300 → β = 25 ÷ 300 = 0,0833 (Edmund / Hikrobot: f = cảm biến × WD ÷ vùng nhìn)
+  close(entocentricMagnification(25, 300), 0.083333, 1e-6, 'β');
+  // Chụp cận: ống 25 mm ở WD 50 → β = 25 ÷ 50 = 0,5
+  close(entocentricMagnification(25, 50), 0.5, 1e-9, 'β cận');
+  // Có sF: Basler C125-2522 (f 25, sF 1,83) ở WD 500 → β = 25 ÷ 498,17 = 0,0502 (datasheet 0,048, f ±5 %)
+  close(entocentricMagnification(25, 500, 1.83), 0.050184, 1e-6, 'β có sF');
+  // WD không vượt sF → không lấy nét được
+  assert.equal(entocentricMagnification(25, 1.5, 1.83), null);
 });
 
 test('[F1] β theo trục giới hạn: vùng nhìn vuông trên cảm biến 4:3', () => {
@@ -65,8 +69,8 @@ test('[F1] β theo trục giới hạn: vùng nhìn vuông trên cảm biến 4:
   close(fit.beta, 0.066, 1e-9, 'β');
   close(s.widthMm / fit.beta, 133.33, 0.01, 'vùng nhìn dài');
   close(s.heightMm / fit.beta, 100, 1e-9, 'vùng nhìn ngắn');
-  // f = 300 × 0,066 ÷ 1,066 = 18,574 mm (bản cũ ra 24,26 mm → vật bị cắt còn 75 mm)
-  close(focalLengthFor(fit.beta, 300), 18.574, 1e-3, 'f');
+  // f = 0,066 × 300 = 19,8 mm (bản trước F1 ra 26,4 mm → vật bị cắt còn 75 mm)
+  close(focalLengthFor(fit.beta, 300), 19.8, 1e-9, 'f');
 });
 
 test('[F1] vùng nhìn dọc: xoay camera, ghép cạnh dài với cạnh dài', () => {
@@ -92,7 +96,7 @@ test('[F1] bộ chọn cũ: phép kiểm tiêu cự dùng trục giới hạn', 
     circleOfConfusionPx: 2,
   });
   const focal = checks.find((c) => c.key === 'focalLength')!;
-  assert.match(focal.formula, /18\.6 mm$/, focal.formula);
+  assert.match(focal.formula, /19\.8 mm$/, focal.formula);
 });
 
 test('[TL] estimateLens suy ngược ra đúng WD', () => {
@@ -179,11 +183,11 @@ const analysisAt = (wd: number) =>
   );
 
 test('[WFN] OPT-004 chụp cận: ống nhanh nhất F/4 ở β 0,5 không còn đạt', () => {
-  // WD 75, f 25 → β 0,5 → F#max trên vòng 3,43 < F/4 → FAIL (trước khi sửa: 4 ≤ 5,14 → PASS)
-  const near = evaluateConfiguration({ analysis: analysisAt(75), camera: CAMERA, lens: LENS }).find((r) => r.ruleId === 'OPT-004')!;
+  // WD 50, f 25 → β 0,5 → F#max trên vòng 3,43 < F/4 → FAIL (trước khi sửa: 4 ≤ 5,14 → PASS)
+  const near = evaluateConfiguration({ analysis: analysisAt(50), camera: CAMERA, lens: LENS }).find((r) => r.ruleId === 'OPT-004')!;
   assert.equal(near.status, 'fail', near.formula);
   assert.match(near.formula, /÷ \(1 \+ 0\.5\) = 3\.43/, near.formula);
-  // WD 300, f 25 → β 0,0909 → F#max trên vòng 4,71 ≥ F/4 → vẫn đạt
+  // WD 300, f 25 → β 0,0833 → F#max trên vòng 4,75 ≥ F/4 → vẫn đạt
   const far = evaluateConfiguration({ analysis: analysisAt(300), camera: CAMERA, lens: LENS }).find((r) => r.ruleId === 'OPT-004')!;
   assert.equal(far.status, 'pass', far.formula);
   // Telecentric ghi F# làm việc: không chia thêm

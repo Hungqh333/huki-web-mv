@@ -42,7 +42,7 @@ const CATALOG: Component[] = [
     camera_type: 'area', resolution_w_px: 2448, resolution_h_px: 2048, pixel_size_um: 3.45, sensor_format: '2/3',
     mount: 'C', interface: 'GigE', max_fps: 23, color: 'mono', shutter: 'global', trigger_io: 'yes',
   }, { price_vnd: 10_000_000, source: 'unverified' }),
-  make('lens', 'f20', { lens_type: 'fixed', focal_length_mm: 20, image_circle: '2/3', mount: 'C', f_number_min: 1.4, f_number_max: 16, resolution_lp_mm: 160 }),
+  make('lens', 'f21', { lens_type: 'fixed', focal_length_mm: 21, image_circle: '2/3', mount: 'C', f_number_min: 1.4, f_number_max: 16, resolution_lp_mm: 160 }),
   make('light', 'dome', { light_type: 'dome', color: 'white', size_mm: 100 }),
   make('controller', 'pc', { cpu_cores: 8, ram_gb: 32, lan_ports: 4, pcie_slots: 2 }, { price_vnd: 20_000_000 }),
   make('cable', 'gige', { cable_for: 'camera_data', connector: 'RJ45', length_m: 5 }),

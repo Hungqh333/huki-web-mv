@@ -3,6 +3,7 @@ import {
   effectiveFNumberFactor,
   entocentricMagnification,
   focalLengthFor,
+  workingDistanceFor,
   lensFromComponent,
   maxRingFNumber,
   mountFit,
@@ -83,6 +84,7 @@ export type LensParams = Pick<
   | 'tubeLengthToFocalWarn'
   | 'tubeMaxSegments'
   | 'converterMaxFactor'
+  | 'lensFovMaxRatio'
 >;
 type Params = LensParams;
 
@@ -147,9 +149,9 @@ export type LensCandidate = {
  * cho VỪA KHÍT vùng nhìn (trục chặt hơn của cảm biến quyết định):
  *
  *   β_cần   = min(cạnh dài cảm biến ÷ cạnh dài vùng nhìn, cạnh ngắn cảm biến ÷ cạnh ngắn vùng nhìn)
- *   WD_thật = f × (1 + k ÷ β_cần)      k = hệ số bộ nhân (OPT-011), không có thì 1
+ *   WD_thật = f × k ÷ β_cần + sF      k = hệ số bộ nhân (OPT-011), không có thì 1; sF như OPT-001
  *
- * Thấu kính mỏng, đo từ mặt phẳng chính của ống — đo lại khi lắp. Ống nối (OPT-010) không đổi β ở
+ * WD đo từ mặt trước ống (chốt 2026-10-26); ống chưa khai sF thì sF = 0 — đo lại khi lắp. Ống nối (OPT-010) không đổi β ở
  * cùng WD nên WD thật như ống trơn, chỉ kiểm thêm có nằm trong dải lấy nét sau khi lắp không.
  * Telecentric: β cố định → WD là WD danh định / dải hãng ghi. CHỈ để tham khảo bố trí cơ khí:
  * không đổi Đạt / Loại (vẫn kiểm theo WD đã nhập, Q4).
@@ -178,16 +180,16 @@ export function betaToFit(sensorLongMm: number, sensorShortMm: number, fovWidthM
   return Math.min(long, sensorShortMm / needShort);
 }
 
-/** OPT-012: WD = f × (1 + k ÷ β) — thấu kính mỏng. */
-export function realWorkingDistanceMm(focalMm: number, beta: number, converterFactor = 1): number {
-  return focalMm * (1 + converterFactor / beta);
+/** OPT-012: WD = f × k ÷ β + sF (Newton, WD từ mặt trước ống — chốt 2026-10-26). */
+export function realWorkingDistanceMm(focalMm: number, beta: number, converterFactor = 1, frontFocalMm = 0): number {
+  return workingDistanceFor(focalMm, beta / converterFactor, frontFocalMm);
 }
 
 // ───────────────────────── PHỤ KIỆN — chốt 2026-10-20 (Q1–Q5) ──────────────────────────
 /*
  * OPT-010 ống nối (extension tube): đẩy ống ra xa cảm biến → lấy nét được GẦN hơn MOD.
- *   Thấu kính mỏng: ở cùng WD, β = f ÷ (WD − f) KHÔNG đổi — ống nối chỉ cho TỚI được WD đó.
- *   Ống gốc lấy nét được β ∈ [0; β_MOD], β_MOD = f ÷ (MOD − f). Thêm ống e: β ∈ [e/f; e/f + β_MOD].
+ *   Newton (chốt 2026-10-26): ở cùng WD, β = f ÷ (WD − sF) KHÔNG đổi — ống nối chỉ cho TỚI được WD đó.
+ *   Ống gốc lấy nét được β ∈ [0; β_MOD], β_MOD = f ÷ (MOD − sF). Thêm ống e: β ∈ [e/f; e/f + β_MOD].
  *   ⇒ cần e ∈ [f·(β_WD − β_MOD); f·β_WD].
  * OPT-011 bộ nhân ×k (rear converter): F#, vòng ảnh × k; độ phóng đại × k (vùng nhìn ÷ k);
  *   lp/mm của ống ÷ k; MOD KHÔNG đổi (nhóm thấu kính trước giữ nguyên) — không cứu được MOD.
@@ -242,19 +244,19 @@ type LensVariant = {
   checks: LensCheck[];
 };
 
-/** Dải chiều dài ống nối cần để ống tiêu cự f (MOD đã biết) lấy nét được ở WD. */
-export function tubeLengthRange(focalMm: number, modMm: number, wdMm: number): { minMm: number; maxMm: number; betaWd: number; betaMod: number } | null {
-  if (!(focalMm > 0) || !(modMm > focalMm) || !(wdMm > focalMm)) return null;
-  const betaWd = focalMm / (wdMm - focalMm);
-  const betaMod = focalMm / (modMm - focalMm);
+/** Dải chiều dài ống nối cần để ống tiêu cự f (MOD đã biết) lấy nét được ở WD — WD, MOD đo từ mặt trước, sF như OPT-001. */
+export function tubeLengthRange(focalMm: number, modMm: number, wdMm: number, frontFocalMm = 0): { minMm: number; maxMm: number; betaWd: number; betaMod: number } | null {
+  if (!(focalMm > 0) || !(modMm > frontFocalMm) || !(wdMm > frontFocalMm)) return null;
+  const betaWd = focalMm / (wdMm - frontFocalMm);
+  const betaMod = focalMm / (modMm - frontFocalMm);
   return { minMm: Math.max(0, focalMm * (betaWd - betaMod)), maxMm: focalMm * betaWd, betaWd, betaMod };
 }
 
-/** Dải WD lấy nét được khi lắp ống nối tổng `totalMm`: [f(1 + 1/(e/f + β_MOD)); f(1 + f/e)]. */
-export function tubeFocusRange(focalMm: number, modMm: number, totalMm: number): { wdMinMm: number; wdMaxMm: number } {
-  const betaMod = focalMm / (modMm - focalMm);
+/** Dải WD lấy nét được khi lắp ống nối tổng `totalMm`: [f ÷ (e/f + β_MOD) + sF; f² ÷ e + sF]. */
+export function tubeFocusRange(focalMm: number, modMm: number, totalMm: number, frontFocalMm = 0): { wdMinMm: number; wdMaxMm: number } {
+  const betaMod = focalMm / (modMm - frontFocalMm);
   const lo = totalMm / focalMm;
-  return { wdMinMm: focalMm * (1 + 1 / (lo + betaMod)), wdMaxMm: lo > 0 ? focalMm * (1 + 1 / lo) : Infinity };
+  return { wdMinMm: workingDistanceFor(focalMm, lo + betaMod, frontFocalMm), wdMaxMm: lo > 0 ? workingDistanceFor(focalMm, lo, frontFocalMm) : Infinity };
 }
 
 /** Tổ hợp ống nối có tổng ∈ [min; max]: ít khúc nhất, rồi ngắn nhất. Một chiều dài dùng lặp được. */
@@ -446,6 +448,8 @@ export function evaluateLens(
   const { camera, workingDistanceMm: wd } = input;
   const pitch = camera.pixelSizeUm;
   const line = camera.cameraType === 'line';
+  // sF: mặt trước ống → tiêu điểm trước; chưa khai → 0 (β = f ÷ WD), chốt 2026-10-26.
+  const sF = lens.frontFocalMm ?? 0;
   const checks: LensCheck[] = [];
   let unknownCount = 0;
   const unknown = (key: LensCheckKey, formula: string, noteKey: string, noteValues?: Check['noteValues']) => {
@@ -506,11 +510,11 @@ export function evaluateLens(
   } else if (lens.focalLengthMm !== null && wd === null) {
     unknown('workingDistance', '—', 'wdMissing');
   } else if (lens.focalLengthMm !== null && wd !== null) {
-    beta = entocentricMagnification(lens.focalLengthMm, wd);
+    beta = entocentricMagnification(lens.focalLengthMm, wd, sF);
     // Bộ nhân ×k: độ phóng đại cả hệ = k × β của ống gốc ở cùng WD (OPT-011).
     if (beta !== null && variant?.converterFactor) beta *= variant.converterFactor;
     if (beta === null) {
-      checks.push({ key: 'workingDistance', status: 'fail', formula: `WD ${fmt(wd)} mm ≤ f ${fmt(lens.focalLengthMm, 1)} mm`, noteKey: 'wdBelowFocal' });
+      checks.push({ key: 'workingDistance', status: 'fail', formula: `WD ${fmt(wd)} mm ≤ sF ${fmt(sF, 1)} mm`, noteKey: 'wdBelowFocal' });
     } else if (variant?.tube) {
       // Ống nối: WD phải nằm trong dải lấy nét MỚI (OPT-010) — MOD gốc không còn là giới hạn.
       const tube = variant.tube;
@@ -549,7 +553,7 @@ export function evaluateLens(
     const covers = fovLong >= needLong * (1 - EPS) && (line || fovShort >= needShort * (1 - EPS));
     const optic = fixedMagnification
       ? `β ${fmt(beta, 4)}×`
-      : `β = ${variant?.converterFactor ? `${fmt(variant.converterFactor, 2)} × ` : ''}${fmt(lens.focalLengthMm!, 1)} ÷ (${fmt(wd!)} − ${fmt(lens.focalLengthMm!, 1)}) = ${fmt(beta, 4)}`;
+      : `β = ${variant?.converterFactor ? `${fmt(variant.converterFactor, 2)} × ` : ''}${fmt(lens.focalLengthMm!, 1)} ÷ (${fmt(wd!)} − ${fmt(sF, 1)}) = ${fmt(beta, 4)}`;
     checks.push({
       key: 'fov',
       status: covers ? 'pass' : 'fail',
@@ -560,6 +564,17 @@ export function evaluateLens(
     });
     if (covers && !line) pixelUse = (needLong * needShort) / (fovLong * fovShort);
     if (covers && line) pixelUse = needLong / fovLong;
+    // LNS-005 (2026-10-26): phủ được nhưng rộng quá — trục sát nhất vẫn dư hơn ngưỡng → loại (ít pixel dùng cho vật).
+    const excess = line ? fovLong / needLong : Math.min(fovLong / needLong, fovShort / needShort);
+    if (covers && excess > params.lensFovMaxRatio + EPS) {
+      checks.push({
+        key: 'fov',
+        status: 'fail',
+        formula: `${fmt(excess, 2)}× > ${fmt(params.lensFovMaxRatio, 2)}×`,
+        noteKey: 'fovTooWide',
+        noteValues: { ratio: round(excess, 2), max: params.lensFovMaxRatio },
+      });
+    }
 
     if (pitch !== null) {
       mmPerPx = pitch / 1000 / beta;
@@ -638,14 +653,14 @@ export function evaluateLens(
     const fit = betaToFit(need.sensorLongMm, need.sensorShortMm, input.fovWidthMm, input.fovHeightMm, line);
     if (fit !== null && fit > 0) {
       const k = variant?.converterFactor ?? 1;
-      const mm = realWorkingDistanceMm(lens.focalLengthMm, fit, k);
+      const mm = realWorkingDistanceMm(lens.focalLengthMm, fit, k, sF);
       const tube = variant?.tube ?? null;
       const outside = tube !== null && (mm > tube.wdMaxMm + EPS || (tube.wdMinMm !== null && mm < tube.wdMinMm - EPS));
       realWd = {
         kind: 'focal',
         mm: round(mm, 1),
         deltaMm: wd !== null ? round(mm - wd, 1) : null,
-        formula: `β = ${fmt(fit, 4)} · WD = ${fmt(lens.focalLengthMm, 1)} × (1 + ${fmt(k, 2)} ÷ ${fmt(fit, 4)}) = ${fmt(mm, 0)} mm`,
+        formula: `β = ${fmt(fit, 4)} · WD = ${fmt(lens.focalLengthMm, 1)} × ${fmt(k, 2)} ÷ ${fmt(fit, 4)} + ${fmt(sF, 1)} = ${fmt(mm, 0)} mm`,
         belowModMm: tube === null && lens.wdMinMm !== null && mm < lens.wdMinMm - EPS ? lens.wdMinMm : null,
         outsideTube: outside ? { minMm: tube.wdMinMm, maxMm: tube.wdMaxMm } : null,
       };
@@ -705,7 +720,7 @@ function tryAccessory(input: LensSelectorInput, need: LensNeed, component: Compo
 
   // ── OPT-010: ống nối ──
   if (fails.length > 0 && fails.every((key) => key === 'wdBelowMod') && lens.wdMinMm !== null) {
-    const range = tubeLengthRange(f, lens.wdMinMm, wd);
+    const range = tubeLengthRange(f, lens.wdMinMm, wd, lens.frontFocalMm ?? 0);
     if (!range) return null;
     let pieces = chooseTubeStack(stock.tubes.filter((t) => t.mount === mount), range.minMm, range.maxMm);
     let inStock = true;
@@ -716,7 +731,7 @@ function tryAccessory(input: LensSelectorInput, need: LensNeed, component: Compo
     }
     if (!pieces) return null;
     const totalMm = pieces.reduce((sum, p) => sum + p.lengthMm, 0);
-    const focus = tubeFocusRange(f, lens.wdMinMm, totalMm);
+    const focus = tubeFocusRange(f, lens.wdMinMm, totalMm, lens.frontFocalMm ?? 0);
     const accessory: TubeAccessory = {
       kind: 'tube',
       mount,
@@ -780,13 +795,14 @@ function manualVariant(lens: ConfigLens, wd: number | null, fixed: { tubeMm: num
   const k = fixed.converterFactor;
   const checks: LensCheck[] = [];
   let tube: LensVariant['tube'] = null;
-  // β của ống GỐC ở WD (thấu kính mỏng) — ống nối không đổi β ở cùng WD.
-  const betaPrime = f !== null && wd !== null && wd > f ? f / (wd - f) : null;
+  // β của ống GỐC ở WD (Newton, sF) — ống nối không đổi β ở cùng WD.
+  const sF = lens.frontFocalMm ?? 0;
+  const betaPrime = f !== null && wd !== null ? entocentricMagnification(f, wd, sF) : null;
 
   if (fixed.tubeMm !== null && f !== null) {
     const e = fixed.tubeMm;
-    const hasMod = lens.wdMinMm !== null && lens.wdMinMm > f;
-    const range = hasMod ? tubeFocusRange(f, lens.wdMinMm!, e) : { wdMinMm: null, wdMaxMm: f * (1 + f / e) };
+    const hasMod = lens.wdMinMm !== null && lens.wdMinMm > sF;
+    const range = hasMod ? tubeFocusRange(f, lens.wdMinMm!, e, sF) : { wdMinMm: null, wdMaxMm: workingDistanceFor(f, e / f, sF) };
     tube = { totalMm: e, wdMinMm: range.wdMinMm, wdMaxMm: range.wdMaxMm };
     checks.push({
       key: 'tube',
@@ -885,9 +901,10 @@ export function selectLenses(
  * nhìn) thì tính đại lượng còn lại — rồi mọi chế độ quy về cùng một cặp (vùng nhìn,
  * WD) để chạy `selectLenses`, nên danh sách ống luôn theo một bộ luật.
  *
- *   'fov-wd'    β = trục giới hạn (magnificationToFit) → f = WD × β ÷ (1 + β)
- *   'focal-wd'  β = f ÷ (WD − f)                       → vùng nhìn = cảm biến ÷ β
- *   'focal-fov' β = trục giới hạn                      → WD = f × (1 + 1/β)
+ *   'fov-wd'    β = trục giới hạn (magnificationToFit) → f = β × WD
+ *   'focal-wd'  β = f ÷ WD                             → vùng nhìn = cảm biến ÷ β
+ *   'focal-fov' β = trục giới hạn                      → WD = f ÷ β
+ *   (WD từ mặt trước ống, sF = 0 — số chung chưa gắn ống nào; chốt 2026-10-26)
  *
  * 'focal-wd' trả vùng nhìn thật của ống đó (cạnh dài theo bề rộng): ống có đúng
  * tiêu cự đã nhập sẽ phủ khít 100% và đứng đầu danh sách.
@@ -940,5 +957,5 @@ export function solveGeometry(input: {
   }
   const m = fit();
   if (!m || f === null || !(f > 0)) return null;
-  return { fovWidthMm: fw!, fovHeightMm: fh!, workingDistanceMm: f * (1 + 1 / (m.beta / k)), focalLengthMm: f, beta: m.beta };
+  return { fovWidthMm: fw!, fovHeightMm: fh!, workingDistanceMm: workingDistanceFor(f, m.beta / k), focalLengthMm: f, beta: m.beta };
 }

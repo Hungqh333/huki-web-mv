@@ -28,11 +28,11 @@ export type LensEstimate = {
 };
 
 /**
- * β = sensor / FOV ; f ≈ WD × β / (1 + β) ; WD = f × (1 + 1/β)
+ * β = sensor / FOV ; f ≈ β × WD ; WD = f ÷ β  (WD từ mặt trước ống, sF = 0 — chốt 2026-10-26)
  *
- * ƯỚC LƯỢNG, không phải con số để đặt hàng: công thức bỏ qua vị trí điểm chính
- * và bề dày cụm thấu kính. Ống kính thật phải tra bảng khoảng cách làm việc của
- * hãng.
+ * ƯỚC LƯỢNG, không phải con số để đặt hàng: công thức nhanh của các hãng, bỏ qua
+ * vị trí tiêu điểm trước của từng ống. Ống kính thật phải tra bảng khoảng cách
+ * làm việc của hãng.
  */
 export function estimateLens(input: {
   sensorSizeMm: number;
@@ -43,12 +43,12 @@ export function estimateLens(input: {
   if (sensorSizeMm <= 0 || fovMm <= 0 || workingDistanceMm <= 0) return null;
 
   const beta = sensorSizeMm / fovMm;
-  const focalLengthMm = (workingDistanceMm * beta) / (1 + beta);
+  const focalLengthMm = beta * workingDistanceMm;
 
   return {
     beta: round(beta, 4),
     focalLengthMm: round(focalLengthMm, 2),
-    workingDistanceMm: round(focalLengthMm * (1 + 1 / beta), 1),
+    workingDistanceMm: round(focalLengthMm / beta, 1),
   };
 }
 
@@ -363,7 +363,7 @@ export function opticsChecks(input: {
       checks.push({
         key: 'focalLength',
         status: 'info',
-        formula: `${fmt(input.workingDistanceMm)} × ${fmt(lens.beta, 4)} ÷ (1 + ${fmt(lens.beta, 4)}) ≈ ${fmt(lens.focalLengthMm, 1)} mm`,
+        formula: `${fmt(input.workingDistanceMm)} × ${fmt(lens.beta, 4)} ≈ ${fmt(lens.focalLengthMm, 1)} mm`,
         noteKey: 'focalIsEstimate',
       });
     }

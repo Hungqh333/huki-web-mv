@@ -2,7 +2,7 @@
  * Danh mục vật tư — V1c mục C5. Chốt Q1–Q7 ngày 2026-09-18.
  *
  * Cùng bài chuẩn với test-solutions.ts (vật 60 × 50, 0,0667 mm/px, WD 300,
- * bề mặt bóng): mức Đề xuất = camera 5 MP + ống f20.
+ * bề mặt bóng): mức Đề xuất = camera 5 MP + ống f21.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -42,7 +42,7 @@ const CATALOG: Component[] = [
     camera_type: 'area', resolution_w_px: 2448, resolution_h_px: 2048, pixel_size_um: 3.45, sensor_format: '2/3',
     mount: 'C', interface: 'GigE', max_fps: 23, color: 'mono', shutter: 'global', trigger_io: 'yes',
   }, { price_vnd: 10_000_000 }),
-  make('lens', 'f20', { lens_type: 'fixed', focal_length_mm: 20, image_circle: '2/3', mount: 'C', f_number_min: 1.4, f_number_max: 16, resolution_lp_mm: 160 }),
+  make('lens', 'f21', { lens_type: 'fixed', focal_length_mm: 21, image_circle: '2/3', mount: 'C', f_number_min: 1.4, f_number_max: 16, resolution_lp_mm: 160 }),
   make('light', 'dome', { light_type: 'dome', color: 'white', size_mm: 100 }, { price_vnd: 2_000_000 }),
   make('controller', 'pc', { cpu_cores: 8, ram_gb: 32, lan_ports: 4, pcie_slots: 2 }, { price_vnd: 20_000_000 }),
   make('cable', 'gige-5m', { cable_for: 'camera_data', connector: 'RJ45', length_m: 5 }, { price_vnd: 300_000 }),
@@ -79,7 +79,7 @@ test('BOM đủ các dòng mua hàng hay thiếu, mỗi dòng có mã luật', (
   for (const key of ['camera', 'lens', 'light', 'cable:data', 'cable:power', 'cable:light', 'lightController', 'pc', 'software', 'accessory:POL-LENS', 'accessory:POL-LIGHT']) {
     assert.ok(keys.includes(key), `thieu dong ${key}`);
   }
-  assert.equal(line(bom, 'lens')?.model, 'f20');
+  assert.equal(line(bom, 'lens')?.model, 'f21');
   assert.deepEqual(line(bom, 'camera')?.ruleIds, ['RES-004']);
   assert.deepEqual(line(bom, 'accessory:POL-LENS')?.ruleIds, ['LGT-001'], 'be mat bong → kinh phan cuc');
   assert.ok(bom.lines.filter((l) => l.code !== null).every((l) => l.ruleIds.length > 0), 'dong tu sinh nao cung co luat');
@@ -131,7 +131,7 @@ test('tổng tiền = Σ giá × SL; dòng cần báo giá hoặc thiếu giá t
 });
 
 test('mức bị chặn / rỗng → không dựng BOM', () => {
-  assert.equal(bomOf({}, emptySelection('economy')), null, 'kho chi co f20 → Tiet kiem rong');
+  assert.equal(bomOf({}, emptySelection('economy')), null, 'kho chi co f21 → Tiet kiem rong');
 });
 
 test('khối Giả định & Loại trừ lấy đúng ô đang giả định; ghi trạng thái khả thi', () => {

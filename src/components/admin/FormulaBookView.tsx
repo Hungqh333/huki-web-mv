@@ -92,7 +92,7 @@ type TableLabels = {
   lightRow: (key: string) => string;
   lightColor: (key: string) => string;
   defaultRow: (key: string) => string;
-  option: (group: 'contrast' | 'motion', value: string) => string;
+  option: (group: string, value: string) => string;
 };
 
 function EntryCard({
@@ -201,7 +201,7 @@ function DefaultsTable({ loaded, labels }: { loaded: LoadedEngineParams; labels:
           const row = loaded.tables.defaults[def.key];
           const changed = JSON.stringify(row) !== JSON.stringify(DEFAULT_ENGINE_TABLES.defaults[def.key]);
           const value =
-            def.kind === 'choice' ? labels.option(def.key === 'contrast' ? 'contrast' : 'motion', String(row.value)) : `${row.value}${'unit' in def ? ` ${def.unit}` : ''}`;
+            def.kind === 'choice' ? labels.option(def.key, String(row.value)) : `${row.value}${'unit' in def ? ` ${def.unit}` : ''}`;
           return (
             <tr key={def.key}>
               <td className="py-1 pr-3 text-slate-600 dark:text-slate-300">{labels.defaultRow(def.key)}</td>

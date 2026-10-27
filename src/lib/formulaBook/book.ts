@@ -22,7 +22,7 @@ import { UNKNOWN_SCORE } from '@/lib/vision/feasibility';
 import { K_STITCH } from '@/lib/vision/mechanics';
 import { STANDARD_CONVERTER_FACTORS, STANDARD_TUBE_LENGTHS_MM } from '@/lib/vision/lensSelector';
 import { DEFAULT_CIRCLE_OF_CONFUSION_PX, WAVELENGTH_UM } from '@/lib/vision/optics';
-import { K_BLUR, STROBE_EXPOSURE_LIMIT_US, BYTES_PER_PX } from '@/lib/vision/requirementAnalysis';
+import { BYTES_PER_PX } from '@/lib/vision/requirementAnalysis';
 import { DEFAULT_PX_PER_DEFECT, GRR_DIVISOR, K_SUBPIXEL } from '@/lib/vision/resolution';
 import type { Evidence } from '@/lib/vision/rules';
 import { LEAD_TIME_ZERO_DAYS, MARGIN_FULL_SCORE, PRIOR_USE_FULL } from '@/lib/vision/solutionLevels';
@@ -86,8 +86,14 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
       {
         id: 'ASM-DEFAULT',
         title: 'Giá trị mặc định cho ô còn trống',
-        formula: ['ô trống → giá trị trong bảng Giả định mặc định (sửa ở Quản trị → Giả định mặc định)'],
-        notes: ['Độ tương phản mặc định "thấp" là phía xấu: N px/lỗi lớn nhất → camera nhiều pixel nhất.'],
+        formula: [
+          'ô trống → giá trị trong bảng Giả định mặc định (sửa ở Quản trị → Giả định mặc định)',
+          'ô tốc độ cao chỉ giả định khi có điều kiện: số ảnh/sản phẩm khi có sản lượng; nguồn trigger, sai lệch trigger (cảm biến quang), phơi sáng lúc chụp mẫu khi chạy liên tục; thời gian cơ cấu gạt khi đã có khoảng cách tới điểm gạt',
+        ],
+        notes: [
+          'Độ tương phản mặc định "thấp" là phía xấu: N px/lỗi lớn nhất → camera nhiều pixel nhất.',
+          'Ô tốc độ cao thêm 2026-10-26: 1 ảnh/sản phẩm · cảm biến quang · 0,5 ms · 20 ms · 1 ms (ước tính).',
+        ],
         liveTable: 'defaults',
         usedIn: DESIGN_ONLY,
         source: 'requirement/assumptions.ts : applyDefaults · vision/engineTables.ts',
@@ -337,7 +343,8 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
         rules: ['THR-005'],
         formula: ['t_max = k_blur × m_cần ÷ v   (µs; chỉ khi sản phẩm chạy liên tục)'],
         verdict: ['lọc camera: rolling shutter khi vật chạy → LOẠI'],
-        constants: [{ name: 'k_blur (px nhoè cho phép)', value: K_BLUR }],
+        params: ['blurPxAllowed'],
+        notes: ['k_blur mở ra Ngưỡng engine 2026-10-26 (trước đó cố định 0,5 trong code).'],
         evidence: 'calculated',
         usedIn: DESIGN_ONLY,
         source: 'vision/requirementAnalysis.ts : THR-005 · vision/equipmentFilter.ts',
@@ -347,7 +354,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
         title: 'Bắt buộc strobe + global shutter',
         rules: ['LGT-008'],
         formula: ['t_max < ngưỡng strobe → CẢNH BÁO', 'lọc camera: không có trigger IO → LOẠI', 'lọc đèn: không strobe được → LOẠI'],
-        constants: [{ name: 'ngưỡng strobe (µs)', value: STROBE_EXPOSURE_LIMIT_US }],
+        params: ['strobeExposureLimitUs'],
         evidence: 'rule-of-thumb',
         usedIn: DESIGN_ONLY,
         source: 'vision/requirementAnalysis.ts : LGT-008 · vision/equipmentFilter.ts',
@@ -356,7 +363,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
         id: 'THR-001',
         title: 'Lưu lượng dữ liệu',
         rules: ['THR-001'],
-        formula: ['ảnh/giây = ppm ÷ 60', 'MB/s mỗi camera = MP × byte/px × ảnh/giây', 'tổng = MB/s mỗi camera × số camera'],
+        formula: ['ảnh/giây = số ảnh mỗi sản phẩm × ppm ÷ 60   (THR-006)', 'MB/s mỗi camera = MP × byte/px × ảnh/giây', 'tổng = MB/s mỗi camera × số camera'],
         constants: [{ name: 'byte/px khi chưa chọn camera (Mono8 / Bayer8)', value: BYTES_PER_PX }],
         evidence: 'calculated',
         usedIn: DESIGN_ONLY,
@@ -368,13 +375,61 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
         rules: ['THR-002'],
         formula: [
           'chọn chuẩn có băng thông NHỎ NHẤT thoả: băng thông × tỉ lệ dùng tối đa ≥ MB/s mỗi camera',
-          'lọc camera: MB/s ≤ tỉ lệ × băng thông chuẩn của camera (CXP nhân số làn)',
+          'lọc camera: MB/s ≤ tỉ lệ × băng thông chuẩn của camera (CXP nhân số làn); MB/s nhân số ảnh mỗi sản phẩm',
         ],
         verdict: ['không chuẩn nào đủ → LOẠI'],
         params: ['interfaceMaxShare', 'bwGigE', 'bwUsbThree', 'bwFiveGigE', 'bwTenGigE', 'bwCxpSix', 'bwCxpTwelve', 'bwCameraLinkBase', 'bwCameraLinkMedium', 'bwCameraLinkFull', 'bwCameraLinkDeca'],
         evidence: 'calculated',
         usedIn: ['design', 'oldSelector', 'pc'],
         source: 'vision/requirementAnalysis.ts : THR-002 · components/specs.ts : INTERFACE_BANDWIDTH',
+      },
+      {
+        id: 'THR-006',
+        title: 'Số ảnh/giây cần so với fps camera',
+        rules: ['THR-006'],
+        formula: ['fps cần = số ảnh mỗi sản phẩm × ppm ÷ 60   (chưa nhập số ảnh → giả định 1)'],
+        verdict: ['lọc camera: fps cần > fps tối đa → LOẠI', 'fps cần > fps tối đa × (1 − dư tối thiểu) → CẢNH BÁO (gợi ý ROI / binning)', 'camera chưa khai fps → chưa kiểm được'],
+        params: ['cycleMinMargin'],
+        notes: ['Chốt 2026-10-26 (đợt 1 tốc độ cao, điểm C). Dùng chung dư tối thiểu với THR-003.'],
+        evidence: 'calculated',
+        usedIn: DESIGN_ONLY,
+        source: 'vision/requirementAnalysis.ts : THR-006 · vision/equipmentFilter.ts',
+      },
+      {
+        id: 'THR-007',
+        title: 'Lệch vị trí chụp do trigger',
+        rules: ['THR-007'],
+        formula: [
+          'Δx = v × sai lệch thời điểm trigger   (mm; cảm biến quang chưa nhập → giả định 0,5 ms)',
+          'Δpx = Δx ÷ m_cần · tỉ lệ = Δx ÷ cạnh ngắn vùng nhìn một camera',
+          'vùng nhìn theo chiều chạy nên dư ≥ 2Δx',
+        ],
+        verdict: ['tỉ lệ > ngưỡng → CẢNH BÁO (nới vùng nhìn, cảm biến nhanh hơn, hoặc encoder)', 'trigger bằng encoder → ĐẠT (không lệch theo tốc độ)'],
+        params: ['triggerShiftMaxShare'],
+        notes: ['Chốt 2026-10-26 (điểm A). Chiều chạy chưa có ô nhập nên so với cạnh NGẮN (phía xấu).'],
+        evidence: 'calculated',
+        usedIn: DESIGN_ONLY,
+        source: 'vision/requirementAnalysis.ts : THR-007',
+      },
+      {
+        id: 'LGT-024',
+        title: 'Đủ sáng ở thời gian phơi ngắn',
+        rules: ['LGT-024'],
+        formula: [
+          'hệ số sáng = t_phơi lúc chụp mẫu ÷ t_max   (chưa nhập → giả định 1 ms, ghi "ước tính")',
+          'duty = t_max × fps cần',
+        ],
+        verdict: [
+          'hệ số ≤ 1 → ĐẠT (đèn liên tục đủ)',
+          'duty > duty tối đa → LOẠI (đèn quá nhiệt khi overdrive)',
+          'hệ số > strobe tối đa → LOẠI nếu t_phơi mẫu là số thật, CẢNH BÁO nếu ước tính',
+          'còn lại → CẢNH BÁO: cần strobe overdrive, chụp thử',
+        ],
+        params: ['strobeBoostMax', 'strobeMaxDuty'],
+        notes: ['Chốt 2026-10-26 (điểm B, Q3). Độ sáng cần tỉ lệ nghịch với thời gian phơi khi giữ nguyên mức xám; tăng gain thay vì tăng sáng làm nhiễu tăng.'],
+        evidence: 'rule-of-thumb',
+        usedIn: DESIGN_ONLY,
+        source: 'vision/requirementAnalysis.ts : LGT-024',
       },
     ],
   },
@@ -534,7 +589,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
         title: 'Giao tiếp trả kết quả',
         rules: ['INT-001'],
         formula: ['chỉ ghi nhận giao thức đã chọn, không tụt điểm khả thi (chốt 2026-10-12)'],
-        constants: [{ name: 'thời gian IO giả định trong THR-003 (ms)', value: CYCLE_DEFAULTS.ioMs }],
+        params: ['cycleIoMs'],
         evidence: 'rule-of-thumb',
         usedIn: DESIGN_ONLY,
         source: 'vision/requirementAnalysis.ts : INT-001',
@@ -631,25 +686,38 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
       },
       {
         id: 'THR-003',
-        title: 'Ngân sách thời gian chu kỳ',
+        title: 'Thông lượng — khâu chậm nhất so với nhịp',
         rules: ['THR-003'],
         formula: [
           'T_nhịp = 60 000 ÷ ppm   (ms)',
-          'T = trigger + khung + truyền + xử lý + IO',
+          'T = số ảnh mỗi sản phẩm × max(khung, truyền, xử lý)   — các khâu chạy gối nhau',
           'khung = 1000 ÷ fps camera (không khai: giả định) · truyền = MB một ảnh ÷ băng thông × 1000',
           'xử lý = số đo thật; chưa đo → giả định (học sâu nếu AI-002)',
           'dư = (T_nhịp − T) ÷ T_nhịp',
         ],
         verdict: ['dư < 0 → LOẠI', 'dư < dư tối thiểu → CẢNH BÁO'],
         params: ['cycleMinMargin', 'processMs', 'processDeepLearningMs'],
-        constants: [
-          { name: 'trigger (ms)', value: CYCLE_DEFAULTS.triggerMs },
-          { name: 'IO (ms)', value: CYCLE_DEFAULTS.ioMs },
-          { name: 'khung khi camera không khai fps (ms)', value: CYCLE_DEFAULTS.frameIntervalMs },
-        ],
+        constants: [{ name: 'khung khi camera không khai fps (ms)', value: CYCLE_DEFAULTS.frameIntervalMs }],
+        notes: ['Đổi 2026-10-26 (Q5): trước đây cộng NỐI TIẾP trigger + khung + truyền + xử lý + IO. Phần nối tiếp là độ trễ — nay kiểm ở THR-008.'],
         evidence: 'rule-of-thumb',
         usedIn: DESIGN_ONLY,
         source: 'vision/configurationRules.ts : THR-003',
+      },
+      {
+        id: 'THR-008',
+        title: 'Độ trễ tới điểm gạt loại',
+        rules: ['THR-008'],
+        formula: [
+          'trễ = trigger + n × khung + truyền + n × xử lý × hệ số lần chậm + IO + cơ cấu gạt   (n = số ảnh mỗi sản phẩm)',
+          'ngân sách = khoảng cách camera → điểm gạt ÷ v × 1000   (ms)',
+          'dư = (ngân sách − trễ) ÷ ngân sách',
+        ],
+        verdict: ['dư < 0 → LOẠI (gạt nhầm sản phẩm)', 'dư < dư tối thiểu → CẢNH BÁO', 'chưa có khoảng cách → chưa kiểm được'],
+        params: ['cycleTriggerMs', 'cycleIoMs', 'processWorstFactor', 'cycleMinMargin', 'processMs', 'processDeepLearningMs'],
+        notes: ['Chốt 2026-10-26 (điểm D). Chỉ khi sản phẩm chạy liên tục. Cơ cấu gạt chưa nhập → giả định 20 ms.'],
+        evidence: 'rule-of-thumb',
+        usedIn: DESIGN_ONLY,
+        source: 'vision/configurationRules.ts : THR-008',
       },
       {
         id: 'THR-004',
@@ -1000,6 +1068,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
       },
     ],
   },
+
 ];
 
 /** Mọi mã luật engine có trong sổ tay — test so với RULES. */

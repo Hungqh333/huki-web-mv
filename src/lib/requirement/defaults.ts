@@ -18,7 +18,7 @@
  * GRR_DIVISOR, K_SUBPIXEL, N_DET_BY_CONTRAST thì KHÔNG nên cho sửa qua admin.
  */
 import type { MATERIALS } from './fields';
-import type { AssumptionLevel, DefectContrast } from './types';
+import type { AssumptionLevel, DefectContrast, Requirement } from './types';
 
 export type FieldDefault = {
   /** Đường dẫn trong Requirement, cùng dạng với V1A_FIELDS. */
@@ -30,7 +30,16 @@ export type FieldDefault = {
   /** 'warning': giả định sai có thể làm kết quả lệch về phía nguy hiểm. */
   level: AssumptionLevel;
   basis: { vi: string; en: string };
+  /**
+   * Chỉ giả định khi điều kiện đúng (xét trên bản đã điền các giả định đứng trước) —
+   * vd thời gian đáp ứng cảm biến chỉ có nghĩa khi sản phẩm chạy liên tục. Không có = luôn áp.
+   */
+  when?: (requirement: Requirement) => boolean;
 };
+
+const valueOf = (requirement: Requirement, read: (r: Requirement) => { value: unknown } | undefined) => read(requirement)?.value ?? null;
+const isContinuous = (r: Requirement) => valueOf(r, (x) => x.production.motion) === 'continuous';
+const hasRate = (r: Requirement) => valueOf(r, (x) => x.production.partsPerMinute) !== null || valueOf(r, (x) => x.production.taktTime) !== null;
 
 /**
  * Thứ tự = thứ tự hiện trên panel. Chỉ áp cho trường ĐANG CÓ trên bảng tóm tắt
@@ -104,6 +113,66 @@ export const FIELD_DEFAULTS: readonly FieldDefault[] = [
       vi: 'Kiểu dây chuyền thường gặp. Nếu sản phẩm chạy liên tục khi chụp thì phải xét nhoè chuyển động.',
       en: 'The most common line type. If parts keep moving during capture, motion blur must be checked.',
     },
+  },
+  /* Tốc độ cao — chốt 2026-10-26 (Q2/Q3). Các ô dưới đây đứng SAU 'production.motion'
+     để `when` thấy cả kiểu chuyển động đang giả định. */
+  {
+    path: 'production.imagesPerPart',
+    value: 1,
+    ruleIds: ['THR-001', 'THR-006'],
+    level: 'info',
+    basis: {
+      vi: 'Mỗi sản phẩm một ảnh. Chụp nhiều góc hoặc nhiều kiểu đèn thì nhập số ảnh thật — số ảnh/giây và băng thông nhân lên theo.',
+      en: 'One image per part. For several views or lighting modes enter the real count — frame rate and bandwidth scale with it.',
+    },
+    when: hasRate,
+  },
+  {
+    path: 'production.triggerSource',
+    value: 'photoSensor',
+    ruleIds: ['THR-007'],
+    level: 'info',
+    basis: {
+      vi: 'Trigger bằng cảm biến quang — cách thường gặp. Vị trí chụp lệch theo tốc độ; dùng encoder thì chọn lại.',
+      en: 'Photo-sensor trigger — the common setup. Capture position shifts with speed; choose encoder if one is used.',
+    },
+    when: isContinuous,
+  },
+  {
+    path: 'production.triggerJitterMs',
+    value: 0.5,
+    unit: 'ms',
+    ruleIds: ['THR-007'],
+    level: 'warning',
+    basis: {
+      vi: 'Thời gian đáp ứng điển hình của cảm biến quang. Lấy số trên datasheet cảm biến thật.',
+      en: 'Typical photo-sensor response time. Use the figure from the real sensor datasheet.',
+    },
+    when: (r) => isContinuous(r) && valueOf(r, (x) => x.production.triggerSource) !== 'encoder',
+  },
+  {
+    path: 'production.rejectActuationMs',
+    value: 20,
+    unit: 'ms',
+    ruleIds: ['THR-008'],
+    level: 'warning',
+    basis: {
+      vi: 'Van khí / xi lanh gạt điển hình 10–30 ms. Lấy số thật của cơ cấu gạt.',
+      en: 'Typical air-jet / pneumatic pusher 10–30 ms. Use the real actuator figure.',
+    },
+    when: (r) => isContinuous(r) && valueOf(r, (x) => x.production.rejectDistance) !== null,
+  },
+  {
+    path: 'production.sampleExposureMs',
+    value: 1,
+    unit: 'ms',
+    ruleIds: ['LGT-024'],
+    level: 'warning',
+    basis: {
+      vi: 'Chưa có thời gian phơi lúc chụp mẫu (ảnh mẫu / Dự án thực nghiệm) — ước tính 1 ms với đèn liên tục. Nhập số thật để biết đèn cần sáng thêm bao nhiêu.',
+      en: 'No exposure time from a sample shot (sample images / test projects) — estimating 1 ms with continuous light. Enter the real figure to know how much more light is needed.',
+    },
+    when: isContinuous,
   },
 ];
 

@@ -50,8 +50,9 @@ export const IMAGE_CIRCLE_TOLERANCE = DEFAULT_ENGINE_PARAMS.imageCircleTolerance
 export const CYCLE_MIN_MARGIN = DEFAULT_ENGINE_PARAMS.cycleMinMargin;
 /** THR-003: giả định khi chưa đo thuật toán thật. */
 export const CYCLE_DEFAULTS = {
-  triggerMs: 1,
-  ioMs: 10,
+  // Trigger / IO là MẶC ĐỊNH; THR-003/008 đọc giá trị đang dùng từ analysis.params (2026-10-26).
+  triggerMs: DEFAULT_ENGINE_PARAMS.cycleTriggerMs,
+  ioMs: DEFAULT_ENGINE_PARAMS.cycleIoMs,
   // Hai số xử lý là MẶC ĐỊNH; THR-003 đọc giá trị đang dùng từ analysis.params (sửa qua admin).
   processMs: DEFAULT_ENGINE_PARAMS.processMs,
   processDeepLearningMs: DEFAULT_ENGINE_PARAMS.processDeepLearningMs,
@@ -579,35 +580,80 @@ export function evaluateConfiguration(input: ConfigurationInput): RuleResult[] {
 
   if (input.stopOnFail && results.some((r) => r.status === 'fail')) return results;
 
-  // ─── THR-003: ngân sách thời gian chu kỳ ───
+  // ─── THR-003: thông lượng — khâu chậm nhất so với nhịp (chốt 2026-10-26 Q5) ───
+  /* Chụp, truyền, xử lý chạy GỐI nhau (ảnh sau chụp trong lúc ảnh trước đang xử lý), nên
+     nhịp chỉ bị chặn bởi khâu chậm nhất, mỗi khâu nhân số ảnh/sản phẩm. Thời gian nối
+     tiếp từ lúc chụp tới lúc có kết quả là ĐỘ TRỄ — kiểm riêng ở THR-008. */
   const ppm = analysis.partsPerMinute;
+  const p = analysis.params;
+  const n = analysis.imagesPerPart;
+  const frameMs = camera.maxFps && camera.maxFps > 0 ? 1000 / camera.maxFps : CYCLE_DEFAULTS.frameIntervalMs;
+  const frameMb = (camera.widthPx * camera.heightPx * camera.bytesPerPx) / 1e6;
+  const bandwidth = linkBandwidth(interfaceBandwidthFor(p), camera.interfaceName, camera.lanes);
+  const transferMs = bandwidth ? (frameMb / bandwidth) * 1000 : 0;
+  const measured = input.processMsPerImage ?? null;
+  const processMs = measured ?? (analysis.usesDeepLearning ? p.processDeepLearningMs : p.processMs);
+  const star = (assumed: boolean) => (assumed ? '*' : '');
   if (ppm !== null && ppm > 0 && camera.cameraType === 'area') {
     const takt = 60000 / ppm;
-    const frameMs = camera.maxFps && camera.maxFps > 0 ? 1000 / camera.maxFps : CYCLE_DEFAULTS.frameIntervalMs;
-    const frameMb = (camera.widthPx * camera.heightPx * camera.bytesPerPx) / 1e6;
-    const bandwidth = linkBandwidth(interfaceBandwidthFor(analysis.params), camera.interfaceName, camera.lanes);
-    const transferMs = bandwidth ? (frameMb / bandwidth) * 1000 : 0;
-    const measured = input.processMsPerImage ?? null;
-    const processMs = measured ?? (analysis.usesDeepLearning ? analysis.params.processDeepLearningMs : analysis.params.processMs);
-    const total = CYCLE_DEFAULTS.triggerMs + frameMs + transferMs + processMs + CYCLE_DEFAULTS.ioMs;
-    const margin = (takt - total) / takt;
-    const status: Check['status'] = margin < 0 ? 'fail' : margin < analysis.params.cycleMinMargin ? 'warn' : 'pass';
+    const bottleneck = n * Math.max(frameMs, transferMs, processMs);
+    const margin = (takt - bottleneck) / takt;
+    const status: Check['status'] = margin < 0 ? 'fail' : margin < p.cycleMinMargin ? 'warn' : 'pass';
     push(
       'THR-003',
       {
         key: 'cycleTimeBudget',
         status,
         formula:
-          `${CYCLE_DEFAULTS.triggerMs} + ${fmt(frameMs, 1)}${camera.maxFps ? '' : '*'} + ${fmt(transferMs, 1)} + ${fmt(processMs, 0)}${measured === null ? '*' : ''} + ${CYCLE_DEFAULTS.ioMs} ` +
-          `= ${fmt(total, 0)} ms vs ${term('takt')} ${fmt(takt, 0)} ms`,
+          `${n} × max(${fmt(frameMs, 1)}${star(!camera.maxFps)}, ${fmt(transferMs, 1)}, ${fmt(processMs, 0)}${star(measured === null)}) ` +
+          `= ${fmt(bottleneck, 0)} ms vs ${term('takt')} ${fmt(takt, 0)} ms`,
         noteKey: status === 'fail' ? 'cycleOver' : status === 'warn' ? 'cycleTight' : 'cycleWithin',
-        noteValues: { margin: Math.round(margin * 100), process: Math.round(processMs), total: Math.round(total), takt: Math.round(takt) },
+        noteValues: {
+          margin: Math.round(margin * 100),
+          process: Math.round(processMs),
+          total: Math.round(bottleneck),
+          takt: Math.round(takt),
+          min: Math.round(p.cycleMinMargin * 100),
+        },
       },
       measured === null ? 'rule-of-thumb' : 'calculated',
-      ['production.partsPerMinute', 'detection.0.variability'],
+      ['production.partsPerMinute', 'production.imagesPerPart', 'detection.0.variability'],
       { 'camera.max_fps': camera.maxFps, 'camera.interface': camera.interfaceName, 'process_ms_per_image': measured },
-      status === 'pass' ? takt / total : null
+      status === 'pass' ? takt / bottleneck : null
     );
+  }
+
+  // ─── THR-008: độ trễ từ lúc chụp tới khi cơ cấu gạt tác động ≤ thời gian sản phẩm tới điểm gạt ───
+  const v = analysis.conveyorSpeedMmS;
+  if (v !== null && v > 0 && camera.cameraType === 'area') {
+    const rejectPaths = ['production.rejectDistance', 'production.rejectActuationMs', 'production.conveyorSpeed', 'production.imagesPerPart'];
+    const distance = analysis.rejectDistanceMm;
+    if (distance === null || !(distance > 0)) {
+      push('THR-008', { key: 'rejectLatency', status: 'info', formula: '—', noteKey: 'rejectDistanceUnknown' }, 'unknown', rejectPaths, {});
+    } else {
+      const actuation = analysis.rejectActuationMs ?? 0;
+      const worstProcess = n * processMs * p.processWorstFactor;
+      const latency = p.cycleTriggerMs + n * frameMs + transferMs + worstProcess + p.cycleIoMs + actuation;
+      const budget = (distance / v) * 1000;
+      const margin = (budget - latency) / budget;
+      const status: Check['status'] = margin < 0 ? 'fail' : margin < p.cycleMinMargin ? 'warn' : 'pass';
+      push(
+        'THR-008',
+        {
+          key: 'rejectLatency',
+          status,
+          formula:
+            `${p.cycleTriggerMs} + ${n} × ${fmt(frameMs, 1)}${star(!camera.maxFps)} + ${fmt(transferMs, 1)} + ${n} × ${fmt(processMs, 0)}${star(measured === null)} × ${p.processWorstFactor} + ${p.cycleIoMs} + ${fmt(actuation, 0)} ` +
+            `= ${fmt(latency, 0)} ms vs ${fmt(distance)} mm ÷ ${fmt(v)} mm/s = ${fmt(budget, 0)} ms`,
+          noteKey: status === 'fail' ? 'rejectTooLate' : status === 'warn' ? 'rejectTight' : 'rejectWithin',
+          noteValues: { latency: Math.round(latency), budget: Math.round(budget), margin: Math.round(margin * 100), min: Math.round(p.cycleMinMargin * 100) },
+        },
+        measured === null ? 'rule-of-thumb' : 'calculated',
+        rejectPaths,
+        { 'camera.max_fps': camera.maxFps, 'process_ms_per_image': measured },
+        status === 'fail' ? null : budget / latency
+      );
+    }
   }
 
   // ─── THR-004: cỡ máy tính ───

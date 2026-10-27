@@ -25,6 +25,10 @@ export const PURPOSES = [
   'algorithm',
   'motionBlur',
   'integration',
+  'frameRate',
+  'triggerPosition',
+  'rejectTiming',
+  'lightBudget',
 ] as const;
 
 export type Purpose = (typeof PURPOSES)[number];
@@ -51,6 +55,11 @@ export const RULE_PURPOSE: Readonly<Record<string, Purpose>> = {
   'AI-001': 'algorithm',
   'AI-002': 'algorithm',
   'THR-005': 'motionBlur',
+  'THR-001': 'frameRate',
+  'THR-006': 'frameRate',
+  'THR-007': 'triggerPosition',
+  'THR-008': 'rejectTiming',
+  'LGT-024': 'lightBudget',
 };
 
 /** Mục đích của một nhóm luật, bỏ trùng, giữ thứ tự. Mã chưa khai thì bỏ qua. */

@@ -67,6 +67,7 @@ const valueAt = (requirement: Requirement, path: string) => readField(requiremen
 const hasDefectSize = (requirement: Requirement) => requirement.detection.some((item) => item.minSize.value !== null);
 const hasTolerance = (requirement: Requirement) => requirement.measurement.some((item) => item.tolerance.value !== null);
 const always = () => true;
+const isContinuous = (requirement: Requirement) => valueAt(requirement, 'production.motion') === 'continuous';
 
 export const QUESTIONS: readonly QuestionDef[] = [
   // Bậc 1
@@ -137,6 +138,26 @@ export const QUESTIONS: readonly QuestionDef[] = [
     askWhen: always,
   },
   { id: 'variability', tier: 8, paths: ['detection.0.variability'], ruleIds: ['AI-001', 'AI-002'], askWhen: hasDefectSize },
+
+  // Bậc 9 — tốc độ cao (chốt 2026-10-26): chỉ hỏi khi sản phẩm chạy liên tục / đã có sản lượng.
+  {
+    id: 'imagesPerPart',
+    tier: 9,
+    paths: ['production.imagesPerPart'],
+    ruleIds: ['THR-006'],
+    askWhen: (req) => valueAt(req, 'production.partsPerMinute') !== null || valueAt(req, 'production.taktTime') !== null,
+    suggestions: [1, 2, 4],
+  },
+  {
+    id: 'triggerSource',
+    tier: 9,
+    paths: ['production.triggerSource'],
+    followUp: { path: 'production.triggerJitterMs', when: (req) => valueAt(req, 'production.triggerSource') === 'photoSensor' },
+    ruleIds: ['THR-007'],
+    askWhen: isContinuous,
+  },
+  { id: 'rejectDistance', tier: 9, paths: ['production.rejectDistance'], ruleIds: ['THR-008'], askWhen: isContinuous },
+  { id: 'sampleExposure', tier: 9, paths: ['production.sampleExposureMs'], ruleIds: ['LGT-024'], askWhen: isContinuous, suggestions: [0.5, 1, 5] },
 ];
 
 const isAsked = (field: Field<unknown> | null) => field?.confidence !== undefined;

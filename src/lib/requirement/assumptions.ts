@@ -135,6 +135,7 @@ export function applyDefaults(
       ? { ...codeDef, value: row.value, basis: { vi: row.basisVi ?? row.basisEn ?? codeDef.basis.vi, en: row.basisEn ?? row.basisVi ?? codeDef.basis.en } }
       : codeDef;
     if (!shown.has(def.path)) continue;
+    if (def.when && !def.when(next)) continue;
     const field = readField(next, def.path);
     if (!field || field.value !== null) continue;
 

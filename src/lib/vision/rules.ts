@@ -112,11 +112,17 @@ export const RULES: readonly RuleDefinition[] = [
   { id: 'LGT-021', version: '1.0.0', category: 'LGT', dimension: 'Lighting' },
   { id: 'LGT-022', version: '1.0.0', category: 'LGT', dimension: 'Lighting' },
   { id: 'LGT-023', version: '1.0.0', category: 'LGT', dimension: 'Lighting' },
+  // Đủ sáng ở thời gian phơi ngắn — tốc độ cao (chốt 2026-10-26).
+  { id: 'LGT-024', version: '1.0.0', category: 'LGT', dimension: 'Lighting' },
   { id: 'THR-001', version: '1.0.0', category: 'THR', dimension: 'Throughput' },
   { id: 'THR-002', version: '1.0.0', category: 'THR', dimension: 'Throughput' },
   { id: 'THR-003', version: '1.0.0', category: 'THR', dimension: 'Throughput' },
   { id: 'THR-004', version: '1.0.0', category: 'THR', dimension: 'Throughput' },
   { id: 'THR-005', version: '1.0.0', category: 'THR', dimension: 'Throughput' },
+  // Tốc độ cao (chốt 2026-10-26): số ảnh/giây · lệch vị trí khi trigger · độ trễ tới điểm gạt.
+  { id: 'THR-006', version: '1.0.0', category: 'THR', dimension: 'Throughput' },
+  { id: 'THR-007', version: '1.0.0', category: 'THR', dimension: 'Throughput' },
+  { id: 'THR-008', version: '1.0.0', category: 'THR', dimension: 'Throughput' },
   { id: 'MEC-001', version: '1.0.0', category: 'MEC', dimension: 'Mechanical' },
   { id: 'MEC-002', version: '1.0.0', category: 'MEC', dimension: 'Mechanical' },
   { id: 'MEC-003', version: '1.0.0', category: 'MEC', dimension: 'Mechanical' },

@@ -25,6 +25,7 @@ import {
   IP_REQUIREMENTS,
   MATERIALS,
   MOTIONS,
+  TRIGGER_SOURCES,
   SURFACES,
   V1A_FIELDS,
   VARIABILITIES,
@@ -39,6 +40,7 @@ const RATE_UNITS = ['per_second', 'per_minute', 'per_hour'] as const;
 const TEMP_DELTA_UNITS = ['K', 'C'] as const;
 const ALPHA_UNITS = ['um_per_m_K', 'ppm_per_K'] as const;
 const ANGLE_UNITS = ['deg'] as const;
+const DURATION_UNITS = ['ms', 'us', 's'] as const;
 const TOLERANCE_FORMS = ['plus_minus', 'total_band', 'unclear'] as const;
 
 const sourceSpan = z.string().describe('Đoạn chữ chép NGUYÊN VĂN, liên tục, từ mô tả — chứa thông tin này.');
@@ -95,6 +97,12 @@ export const EXTRACTION_SCHEMA = z.object({
   throughput: measured(RATE_UNITS, 'Sản lượng: số sản phẩm theo đơn vị thời gian.'),
   motion: choice(MOTIONS, 'Sản phẩm đứng yên / dừng từng bước / chạy liên tục khi chụp.'),
   conveyorSpeed: measured(SPEED_UNITS, 'Tốc độ băng tải / dây chuyền.'),
+  imagesPerPart: z.object({ value: z.number().int(), sourceSpan }).nullable().describe('Số ảnh chụp cho mỗi sản phẩm, chỉ khi mô tả nêu con số.'),
+  triggerSource: choice(TRIGGER_SOURCES, 'Thiết bị kích chụp khi sản phẩm chạy: cảm biến quang hay encoder.'),
+  triggerJitter: measured(DURATION_UNITS, 'Thời gian đáp ứng / sai lệch thời điểm của cảm biến trigger, chỉ khi mô tả nêu con số.'),
+  rejectDistance: measured(LENGTH_UNITS, 'Khoảng cách từ camera tới điểm / cơ cấu gạt loại.'),
+  rejectActuation: measured(DURATION_UNITS, 'Thời gian cơ cấu gạt loại tác động, chỉ khi mô tả nêu con số.'),
+  sampleExposure: measured(DURATION_UNITS, 'Thời gian phơi sáng đã dùng khi chụp mẫu, chỉ khi mô tả nêu con số.'),
 
   cameraCount: z.object({ value: z.number().int(), sourceSpan }).nullable().describe('Số camera dự kiến.'),
   workingDistance: measured(LENGTH_UNITS, 'Khoảng cách làm việc từ camera tới vật.'),
@@ -153,6 +161,7 @@ Nghĩa các giá trị lựa chọn:
 - defectVariability: low = lỗi ổn định về hình dạng và vị trí; medium = có biến thiên; high = hình dạng / vị trí / màu thay đổi nhiều; unknown = mô tả nói chưa rõ.
 - measuredFeature: dimension = kích thước / khoảng cách; diameter = đường kính; angle = góc; position = vị trí tương đối.
 - motion: static = đứng yên; indexed = dừng từng bước để chụp; continuous = chạy liên tục khi chụp.
+- triggerSource: photoSensor = cảm biến quang / sensor phát hiện vật; encoder = encoder băng tải.
 - environmentConditions: clean = sạch; dust = bụi; oil = dầu; vibration = rung; variableLight = ánh sáng môi trường thay đổi; highTemp = nhiệt độ cao.
 - ipRequirement: none = không yêu cầu; ip54 / ip65 / ip67 = cấp tương ứng.
 - resultInterface: digitalIO = tín hiệu I/O số (OK/NG); ethernetIP = EtherNet/IP; profinet = PROFINET; modbus = Modbus TCP; tcp = TCP/IP socket.`;
@@ -164,7 +173,7 @@ export function buildUserMessage(rawText: string): string {
 
 // ─────────────────────────────── Đầu ra LLM → ô trên bảng ───────────────────────────────
 
-type ValueKind = 'length' | 'speed' | 'rate' | 'tempDelta' | 'alpha' | 'angle' | 'count' | 'choice' | 'flag' | 'tolerance' | 'list';
+type ValueKind = 'length' | 'speed' | 'rate' | 'tempDelta' | 'alpha' | 'angle' | 'count' | 'duration' | 'choice' | 'flag' | 'tolerance' | 'list';
 type FieldKey = Exclude<keyof Extraction, 'applicationType'>;
 
 /** Mỗi ô trên bảng V1a có đúng một khoá trong schema — test kiểm. */
@@ -188,6 +197,12 @@ export const EXTRACTION_FIELD_MAP: readonly { key: FieldKey; path: string; kind:
   { key: 'throughput', path: 'production.partsPerMinute', kind: 'rate' },
   { key: 'motion', path: 'production.motion', kind: 'choice' },
   { key: 'conveyorSpeed', path: 'production.conveyorSpeed', kind: 'speed' },
+  { key: 'imagesPerPart', path: 'production.imagesPerPart', kind: 'count' },
+  { key: 'triggerSource', path: 'production.triggerSource', kind: 'choice' },
+  { key: 'triggerJitter', path: 'production.triggerJitterMs', kind: 'duration' },
+  { key: 'rejectDistance', path: 'production.rejectDistance', kind: 'length' },
+  { key: 'rejectActuation', path: 'production.rejectActuationMs', kind: 'duration' },
+  { key: 'sampleExposure', path: 'production.sampleExposureMs', kind: 'duration' },
   { key: 'cameraCount', path: 'system.cameraCount', kind: 'count' },
   { key: 'workingDistance', path: 'system.workingDistance', kind: 'length' },
   { key: 'cameraTilt', path: 'system.cameraTiltDeg', kind: 'angle' },
@@ -209,6 +224,7 @@ const RATE_TO_PER_MINUTE: Record<(typeof RATE_UNITS)[number], number> = { per_se
 // Dao động nhiệt độ: 1 °C chênh lệch = 1 K. Hệ số giãn nở: 1 ppm/K = 1 µm/(m·K).
 const TEMP_DELTA_TO_K: Record<(typeof TEMP_DELTA_UNITS)[number], number> = { K: 1, C: 1 };
 const ALPHA_TO_UM_PER_M_K: Record<(typeof ALPHA_UNITS)[number], number> = { um_per_m_K: 1, ppm_per_K: 1 };
+const DURATION_TO_MS: Record<(typeof DURATION_UNITS)[number], number> = { ms: 1, us: 0.001, s: 1000 };
 
 /** Bỏ nhiễu dấu phẩy động của phép nhân (0.05 × 1000 = 50.00000000000001). */
 const tidy = (n: number) => Number(n.toPrecision(10));
@@ -309,6 +325,9 @@ export function extractionToFields(extraction: Extraction, rawText: string): Ext
         break;
       case 'angle':
         value = written;
+        break;
+      case 'duration':
+        value = written * DURATION_TO_MS[entry.unit as keyof typeof DURATION_TO_MS];
         break;
     }
 

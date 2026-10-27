@@ -1,7 +1,6 @@
 import { resolveAssumptions } from '@/lib/requirement/assumptions';
 import { fieldsFor, readField } from '@/lib/requirement/fields';
 import type { Assumption, DefectContrast, Requirement } from '@/lib/requirement/types';
-import { CYCLE_DEFAULTS } from './configurationRules';
 import { lightingRuleId, suggestLighting } from './lighting';
 import { DEFAULT_ENGINE_TABLES, type EngineTables } from './engineTables';
 import { DEFAULT_ENGINE_PARAMS, type EngineParams, interfaceBandwidthFor, pxPerDefectFor } from './engineParams';
@@ -29,11 +28,11 @@ import { term } from './formulaTerms';
  * CHƯA BIẾT, không coi là đạt.
  */
 
-/** THR-005: nhoè cho phép = k_blur × mm/px (spec cho 0,3…1, mặc định 0,5). */
-export const K_BLUR = 0.5;
-/** LGT-008: thời gian phơi sáng tối đa dưới mức này thì bắt buộc strobe + global shutter. */
-export const STROBE_EXPOSURE_LIMIT_US = 50;
-/** THR-006: dùng quá tỉ lệ này băng thông giao tiếp là mỏng biên. */
+/** THR-005: nhoè cho phép = k_blur × mm/px (spec cho 0,3…1, mặc định 0,5). Mặc định — sửa qua admin (engineParams). */
+export const K_BLUR = DEFAULT_ENGINE_PARAMS.blurPxAllowed;
+/** LGT-008: thời gian phơi sáng tối đa dưới mức này thì bắt buộc strobe + global shutter. Mặc định — sửa qua admin. */
+export const STROBE_EXPOSURE_LIMIT_US = DEFAULT_ENGINE_PARAMS.strobeExposureLimitUs;
+/** THR-002: dùng quá tỉ lệ này băng thông giao tiếp là mỏng biên. */
 export const INTERFACE_MAX_SHARE = DEFAULT_ENGINE_PARAMS.interfaceMaxShare;
 /** THR-001: ảnh đơn sắc 8 bit (Bayer 8 bit cũng 1 byte/px) khi chưa chọn camera. */
 export const BYTES_PER_PX = 1;
@@ -82,6 +81,15 @@ export type RequirementAnalysis = {
   partsPerMinute: number | null;
   /** Phơi sáng tối đa để không nhoè (THR-005), µs; null khi sản phẩm không chạy liên tục. */
   exposureMaxUs: number | null;
+  /** Số ảnh mỗi sản phẩm (ô thật hoặc giả định 1). */
+  imagesPerPart: number;
+  /** THR-006: số ảnh/giây mỗi camera cần = ảnh/sản phẩm × ppm ÷ 60; null khi chưa có sản lượng. */
+  framesPerSecondNeeded: number | null;
+  /** Tốc độ băng tải khi sản phẩm chạy liên tục (mm/s), null nếu không — THR-008. */
+  conveyorSpeedMmS: number | null;
+  /** Camera → điểm gạt (mm) và thời gian cơ cấu gạt (ms) — THR-008. */
+  rejectDistanceMm: number | null;
+  rejectActuationMs: number | null;
   /** AI-002 đã bật: biến động lỗi lớn, ứng viên học sâu. */
   usesDeepLearning: boolean;
   /**
@@ -382,36 +390,128 @@ export function analyseRequirement(
 
   // ─── THR-005 / LGT-008: nhoè chuyển động → phơi sáng → strobe ───
   const speed = num('production.conveyorSpeed');
-  if (raw('production.motion') === 'continuous' && speed !== null && speed > 0 && governing !== null) {
-    const exposureUs = ((K_BLUR * governing) / speed) * 1e6;
+  const continuous = raw('production.motion') === 'continuous' && speed !== null && speed > 0;
+  const kBlur = params.blurPxAllowed;
+  const exposureMaxUs = continuous && governing !== null ? ((kBlur * governing) / speed!) * 1e6 : null;
+  if (exposureMaxUs !== null) {
     push(
       'THR-005',
-      { key: 'exposureForBlur', status: 'info', formula: `${K_BLUR} × ${fmt(governing, 5)} mm/px ÷ ${fmt(speed)} mm/s = ${fmt(exposureUs, 0)} µs` },
+      { key: 'exposureForBlur', status: 'info', formula: `${kBlur} × ${fmt(governing!, 5)} mm/px ÷ ${fmt(speed!)} mm/s = ${fmt(exposureMaxUs, 0)} µs` },
       'calculated',
       ['production.motion', 'production.conveyorSpeed']
     );
-    if (exposureUs < STROBE_EXPOSURE_LIMIT_US) {
+    if (exposureMaxUs < params.strobeExposureLimitUs) {
       push(
         'LGT-008',
-        { key: 'strobeRequired', status: 'warn', formula: `${fmt(exposureUs, 0)} µs < ${STROBE_EXPOSURE_LIMIT_US} µs`, noteKey: 'strobeRequired', noteValues: { us: Math.round(exposureUs) } },
+        {
+          key: 'strobeRequired',
+          status: 'warn',
+          formula: `${fmt(exposureMaxUs, 0)} µs < ${params.strobeExposureLimitUs} µs`,
+          noteKey: 'strobeRequired',
+          noteValues: { us: Math.round(exposureMaxUs) },
+        },
         'rule-of-thumb',
         ['production.motion', 'production.conveyorSpeed']
       );
     }
   }
 
+  // ─── THR-006: số ảnh/giây mỗi camera cần (so với fps camera ở bộ lọc thiết bị) ───
+  const ppm = num('production.partsPerMinute') ?? (num('production.taktTime') ? 60 / num('production.taktTime')! : null);
+  const imagesPerPart = Math.max(1, num('production.imagesPerPart') ?? 1);
+  const fpsNeeded = ppm !== null && ppm > 0 ? (imagesPerPart * ppm) / 60 : null;
+  const ratePaths = ['production.partsPerMinute', 'production.taktTime', 'production.imagesPerPart'];
+  if (fpsNeeded !== null) {
+    push(
+      'THR-006',
+      {
+        key: 'frameRateNeeded',
+        status: 'info',
+        formula: `${imagesPerPart} × ${fmt(ppm!, 1)} ÷ 60 = ${fmt(fpsNeeded, 2)} ${term('framesPerSecond')}`,
+        noteKey: 'frameRateNeeded',
+        noteValues: { fps: round(fpsNeeded, 2), n: imagesPerPart },
+      },
+      'calculated',
+      ratePaths
+    );
+  }
+
+  // ─── THR-007: lệch vị trí chụp do sai lệch thời điểm trigger ───
+  if (continuous) {
+    const source = raw('production.triggerSource');
+    const paths = ['production.motion', 'production.conveyorSpeed', 'production.triggerSource', 'production.triggerJitterMs'];
+    const jitterMs = num('production.triggerJitterMs');
+    if (source === 'encoder') {
+      push('THR-007', { key: 'triggerShift', status: 'pass', formula: 'encoder', noteKey: 'triggerEncoder' }, 'rule-of-thumb', paths);
+    } else if (jitterMs !== null) {
+      const shiftMm = (speed! * jitterMs) / 1000;
+      const shortSide = tile ? Math.min(tile.widthMm, tile.heightMm) : fovW !== null && fovH !== null ? Math.min(fovW, fovH) : null;
+      const share = shortSide ? shiftMm / shortSide : null;
+      const px = governing !== null ? shiftMm / governing : null;
+      const over = share !== null && share > params.triggerShiftMaxShare;
+      push(
+        'THR-007',
+        {
+          key: 'triggerShift',
+          status: over ? 'warn' : 'pass',
+          formula:
+            `${fmt(speed!)} mm/s × ${fmt(jitterMs, 3)} ms = ±${fmt(shiftMm, 3)} mm` +
+            (px !== null ? ` = ${fmt(px, 1)} px` : '') +
+            (share !== null ? ` · ${fmt(share * 100, 1)}% ${over ? '>' : '≤'} ${fmt(params.triggerShiftMaxShare * 100, 1)}%` : ''),
+          noteKey: over ? 'triggerShiftHigh' : 'triggerShiftOk',
+          noteValues: { shift: round(shiftMm, 3), margin: round(2 * shiftMm, 2), px: px !== null ? round(px, 1) : '—' },
+        },
+        'calculated',
+        paths,
+        share !== null && share > 0 ? params.triggerShiftMaxShare / share : null
+      );
+    }
+  }
+
+  // ─── LGT-024: đèn có đủ sáng ở thời gian phơi ngắn không ───
+  if (exposureMaxUs !== null) {
+    const sampleMs = num('production.sampleExposureMs');
+    const sampleField = readField(req, 'production.sampleExposureMs');
+    const stated = sampleField?.confidence === 'stated';
+    if (sampleMs !== null && sampleMs > 0) {
+      const boost = (sampleMs * 1000) / exposureMaxUs;
+      const duty = fpsNeeded !== null ? exposureMaxUs * 1e-6 * fpsNeeded : null;
+      const paths = ['production.sampleExposureMs', 'production.conveyorSpeed', ...ratePaths];
+      // Duty rất nhỏ (xung µs, vài ảnh/giây) làm tròn ra "0" — ghi "< 0.01" cho khỏi hiểu nhầm là không chớp.
+      const dutyText = duty === null ? '—' : duty * 100 < 0.01 ? '< 0.01' : fmt(duty * 100, 2);
+      const values = { boost: round(boost, 1), us: Math.round(exposureMaxUs), duty: dutyText, maxBoost: params.strobeBoostMax, maxDuty: round(params.strobeMaxDuty * 100, 1) };
+      const formula =
+        `${fmt(sampleMs * 1000, 0)} µs ÷ ${fmt(exposureMaxUs, 0)} µs = ×${fmt(boost, 1)}` +
+        (duty !== null ? ` · duty ${fmt(exposureMaxUs, 0)} µs × ${fmt(fpsNeeded!, 2)} ${term('framesPerSecond')} = ${dutyText}%` : '');
+      let check: Check;
+      let margin: number | null = null;
+      if (boost <= 1) {
+        check = { key: 'lightBudget', status: 'pass', formula, noteKey: 'lightContinuousOk', noteValues: values };
+        margin = 1 / boost;
+      } else if (duty !== null && duty > params.strobeMaxDuty) {
+        check = { key: 'lightBudget', status: 'fail', formula, noteKey: 'lightDutyTooHigh', noteValues: values };
+        margin = params.strobeMaxDuty / duty;
+      } else if (boost > params.strobeBoostMax) {
+        // Số phơi lúc chụp mẫu là số THẬT → kết luận được; còn ước tính thì chỉ cảnh báo.
+        check = { key: 'lightBudget', status: stated ? 'fail' : 'warn', formula, noteKey: 'lightBoostTooHigh', noteValues: values };
+        margin = params.strobeBoostMax / boost;
+      } else {
+        check = { key: 'lightBudget', status: 'warn', formula, noteKey: 'lightNeedsOverdrive', noteValues: values };
+        margin = params.strobeBoostMax / boost;
+      }
+      push('LGT-024', check, stated ? 'rule-of-thumb' : 'requires-sample-test', paths, margin);
+    }
+  }
+
   // ─── THR-001 / THR-002: băng thông, giao tiếp tối thiểu ───
-  const exposureMaxUs =
-    raw('production.motion') === 'continuous' && speed !== null && speed > 0 && governing !== null ? ((K_BLUR * governing) / speed) * 1e6 : null;
   let dataRateTotal: number | null = null;
   let interfaceName: string | null = null;
-  const ppm = num('production.partsPerMinute') ?? (num('production.taktTime') ? 60 / num('production.taktTime')! : null);
-  if (ppm !== null && ppm > 0 && megapixels !== null && cameraCount !== null) {
-    const fps = ppm / 60;
+  if (fpsNeeded !== null && megapixels !== null && cameraCount !== null) {
+    const fps = fpsNeeded;
     const perCamera = megapixels * BYTES_PER_PX * fps;
     const total = perCamera * cameraCount;
     dataRateTotal = total;
-    const throughputPaths = ['production.partsPerMinute', 'production.taktTime', ...sizePaths];
+    const throughputPaths = [...ratePaths, ...sizePaths];
     push(
       'THR-001',
       {
@@ -504,7 +604,7 @@ export function analyseRequirement(
         status: 'info',
         formula: interfaces.map((v) => RESULT_INTERFACE_LABEL[v] ?? v).join(' · '),
         noteKey: 'intResultInterface',
-        noteValues: { ioMs: CYCLE_DEFAULTS.ioMs },
+        noteValues: { ioMs: params.cycleIoMs },
       },
       'rule-of-thumb',
       ['integration.resultInterface']
@@ -534,6 +634,11 @@ export function analyseRequirement(
     tiltDepthMm: tiltDepth,
     partsPerMinute: ppm,
     exposureMaxUs,
+    imagesPerPart,
+    framesPerSecondNeeded: fpsNeeded,
+    conveyorSpeedMmS: continuous ? speed : null,
+    rejectDistanceMm: continuous ? num('production.rejectDistance') : null,
+    rejectActuationMs: continuous ? num('production.rejectActuationMs') : null,
     usesDeepLearning: results.some((result) => result.ruleId === 'AI-002'),
     fieldInputs: Object.fromEntries(
       fieldsFor(req.applicationType).flatMap((def) => {

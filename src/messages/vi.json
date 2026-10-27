@@ -644,7 +644,11 @@
         "ipcUnknown": "Thông số máy tính chưa khai",
         "cameraFit": "Camera khớp yêu cầu",
         "lightFit": "Đèn khớp yêu cầu",
-        "resultInterface": "Giao tiếp trả kết quả"
+        "resultInterface": "Giao tiếp trả kết quả",
+        "frameRateNeeded": "Số ảnh/giây cần",
+        "triggerShift": "Lệch vị trí khi trigger",
+        "lightBudget": "Đủ sáng ở thời gian phơi ngắn",
+        "rejectLatency": "Độ trễ tới điểm gạt loại"
       },
       "notes": {
         "sensorTooSmall": "Cảm biến thiếu pixel trên ít nhất một trục — đổi camera hoặc thu hẹp FOV.",
@@ -720,9 +724,9 @@
         "dofConflictDetection": "Cần F/{f} cho độ sâu {dof} mm, gấp {ratio}× F#max: phần xa mặt nét sẽ mờ. Bài chỉ phát hiện lỗi (không đo) nên chưa loại ống — phải chụp mẫu xác nhận lỗi nhỏ nhất vẫn thấy được ở cả vùng mờ. Nếu không thấy: giảm dao động chiều cao bằng đồ gá, tăng khoảng cách làm việc, hoặc chụp nhiều mặt nét.",
         "dofConflictTiltDetection": "Cần F/{f} cho độ sâu {dof} mm, gấp {ratio}× F#max, phần lớn do camera nghiêng: phần xa mặt nét sẽ mờ. Bài chỉ phát hiện lỗi (không đo) nên chưa loại ống — phải chụp mẫu xác nhận lỗi vẫn thấy được. Nếu không thấy: giảm góc nghiêng hoặc dùng ống Scheimpflug.",
         "dofBeyondLensAperture": "Cần khép tới F/{f} cho độ sâu {dof} mm nhưng ống kính chỉ khép được tới F/{fLens}.",
-        "cycleWithin": "Dư {margin}% so với nhịp {takt} ms. Số có dấu * là GIẢ ĐỊNH (xử lý {process} ms/ảnh) — đo lại với thuật toán thật.",
-        "cycleTight": "Chỉ dư {margin}% nhịp (dưới 30%). Số có dấu * là GIẢ ĐỊNH (xử lý {process} ms/ảnh) — đo thuật toán thật trước khi chốt.",
-        "cycleOver": "Vượt nhịp: cần khoảng {total} ms, nhịp chỉ {takt} ms. Số có dấu * là GIẢ ĐỊNH (xử lý {process} ms/ảnh).",
+        "cycleWithin": "Khâu chậm nhất (chụp / truyền / xử lý) dư {margin}% so với nhịp {takt} ms. Số có dấu * là GIẢ ĐỊNH (xử lý {process} ms/ảnh) — đo lại với thuật toán thật.",
+        "cycleTight": "Khâu chậm nhất chỉ dư {margin}% nhịp (dưới {min}%). Số có dấu * là GIẢ ĐỊNH (xử lý {process} ms/ảnh) — đo thuật toán thật trước khi chốt.",
+        "cycleOver": "Khâu chậm nhất cần {total} ms mỗi sản phẩm, nhịp chỉ {takt} ms. Số có dấu * là GIẢ ĐỊNH (xử lý {process} ms/ảnh).",
         "ipcPcieShort": "Cần {need} khe PCIe, máy chỉ có {have}.",
         "ipcCoresShort": "Cần tối thiểu {min} core cho {n} camera, máy chỉ có {have}.",
         "ipcCoresTight": "Đủ tối thiểu nhưng dưới mức khuyên dùng {rec} core — xử lý nặng sẽ nghẽn.",
@@ -748,7 +752,22 @@
         "lightNoStrobe": "Bài cần đèn chạy xung (phơi sáng rất ngắn) mà đèn này không chạy xung được.",
         "lightStrobeUnknown": "Đèn chưa khai khả năng chạy xung — bài này cần strobe.",
         "dofSetApertureTight": "Đạt nhưng sát giới hạn: cần khép tới F/{f} cho độ sâu {dof} mm, gần F#max F/{fMax} — ít dư nếu chiều cao thực tế dao động nhiều hơn.",
-        "intResultInterface": "Trả kết quả qua chuẩn đã chọn. Ngân sách thời gian chu kỳ (THR-003) đang tính {ioMs} ms cho bước gửi kết quả — đo lại với PLC thật khi chạy thử."
+        "intResultInterface": "Trả kết quả qua chuẩn đã chọn. Ngân sách thời gian chu kỳ (THR-003) đang tính {ioMs} ms cho bước gửi kết quả — đo lại với PLC thật khi chạy thử.",
+        "frameRateNeeded": "Mỗi camera phải chụp {fps} ảnh/giây ({n} ảnh mỗi sản phẩm). Camera có fps thấp hơn sẽ bị loại ở bước chọn thiết bị.",
+        "triggerEncoder": "Trigger theo encoder: vị trí chụp bám theo băng tải, không lệch thêm khi tốc độ thay đổi.",
+        "triggerShiftOk": "Vị trí chụp lệch tới ±{shift} mm ({px} px). Để vùng nhìn dư ít nhất {margin} mm theo chiều chạy.",
+        "triggerShiftHigh": "Vị trí chụp lệch tới ±{shift} mm ({px} px) — quá lớn so với vùng nhìn. Nới vùng nhìn thêm ít nhất {margin} mm theo chiều chạy, dùng cảm biến đáp ứng nhanh hơn, hoặc trigger bằng encoder.",
+        "lightContinuousOk": "Phơi tối đa {us} µs vẫn dài hơn lúc chụp mẫu — đèn liên tục đủ sáng.",
+        "lightNeedsOverdrive": "Phơi chỉ {us} µs: đèn phải sáng gấp ×{boost} lúc chụp mẫu — cần strobe overdrive (duty {duty}%). Chụp thử ở đúng thời gian phơi này.",
+        "lightBoostTooHigh": "Đèn phải sáng gấp ×{boost} lúc chụp mẫu, quá mức overdrive thường đạt (×{maxBoost}). Dùng đèn mạnh hơn / đặt gần hơn, khẩu mở hơn, hoặc giảm tốc độ — tăng gain sẽ làm ảnh nhiễu và kết quả chập chờn.",
+        "lightDutyTooHigh": "Đèn cần overdrive ×{boost} nhưng duty {duty}% vượt giới hạn {maxDuty}% — đèn không chịu được nhiệt. Giảm số ảnh/giây hoặc dùng đèn mạnh hơn để chạy liên tục.",
+        "cameraFpsTooLow": "Cần {need} ảnh/giây, camera chỉ tối đa {max} fps.",
+        "cameraFpsTight": "Cần {need} ảnh/giây, camera tối đa {max} fps — dư dưới {margin}%. Có thể tăng fps bằng ROI hoặc binning.",
+        "cameraFpsUnknown": "Camera chưa khai fps tối đa — chưa kiểm được số ảnh/giây.",
+        "rejectDistanceUnknown": "Chưa có khoảng cách camera → điểm gạt loại — chưa kiểm được kết quả có kịp không.",
+        "rejectWithin": "Kết quả có sau khoảng {latency} ms, sản phẩm tới điểm gạt sau {budget} ms — dư {margin}%. Số có dấu * là GIẢ ĐỊNH; xử lý tính lần chậm.",
+        "rejectTight": "Chỉ dư {margin}% (dưới {min}%) trước khi sản phẩm tới điểm gạt. Lùi điểm gạt xa hơn hoặc rút ngắn xử lý. Số có dấu * là GIẢ ĐỊNH.",
+        "rejectTooLate": "Kết quả có sau khoảng {latency} ms nhưng sản phẩm tới điểm gạt sau {budget} ms — gạt nhầm sản phẩm khác. Lùi điểm gạt, rút ngắn xử lý, hoặc theo dõi sản phẩm bằng encoder."
       },
       "lightingReason": {
         "scratch": "Xước và nứt nông chỉ nổi lên khi chiếu góc rất thấp, nền tối hẳn.",
@@ -1381,7 +1400,7 @@
         },
         "throughput": {
           "title": "Thời gian chu kỳ",
-          "hint": "THR-003: dư tối thiểu so với nhịp, và thời gian xử lý giả định khi chưa đo thuật toán thật."
+          "hint": "THR-003: dư tối thiểu so với nhịp, thời gian xử lý giả định khi chưa đo thuật toán thật. Tốc độ cao: nhoè, strobe, trigger, IO, xử lý lần chậm, lệch vị trí chụp, độ sáng strobe (THR-005..008, LGT-008/024)."
         },
         "budget": {
           "title": "Ngân sách sai số đo",
@@ -1451,7 +1470,15 @@
         "bwCameraLinkMedium": "Camera Link Medium",
         "bwCameraLinkFull": "Camera Link Full",
         "bwCameraLinkDeca": "Camera Link Deca",
-        "lensFovMaxRatio": "Chọn ống kính — vùng nhìn rộng tối đa so với vùng cần"
+        "lensFovMaxRatio": "Chọn ống kính — vùng nhìn rộng tối đa so với vùng cần",
+        "blurPxAllowed": "Nhoè chuyển động cho phép (THR-005)",
+        "strobeExposureLimitUs": "Phơi sáng dưới mức này bắt buộc strobe (LGT-008)",
+        "cycleTriggerMs": "Thời gian trigger giả định (THR-003/008)",
+        "cycleIoMs": "Thời gian trả IO giả định (THR-003/008)",
+        "processWorstFactor": "Xử lý lần chậm = trung bình × hệ số (THR-008)",
+        "triggerShiftMaxShare": "Lệch vị trí chụp tối đa so với cạnh ngắn vùng nhìn (THR-007)",
+        "strobeBoostMax": "Strobe sáng gấp tối đa so với đèn liên tục (LGT-024)",
+        "strobeMaxDuty": "Duty tối đa của xung strobe (LGT-024)"
       },
       "errors": {
         "fix": "Có ô chưa hợp lệ — xem dòng báo đỏ.",
@@ -1519,7 +1546,12 @@
           "workingDistance": "Khoảng cách làm việc",
           "thermalExpansionCoeff": "Hệ số giãn nở α (khi chưa biết vật liệu)",
           "ambientTempRange": "Dao động nhiệt độ ΔT",
-          "motion": "Chuyển động khi chụp"
+          "motion": "Chuyển động khi chụp",
+          "imagesPerPart": "Số ảnh mỗi sản phẩm",
+          "triggerSource": "Nguồn trigger chụp",
+          "triggerJitterMs": "Sai lệch thời điểm trigger",
+          "rejectActuationMs": "Thời gian cơ cấu gạt",
+          "sampleExposureMs": "Phơi sáng lúc chụp mẫu"
         }
       },
       "errors": {
@@ -2162,7 +2194,13 @@
         "production": {
           "partsPerMinute": "Sản lượng",
           "motion": "Chuyển động khi chụp",
-          "conveyorSpeed": "Tốc độ băng tải"
+          "conveyorSpeed": "Tốc độ băng tải",
+          "imagesPerPart": "Số ảnh mỗi sản phẩm",
+          "triggerSource": "Nguồn trigger chụp",
+          "triggerJitterMs": "Sai lệch thời điểm trigger",
+          "rejectDistance": "Khoảng cách camera → điểm gạt loại",
+          "rejectActuationMs": "Thời gian cơ cấu gạt",
+          "sampleExposureMs": "Phơi sáng lúc chụp mẫu"
         },
         "system": {
           "cameraCount": "Số camera dự kiến",
@@ -2245,6 +2283,10 @@
           "profinet": "PROFINET",
           "modbus": "Modbus TCP",
           "tcp": "TCP/IP socket"
+        },
+        "triggerSource": {
+          "photoSensor": "Cảm biến quang",
+          "encoder": "Encoder"
         }
       },
       "assumedOption": "Giả định: {value}",
@@ -2276,7 +2318,11 @@
         "stitching": "để kiểm sai số ghép ảnh giữa các camera",
         "algorithm": "để quyết định dùng xử lý ảnh truyền thống hay Deep Learning",
         "motionBlur": "để kiểm nhoè chuyển động",
-        "integration": "để biết cách trả kết quả cho PLC / robot"
+        "integration": "để biết cách trả kết quả cho PLC / robot",
+        "frameRate": "để kiểm số ảnh/giây camera phải chụp",
+        "triggerPosition": "để kiểm vị trí chụp lệch bao nhiêu khi chạy nhanh",
+        "rejectTiming": "để kiểm kết quả có kịp trước điểm gạt loại",
+        "lightBudget": "để kiểm đèn có đủ sáng ở thời gian phơi ngắn"
       },
       "questions": {
         "title": "Thông tin còn thiếu",
@@ -2344,6 +2390,22 @@
           "variability": {
             "question": "Hình dạng, vị trí, màu của lỗi có thay đổi nhiều không?",
             "short": "Biến động ngoại hình lỗi"
+          },
+          "imagesPerPart": {
+            "question": "Mỗi sản phẩm chụp mấy ảnh (nhiều góc / nhiều kiểu đèn)?",
+            "short": "Số ảnh mỗi sản phẩm"
+          },
+          "triggerSource": {
+            "question": "Chụp được kích bằng cảm biến quang hay encoder? Cảm biến quang thì đáp ứng bao nhiêu ms?",
+            "short": "Nguồn trigger"
+          },
+          "rejectDistance": {
+            "question": "Điểm gạt loại cách camera bao nhiêu mm?",
+            "short": "Khoảng cách tới điểm gạt"
+          },
+          "sampleExposure": {
+            "question": "Lúc chụp mẫu ra ảnh tốt, thời gian phơi sáng là bao nhiêu ms?",
+            "short": "Phơi sáng lúc chụp mẫu"
           }
         }
       },

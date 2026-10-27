@@ -644,7 +644,11 @@
         "ipcUnknown": "Missing PC specs",
         "cameraFit": "Camera fit",
         "lightFit": "Light fit",
-        "resultInterface": "Result interface"
+        "resultInterface": "Result interface",
+        "frameRateNeeded": "Frame rate needed",
+        "triggerShift": "Capture position shift",
+        "lightBudget": "Light at short exposure",
+        "rejectLatency": "Latency to the reject point"
       },
       "notes": {
         "sensorTooSmall": "The sensor lacks pixels on at least one axis — change camera or narrow the field of view.",
@@ -720,9 +724,9 @@
         "dofConflictDetection": "F/{f} is needed for {dof} mm depth, {ratio}× F#max: areas away from the focal plane will blur. This is detection only (no measurement), so the lens is not excluded — confirm with samples that the smallest defect is still visible in the blurred areas. If not: reduce height variation with fixturing, raise the working distance, or focus-stack.",
         "dofConflictTiltDetection": "F/{f} is needed for {dof} mm depth, {ratio}× F#max, mostly because the camera is tilted: areas away from the focal plane will blur. This is detection only (no measurement), so the lens is not excluded — confirm with samples that defects stay visible. If not: reduce the tilt or use a Scheimpflug lens.",
         "dofBeyondLensAperture": "F/{f} is needed for {dof} mm depth, but the lens only stops down to F/{fLens}.",
-        "cycleWithin": "{margin}% headroom on the {takt} ms cycle. Values marked * are ASSUMED ({process} ms processing per image) — re-measure with the real algorithm.",
-        "cycleTight": "Only {margin}% headroom (below 30%). Values marked * are ASSUMED ({process} ms processing per image) — measure the real algorithm before committing.",
-        "cycleOver": "Cycle exceeded: about {total} ms needed, only {takt} ms available. Values marked * are ASSUMED ({process} ms processing per image).",
+        "cycleWithin": "The slowest stage (capture / transfer / processing) leaves {margin}% of the {takt} ms takt. Figures with * are ASSUMED (processing {process} ms/image) — re-measure with the real algorithm.",
+        "cycleTight": "The slowest stage leaves only {margin}% of the takt (under {min}%). Figures with * are ASSUMED (processing {process} ms/image) — measure the real algorithm before committing.",
+        "cycleOver": "The slowest stage needs {total} ms per part, the takt is only {takt} ms. Figures with * are ASSUMED (processing {process} ms/image).",
         "ipcPcieShort": "{need} PCIe slots needed, the PC has {have}.",
         "ipcCoresShort": "At least {min} cores are needed for {n} cameras, the PC has {have}.",
         "ipcCoresTight": "Meets the minimum but is below the recommended {rec} cores — heavy processing will bottleneck.",
@@ -748,7 +752,22 @@
         "lightNoStrobe": "The task needs a strobed light (very short exposure) but this light cannot be strobed.",
         "lightStrobeUnknown": "Strobe capability not specified — this task needs strobe.",
         "dofSetApertureTight": "Passes but tight: F/{f} is needed for {dof} mm depth, close to F#max F/{fMax} — little headroom if real height variation is larger.",
-        "intResultInterface": "Results are sent over the chosen interface. The cycle time budget (THR-003) assumes {ioMs} ms for sending the result — re-measure with the real PLC during trials."
+        "intResultInterface": "Results are sent over the chosen interface. The cycle time budget (THR-003) assumes {ioMs} ms for sending the result — re-measure with the real PLC during trials.",
+        "frameRateNeeded": "Each camera must capture {fps} images/s ({n} images per part). Slower cameras are excluded at equipment selection.",
+        "triggerEncoder": "Encoder trigger: the capture position follows the conveyor and does not shift when speed changes.",
+        "triggerShiftOk": "Capture position shifts by up to ±{shift} mm ({px} px). Keep at least {margin} mm of spare field of view along the motion.",
+        "triggerShiftHigh": "Capture position shifts by up to ±{shift} mm ({px} px) — large against the field of view. Add at least {margin} mm of field of view along the motion, use a faster sensor, or trigger from an encoder.",
+        "lightContinuousOk": "The {us} µs maximum exposure is still longer than in the sample shot — continuous light is bright enough.",
+        "lightNeedsOverdrive": "Only {us} µs exposure: light must be ×{boost} brighter than in the sample shot — needs strobe overdrive (duty {duty}%). Test at this exact exposure.",
+        "lightBoostTooHigh": "Light must be ×{boost} brighter than in the sample shot, beyond what overdrive usually gives (×{maxBoost}). Use a stronger / closer light, a wider aperture, or a slower line — raising gain makes images noisy and results unstable.",
+        "lightDutyTooHigh": "Light needs ×{boost} overdrive but the {duty}% duty exceeds the {maxDuty}% limit — the light will overheat. Lower the frame rate or use a light bright enough to run continuously.",
+        "cameraFpsTooLow": "Needs {need} images/s, the camera tops out at {max} fps.",
+        "cameraFpsTight": "Needs {need} images/s, the camera tops out at {max} fps — under {margin}% headroom. ROI or binning can raise the frame rate.",
+        "cameraFpsUnknown": "Camera has no maximum fps on record — frame rate not checked.",
+        "rejectDistanceUnknown": "No camera → reject point distance yet — cannot check whether the result arrives in time.",
+        "rejectWithin": "The result is ready after about {latency} ms; the part reaches the reject point after {budget} ms — {margin}% headroom. Figures with * are ASSUMED; processing uses the slow case.",
+        "rejectTight": "Only {margin}% headroom (under {min}%) before the part reaches the reject point. Move the reject point further or shorten processing. Figures with * are ASSUMED.",
+        "rejectTooLate": "The result is ready after about {latency} ms but the part reaches the reject point after {budget} ms — the wrong part gets rejected. Move the reject point, shorten processing, or track parts with an encoder."
       },
       "lightingReason": {
         "scratch": "Scratches and shallow cracks only stand out under a very low angle against a dark background.",
@@ -1381,7 +1400,7 @@
         },
         "throughput": {
           "title": "Cycle time",
-          "hint": "THR-003: minimum headroom versus takt, and assumed processing time before the real algorithm is measured."
+          "hint": "THR-003: minimum headroom against the takt, assumed processing time until the real algorithm is measured. High speed: blur, strobe, trigger, IO, slow-case processing, capture shift, strobe brightness (THR-005..008, LGT-008/024)."
         },
         "budget": {
           "title": "Measurement error budget",
@@ -1451,7 +1470,15 @@
         "bwCameraLinkMedium": "Camera Link Medium",
         "bwCameraLinkFull": "Camera Link Full",
         "bwCameraLinkDeca": "Camera Link Deca",
-        "lensFovMaxRatio": "Lens selector — maximum field of view relative to the required one"
+        "lensFovMaxRatio": "Lens selector — maximum field of view relative to the required one",
+        "blurPxAllowed": "Allowed motion blur (THR-005)",
+        "strobeExposureLimitUs": "Exposure below this requires strobe (LGT-008)",
+        "cycleTriggerMs": "Assumed trigger time (THR-003/008)",
+        "cycleIoMs": "Assumed IO response time (THR-003/008)",
+        "processWorstFactor": "Slow-case processing = average × factor (THR-008)",
+        "triggerShiftMaxShare": "Maximum capture shift relative to the short field-of-view side (THR-007)",
+        "strobeBoostMax": "Maximum strobe brightness relative to continuous light (LGT-024)",
+        "strobeMaxDuty": "Maximum strobe pulse duty (LGT-024)"
       },
       "errors": {
         "fix": "Some fields are invalid — see the red lines.",
@@ -1519,7 +1546,12 @@
           "workingDistance": "Working distance",
           "thermalExpansionCoeff": "Thermal expansion α (material unknown)",
           "ambientTempRange": "Temperature variation ΔT",
-          "motion": "Motion during capture"
+          "motion": "Motion during capture",
+          "imagesPerPart": "Images per part",
+          "triggerSource": "Capture trigger source",
+          "triggerJitterMs": "Trigger timing jitter",
+          "rejectActuationMs": "Reject actuator time",
+          "sampleExposureMs": "Exposure in the sample shot"
         }
       },
       "errors": {
@@ -2162,7 +2194,13 @@
         "production": {
           "partsPerMinute": "Throughput",
           "motion": "Motion during capture",
-          "conveyorSpeed": "Conveyor speed"
+          "conveyorSpeed": "Conveyor speed",
+          "imagesPerPart": "Images per part",
+          "triggerSource": "Capture trigger source",
+          "triggerJitterMs": "Trigger timing jitter",
+          "rejectDistance": "Camera → reject point distance",
+          "rejectActuationMs": "Reject actuator time",
+          "sampleExposureMs": "Exposure in the sample shot"
         },
         "system": {
           "cameraCount": "Planned camera count",
@@ -2245,6 +2283,10 @@
           "profinet": "PROFINET",
           "modbus": "Modbus TCP",
           "tcp": "TCP/IP socket"
+        },
+        "triggerSource": {
+          "photoSensor": "Photo sensor",
+          "encoder": "Encoder"
         }
       },
       "assumedOption": "Assumed: {value}",
@@ -2276,7 +2318,11 @@
         "stitching": "to check stitching error between cameras",
         "algorithm": "to decide between rule-based vision and deep learning",
         "motionBlur": "to check motion blur",
-        "integration": "to know how results reach the PLC / robot"
+        "integration": "to know how results reach the PLC / robot",
+        "frameRate": "to check the frame rate the camera must reach",
+        "triggerPosition": "to check how far the capture position shifts at speed",
+        "rejectTiming": "to check the result arrives before the reject point",
+        "lightBudget": "to check the light is bright enough at short exposure"
       },
       "questions": {
         "title": "Missing information",
@@ -2344,6 +2390,22 @@
           "variability": {
             "question": "Do the defects vary a lot in shape, position or colour?",
             "short": "Defect variability"
+          },
+          "imagesPerPart": {
+            "question": "How many images per part (several views / lighting modes)?",
+            "short": "Images per part"
+          },
+          "triggerSource": {
+            "question": "Is capture triggered by a photo sensor or an encoder? For a photo sensor, what is its response time in ms?",
+            "short": "Trigger source"
+          },
+          "rejectDistance": {
+            "question": "How far is the reject point from the camera, in mm?",
+            "short": "Distance to reject point"
+          },
+          "sampleExposure": {
+            "question": "What exposure time (ms) gave a good image in the sample shot?",
+            "short": "Sample-shot exposure"
           }
         }
       },

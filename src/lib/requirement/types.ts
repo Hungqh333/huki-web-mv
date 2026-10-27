@@ -72,6 +72,8 @@ export type Surface = 'matte' | 'glossy' | 'metallic' | 'black' | 'transparent' 
 export type DefectContrast = 'high' | 'medium' | 'low' | 'unknown';
 export type DefectVariability = 'low' | 'medium' | 'high' | 'unknown';
 export type Motion = 'static' | 'indexed' | 'continuous';
+/** Nguồn trigger chụp khi sản phẩm chạy liên tục — THR-007 (chốt 2026-10-26). */
+export type TriggerSource = 'photoSensor' | 'encoder';
 export type MountingRigidity = 'rigid' | 'standard' | 'unknown';
 export type EnvironmentCondition = 'clean' | 'dust' | 'oil' | 'vibration' | 'variableLight' | 'highTemp';
 export type ResultInterface = 'digitalIO' | 'ethernetIP' | 'profinet' | 'modbus' | 'tcp';
@@ -133,6 +135,18 @@ export interface Requirement {
     motion: Field<Motion>;
     /** mm/s */
     conveyorSpeed: Field<number>;
+    /* Tốc độ cao — chốt 2026-10-26 (THR-006/007/008, LGT-024). Thêm sau V2: draft.ts backfill. */
+    /** Số ảnh chụp cho mỗi sản phẩm (nhiều góc / nhiều kiểu đèn). */
+    imagesPerPart: Field<number>;
+    triggerSource: Field<TriggerSource>;
+    /** ms — sai lệch thời điểm trigger, ≈ thời gian đáp ứng cảm biến quang. */
+    triggerJitterMs: Field<number>;
+    /** mm — từ camera tới điểm gạt loại. */
+    rejectDistance: Field<number>;
+    /** ms — thời gian cơ cấu gạt tác động. */
+    rejectActuationMs: Field<number>;
+    /** ms — thời gian phơi sáng lúc chụp mẫu ra ảnh tốt. */
+    sampleExposureMs: Field<number>;
   };
 
   system: {

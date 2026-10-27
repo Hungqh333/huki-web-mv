@@ -186,8 +186,8 @@ export function EngineTableForm({
             const base = DEFAULT_ENGINE_TABLES.defaults[def.key];
             const changed = JSON.stringify(value) !== JSON.stringify(base);
             const basis = FIELD_DEFAULTS.find((d) => d.path === def.path)!.basis;
-            const optionLabel = (option: string) =>
-              def.key === 'contrast' ? tOptions(`contrast.${option}` as never) : tOptions(`motion.${option}` as never);
+            // Khoá dòng lựa chọn trùng khoá nhãn: contrast / motion / triggerSource.
+            const optionLabel = (option: string) => tOptions(`${def.key}.${option}` as never);
             return rowFrame(
               def.key,
               t(`defaults.rows.${def.key}`),

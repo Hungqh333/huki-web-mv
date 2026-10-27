@@ -245,16 +245,19 @@ test('OPT-009 ở tầng Yêu cầu: nhân 1/cos θ vào số pixel cạnh dài;
   assert.deepEqual([warn.status, warn.noteKey], ['warn', 'cameraTiltMeasurement']);
 });
 
-test('THR-003: 1 + 43,5 + 45,6 + 300* + 10 = 400 ms trong nhịp 2000 ms; sát nhịp cảnh báo, vượt nhịp FAIL', () => {
+test('THR-003: khâu chậm nhất 1 × max(43,5; 45,6; 300*) = 300 ms trong nhịp 2000 ms; sát nhịp cảnh báo, vượt nhịp FAIL', () => {
   const ok = find(run(), 'THR-003');
   assert.equal(ok.status, 'pass');
-  // khung 1000/23 = 43,48 · truyền 5,01 MB ÷ 110 MB/s = 45,58 · xử lý GIẢ ĐỊNH 300
-  assert.equal(ok.noteValues?.total, 400);
+  // khung 1000/23 = 43,48 · truyền 5,01 MB ÷ 110 MB/s = 45,58 · xử lý GIẢ ĐỊNH 300 — chạy gối nhau (chốt 2026-10-26 Q5)
+  assert.equal(ok.noteValues?.total, 300);
   assert.equal(ok.evidence, 'rule-of-thumb', 'xu ly la gia dinh');
   assert.match(ok.formula, /300\*/);
 
-  assert.equal(find(run({ analysis: { 'production.partsPerMinute': 120 } }), 'THR-003').status, 'warn', 'nhip 500: du 20%');
-  assert.equal(find(run({ analysis: { 'production.partsPerMinute': 200 } }), 'THR-003').status, 'fail', 'nhip 300 < 400');
+  assert.equal(find(run({ analysis: { 'production.partsPerMinute': 120 } }), 'THR-003').status, 'pass', 'nhip 500: du 40% (truoc day cong noi tiep 400 ms → 20%)');
+  assert.equal(find(run({ analysis: { 'production.partsPerMinute': 150 } }), 'THR-003').status, 'warn', 'nhip 400: du 25%');
+  assert.equal(find(run({ analysis: { 'production.partsPerMinute': 250 } }), 'THR-003').status, 'fail', 'nhip 240 < 300');
+  // 2 ảnh mỗi sản phẩm → khâu chậm nhất nhân đôi
+  assert.equal(find(run({ analysis: { 'production.imagesPerPart': 2 } }), 'THR-003').noteValues?.total, 600);
   // Biến động cao → AI-002 → giả định 800 ms
   const dl = find(run({ analysis: { 'detection.0.variability': 'high' } }), 'THR-003');
   assert.equal(dl.noteValues?.process, CYCLE_DEFAULTS.processDeepLearningMs);
@@ -321,7 +324,7 @@ test('mọi khoá tên bước và câu diễn giải của tầng Cấu hình c
     run({ lens: { wdMinMm: 400, resolutionLpMm: 100 } }),
     run({ lens: { lensType: 'telecentric', magnification: 0.1, wdMinMm: 100, wdMaxMm: 120 } }),
     run({ lens: { focalLengthMm: null, imageCircleFormat: '1/2' } }),
-    run({ analysis: { 'object.heightVariation': 12, 'production.partsPerMinute': 120 } }),
+    run({ analysis: { 'object.heightVariation': 12, 'production.partsPerMinute': 150 } }),
     run({ analysis: { 'object.heightVariation': 20, 'production.partsPerMinute': 200, 'detection.0.variability': 'high' }, pc: { cpuCores: 3, ramGb: 8, lanPorts: 1 } }),
     run({ analysis: { 'object.heightVariation': 13 }, lens: { fNumberMax: 5.6 }, pc: { cpuCores: 2, pcieSlots: 0 }, cards: 1 }),
     run({ analysis: { 'system.cameraTiltDeg': 30 }, pc: { cpuCores: null } }),

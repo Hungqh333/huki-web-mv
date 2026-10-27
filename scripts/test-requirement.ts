@@ -306,6 +306,11 @@ test('mặc định §3.3: mỗi giá trị trỏ tới ô có trên bảng và 
     'object.thermalExpansionCoeff': 23,
     'environment.ambientTempRange': 10,
     'production.motion': 'indexed',
+    'production.imagesPerPart': 1,
+    'production.triggerSource': 'photoSensor',
+    'production.triggerJitterMs': 0.5,
+    'production.rejectActuationMs': 20,
+    'production.sampleExposureMs': 1,
   });
 });
 
@@ -324,7 +329,8 @@ test('áp mặc định lúc hiển thị: ô trống → "assumed", bản nháp
   assert.equal(readField(draft, 'detection.0.contrast')!.value, null, 'ban nhap khong bi ghi gia dinh');
   assert.equal(readField(draft, 'detection.0.contrast')!.confidence, undefined, 'ban nhap van la chua hoi');
 
-  assert.deepEqual(assumptions.map((a) => a.path).sort(), FIELD_DEFAULTS.map((d) => d.path).sort());
+  // Giả định có điều kiện (`when` — tốc độ cao, chỉ khi chạy liên tục / có sản lượng) không áp cho bản nháp trống.
+  assert.deepEqual(assumptions.map((a) => a.path).sort(), FIELD_DEFAULTS.filter((d) => !d.when).map((d) => d.path).sort());
   assert.ok(assumptions.every((a) => a.source === 'default'));
   for (const a of assumptions) assert.equal(readField(requirement, a.path!)!.assumptionId, a.key);
 
@@ -455,8 +461,9 @@ test('bộ câu hỏi: đúng thứ tự bậc đã duyệt, trỏ tới ô có 
     'objectSize', 'defectMinSize', 'tolerance', 'contrast', 'heightVariation', 'workingDistance',
     'spanLength', 'ambientTempRange', 'material', 'crossesCameraSeam', 'cameraCount',
     'surface', 'motion', 'variability',
+    'imagesPerPart', 'triggerSource', 'rejectDistance', 'sampleExposure',
   ]);
-  assert.deepEqual(QUESTIONS.map((q) => q.tier), [1, 2, 2, 3, 4, 4, 5, 5, 5, 6, 7, 8, 8, 8]);
+  assert.deepEqual(QUESTIONS.map((q) => q.tier), [1, 2, 2, 3, 4, 4, 5, 5, 5, 6, 7, 8, 8, 8, 9, 9, 9, 9]);
   assert.equal(MAX_VISIBLE_QUESTIONS, 3);
 
   const paths = new Set(V1A_FIELDS.map((f) => f.path));

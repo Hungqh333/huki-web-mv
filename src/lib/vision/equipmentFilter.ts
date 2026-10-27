@@ -171,13 +171,39 @@ export function cameraRequirementChecks(analysis: RequirementAnalysis, component
     }
   }
 
+  // THR-006: số ảnh/giây cần so với fps tối đa của camera (chốt 2026-10-26).
+  const fpsNeed = analysis.framesPerSecondNeeded;
+  if (fpsNeed !== null) {
+    if (camera.maxFps !== null && camera.maxFps > 0) {
+      const usable = camera.maxFps * (1 - analysis.params.cycleMinMargin);
+      const status: Check['status'] = fpsNeed > camera.maxFps ? 'fail' : fpsNeed > usable ? 'warn' : 'pass';
+      results.push(
+        make(
+          'THR-006',
+          {
+            key: 'cameraFit',
+            status,
+            formula: `${fmt(fpsNeed, 2)} ${status === 'fail' ? '>' : '≤'} ${fmt(camera.maxFps, 1)} fps`,
+            noteKey: status === 'fail' ? 'cameraFpsTooLow' : status === 'warn' ? 'cameraFpsTight' : undefined,
+            noteValues: { need: round(fpsNeed, 2), max: camera.maxFps, margin: Math.round(analysis.params.cycleMinMargin * 100) },
+          },
+          'calculated',
+          { 'camera.max_fps': camera.maxFps },
+          camera.maxFps / fpsNeed
+        )
+      );
+    } else {
+      results.push(make('THR-006', { key: 'cameraFit', status: 'info', formula: '—', noteKey: 'cameraFpsUnknown' }, 'unknown', {}));
+    }
+  }
+
   // THR-002: băng thông THẬT của camera này (pixel của nó, không phải pixel cần).
   const ppm = analysis.partsPerMinute;
   if (ppm !== null && ppm > 0 && camera.interfaceName) {
     const capacity = linkBandwidth(interfaceBandwidthFor(analysis.params), camera.interfaceName, camera.lanes);
     const link = (camera.lanes ?? 1) > 1 ? `${camera.interfaceName} × ${camera.lanes}` : camera.interfaceName;
     const maxShare = analysis.params.interfaceMaxShare;
-    const rate = ((camera.widthPx * camera.heightPx * camera.bytesPerPx) / 1e6) * (ppm / 60);
+    const rate = ((camera.widthPx * camera.heightPx * camera.bytesPerPx) / 1e6) * (ppm / 60) * analysis.imagesPerPart;
     if (capacity !== undefined) {
       const ok = rate <= capacity * maxShare;
       results.push(

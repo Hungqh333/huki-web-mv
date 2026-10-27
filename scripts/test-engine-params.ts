@@ -112,8 +112,8 @@ test('sửa ngưỡng đổi đúng phương án: mức Tiết kiệm, thời gi
   assert.notEqual(levels(withParams({ levelRecommendedMin: 1.7 })).find((l) => l.key === 'recommended')!.margin, recommended.margin);
   // Thời gian xử lý giả định đi thẳng vào công thức THR-003 của phương án.
   const thr = (params: EngineParams) => levels(params).find((l) => l.status === 'ok')!.lens!.results.find((r) => r.ruleId === 'THR-003')!.formula;
-  assert.match(thr(DEFAULT_ENGINE_PARAMS), /\+ 300\* \+/);
-  assert.match(thr(withParams({ processMs: 450 })), /\+ 450\* \+/);
+  assert.match(thr(DEFAULT_ENGINE_PARAMS), /, 300\*\)/);
+  assert.match(thr(withParams({ processMs: 450 })), /, 450\*\)/);
 });
 
 test('mỗi ngưỡng có nhãn vi/en trong trang admin', () => {

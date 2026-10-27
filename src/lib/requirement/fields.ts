@@ -64,6 +64,7 @@ export const CONTRASTS = ['high', 'medium', 'low', 'unknown'] as const;
 export const VARIABILITIES = ['low', 'medium', 'high', 'unknown'] as const;
 export const FEATURES = ['dimension', 'diameter', 'angle', 'position'] as const;
 export const MOTIONS = ['static', 'indexed', 'continuous'] as const;
+export const TRIGGER_SOURCES = ['photoSensor', 'encoder'] as const;
 export const CONDITIONS = ['clean', 'dust', 'oil', 'vibration', 'variableLight', 'highTemp'] as const;
 export const IP_REQUIREMENTS = ['none', 'ip54', 'ip65', 'ip67'] as const;
 /** Giao tiếp trả kết quả cho PLC / robot — INT-001 (V1c, 2026-10-12). */
@@ -97,6 +98,13 @@ export const V1A_FIELDS: readonly RequirementFieldDef[] = [
   { path: 'production.partsPerMinute', section: 'production', key: 'partsPerMinute', kind: 'number', unit: 'part/min', min: 0 },
   { path: 'production.motion', section: 'production', key: 'motion', kind: 'select', options: MOTIONS, optionsKey: 'motion' },
   { path: 'production.conveyorSpeed', section: 'production', key: 'conveyorSpeed', kind: 'number', unit: 'mm/s', min: 0 },
+  // Tốc độ cao (chốt 2026-10-26): ô Nâng cao, để trống thì engine dùng giả định trên panel.
+  { path: 'production.imagesPerPart', section: 'production', key: 'imagesPerPart', kind: 'number', min: 1 },
+  { path: 'production.triggerSource', section: 'production', key: 'triggerSource', kind: 'select', options: TRIGGER_SOURCES, optionsKey: 'triggerSource' },
+  { path: 'production.triggerJitterMs', section: 'production', key: 'triggerJitterMs', kind: 'number', unit: 'ms', min: 0 },
+  { path: 'production.rejectDistance', section: 'production', key: 'rejectDistance', kind: 'number', unit: 'mm', min: 0 },
+  { path: 'production.rejectActuationMs', section: 'production', key: 'rejectActuationMs', kind: 'number', unit: 'ms', min: 0 },
+  { path: 'production.sampleExposureMs', section: 'production', key: 'sampleExposureMs', kind: 'number', unit: 'ms', min: 0.001 },
 
   { path: 'system.cameraCount', section: 'system', key: 'cameraCount', kind: 'number', min: 1 },
   { path: 'system.workingDistance', section: 'system', key: 'workingDistance', kind: 'number', unit: 'mm', min: 1 },
@@ -173,6 +181,12 @@ export function emptyRequirement(type: ApplicationType, id = 'draft'): Requireme
       partsPerMinute: notAsked('part/min'),
       motion: notAsked(),
       conveyorSpeed: notAsked('mm/s'),
+      imagesPerPart: notAsked(),
+      triggerSource: notAsked(),
+      triggerJitterMs: notAsked('ms'),
+      rejectDistance: notAsked('mm'),
+      rejectActuationMs: notAsked('ms'),
+      sampleExposureMs: notAsked('ms'),
     },
     system: {
       cameraCount: notAsked(),

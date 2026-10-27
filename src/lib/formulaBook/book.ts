@@ -72,9 +72,46 @@ export type FormulaEntry = {
   usedIn: FormulaPage[];
   /** File : hàm trong mã nguồn. */
   source: string;
+  /** Hình minh hoạ hiện ngay dưới công thức. */
+  figure?: FormulaFigureKey;
   /** Mục có bảng sống đọc từ database (vẽ riêng trên trang). */
   liveTable?: 'defaults' | 'lighting' | 'lightColor' | 'lightMatrix';
 };
+
+/** Hình minh hoạ (đợt 1, chốt 2026-10-27) — vẽ ở components/admin/FormulaFigures.tsx. */
+export type FormulaFigureKey =
+  | 'angleOfView'
+  | 'budgetChain'
+  | 'codeWindow'
+  | 'confusion'
+  | 'converter'
+  | 'dataPipe'
+  | 'decisionFlow'
+  | 'diffraction'
+  | 'dof'
+  | 'extensionTube'
+  | 'fovTooWide'
+  | 'framesPerTakt'
+  | 'governing'
+  | 'imageCircle'
+  | 'lensGeometry'
+  | 'lensResolution'
+  | 'lightTypes'
+  | 'limitingAxis'
+  | 'motionBlur'
+  | 'overlapRoi'
+  | 'perspective'
+  | 'pipeline'
+  | 'pixelGrid'
+  | 'pxPerDefect'
+  | 'seam'
+  | 'shutter'
+  | 'strobe'
+  | 'telecentric'
+  | 'thermal'
+  | 'tiles'
+  | 'tilt'
+  | 'triggerShift';
 
 export type FormulaSection = { key: string; title: string; intro?: string; entries: FormulaEntry[] };
 
@@ -146,6 +183,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
       {
         id: 'RES-001',
         title: 'Nhánh phát hiện lỗi — mm/px cần',
+        figure: 'pxPerDefect',
         rules: ['RES-001'],
         formula: ['m_phát hiện = d_min ÷ N', 'N theo độ tương phản: cao / vừa / thấp (chưa rõ = thấp)', 'nhiều loại lỗi → lấy m nhỏ nhất'],
         params: ['pxPerDefectHigh', 'pxPerDefectMedium', 'pxPerDefectLow'],
@@ -166,6 +204,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
       {
         id: 'RES-002',
         title: 'Nhánh đo lường — ngân sách sai số',
+        figure: 'budgetChain',
         rules: ['RES-002'],
         formula: ['T = 2 × t   (t là dung sai dạng ±)', 'U = T ÷ GRR', 'm_đo = U × k_subpixel', 'nhiều dung sai → lấy t nhỏ nhất'],
         constants: [
@@ -179,6 +218,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
       {
         id: 'RES-003',
         title: 'Nhánh quyết định',
+        figure: 'governing',
         rules: ['RES-003'],
         formula: ['m_cần = min(m_phát hiện, m_đo)'],
         notes: ['Lấy MIN, không lấy trung bình: hệ thống phải thoả cả hai tiêu chí.'],
@@ -189,6 +229,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
       {
         id: 'RES-005',
         title: 'Chia vùng nhìn cho nhiều camera',
+        figure: 'tiles',
         rules: ['RES-005'],
         formula: [
           'lưới gần vuông nhất: số hàng = ước lớn nhất ≤ √n, số cột = n ÷ hàng; chiều nhiều camera nằm theo cạnh dài vật',
@@ -204,6 +245,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
       {
         id: 'RES-004',
         title: 'Số pixel / MP mỗi camera + lọc camera',
+        figure: 'pixelGrid',
         rules: ['RES-004'],
         formula: [
           'Nx = ⌈rộng ô ÷ (m_cần × cos θ)⌉, Ny = ⌈cao ô ÷ m_cần⌉   (cos θ chỉ nhân trục DÀI khi camera nghiêng θ)',
@@ -226,6 +268,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
       {
         id: 'OPT-009',
         title: 'Camera nghiêng',
+        figure: 'tilt',
         rules: ['OPT-009'],
         formula: ['hệ số kéo dài pixel = 1 ÷ cos θ', 'độ sâu sinh ra do nghiêng = cạnh dài ô × sin θ   (cộng vào Δh ở OPT-005)'],
         verdict: ['Bài đo → CẢNH BÁO (phải hiệu chuẩn phối cảnh)', 'Bài phát hiện → chỉ ghi nhận'],
@@ -236,6 +279,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
       {
         id: 'OPT-008',
         title: 'Sai số phối cảnh (ống thường)',
+        figure: 'perspective',
         rules: ['OPT-008'],
         formula: ['e = Δh ÷ WD × r', 'r = nửa đường chéo vùng nhìn MỘT camera (đã cộng chồng lấn)', 'Δh lấy cả dải, không chia đôi'],
         verdict: ['e > U → LOẠI', 'e > tỉ lệ cảnh báo × U → CẢNH BÁO', 'chỉ chạy khi bài có dung sai đo'],
@@ -247,6 +291,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
       {
         id: 'OPT-006',
         title: 'Khách yêu cầu đo không phối cảnh',
+        figure: 'telecentric',
         rules: ['OPT-006'],
         formula: ['vẫn tính e như OPT-008 để hiển thị, kết luận: phải dùng telecentric'],
         verdict: ['Luôn CẢNH BÁO'],
@@ -257,6 +302,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
       {
         id: 'OPT-007',
         title: 'Trần khả thi của telecentric',
+        figure: 'telecentric',
         rules: ['OPT-007'],
         formula: [
           'chạy khi OPT-008 LOẠI hoặc có OPT-006',
@@ -281,6 +327,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
       {
         id: 'MEC-001',
         title: 'Giãn nở nhiệt',
+        figure: 'thermal',
         rules: ['MEC-001'],
         formula: ['e = α × L × ΔT   (µm; α µm/(m·K), L m, ΔT K là cả DẢI dao động)', 'ΔT_max = U ÷ (α × L)   (dải; giữ trong ± ΔT_max ÷ 2)'],
         verdict: ['e > U → LOẠI', 'e > tỉ lệ cảnh báo × U → CẢNH BÁO', 'chỉ chạy khi bài có dung sai đo'],
@@ -292,6 +339,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
       {
         id: 'MEC-003',
         title: 'Ghép ảnh giữa camera',
+        figure: 'seam',
         rules: ['MEC-003'],
         formula: [
           'số đường ghép = min(n − 1, max(1, ⌈L ÷ bước lưới⌉ − 1)) theo trục nhiều camera; bước = ô − chồng lấn',
@@ -345,6 +393,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
       {
         id: 'THR-005',
         title: 'Phơi sáng tối đa để không nhoè',
+        figure: 'motionBlur',
         rules: ['THR-005'],
         formula: [
           't_max = k_blur × m_cần ÷ v   (µs; chỉ khi sản phẩm chạy liên tục)',
@@ -363,6 +412,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
       {
         id: 'LGT-008',
         title: 'Bắt buộc strobe + global shutter',
+        figure: 'shutter',
         rules: ['LGT-008'],
         formula: ['t_max < ngưỡng strobe → CẢNH BÁO', 'lọc camera: không có trigger IO → LOẠI', 'lọc đèn: không strobe được → LOẠI'],
         params: ['strobeExposureLimitUs'],
@@ -373,6 +423,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
       {
         id: 'THR-001',
         title: 'Lưu lượng dữ liệu',
+        figure: 'dataPipe',
         rules: ['THR-001'],
         formula: ['ảnh/giây = số ảnh mỗi sản phẩm × ppm ÷ 60   (THR-006)', 'MB/s mỗi camera = MP × byte/px × ảnh/giây', 'tổng = MB/s mỗi camera × số camera'],
         constants: [{ name: 'byte/px khi chưa chọn camera (Mono8 / Bayer8)', value: BYTES_PER_PX }],
@@ -383,6 +434,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
       {
         id: 'THR-002',
         title: 'Chuẩn giao tiếp tối thiểu',
+        figure: 'dataPipe',
         rules: ['THR-002'],
         formula: [
           'chọn chuẩn có băng thông NHỎ NHẤT thoả: băng thông × tỉ lệ dùng tối đa ≥ MB/s mỗi camera',
@@ -397,6 +449,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
       {
         id: 'THR-006',
         title: 'Số ảnh/giây cần so với fps camera',
+        figure: 'framesPerTakt',
         rules: ['THR-006'],
         formula: ['fps cần = số ảnh mỗi sản phẩm × ppm ÷ 60   (chưa nhập số ảnh → giả định 1)'],
         verdict: ['lọc camera: fps cần > fps tối đa → LOẠI', 'fps cần > fps tối đa × (1 − dư tối thiểu) → CẢNH BÁO (gợi ý ROI / binning)', 'camera chưa khai fps → chưa kiểm được'],
@@ -409,6 +462,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
       {
         id: 'THR-007',
         title: 'Lệch vị trí chụp do trigger',
+        figure: 'triggerShift',
         rules: ['THR-007'],
         formula: [
           'Δx = v × (đáp ứng cảm biến + jitter camera)   (mm; cảm biến chưa nhập → giả định 0,5 ms)',
@@ -429,6 +483,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
       {
         id: 'LGT-024',
         title: 'Đủ sáng ở thời gian phơi ngắn',
+        figure: 'strobe',
         rules: ['LGT-024'],
         formula: [
           'hệ số sáng = t_phơi lúc chụp mẫu ÷ t_max   (chưa nhập → giả định 1 ms, ghi "ước tính")',
@@ -458,6 +513,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
       {
         id: 'LGT-001..004',
         title: 'Kiểu đèn theo bề mặt và loại lỗi',
+        figure: 'lightTypes',
         rules: ['LGT-001', 'LGT-002', 'LGT-003', 'LGT-004'],
         formula: [
           'bề mặt bóng / kim loại / trong suốt LẤN ÁT loại lỗi; còn lại tra theo loại lỗi',
@@ -475,6 +531,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
       {
         id: 'LGT-017..023',
         title: 'Kiểu đèn (trang Chọn đèn bản 2)',
+        figure: 'lightTypes',
         rules: ['LGT-017', 'LGT-018', 'LGT-019', 'LGT-020', 'LGT-021', 'LGT-022', 'LGT-023'],
         formula: [
           'nhập 5 bước: bài toán → cần thấy gì → vật liệu (chỉ điền sẵn) → bề mặt + hình dạng → màu chi tiết + màu nền',
@@ -534,6 +591,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
       {
         id: 'EXP-001..002',
         title: 'Dự án thực nghiệm: tỉ lệ bỏ sót / hao phí',
+        figure: 'confusion',
         formula: [
           'EXP-001 · tỉ lệ bỏ sót = FN / (TP + TN + FP + FN) — hàng lỗi bị xếp thành OK',
           'EXP-002 · tỉ lệ hao phí = FP / (TP + TN + FP + FN) — hàng OK bị xếp thành NG',
@@ -592,6 +650,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
       {
         id: 'AI-001/002',
         title: 'Truyền thống hay học sâu',
+        figure: 'decisionFlow',
         rules: ['AI-001', 'AI-002'],
         formula: ['biến động lỗi thấp / vừa → truyền thống (AI-001, ĐẠT)', 'biến động cao → ứng viên học sâu (AI-002, CẢNH BÁO, phải chụp mẫu)', 'chưa rõ → AI-001 CẢNH BÁO'],
         notes: ['AI-002 bật thì THR-003 dùng thời gian xử lý học sâu và THR-004 đòi GPU.'],
@@ -621,6 +680,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
       {
         id: 'OPT-001',
         title: 'Vùng nhìn thật & mm/px thật',
+        figure: 'lensGeometry',
         rules: ['OPT-001'],
         formula: [
           'β = f ÷ (WD − sF)   (sF chưa khai = 0 → β = f ÷ WD; telecentric: β ghi trên ống)',
@@ -643,6 +703,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
       {
         id: 'OPT-002',
         title: 'Vòng ảnh & ngàm',
+        figure: 'imageCircle',
         rules: ['OPT-002'],
         formula: ['Ø vòng ảnh ≥ đường chéo cảm biến × (1 − dung sai vòng ảnh)', 'ngàm ống = ngàm camera'],
         verdict: ['vòng ảnh nhỏ → LOẠI', 'ống C lên camera CS → CẢNH BÁO (vòng đệm 5 mm)', 'ngàm khác → LOẠI'],
@@ -654,6 +715,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
       {
         id: 'OPT-003',
         title: 'Độ phân giải ống kính',
+        figure: 'lensResolution',
         rules: ['OPT-003'],
         formula: ['lp/mm cần = 1000 ÷ (2 × pitch µm)   (tần số Nyquist)'],
         verdict: ['lp/mm ống < cần → CẢNH BÁO', 'ống chưa khai lp/mm và pitch < 3 µm → CẢNH BÁO'],
@@ -664,6 +726,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
       {
         id: 'OPT-004',
         title: 'Giới hạn nhiễu xạ (F# hiệu dụng)',
+        figure: 'diffraction',
         rules: ['OPT-004'],
         formula: [
           'Airy = 2,44 × λ × N_hiệu dụng ≤ 2 pixel',
@@ -678,6 +741,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
       {
         id: 'OPT-005',
         title: 'Độ sâu trường ảnh ↔ nhiễu xạ',
+        figure: 'dof',
         rules: ['OPT-005'],
         formula: [
           'c = vòng mờ cho phép = số px × pitch',
@@ -702,6 +766,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
       {
         id: 'THR-003',
         title: 'Thông lượng — khâu chậm nhất so với nhịp',
+        figure: 'pipeline',
         rules: ['THR-003'],
         formula: [
           'T_nhịp = 60 000 ÷ ppm   (ms)',
@@ -721,6 +786,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
       {
         id: 'THR-008',
         title: 'Độ trễ tới điểm gạt loại',
+        figure: 'pipeline',
         rules: ['THR-008'],
         formula: [
           'trễ = trigger + n × khung + truyền + n × xử lý × hệ số lần chậm + IO + cơ cấu gạt   (n = số ảnh mỗi sản phẩm)',
@@ -762,6 +828,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
       {
         id: 'LNS-001',
         title: 'Độ phóng đại theo trục giới hạn',
+        figure: 'limitingAxis',
         formula: ['β = min(cảm biến dài ÷ vùng nhìn dài, cảm biến ngắn ÷ vùng nhìn ngắn)   (xoay camera được)', 'line scan: β = cảm biến dài ÷ vùng nhìn rộng'],
         evidence: 'calculated',
         usedIn: ['lens', 'oldSelector'],
@@ -770,6 +837,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
       {
         id: 'LNS-002',
         title: 'Biết 2 trong 3 (Newton, WD từ mặt trước ống)',
+        figure: 'lensGeometry',
         formula: [
           'vùng nhìn + WD → f = β × WD',
           'f + WD → β = f ÷ WD, vùng nhìn = cảm biến ÷ β',
@@ -784,6 +852,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
       {
         id: 'LNS-003',
         title: 'Góc nhìn tại WD',
+        figure: 'angleOfView',
         formula: ['góc = 2 × atan(vùng nhìn ÷ (2 × WD))'],
         notes: ['Datasheet thường ghi góc ở vô cực (2 × atan(cảm biến ÷ 2f)) → lệch vài % khi lấy nét gần.'],
         evidence: 'calculated',
@@ -806,6 +875,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
       {
         id: 'LNS-005',
         title: 'Vùng nhìn rộng quá',
+        figure: 'fovTooWide',
         formula: [
           'dư vùng nhìn = min(vùng nhìn dài thật ÷ dài cần, vùng nhìn ngắn thật ÷ ngắn cần)   (line scan: chỉ cạnh dài)',
           'phủ được vật nhưng dư vùng nhìn > ngưỡng → LOẠI (ẩn, xem bằng "Hiện cả ống bị loại")',
@@ -819,6 +889,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
       {
         id: 'OPT-010',
         title: 'Ống nối (extension tube) — khi MOD không đạt',
+        figure: 'extensionTube',
         rules: ['OPT-010'],
         formula: [
           'chỉ thử khi ống thường bị LOẠI DUY NHẤT vì WD < MOD (không áp telecentric, không ghép với bộ nhân)',
@@ -849,6 +920,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
       {
         id: 'OPT-011',
         title: 'Bộ nhân tiêu cự (rear converter) ×k',
+        figure: 'converter',
         rules: ['OPT-011'],
         formula: [
           'chỉ thử khi ống thường bị LOẠI chỉ vì pixel thô và/hoặc vòng ảnh nhỏ (MOD không cứu được: MOD không đổi)',
@@ -875,6 +947,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
       {
         id: 'OPT-012',
         title: 'WD thật để vừa khít vùng nhìn',
+        figure: 'lensGeometry',
         rules: ['OPT-012'],
         formula: [
           'β_cần = min(cạnh dài cảm biến ÷ cạnh dài vùng nhìn, cạnh ngắn cảm biến ÷ cạnh ngắn vùng nhìn) · line scan: chỉ cạnh dài',
@@ -1128,6 +1201,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
       {
         id: 'CAM-002',
         title: 'Area scan: fps thật (cảm biến / ROI, thời gian phơi, cổng giao tiếp)',
+        figure: 'overlapRoi',
         formula: [
           'fps cần = số ảnh mỗi sản phẩm × ppm ÷ 60   (THR-006)',
           't_phơi dùng: vật chạy → t_max của camera; đứng yên → phơi lúc chụp mẫu (nếu đã nhập)',
@@ -1167,6 +1241,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
       {
         id: 'LSC-001',
         title: 'Line scan: mm/px ngang và số camera ghép',
+        figure: 'tiles',
         formula: [
           'n = số camera nhỏ nhất để (bề rộng ÷ n + chồng lấn) ÷ px một dòng ≤ mm/px cần',
           'chồng lấn = max(tỉ lệ × bề rộng ÷ n, px chồng lấn tối thiểu × mm/px cần); n = 1 không chồng lấn',
@@ -1248,6 +1323,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
       {
         id: 'COD-002',
         title: 'Mã đang chạy: đủ số lần chụp khi mã đi qua khung',
+        figure: 'codeWindow',
         formula: [
           'cửa sổ W = vùng nhìn theo chiều chạy − mã theo chiều chạy − 2 × dung sai theo chiều chạy',
           'không đặt vùng nhìn dọc → vùng nhìn dọc = mã + 2 × dung sai + một chiều dài mã (W = một chiều dài mã)',

@@ -1,8 +1,10 @@
 import { getTranslations } from 'next-intl/server';
 import { PanelHeader, NOTE_CLASS } from '@/components/ui/PanelHeader';
 import { FormulaBookControls } from './FormulaBookControls';
+import { FormulaFigure } from './FormulaFigures';
 import snapshot from '@/lib/formulaBook/snapshot.json';
 import { EVIDENCE_LABEL, FORMULA_BOOK, PAGE_LABEL, type FormulaEntry } from '@/lib/formulaBook/book';
+import { formulaLines, relatedEntries, verdictRows, type VerdictKind } from '@/lib/formulaBook/present';
 import type { LoadedEngineParams } from '@/lib/engineParamsLoad';
 import { DEFAULT_ROW_DEFS, DEFAULT_ENGINE_TABLES } from '@/lib/vision/engineTables';
 import { DEFAULT_ENGINE_PARAMS, ENGINE_PARAMS } from '@/lib/vision/engineParams';
@@ -19,6 +21,7 @@ import { lightRowLabels } from '@/lib/lightRowLabels';
  */
 
 const UNIT: Record<string, string | undefined> = Object.fromEntries(ENGINE_PARAMS.map((p) => [p.key, 'unit' in p ? p.unit : undefined]));
+const TITLE_OF = new Map(FORMULA_BOOK.flatMap((s) => s.entries.map((e) => [e.id, e.title] as const)));
 
 export async function FormulaBookView({ loaded }: { loaded: LoadedEngineParams }) {
   const t = await getTranslations('admin.formulas');
@@ -95,6 +98,16 @@ type TableLabels = {
   option: (group: string, value: string) => string;
 };
 
+/** Chuẩn chữ thẻ (chốt 2026-10-27): nội dung 14 px, nhãn / khoá / nguồn 13 px, tên mục 15 px. */
+const LABEL = 'mb-1.5 text-[13px] font-semibold text-slate-500 dark:text-slate-400';
+
+const BADGE: Record<Exclude<VerdictKind, 'neutral'>, string> = {
+  bad: 'bg-red-50 text-red-700 ring-red-200 dark:bg-red-950/50 dark:text-red-300 dark:ring-red-900',
+  warn: 'bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:ring-amber-900',
+  ok: 'bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:ring-emerald-900',
+  unknown: 'bg-slate-100 text-slate-600 ring-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-700',
+};
+
 function EntryCard({
   entry,
   loaded,
@@ -108,86 +121,160 @@ function EntryCard({
   paramLabel: (key: string) => string;
   tables: TableLabels;
 }) {
+  const lines = formulaLines(entry);
+  const verdicts = verdictRows(entry);
+  const related = relatedEntries(entry);
+  const hasParams = Boolean(entry.params?.length || entry.constants?.length || entry.liveTable);
+
   return (
-    <article id={entry.id} className="scroll-mt-20 rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-      <div className="flex flex-wrap items-center justify-between gap-2 rounded-t-2xl border-b border-slate-200 bg-[#E4E5F6] px-4 py-2.5 dark:border-slate-800 dark:bg-[#22274A]">
+    <article id={entry.id} className="scroll-mt-20 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div className="border-b border-slate-200 bg-[#E4E5F6] px-4 py-3 dark:border-slate-800 dark:bg-[#22274A]">
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-          <span className="font-mono text-xs font-semibold text-indigo-700 dark:text-indigo-300">{entry.id}</span>
-          <h3 className="text-sm font-semibold text-indigo-950 dark:text-indigo-100">{entry.title}</h3>
-          {entry.evidence ? <span className={NOTE_CLASS}>{EVIDENCE_LABEL[entry.evidence]}</span> : null}
+          <span className="font-mono text-[13px] font-semibold text-indigo-700 dark:text-indigo-300">{entry.id}</span>
+          <h3 className="text-[15px] font-semibold text-indigo-950 dark:text-indigo-100">{entry.title}</h3>
+          {entry.evidence ? <span className="text-[13px] text-slate-500 dark:text-slate-400">{EVIDENCE_LABEL[entry.evidence]}</span> : null}
         </div>
-        <div className="flex flex-wrap gap-1.5">
-          {entry.usedIn.map((page) => (
-            <a key={page} href={PAGE_LABEL[page].href} className="rounded-full bg-white/70 px-2 py-0.5 text-[11px] text-slate-600 hover:text-sky-700 dark:bg-slate-800 dark:text-slate-300">
-              {PAGE_LABEL[page].label}
-            </a>
-          ))}
-        </div>
+        {entry.usedIn.length ? (
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {entry.usedIn.map((page) => (
+              <a
+                key={page}
+                href={PAGE_LABEL[page].href}
+                className="rounded-full bg-white/75 px-2.5 py-0.5 text-[13px] text-slate-600 hover:text-sky-700 dark:bg-slate-800 dark:text-slate-300"
+              >
+                {PAGE_LABEL[page].label}
+              </a>
+            ))}
+          </div>
+        ) : null}
       </div>
 
-      <div className="space-y-3 px-4 py-3">
-        <pre className="overflow-x-auto whitespace-pre-wrap rounded-lg bg-slate-50 px-3 py-2 font-mono text-[13px] leading-relaxed text-slate-800 dark:bg-slate-950 dark:text-slate-200">
-          {entry.formula.join('\n')}
-        </pre>
-
-        {entry.verdict?.length ? (
-          <ul className="space-y-0.5 text-sm text-slate-700 dark:text-slate-300">
-            {entry.verdict.map((line) => (
-              <li key={line}>→ {line}</li>
+      <div className="space-y-4 px-4 pb-4 pt-3.5">
+        <div>
+          <div className={LABEL}>Công thức</div>
+          <div className="space-y-1.5">
+            {lines.map((line, i) => (
+              <div
+                key={i}
+                className={`flex flex-col gap-0.5 border-l-[3px] bg-slate-50 px-3 py-1.5 sm:flex-row sm:items-baseline sm:gap-3 dark:bg-slate-950 ${
+                  line.indent ? 'ml-6 border-sky-300 dark:border-sky-800' : 'border-sky-600 dark:border-sky-500'
+                }`}
+              >
+                <code className="flex-1 break-words font-mono text-sm text-slate-900 dark:text-slate-100">{line.main}</code>
+                {line.note ? <span className="text-[13px] text-slate-500 sm:max-w-[45%] dark:text-slate-400">{line.note}</span> : null}
+              </div>
             ))}
-          </ul>
-        ) : null}
+          </div>
+        </div>
 
-        {entry.params?.length || entry.constants?.length ? (
-          <table className="w-full max-w-2xl text-left text-sm">
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {entry.params?.map((key) => {
-                const value = loaded.params[key];
-                const changed = overridden.has(key);
-                const unit = UNIT[key];
-                return (
-                  <tr key={key}>
-                    <td className="py-1 pr-3 text-slate-600 dark:text-slate-300">
-                      {paramLabel(key)} <span className="font-mono text-[11px] text-slate-400">{key}</span>
-                    </td>
-                    <td className="py-1 text-right font-mono tabular-nums text-slate-900 dark:text-slate-100">
-                      {value}
-                      {unit ? ` ${unit}` : ''}
-                    </td>
-                    <td className="py-1 pl-3 text-xs">
-                      {changed ? (
-                        <span className="rounded bg-amber-100 px-1.5 py-0.5 text-amber-900 dark:bg-amber-950/60 dark:text-amber-200">
-                          đã sửa · mặc định {DEFAULT_ENGINE_PARAMS[key]}
-                        </span>
-                      ) : (
-                        <span className="text-slate-400">admin</span>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-              {entry.constants?.map((c) => (
-                <tr key={c.name}>
-                  <td className="py-1 pr-3 text-slate-600 dark:text-slate-300">{c.name}</td>
-                  <td className="py-1 text-right font-mono tabular-nums text-slate-900 dark:text-slate-100">{c.value}</td>
-                  <td className="py-1 pl-3 text-xs text-slate-400">trong code</td>
-                </tr>
+        {entry.figure ? <FormulaFigure figure={entry.figure} uid={entry.id} /> : null}
+
+        {verdicts.length ? (
+          <div>
+            <div className={LABEL}>Kết luận</div>
+            <ul className="divide-y divide-slate-100 text-sm dark:divide-slate-800">
+              {verdicts.map((row, i) => (
+                // Điện thoại: nhãn xuống dòng dưới điều kiện (chốt 2026-10-27).
+                <li key={i} className="flex flex-col gap-1 py-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+                  <span className="text-slate-700 dark:text-slate-300">
+                    {row.kind !== 'neutral' && row.when !== 'Mọi trường hợp' ? (
+                      <span className="mr-1.5 text-slate-500 dark:text-slate-400">Khi</span>
+                    ) : null}
+                    {row.when}
+                  </span>
+                  {row.kind === 'neutral' ? (
+                    row.label ? <span className="text-slate-600 sm:max-w-[50%] sm:text-right dark:text-slate-400">→ {row.label}</span> : null
+                  ) : (
+                    <span
+                      className={`self-start rounded-full px-2.5 py-0.5 text-[13px] font-semibold ring-1 ring-inset sm:max-w-[50%] sm:self-auto sm:text-right ${BADGE[row.kind]}`}
+                    >
+                      {row.label}
+                    </span>
+                  )}
+                </li>
               ))}
-            </tbody>
-          </table>
+            </ul>
+          </div>
         ) : null}
 
-        {entry.liveTable === 'defaults' ? <DefaultsTable loaded={loaded} labels={tables} /> : null}
-        {entry.liveTable === 'lighting' ? <LightingTable loaded={loaded} labels={tables} /> : null}
-        {entry.liveTable === 'lightColor' ? <LightColorTable loaded={loaded} labels={tables} /> : null}
-        {entry.liveTable === 'lightMatrix' ? <LightMatrixTable loaded={loaded} labels={tables} /> : null}
+        {hasParams ? (
+          <div>
+            <div className={LABEL}>Ngưỡng đang chạy</div>
+            {entry.params?.length || entry.constants?.length ? (
+              <ul className="divide-y divide-slate-100 text-sm dark:divide-slate-800">
+                {entry.params?.map((key) => {
+                  const unit = UNIT[key];
+                  return (
+                    <li key={key} className="flex flex-wrap items-center gap-x-3 gap-y-0.5 py-1.5">
+                      <div className="min-w-0 basis-full sm:basis-auto sm:flex-1">
+                        <div className="text-slate-700 dark:text-slate-300">{paramLabel(key)}</div>
+                        <div className="break-words font-mono text-[13px] text-slate-400">{key}</div>
+                      </div>
+                      <div className="ml-auto whitespace-nowrap text-right font-mono tabular-nums text-slate-900 dark:text-slate-100">
+                        {loaded.params[key]}
+                        {unit ? ` ${unit}` : ''}
+                      </div>
+                      <div className="shrink-0 text-right text-[13px] sm:w-24">
+                        {overridden.has(key) ? (
+                          <span className="rounded bg-amber-100 px-1.5 py-0.5 text-amber-900 dark:bg-amber-950/60 dark:text-amber-200">
+                            đã sửa · mặc định {DEFAULT_ENGINE_PARAMS[key]}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400">admin</span>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
+                {entry.constants?.map((c) => (
+                  <li key={c.name} className="flex flex-wrap items-center gap-x-3 gap-y-0.5 py-1.5">
+                    <div className="min-w-0 basis-full text-slate-700 sm:basis-auto sm:flex-1 dark:text-slate-300">{c.name}</div>
+                    <div className="ml-auto text-right font-mono tabular-nums text-slate-900 dark:text-slate-100">{c.value}</div>
+                    <div className="shrink-0 text-right text-[13px] sm:w-24 text-slate-400">trong code</div>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+            {entry.liveTable === 'defaults' ? <DefaultsTable loaded={loaded} labels={tables} /> : null}
+            {entry.liveTable === 'lighting' ? <LightingTable loaded={loaded} labels={tables} /> : null}
+            {entry.liveTable === 'lightColor' ? <LightColorTable loaded={loaded} labels={tables} /> : null}
+            {entry.liveTable === 'lightMatrix' ? <LightMatrixTable loaded={loaded} labels={tables} /> : null}
+          </div>
+        ) : null}
 
-        {entry.notes?.map((note) => (
-          <p key={note} className={NOTE_CLASS}>
-            {note}
-          </p>
-        ))}
-        <p className="font-mono text-[11px] text-slate-400">{entry.source}</p>
+        {entry.notes?.length ? (
+          <div>
+            <div className={LABEL}>Ghi chú</div>
+            <div className="space-y-1.5">
+              {entry.notes.map((note) => (
+                <p key={note} className="text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+                  {note}
+                </p>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        <div className="space-y-1 border-t border-slate-100 pt-2.5 text-[13px] text-slate-400 dark:border-slate-800">
+          {related.length ? (
+            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+              <span>Liên quan:</span>
+              {related.map((id) => (
+                <a
+                  key={id}
+                  href={`#${encodeURIComponent(id)}`}
+                  title={TITLE_OF.get(id)}
+                  className="font-mono text-sky-700 underline underline-offset-[3px] hover:text-sky-900 dark:text-sky-400 dark:hover:text-sky-300"
+                >
+                  {id}
+                </a>
+              ))}
+            </div>
+          ) : null}
+          <div>
+            Nguồn: <code className="break-words font-mono text-slate-500 dark:text-slate-400">{entry.source}</code>
+          </div>
+        </div>
       </div>
     </article>
   );
@@ -206,7 +293,7 @@ function DefaultsTable({ loaded, labels }: { loaded: LoadedEngineParams; labels:
             <tr key={def.key}>
               <td className="py-1 pr-3 text-slate-600 dark:text-slate-300">{labels.defaultRow(def.key)}</td>
               <td className="py-1 text-right font-mono text-slate-900 dark:text-slate-100">{value}</td>
-              <td className="py-1 pl-3 text-xs">{changed ? <span className="rounded bg-amber-100 px-1.5 py-0.5 text-amber-900 dark:bg-amber-950/60 dark:text-amber-200">đã sửa</span> : null}</td>
+              <td className="py-1 pl-3 text-[13px]">{changed ? <span className="rounded bg-amber-100 px-1.5 py-0.5 text-amber-900 dark:bg-amber-950/60 dark:text-amber-200">đã sửa</span> : null}</td>
             </tr>
           );
         })}
@@ -219,7 +306,7 @@ function LightColorTable({ loaded, labels }: { loaded: LoadedEngineParams; label
   const badge = <span className="rounded bg-amber-100 px-1.5 py-0.5 text-amber-900 dark:bg-amber-950/60 dark:text-amber-200">đã sửa</span>;
   return (
     <table className="w-full max-w-2xl text-left text-sm">
-      <thead className="text-xs text-slate-500 dark:text-slate-400">
+      <thead className="text-[13px] text-slate-500 dark:text-slate-400">
         <tr>
           <th className="py-1 pr-3 font-medium" />
           <th className="py-1 pr-3 font-medium">R · G · B / đèn</th>
@@ -238,7 +325,7 @@ function LightColorTable({ loaded, labels }: { loaded: LoadedEngineParams; label
                   ? `${(row as Reflectance).r} · ${(row as Reflectance).g} · ${(row as Reflectance).b}`
                   : `${labels.lightColor((row as ColorRow).color)}${(row as ColorRow).alternative ? ` / ${labels.lightColor((row as ColorRow).alternative!)}` : ''}`}
               </td>
-              <td className="py-1 pl-3 text-xs">{changed ? badge : null}</td>
+              <td className="py-1 pl-3 text-[13px]">{changed ? badge : null}</td>
             </tr>
           );
         })}
@@ -262,7 +349,7 @@ function LightMatrixTable({ loaded, labels }: { loaded: LoadedEngineParams; labe
                 {labels.lightType(row.lightType)}
                 {row.alternativeType ? ` / ${labels.lightType(row.alternativeType)}` : ''}
               </td>
-              <td className="py-1 pl-3 text-xs">{changed ? <span className="rounded bg-amber-100 px-1.5 py-0.5 text-amber-900 dark:bg-amber-950/60 dark:text-amber-200">đã sửa</span> : null}</td>
+              <td className="py-1 pl-3 text-[13px]">{changed ? <span className="rounded bg-amber-100 px-1.5 py-0.5 text-amber-900 dark:bg-amber-950/60 dark:text-amber-200">đã sửa</span> : null}</td>
             </tr>
           );
         })}
@@ -285,7 +372,7 @@ function LightingTable({ loaded, labels }: { loaded: LoadedEngineParams; labels:
                 {labels.lightType(row.lightType)}
                 {row.alternativeType ? ` / ${labels.lightType(row.alternativeType)}` : ''}
               </td>
-              <td className="py-1 pl-3 text-xs">{changed ? <span className="rounded bg-amber-100 px-1.5 py-0.5 text-amber-900 dark:bg-amber-950/60 dark:text-amber-200">đã sửa</span> : null}</td>
+              <td className="py-1 pl-3 text-[13px]">{changed ? <span className="rounded bg-amber-100 px-1.5 py-0.5 text-amber-900 dark:bg-amber-950/60 dark:text-amber-200">đã sửa</span> : null}</td>
             </tr>
           );
         })}

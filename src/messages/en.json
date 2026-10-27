@@ -21,9 +21,10 @@
     "knowledge": "Knowledge",
     "projects": "Projects",
     "light": "Lighting",
-    "camera": "Camera",
+    "camera": "Area scan",
     "codeReader": "Code reader",
-    "ocr": "OCR"
+    "ocr": "OCR",
+    "lineScan": "Line scan"
   },
   "language": {
     "label": "Language",
@@ -3406,16 +3407,11 @@
     }
   },
   "cameraSelector": {
-    "title": "Camera selector",
-    "subtitle": "Filter in-stock cameras by field of view, resolution and speed — area scan (including high speed) and line scan.",
+    "title": "Area-scan camera selector",
+    "subtitle": "Filter in-stock area-scan cameras by field of view, resolution and speed — including high-speed tasks.",
     "why": "Every figure comes from a formula with an ID, assuming a lens that exactly fits the field of view. Pick the real lens on the Lens page. Theoretical results — test before committing.",
     "emptyCatalog": "No active cameras in stock.",
     "reset": "Reset",
-    "tabs": {
-      "label": "Camera type",
-      "area": "Area scan / high speed",
-      "line": "Line scan"
-    },
     "tabHint": {
       "area": "Cameras that capture a full frame — {area} in stock. Leave the speed fields empty to filter by pixels only; enter speed / output to also check fps, bandwidth, shutter and exposure.",
       "line": "Cameras that scan line by line as the part moves (web, sheet, continuous belt) — {line} in stock."
@@ -3626,6 +3622,12 @@
       "sensor": "limited by the sensor",
       "exposure": "limited by exposure time",
       "interface": "limited by the interface"
+    },
+    "lineTitle": "Line-scan camera selector",
+    "lineSubtitle": "Filter in-stock line-scan cameras by scan width, resolution and part speed — web, sheet, continuous belt.",
+    "switch": {
+      "toLine": "Continuous web / sheet? Choose a line-scan camera",
+      "toArea": "Full-frame capture? Choose an area-scan camera"
     }
   },
   "codeReader": {

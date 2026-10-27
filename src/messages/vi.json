@@ -21,9 +21,10 @@
     "knowledge": "Cẩm nang",
     "projects": "Dự án",
     "light": "Đèn",
-    "camera": "Camera",
+    "camera": "Area scan",
     "codeReader": "Đọc mã",
-    "ocr": "OCR"
+    "ocr": "OCR",
+    "lineScan": "Line scan"
   },
   "language": {
     "label": "Ngôn ngữ",
@@ -3406,16 +3407,11 @@
     }
   },
   "cameraSelector": {
-    "title": "Chọn camera",
-    "subtitle": "Lọc camera trong kho theo vùng nhìn, độ phân giải và tốc độ — area scan (kể cả tốc độ cao) và line scan.",
+    "title": "Chọn camera area scan",
+    "subtitle": "Lọc camera area scan trong kho theo vùng nhìn, độ phân giải và tốc độ — kể cả bài tốc độ cao.",
     "why": "Mọi con số tính theo công thức có mã, giả định ống kính vừa khít vùng nhìn. Chọn ống kính thật ở trang Ống kính. Kết quả lý thuyết — nên chụp thử trước khi chốt.",
     "emptyCatalog": "Kho chưa có camera nào đang dùng.",
     "reset": "Làm lại",
-    "tabs": {
-      "label": "Loại camera",
-      "area": "Area scan / tốc độ cao",
-      "line": "Line scan"
-    },
     "tabHint": {
       "area": "Camera chụp cả khung — {area} camera trong kho. Để trống ô tốc độ thì chỉ lọc theo pixel; nhập tốc độ / sản lượng thì kiểm thêm fps, băng thông, shutter, phơi sáng.",
       "line": "Camera quét từng dòng khi vật chạy qua (cuộn, tấm, băng liên tục) — {line} camera trong kho."
@@ -3626,6 +3622,12 @@
       "sensor": "giới hạn bởi cảm biến",
       "exposure": "giới hạn bởi thời gian phơi",
       "interface": "giới hạn bởi cổng giao tiếp"
+    },
+    "lineTitle": "Chọn camera line scan",
+    "lineSubtitle": "Lọc camera line scan trong kho theo bề rộng quét, độ phân giải và tốc độ vật chạy — cuộn, tấm, băng liên tục.",
+    "switch": {
+      "toLine": "Vật chạy liên tục dạng cuộn / tấm? Chọn camera line scan",
+      "toArea": "Chụp cả khung? Chọn camera area scan"
     }
   },
   "codeReader": {

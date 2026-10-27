@@ -11,7 +11,8 @@ import { hasSupabaseEnv } from '@/lib/supabase/env';
 import { createClient } from '@/lib/supabase/server';
 
 /**
- * Bộ chọn camera — area scan (cả tốc độ cao) và line scan (chốt 2026-10-27, Q1–Q8).
+ * Bộ chọn camera area scan (cả tốc độ cao) — chốt 2026-10-27, Q1–Q8. Line scan tách sang
+ * /chon-line-scan cùng ngày (cùng engine cameraSelector.ts).
  *
  * Member trở lên (Q7), như Chọn ống kính / Chọn đèn. RLS của bảng components đã chặn
  * ở database; khung khoá dưới đây chỉ để hiện lời mời đăng nhập / liên hệ.
@@ -76,7 +77,7 @@ export default async function CameraSelectorPage() {
         {cameras.length > 0 ? (
           // Công thức chỉ admin thấy (bảo vệ công thức, chốt 2026-10-21).
           <FormulaVisibilityProvider show={isAdmin(role)}>
-            <CameraSelector components={cameras} params={engine.params} />
+            <CameraSelector components={cameras} params={engine.params} kind="area" />
           </FormulaVisibilityProvider>
         ) : (
           <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">{t('emptyCatalog')}</p>

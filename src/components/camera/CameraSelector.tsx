@@ -52,7 +52,6 @@ const STATUS_CLASS: Record<CheckStatus, string> = {
 };
 
 const PAGE = 30;
-const TABS: Tab[] = ['area', 'line'];
 const CONTRASTS: Contrast[] = ['high', 'medium', 'low', 'unknown'];
 const COLORS: CameraColorFilter[] = ['any', 'mono', 'color'];
 const PURPOSES: Purpose[] = ['detect', 'measure'];
@@ -88,13 +87,14 @@ function StatusBadge({ status }: { status: CheckStatus }) {
   return <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${STATUS_CLASS[status]}`}>{t(status)}</span>;
 }
 
-export function CameraSelector({ components, params }: { components: Component[]; params?: CameraParams }) {
+export function CameraSelector({ components, params, kind }: { components: Component[]; params?: CameraParams; kind: Tab }) {
   const t = useTranslations('cameraSelector');
   const showFormulas = useShowFormulas();
   const cameras = useMemo(() => components.filter((c) => c.kind === 'camera'), [components]);
   const lineCount = cameras.filter((c) => specString(c.spec, 'camera_type') === 'line').length;
 
-  const [tab, setTab] = useState<Tab>('area');
+  // Mỗi trang một họ camera (2026-10-27): area scan ở /chon-camera, line scan ở /chon-line-scan.
+  const tab = kind;
   const [form, setForm] = useState(EMPTY);
   const [showRejected, setShowRejected] = useState(false);
   const [limit, setLimit] = useState(PAGE);
@@ -160,25 +160,11 @@ export function CameraSelector({ components, params }: { components: Component[]
 
   return (
     <div className="space-y-6">
+      {/* Hai trang riêng (chốt 2026-10-27): /chon-camera = area scan, /chon-line-scan = line scan; dẫn chéo sang nhau. */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div role="tablist" aria-label={t('tabs.label')} className="inline-flex rounded-lg border border-slate-300 bg-white p-0.5 dark:border-slate-700 dark:bg-slate-900">
-          {TABS.map((value) => (
-            <button
-              key={value}
-              type="button"
-              role="tab"
-              aria-selected={tab === value}
-              onClick={() => {
-                setTab(value);
-                setLimit(PAGE);
-                setOpen(null);
-              }}
-              className={`rounded-md px-3 py-1.5 text-sm font-medium ${tab === value ? 'bg-sky-600 text-white' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'}`}
-            >
-              {t(`tabs.${value}`)}
-            </button>
-          ))}
-        </div>
+        <ActionLink href={tab === 'area' ? '/chon-line-scan' : '/chon-camera'} variant="soft">
+          {t(tab === 'area' ? 'switch.toLine' : 'switch.toArea')}
+        </ActionLink>
         <button
           type="button"
           onClick={reset}

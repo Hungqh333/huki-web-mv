@@ -32,12 +32,13 @@ import { LEAKAGE_LIMIT, OVERKILL_LIMIT } from '@/lib/vision/experimentMetrics';
 import { LINE_EXPOSURE_BRIGHT_US, LINE_MAX_CAMERAS, RANK_MARGIN_TARGET } from '@/lib/vision/cameraSelector';
 
 /** Trang dùng công thức. */
-export type FormulaPage = 'design' | 'lens' | 'camera' | 'code' | 'ocr' | 'light' | 'oldSelector' | 'pc' | 'kpi';
+export type FormulaPage = 'design' | 'lens' | 'camera' | 'lineScan' | 'code' | 'ocr' | 'light' | 'oldSelector' | 'pc' | 'kpi';
 
 export const PAGE_LABEL: Record<FormulaPage, { label: string; href: string }> = {
   design: { label: 'Thiết kế hệ thống', href: '/thiet-ke-he-thong/yeu-cau' },
   lens: { label: 'Chọn ống kính', href: '/chon-ong-kinh' },
-  camera: { label: 'Chọn camera', href: '/chon-camera' },
+  camera: { label: 'Chọn camera area scan', href: '/chon-camera' },
+  lineScan: { label: 'Chọn camera line scan', href: '/chon-line-scan' },
   code: { label: 'Chọn đầu đọc mã', href: '/chon-doc-ma' },
   ocr: { label: 'Chọn camera OCR', href: '/chon-ocr' },
   light: { label: 'Chọn đèn', href: '/chon-den' },
@@ -1086,9 +1087,9 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
   // ───────────────────────────────────────────────── 14. CHỌN CAMERA ──
   {
     key: 'camera',
-    title: '14. Trang Chọn camera',
+    title: '14. Trang Chọn camera area scan / line scan',
     intro:
-      'Chốt 2026-10-27 (Q1–Q8). Hai tab: area scan (kể cả tốc độ cao) và line scan. Giả định ống kính vừa khít vùng nhìn (β lý tưởng) — ống thật chọn ở trang Chọn ống kính. Ô tốc độ để trống thì area scan chỉ lọc theo pixel.',
+      'Chốt 2026-10-27 (Q1–Q8). Hai trang riêng: /chon-camera (area scan, kể cả tốc độ cao) và /chon-line-scan (line scan). Giả định ống kính vừa khít vùng nhìn (β lý tưởng) — ống thật chọn ở trang Chọn ống kính. Ô tốc độ để trống thì area scan chỉ lọc theo pixel.',
     entries: [
       {
         id: 'CAM-000',
@@ -1101,7 +1102,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
         params: ['pxPerDefectHigh', 'pxPerDefectMedium', 'pxPerDefectLow'],
         constants: [{ name: 'mức dư đích (Q6)', value: RANK_MARGIN_TARGET }],
         evidence: 'rule-of-thumb',
-        usedIn: ['camera'],
+        usedIn: ['camera', 'lineScan'],
         source: 'vision/cameraSelector.ts : targetMmPerPx, rankKey',
       },
       {
@@ -1175,7 +1176,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
         params: ['tileOverlapRatio', 'tileOverlapMinPx'],
         constants: [{ name: 'số camera ghép tối đa', value: LINE_MAX_CAMERAS }],
         evidence: 'calculated',
-        usedIn: ['camera'],
+        usedIn: ['lineScan'],
         source: 'vision/cameraSelector.ts : lineCameraCount, evaluateLineCamera',
       },
       {
@@ -1188,7 +1189,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
         ],
         params: ['cycleMinMargin'],
         evidence: 'calculated',
-        usedIn: ['camera'],
+        usedIn: ['lineScan'],
         source: 'vision/cameraSelector.ts : LSC-002',
       },
       {
@@ -1198,7 +1199,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
         verdict: ['t_dòng < ngưỡng → LƯU Ý: cần đèn dòng cường độ cao; camera không TDI thì gợi ý TDI / multiline / binning (Teledyne)'],
         constants: [{ name: 'ngưỡng phơi mỗi dòng (µs)', value: LINE_EXPOSURE_BRIGHT_US }],
         evidence: 'rule-of-thumb',
-        usedIn: ['camera'],
+        usedIn: ['lineScan'],
         source: 'vision/cameraSelector.ts : LSC-003',
       },
       {
@@ -1208,7 +1209,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
         verdict: ['MB/s > tỉ lệ dùng tối đa × băng thông chuẩn (CXP nhân số làn) → LOẠI'],
         params: ['interfaceMaxShare'],
         evidence: 'calculated',
-        usedIn: ['camera'],
+        usedIn: ['lineScan'],
         source: 'vision/cameraSelector.ts : LSC-004',
       },
       {
@@ -1217,7 +1218,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
         formula: ['µm một dòng = v ÷ tần số chạy × 1000', 'encoder đủ mịn khi µm/xung ≤ µm một dòng'],
         verdict: ['thô hơn → LƯU Ý (ảnh dãn / nén khi tốc độ đổi)', 'chưa có encoder → chưa kiểm được, khuyên dùng'],
         evidence: 'calculated',
-        usedIn: ['camera'],
+        usedIn: ['lineScan'],
         source: 'vision/cameraSelector.ts : LSC-005',
       },
     ],

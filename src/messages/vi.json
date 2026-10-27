@@ -21,7 +21,8 @@
     "knowledge": "Cẩm nang",
     "projects": "Dự án",
     "light": "Đèn",
-    "camera": "Camera"
+    "camera": "Camera",
+    "codeReader": "Đọc mã"
   },
   "language": {
     "label": "Ngôn ngữ",
@@ -1252,7 +1253,8 @@
         "light_controller": "Bộ điều khiển đèn",
         "interface_card": "Card giao tiếp",
         "software": "Phần mềm",
-        "pc_option": "Hàng đi kèm máy tính"
+        "pc_option": "Hàng đi kèm máy tính",
+        "code_reader": "Đầu đọc mã"
       },
       "sources": {
         "unverified": "Chưa kiểm chứng",
@@ -1324,7 +1326,13 @@
         "qe_percent": "Hiệu suất lượng tử QE (EMVA 1288)",
         "saturation_e": "Dung lượng bão hoà (EMVA 1288)",
         "dark_noise_e": "Nhiễu tối (EMVA 1288)",
-        "tdi_stages": "Số tầng TDI / multiline (line scan)"
+        "tdi_stages": "Số tầng TDI / multiline (line scan)",
+        "aov_h_deg": "Góc nhìn ngang",
+        "aov_v_deg": "Góc nhìn dọc",
+        "focus": "Kiểu lấy nét",
+        "decode_rate_hz": "Tốc độ giải mã tối đa",
+        "code_types": "Loại mã đọc được",
+        "protocols": "Giao thức trả kết quả"
       },
       "errors": {
         "notAdmin": "Chỉ admin mới thực hiện được thao tác này.",
@@ -1487,7 +1495,11 @@
         "strobeMaxDuty": "Duty tối đa của xung strobe (LGT-024)",
         "blurPxDetect": "Nhoè chuyển động cho phép — bài phát hiện lỗi (THR-005)",
         "cameraJitterHardwareMs": "Lệch thời điểm chụp của camera — trigger phần cứng (THR-007)",
-        "cameraJitterSoftwareMs": "Lệch thời điểm chụp của camera — trigger phần mềm (THR-007)"
+        "cameraJitterSoftwareMs": "Lệch thời điểm chụp của camera — trigger phần mềm (THR-007)",
+        "codePxPerModule1d": "Đọc mã — px trên vạch hẹp nhất, mã 1D (COD-001)",
+        "codePxPerModule2d": "Đọc mã — px trên một ô, mã 2D in (COD-001)",
+        "codePxPerModuleDpm": "Đọc mã — px trên một ô, mã DPM (COD-001)",
+        "codeMinReads": "Đọc mã — số lần chụp tối thiểu khi mã đi qua khung (COD-002)"
       },
       "errors": {
         "fix": "Có ô chưa hợp lệ — xem dòng báo đỏ.",
@@ -3611,6 +3623,148 @@
       "sensor": "giới hạn bởi cảm biến",
       "exposure": "giới hạn bởi thời gian phơi",
       "interface": "giới hạn bởi cổng giao tiếp"
+    }
+  },
+  "codeReader": {
+    "title": "Chọn đầu đọc mã",
+    "subtitle": "Tính độ phân giải, vùng nhìn, tốc độ cho bài đọc mã vạch / DataMatrix / QR / DPM, rồi lọc đầu đọc mã liền khối và camera trong kho.",
+    "why": "Mọi con số tính theo công thức có mã. px/module là kinh nghiệm ngành (ngưỡng admin sửa được). Kết quả lý thuyết — nên đọc thử mẫu thật trước khi chốt.",
+    "emptyCatalog": "Kho chưa có camera hay đầu đọc mã nào đang dùng.",
+    "reset": "Làm lại",
+    "tabs": {
+      "label": "Hướng thiết bị",
+      "reader": "Đầu đọc liền khối ({n})",
+      "camera": "Camera + phần mềm ({n})"
+    },
+    "codeType": {
+      "barcode_1d": "Mã vạch 1D",
+      "datamatrix": "DataMatrix",
+      "qr": "QR",
+      "dpm": "DPM (khắc / dập trên vật)"
+    },
+    "axis": {
+      "x": "Theo chiều rộng mã",
+      "y": "Theo chiều cao mã"
+    },
+    "focus": {
+      "fixed": "Cố định",
+      "liquid": "Liquid lens",
+      "auto": "Tự động"
+    },
+    "status": {
+      "pass": "Đạt",
+      "warn": "Lưu ý",
+      "info": "Chưa kiểm được",
+      "fail": "Loại"
+    },
+    "task": {
+      "title": "Mã cần đọc",
+      "codeType": "Loại mã",
+      "module": "Module nhỏ nhất (mm)",
+      "moduleHint": "1D: bề rộng vạch hẹp nhất. 2D: cạnh một ô.",
+      "codeWidth": "Chiều rộng mã (mm)",
+      "codeHeight": "Chiều cao mã (mm)",
+      "codeHeightHint": "Để trống = bằng chiều rộng (mã vuông).",
+      "tolX": "Dung sai vị trí ngang (± mm)",
+      "tolY": "Dung sai vị trí dọc (± mm)"
+    },
+    "speed": {
+      "title": "Chuyển động và lắp đặt",
+      "note": "Để trống tốc độ nếu mã đứng yên khi đọc.",
+      "speed": "Tốc độ mã chạy qua (mm/s)",
+      "axis": "Chiều chạy",
+      "fovAlong": "Vùng nhìn theo chiều chạy (mm)",
+      "fovAlongHint": "Để trống = tự tính (khung dài thêm một chiều dài mã).",
+      "reads": "Số lần chụp tối thiểu",
+      "readsHint": "Đọc lại khi lần đầu hỏng — mặc định theo ngưỡng admin.",
+      "ppm": "Sản lượng (sản phẩm/phút)",
+      "wd": "Khoảng cách đọc (mm)",
+      "wdHint": "Cho đầu đọc liền khối. Để trống = tự tìm khoảng hợp lệ."
+    },
+    "need": {
+      "title": "Thông số cần",
+      "mmPerPx": "mm/px cần",
+      "mmPerPxNote": "{ppm} px trên một module.",
+      "fov": "Vùng nhìn",
+      "fovNote": "Mã + 2 × dung sai vị trí.",
+      "fovMovingNote": "Có cửa sổ {window} mm để mã nằm trọn trong khung khi chạy qua.",
+      "pixels": "Pixel tối thiểu",
+      "megapixels": "≈ {mp} MP.",
+      "fps": "Số lần chụp / giải mã",
+      "perSecond": "lần/s",
+      "fpsReadsNote": "{reads} lần trong cửa sổ {window} mm → {fps} lần/s.",
+      "fpsRateNote": "Theo sản lượng.",
+      "fpsMissing": "Nhập tốc độ hoặc sản lượng để tính.",
+      "exposure": "Phơi sáng tối đa (chống nhoè)",
+      "exposureStatic": "Mã đứng yên khi đọc — không giới hạn.",
+      "exposureNote": "Nhoè ≤ 1 px tại mm/px cần.",
+      "strobe": "Đèn strobe",
+      "strobeYes": "Bắt buộc",
+      "strobeNo": "Chưa cần",
+      "missing": "Nhập loại mã, module nhỏ nhất và kích thước mã.",
+      "dpmLight": "Mã DPM: thường cần đèn vòm, đồng trục hoặc chiếu nghiêng góc thấp để nổi vết khắc.",
+      "toLight": "Chọn đèn"
+    },
+    "list": {
+      "showResults": "Hiển thị kết quả",
+      "stale": "Đã đổi thông số — bấm Hiển thị kết quả để tính lại.",
+      "title": "Thiết bị trong kho",
+      "meta": "{pass} đạt · {warn} lưu ý · {info} chưa kiểm được · {fail} loại",
+      "showRejected": "Hiện cả thiết bị bị loại",
+      "empty": "Không có thiết bị nào đạt — bật \"Hiện cả thiết bị bị loại\" để xem lý do.",
+      "noReaders": "Kho chưa có đầu đọc mã liền khối — thêm ở Quản trị → Linh kiện (loại \"Đầu đọc mã\").",
+      "noCameras": "Kho chưa có camera area scan.",
+      "colReader": "Đầu đọc",
+      "colCamera": "Camera",
+      "colResolution": "Độ phân giải",
+      "colAov": "Góc nhìn",
+      "colWd": "Khoảng đọc (mm)",
+      "colMmPerPx": "mm/px",
+      "colFov": "Vùng nhìn tại WD (mm)",
+      "colDecode": "Giải mã (lần/s)",
+      "colTypes": "Loại mã",
+      "colFocus": "Lấy nét",
+      "colStatus": "Kết luận",
+      "colPixel": "Pixel",
+      "colMargin": "Dư",
+      "colFps": "fps thật / cần",
+      "colData": "MB/s",
+      "colInterface": "Giao tiếp",
+      "colShutter": "Shutter",
+      "details": "Chi tiết",
+      "hide": "Thu gọn",
+      "datasheet": "Datasheet",
+      "toLens": "Chọn ống kính",
+      "cameraHint": "Camera + phần mềm giải mã (Halcon, VisionPro…): cần thêm ống kính và đèn — chọn ở trang Ống kính / Đèn.",
+      "footReader": "Xếp: đạt trước, khoảng đọc rộng hơn (dễ lắp) trước, rồi dư độ phân giải, rồi giá. mm/px và vùng nhìn tính tại khoảng đọc nhập hoặc đầu dưới của khoảng hợp lệ.",
+      "footCamera": "Cùng bộ kiểm với trang Chọn camera (pixel, fps thật, băng thông, shutter, phơi sáng); giả định ống kính vừa khít vùng nhìn.",
+      "showMore": "Xem thêm {n} thiết bị"
+    },
+    "checks": {
+      "codeType": "Loại mã",
+      "readingRange": "Khoảng đọc",
+      "decodeRate": "Tốc độ giải mã",
+      "shutter": "Shutter",
+      "exposure": "Phơi sáng chống nhoè"
+    },
+    "notes": {
+      "codeTypeUnknown": "Đầu đọc chưa khai loại mã đọc được.",
+      "codeTypeMissing": "Đầu đọc không đọc mã {type}.",
+      "readerOpticsUnknown": "Đầu đọc chưa khai góc nhìn (hoặc tiêu cự + cỡ pixel) — chưa tính được khoảng đọc.",
+      "wdWindow": "Đọc được ở {lo}–{hi} mm: gần hơn {cover} mm thì không phủ vùng nhìn, xa hơn {res} mm thì không đủ mịn; dải lấy nét {min}–{max} mm.",
+      "wdNoWindowPixels": "Không có khoảng đọc: phủ vùng nhìn cần ≥ {cover} mm nhưng đủ mịn chỉ tới {res} mm — đầu đọc thiếu pixel cho mã này.",
+      "wdNoWindowFocus": "Khoảng phủ + đủ mịn ({cover}–{res} mm) nằm ngoài dải lấy nét {min}–{max} mm.",
+      "wdOk": "Tại {wd} mm: {have} mm/px, phủ đủ vùng nhìn, trong dải lấy nét.",
+      "wdTooClose": "Tại {wd} mm vùng nhìn chưa phủ đủ — cần ≥ {cover} mm.",
+      "wdTooFar": "Tại {wd} mm chỉ {have} mm/px — xa quá, cần ≤ {res} mm.",
+      "wdOutOfFocus": "Tại {wd} mm nằm ngoài dải lấy nét {min}–{max} mm.",
+      "decodeOk": "Cần {need} lần/s, đầu đọc tối đa {max} lần/s.",
+      "decodeTight": "Cần {need} lần/s, đầu đọc tối đa {max} lần/s — dư dưới {margin}%.",
+      "decodeTooSlow": "Cần {need} lần/s, đầu đọc chỉ {max} lần/s.",
+      "decodeUnknown": "Đầu đọc chưa khai tốc độ giải mã.",
+      "rollingShutter": "Rolling shutter: mã đang chạy sẽ bị méo.",
+      "exposureOk": "Phơi tối đa {us} µs.",
+      "readerExposureShort": "Phơi tối đa chỉ {us} µs (dưới {limit} µs): cần đầu đọc có đèn mạnh / chế độ tốc độ cao, hoặc đèn strobe ngoài."
     }
   }
 }

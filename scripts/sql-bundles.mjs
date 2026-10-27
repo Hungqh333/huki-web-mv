@@ -88,6 +88,12 @@ export const BUNDLES = {
       ['PHAN 1/1: MIGRATION — kho + 4 bang thuc nghiem chieu sang (Member+ xem ban cong bo, Admin ghi) + khoa "ren" cho anh mau', 'supabase/migrations/20261024000001_light_experiments.sql'],
     ],
   },
+  'code-reader-kind': {
+    out: 'CHAY-BUOC-NAY-DAU-DOC-MA.sql',
+    parts: [
+      ['PHAN 1/1: MIGRATION — them loai linh kien "code_reader" (dau doc ma lien khoi) vao danh sach hop le', 'supabase/migrations/20261027000001_code_reader_kind.sql'],
+    ],
+  },
   'converter-kind': {
     out: 'CHAY-BUOC-NAY-BO-NHAN.sql',
     parts: [

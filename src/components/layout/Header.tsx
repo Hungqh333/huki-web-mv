@@ -26,6 +26,8 @@ const navItems = [
   { href: '/cong-cu-chon-thiet-bi', key: 'selectorVision' },
   // Chọn camera area / line scan ra món hàng (camera trong kho) — 2026-10-27.
   { href: '/chon-camera', key: 'camera' },
+  // Chọn đầu đọc mã (đầu đọc liền khối hoặc camera + phần mềm) — 2026-10-27.
+  { href: '/chon-doc-ma', key: 'codeReader' },
   { href: '/chon-ong-kinh', key: 'lens' },
   { href: '/chon-den', key: 'light' },
   { href: '/cong-cu-may-tinh', key: 'pc' },

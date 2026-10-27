@@ -32,12 +32,13 @@ import { LEAKAGE_LIMIT, OVERKILL_LIMIT } from '@/lib/vision/experimentMetrics';
 import { LINE_EXPOSURE_BRIGHT_US, LINE_MAX_CAMERAS, RANK_MARGIN_TARGET } from '@/lib/vision/cameraSelector';
 
 /** Trang dùng công thức. */
-export type FormulaPage = 'design' | 'lens' | 'camera' | 'light' | 'oldSelector' | 'pc' | 'kpi';
+export type FormulaPage = 'design' | 'lens' | 'camera' | 'code' | 'light' | 'oldSelector' | 'pc' | 'kpi';
 
 export const PAGE_LABEL: Record<FormulaPage, { label: string; href: string }> = {
   design: { label: 'Thiết kế hệ thống', href: '/thiet-ke-he-thong/yeu-cau' },
   lens: { label: 'Chọn ống kính', href: '/chon-ong-kinh' },
   camera: { label: 'Chọn camera', href: '/chon-camera' },
+  code: { label: 'Chọn đầu đọc mã', href: '/chon-doc-ma' },
   light: { label: 'Chọn đèn', href: '/chon-den' },
   oldSelector: { label: 'Bộ chọn thiết bị (cũ)', href: '/cong-cu-chon-thiet-bi' },
   pc: { label: 'Máy tính (PC)', href: '/cong-cu-may-tinh' },
@@ -1119,7 +1120,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
         ],
         params: ['interfaceMaxShare', 'blurPxAllowed', 'blurPxDetect', 'strobeExposureLimitUs'],
         evidence: 'calculated',
-        usedIn: ['camera'],
+        usedIn: ['camera', 'code'],
         source: 'vision/cameraSelector.ts : areaNeed, evaluateAreaCamera',
       },
       {
@@ -1144,7 +1145,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
           'fps_ROI tỉ lệ với số hàng là quy luật gần đúng (PixeLINK, VA Imaging); Allied Vision nói không có công thức chung — con số thật xem công cụ hãng.',
         ],
         evidence: 'calculated',
-        usedIn: ['camera'],
+        usedIn: ['camera', 'code'],
         source: 'vision/cameraSelector.ts : evaluateAreaCamera · vision/highSpeed.ts : exposureLimitedFps',
       },
       {
@@ -1217,6 +1218,64 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
         evidence: 'calculated',
         usedIn: ['camera'],
         source: 'vision/cameraSelector.ts : LSC-005',
+      },
+    ],
+  },
+
+  // ─────────────────────────────────────────────── 15. CHỌN ĐẦU ĐỌC MÃ ──
+  {
+    key: 'code',
+    title: '15. Trang Chọn đầu đọc mã',
+    intro:
+      'Chốt 2026-10-27 (Q1–Q8). Hai hướng: đầu đọc mã liền khối (loại linh kiện code_reader) và camera + phần mềm (dùng lại CAM-001/002 của trang Chọn camera). px/module là kinh nghiệm ngành — chưa có số chính thức của Cognex / Keyence.',
+    entries: [
+      {
+        id: 'COD-001',
+        title: 'px/module → mm/px; vùng nhìn theo mã và dung sai vị trí',
+        formula: [
+          'mm/px cần = module nhỏ nhất ÷ px/module   (1D: vạch hẹp nhất; 2D: một ô)',
+          'vùng nhìn = (rộng mã + 2 × dung sai X) × (cao mã + 2 × dung sai Y)',
+          't_max = nhoè bài phát hiện lỗi × mm/px cần ÷ v   (THR-005)',
+        ],
+        params: ['codePxPerModule1d', 'codePxPerModule2d', 'codePxPerModuleDpm', 'blurPxDetect'],
+        notes: ['DPM (khắc / dập trên kim loại) cần nhiều px hơn và đèn vòm / đồng trục / chiếu nghiêng — trang dẫn sang Chọn đèn.'],
+        evidence: 'rule-of-thumb',
+        usedIn: ['code'],
+        source: 'vision/codeReader.ts : pxPerModuleFor, codeNeed',
+      },
+      {
+        id: 'COD-002',
+        title: 'Mã đang chạy: đủ số lần chụp khi mã đi qua khung',
+        formula: [
+          'cửa sổ W = vùng nhìn theo chiều chạy − mã theo chiều chạy − 2 × dung sai theo chiều chạy',
+          'không đặt vùng nhìn dọc → vùng nhìn dọc = mã + 2 × dung sai + một chiều dài mã (W = một chiều dài mã)',
+          'fps cần = max(N × v ÷ W, sản lượng ÷ 60)   (N = số lần chụp tối thiểu)',
+        ],
+        verdict: ['đầu đọc: tốc độ giải mã < fps cần → LOẠI; sát (dư dưới mức tối thiểu) → LƯU Ý', 'camera: fps thật theo CAM-002'],
+        params: ['codeMinReads', 'cycleMinMargin'],
+        notes: ['Khung W chứa ít nhất ⌊W × fps ÷ v⌋ lần chụp bất kể mã vào khung lúc nào, nên fps ≥ N × v ÷ W là bảo đảm. Hãng (Keyence, Cognex) nhấn mạnh đọc mã đang chạy nhưng không công bố công thức — đây là công thức tự dựng.'],
+        evidence: 'calculated',
+        usedIn: ['code'],
+        source: 'vision/codeReader.ts : codeNeed, cameraInputFor',
+      },
+      {
+        id: 'COD-003',
+        title: 'Đầu đọc liền khối: khoảng đọc hợp lệ',
+        formula: [
+          'góc nhìn = số trên datasheet, hoặc 2 · atan(px × pixel ÷ 2f)',
+          'vùng nhìn tại WD = 2 · WD · tan(góc ÷ 2)   (mỗi trục)',
+          'WD_phủ = max(vùng cần dài ÷ 2tan(góc dài ÷ 2), vùng cần ngắn ÷ 2tan(góc ngắn ÷ 2))',
+          'WD_mịn = mm/px cần × px cạnh dài ÷ 2tan(góc dài ÷ 2)',
+          'khoảng đọc hợp lệ = [max(WD_phủ, WD min) ; min(WD_mịn, WD max)]',
+        ],
+        verdict: [
+          'khoảng rỗng → LOẠI (gần quá thì không phủ, xa quá thì không đủ mịn, hoặc ngoài dải lấy nét)',
+          'đã nhập WD → kiểm đúng WD đó',
+          'không đọc loại mã này → LOẠI · vật chạy + rolling shutter → LOẠI',
+        ],
+        evidence: 'calculated',
+        usedIn: ['code'],
+        source: 'vision/codeReader.ts : evaluateReader, aovDeg',
       },
     ],
   },

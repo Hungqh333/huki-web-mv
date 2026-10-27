@@ -26,7 +26,9 @@ export type ComponentKind =
   | 'controller'
   | 'software'
   | 'pc_option'
-  | 'accessory';
+  | 'accessory'
+  /** Đầu đọc mã liền khối (camera + ống + đèn + giải mã) — chốt 2026-10-27. */
+  | 'code_reader';
 
 /** Thông số đã đối chiếu tới đâu. Giao diện phải hiện cờ này. */
 export type ComponentSource = 'unverified' | 'datasheet' | 'measured';
@@ -308,6 +310,12 @@ export function specString(spec: Record<string, unknown>, key: string): string |
   return typeof value === 'string' && value.trim() !== '' ? value.trim() : null;
 }
 
+/** Đọc ô chọn nhiều (multiselect) từ spec — bỏ phần tử không phải chuỗi. */
+export function specList(spec: Record<string, unknown>, key: string): string[] {
+  const value = spec[key];
+  return Array.isArray(value) ? value.filter((v): v is string => typeof v === 'string' && v.trim() !== '') : [];
+}
+
 /**
  * Bề rộng cảm biến (mm) — thứ cần để tính tiêu cự.
  *
@@ -492,6 +500,11 @@ export const ACCESSORY_TYPES = [
 
 export const ACCESSORY_TARGETS = ['camera', 'lens', 'light', 'system'];
 
+/** Đầu đọc mã liền khối: kiểu lấy nét, loại mã đọc được, giao thức trả kết quả. */
+export const CODE_READER_FOCUS = ['fixed', 'liquid', 'auto'];
+export const CODE_READER_TYPES = ['1D', '2D', 'DPM'];
+export const CODE_READER_PROTOCOLS = ['digitalIO', 'ethernetIP', 'profinet', 'modbus', 'tcp', 'rs232'];
+
 /** Số lượng nhân theo cái gì. */
 export const ACCESSORY_QTY_BASES = ['per_camera', 'per_light', 'per_system'];
 
@@ -665,6 +678,28 @@ export const SPEC_FIELDS: Record<ComponentKind, SpecFieldDef[]> = {
     { key: 'qty_basis', type: 'select', options: ACCESSORY_QTY_BASES },
     { key: 'wavelength_nm', type: 'number', unit: 'nm', step: 1 },
   ],
+  /**
+   * Đầu đọc mã liền khối (2026-10-27, trang Chọn đầu đọc mã). Vùng nhìn tính từ góc nhìn
+   * (hoặc tiêu cự + cỡ pixel nếu datasheet không ghi góc) ở khoảng cách đọc; khoảng đọc
+   * min–max là dải lấy nét (ống cố định) hoặc dải chỉnh nét (liquid lens / tự động).
+   */
+  code_reader: [
+    { key: 'resolution_w_px', type: 'number', unit: 'px', step: 1, required: true },
+    { key: 'resolution_h_px', type: 'number', unit: 'px', step: 1, required: true },
+    { key: 'pixel_size_um', type: 'number', unit: 'µm', step: 0.01 },
+    { key: 'aov_h_deg', type: 'number', unit: '°', step: 0.1 },
+    { key: 'aov_v_deg', type: 'number', unit: '°', step: 0.1 },
+    { key: 'focal_length_mm', type: 'number', unit: 'mm', step: 0.1 },
+    { key: 'wd_min_mm', type: 'number', unit: 'mm', step: 1 },
+    { key: 'wd_max_mm', type: 'number', unit: 'mm', step: 1 },
+    { key: 'focus', type: 'select', options: CODE_READER_FOCUS },
+    { key: 'decode_rate_hz', type: 'number', unit: 'lần/s', step: 1 },
+    { key: 'code_types', type: 'multiselect', options: CODE_READER_TYPES },
+    { key: 'shutter', type: 'select', options: SHUTTERS },
+    { key: 'color', type: 'select', options: ['mono', 'color'] },
+    { key: 'protocols', type: 'multiselect', options: CODE_READER_PROTOCOLS },
+    { key: 'ip_rating', type: 'text' },
+  ],
 };
 
 /**
@@ -687,6 +722,7 @@ export const SUMMARY_KEYS: Record<ComponentKind, string[]> = {
   software: ['software_type', 'license'],
   pc_option: ['option_type'],
   accessory: ['accessory_type', 'accessory_for', 'wavelength_nm'],
+  code_reader: ['resolution_w_px', 'resolution_h_px', 'code_types', 'focus'],
 };
 
 export const COMPONENT_KINDS: ComponentKind[] = [
@@ -702,6 +738,7 @@ export const COMPONENT_KINDS: ComponentKind[] = [
   'software',
   'pc_option',
   'accessory',
+  'code_reader',
 ];
 
 export const COMPONENT_SOURCES: ComponentSource[] = ['unverified', 'datasheet', 'measured'];

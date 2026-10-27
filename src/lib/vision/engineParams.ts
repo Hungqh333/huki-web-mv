@@ -92,6 +92,12 @@ export const ENGINE_PARAMS = [
   { key: 'pxPerDefectHigh', group: 'detection', default: 3, min: 1, max: 20, step: 0.5, unit: 'px' },
   { key: 'pxPerDefectMedium', group: 'detection', default: 4, min: 1, max: 20, step: 0.5, unit: 'px' },
   { key: 'pxPerDefectLow', group: 'detection', default: 5, min: 1, max: 20, step: 0.5, unit: 'px' },
+  // COD-001 (2026-10-27 Q2): số px trên một module mã — kinh nghiệm ngành, chưa có số chính thức của hãng.
+  { key: 'codePxPerModule1d', group: 'detection', default: 2, min: 1, max: 10, step: 0.1, unit: 'px' },
+  { key: 'codePxPerModule2d', group: 'detection', default: 3, min: 1, max: 10, step: 0.1, unit: 'px' },
+  { key: 'codePxPerModuleDpm', group: 'detection', default: 5, min: 1, max: 15, step: 0.1, unit: 'px' },
+  // COD-002 (Q3): mã đang chạy phải nằm trong khung đủ cho bấy nhiêu lần chụp.
+  { key: 'codeMinReads', group: 'detection', default: 3, min: 1, max: 20, step: 1 },
   // MEC-001 — α suy từ vật liệu, µm/(m·K).
   { key: 'alphaAluminium', group: 'materials', default: 23, min: 1, max: 300, step: 0.5, unit: 'µm/(m·K)' },
   { key: 'alphaSteel', group: 'materials', default: 12, min: 1, max: 300, step: 0.5, unit: 'µm/(m·K)' },

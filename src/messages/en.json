@@ -21,7 +21,8 @@
     "knowledge": "Knowledge",
     "projects": "Projects",
     "light": "Lighting",
-    "camera": "Camera"
+    "camera": "Camera",
+    "codeReader": "Code reader"
   },
   "language": {
     "label": "Language",
@@ -1252,7 +1253,8 @@
         "light_controller": "Light controller",
         "interface_card": "Interface card",
         "software": "Software",
-        "pc_option": "Computer add-on"
+        "pc_option": "Computer add-on",
+        "code_reader": "Code reader"
       },
       "sources": {
         "unverified": "Unverified",
@@ -1324,7 +1326,13 @@
         "qe_percent": "Quantum efficiency QE (EMVA 1288)",
         "saturation_e": "Saturation capacity (EMVA 1288)",
         "dark_noise_e": "Temporal dark noise (EMVA 1288)",
-        "tdi_stages": "TDI / multiline stages (line scan)"
+        "tdi_stages": "TDI / multiline stages (line scan)",
+        "aov_h_deg": "Horizontal angle of view",
+        "aov_v_deg": "Vertical angle of view",
+        "focus": "Focus type",
+        "decode_rate_hz": "Maximum decode rate",
+        "code_types": "Readable code types",
+        "protocols": "Result protocols"
       },
       "errors": {
         "notAdmin": "Only an admin can perform this action.",
@@ -1487,7 +1495,11 @@
         "strobeMaxDuty": "Maximum strobe pulse duty (LGT-024)",
         "blurPxDetect": "Allowed motion blur — defect detection (THR-005)",
         "cameraJitterHardwareMs": "Camera capture jitter — hardware trigger (THR-007)",
-        "cameraJitterSoftwareMs": "Camera capture jitter — software trigger (THR-007)"
+        "cameraJitterSoftwareMs": "Camera capture jitter — software trigger (THR-007)",
+        "codePxPerModule1d": "Code reading — px per narrowest bar, 1D (COD-001)",
+        "codePxPerModule2d": "Code reading — px per cell, printed 2D (COD-001)",
+        "codePxPerModuleDpm": "Code reading — px per cell, DPM (COD-001)",
+        "codeMinReads": "Code reading — minimum captures while a code crosses the view (COD-002)"
       },
       "errors": {
         "fix": "Some fields are invalid — see the red lines.",
@@ -3611,6 +3623,148 @@
       "sensor": "limited by the sensor",
       "exposure": "limited by exposure time",
       "interface": "limited by the interface"
+    }
+  },
+  "codeReader": {
+    "title": "Code reader selector",
+    "subtitle": "Work out resolution, field of view and speed for 1D / DataMatrix / QR / DPM reading, then filter smart code readers and cameras in stock.",
+    "why": "Every figure comes from a formula with an ID. Pixels per module are an industry rule of thumb (editable admin threshold). Theoretical results — test real samples before committing.",
+    "emptyCatalog": "No active cameras or code readers in stock.",
+    "reset": "Reset",
+    "tabs": {
+      "label": "Equipment route",
+      "reader": "Smart code readers ({n})",
+      "camera": "Camera + software ({n})"
+    },
+    "codeType": {
+      "barcode_1d": "1D barcode",
+      "datamatrix": "DataMatrix",
+      "qr": "QR",
+      "dpm": "DPM (marked on the part)"
+    },
+    "axis": {
+      "x": "Along the code width",
+      "y": "Along the code height"
+    },
+    "focus": {
+      "fixed": "Fixed",
+      "liquid": "Liquid lens",
+      "auto": "Autofocus"
+    },
+    "status": {
+      "pass": "Pass",
+      "warn": "Note",
+      "info": "Not checked",
+      "fail": "Excluded"
+    },
+    "task": {
+      "title": "Code to read",
+      "codeType": "Code type",
+      "module": "Smallest module (mm)",
+      "moduleHint": "1D: narrowest bar width. 2D: one cell side.",
+      "codeWidth": "Code width (mm)",
+      "codeHeight": "Code height (mm)",
+      "codeHeightHint": "Empty = same as width (square code).",
+      "tolX": "Horizontal position tolerance (± mm)",
+      "tolY": "Vertical position tolerance (± mm)"
+    },
+    "speed": {
+      "title": "Motion and mounting",
+      "note": "Leave speed empty if the code is stationary when read.",
+      "speed": "Code speed (mm/s)",
+      "axis": "Direction of motion",
+      "fovAlong": "Field of view along the motion (mm)",
+      "fovAlongHint": "Empty = automatic (one extra code length).",
+      "reads": "Minimum captures",
+      "readsHint": "Retries when the first read fails — default from the admin threshold.",
+      "ppm": "Output (parts/min)",
+      "wd": "Reading distance (mm)",
+      "wdHint": "For smart readers. Empty = find the valid range."
+    },
+    "need": {
+      "title": "Requirements",
+      "mmPerPx": "Required mm/px",
+      "mmPerPxNote": "{ppm} px per module.",
+      "fov": "Field of view",
+      "fovNote": "Code + 2 × position tolerance.",
+      "fovMovingNote": "Includes a {window} mm window for the code to stay fully in view while passing.",
+      "pixels": "Minimum pixels",
+      "megapixels": "≈ {mp} MP.",
+      "fps": "Captures / decodes",
+      "perSecond": "per s",
+      "fpsReadsNote": "{reads} captures within the {window} mm window → {fps} per s.",
+      "fpsRateNote": "From the output rate.",
+      "fpsMissing": "Enter speed or output to calculate.",
+      "exposure": "Maximum exposure (no blur)",
+      "exposureStatic": "Code is stationary when read — no limit.",
+      "exposureNote": "Blur ≤ 1 px at the required mm/px.",
+      "strobe": "Strobe light",
+      "strobeYes": "Required",
+      "strobeNo": "Not needed yet",
+      "missing": "Enter the code type, smallest module and code size.",
+      "dpmLight": "DPM codes usually need a dome, coaxial or low-angle light to bring out the marking.",
+      "toLight": "Choose a light"
+    },
+    "list": {
+      "showResults": "Show results",
+      "stale": "Inputs changed — press Show results to recalculate.",
+      "title": "Equipment in stock",
+      "meta": "{pass} pass · {warn} note · {info} not checked · {fail} excluded",
+      "showRejected": "Show excluded equipment",
+      "empty": "Nothing passes — tick \"Show excluded equipment\" to see why.",
+      "noReaders": "No smart code readers in stock yet — add them under Admin → Components (type \"Code reader\").",
+      "noCameras": "No area-scan cameras in stock.",
+      "colReader": "Reader",
+      "colCamera": "Camera",
+      "colResolution": "Resolution",
+      "colAov": "Angle of view",
+      "colWd": "Reading distance (mm)",
+      "colMmPerPx": "mm/px",
+      "colFov": "Field of view at WD (mm)",
+      "colDecode": "Decodes (per s)",
+      "colTypes": "Code types",
+      "colFocus": "Focus",
+      "colStatus": "Verdict",
+      "colPixel": "Pixel",
+      "colMargin": "Margin",
+      "colFps": "Real fps / needed",
+      "colData": "MB/s",
+      "colInterface": "Interface",
+      "colShutter": "Shutter",
+      "details": "Details",
+      "hide": "Collapse",
+      "datasheet": "Datasheet",
+      "toLens": "Choose a lens",
+      "cameraHint": "Camera + decoding software (Halcon, VisionPro…): also needs a lens and a light — choose them on the Lens / Lighting pages.",
+      "footReader": "Order: passing first, wider reading range (easier mounting) first, then resolution margin, then price. mm/px and field of view are at the entered distance or the near end of the valid range.",
+      "footCamera": "Same checks as the Camera selector (pixels, real fps, bandwidth, shutter, exposure); assumes a lens that exactly fits the field of view.",
+      "showMore": "Show {n} more"
+    },
+    "checks": {
+      "codeType": "Code type",
+      "readingRange": "Reading distance",
+      "decodeRate": "Decode rate",
+      "shutter": "Shutter",
+      "exposure": "Exposure against blur"
+    },
+    "notes": {
+      "codeTypeUnknown": "Reader has no readable code types on record.",
+      "codeTypeMissing": "Reader does not read {type} codes.",
+      "readerOpticsUnknown": "Reader has no angle of view (or focal length + pixel size) on record — reading range not calculated.",
+      "wdWindow": "Readable at {lo}–{hi} mm: closer than {cover} mm the view is too small, beyond {res} mm it is too coarse; focus range {min}–{max} mm.",
+      "wdNoWindowPixels": "No reading range: covering the view needs ≥ {cover} mm but fine enough only up to {res} mm — not enough pixels for this code.",
+      "wdNoWindowFocus": "The covering + fine-enough range ({cover}–{res} mm) lies outside the {min}–{max} mm focus range.",
+      "wdOk": "At {wd} mm: {have} mm/px, covers the view, within the focus range.",
+      "wdTooClose": "At {wd} mm the view does not cover — needs ≥ {cover} mm.",
+      "wdTooFar": "At {wd} mm only {have} mm/px — too far, needs ≤ {res} mm.",
+      "wdOutOfFocus": "At {wd} mm it is outside the {min}–{max} mm focus range.",
+      "decodeOk": "Needs {need} per s, reader tops out at {max} per s.",
+      "decodeTight": "Needs {need} per s, reader tops out at {max} per s — under {margin}% headroom.",
+      "decodeTooSlow": "Needs {need} per s, reader only {max} per s.",
+      "decodeUnknown": "Reader has no decode rate on record.",
+      "rollingShutter": "Rolling shutter: a moving code will be distorted.",
+      "exposureOk": "Maximum exposure {us} µs.",
+      "readerExposureShort": "Maximum exposure only {us} µs (under {limit} µs): needs a reader with strong light / high-speed mode, or an external strobe."
     }
   }
 }

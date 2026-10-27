@@ -68,5 +68,8 @@ export function exposureLimitedFps(sensorFps: number, exposureUs: number | null,
   if (exposureUs === null || !(exposureUs > 0)) return sensorFps;
   const readoutS = 1 / sensorFps;
   const exposureS = exposureUs / 1e6;
-  return overlapped ? 1 / Math.max(readoutS, exposureS) : 1 / (readoutS + exposureS);
+  // Phơi ngắn hơn thời gian đọc khi chồng phơi: trả đúng fps cảm biến — tránh 1 ÷ (1 ÷ f) lệch dấu phẩy động
+  // làm giao diện ghi nhầm "giới hạn bởi thời gian phơi".
+  if (overlapped) return exposureS <= readoutS ? sensorFps : 1 / exposureS;
+  return 1 / (readoutS + exposureS);
 }

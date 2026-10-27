@@ -28,6 +28,8 @@ const navItems = [
   { href: '/chon-camera', key: 'camera' },
   // Chọn đầu đọc mã (đầu đọc liền khối hoặc camera + phần mềm) — 2026-10-27.
   { href: '/chon-doc-ma', key: 'codeReader' },
+  // Chọn camera OCR / OCV — 2026-10-27.
+  { href: '/chon-ocr', key: 'ocr' },
   { href: '/chon-ong-kinh', key: 'lens' },
   { href: '/chon-den', key: 'light' },
   { href: '/cong-cu-may-tinh', key: 'pc' },

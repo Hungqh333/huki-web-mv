@@ -32,13 +32,14 @@ import { LEAKAGE_LIMIT, OVERKILL_LIMIT } from '@/lib/vision/experimentMetrics';
 import { LINE_EXPOSURE_BRIGHT_US, LINE_MAX_CAMERAS, RANK_MARGIN_TARGET } from '@/lib/vision/cameraSelector';
 
 /** Trang dùng công thức. */
-export type FormulaPage = 'design' | 'lens' | 'camera' | 'code' | 'light' | 'oldSelector' | 'pc' | 'kpi';
+export type FormulaPage = 'design' | 'lens' | 'camera' | 'code' | 'ocr' | 'light' | 'oldSelector' | 'pc' | 'kpi';
 
 export const PAGE_LABEL: Record<FormulaPage, { label: string; href: string }> = {
   design: { label: 'Thiết kế hệ thống', href: '/thiet-ke-he-thong/yeu-cau' },
   lens: { label: 'Chọn ống kính', href: '/chon-ong-kinh' },
   camera: { label: 'Chọn camera', href: '/chon-camera' },
   code: { label: 'Chọn đầu đọc mã', href: '/chon-doc-ma' },
+  ocr: { label: 'Chọn camera OCR', href: '/chon-ocr' },
   light: { label: 'Chọn đèn', href: '/chon-den' },
   oldSelector: { label: 'Bộ chọn thiết bị (cũ)', href: '/cong-cu-chon-thiet-bi' },
   pc: { label: 'Máy tính (PC)', href: '/cong-cu-may-tinh' },
@@ -355,7 +356,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
           'Tách theo bài toán 2026-10-27 (Q4): đo 0,5 px, phát hiện lỗi 1 px — Vision-Doctor: nhoè 0,5–2 px mắt không thấy nhưng vẫn làm giảm độ chính xác đo; VA Imaging dùng 0,5 px.',
         ],
         evidence: 'calculated',
-        usedIn: ['design', 'camera'],
+        usedIn: ['design', 'camera', 'ocr'],
         source: 'vision/requirementAnalysis.ts : THR-005 · vision/equipmentFilter.ts · vision/highSpeed.ts : blurPxFor, maxExposureUs',
       },
       {
@@ -421,7 +422,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
           'Đợt 2 (2026-10-27 Q3): trigger phần cứng lệch cỡ µs, phần mềm cỡ ms (Baumer); trigger lúc camera đang đọc ảnh có thể lệch thêm tới 1 hàng (Allied Vision); exposure start delay là phần cố định (Basler).',
         ],
         evidence: 'calculated',
-        usedIn: ['design', 'camera'],
+        usedIn: ['design', 'camera', 'ocr'],
         source: 'vision/requirementAnalysis.ts : THR-007 · vision/highSpeed.ts : triggerJitterMs',
       },
       {
@@ -1120,7 +1121,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
         ],
         params: ['interfaceMaxShare', 'blurPxAllowed', 'blurPxDetect', 'strobeExposureLimitUs'],
         evidence: 'calculated',
-        usedIn: ['camera', 'code'],
+        usedIn: ['camera', 'code', 'ocr'],
         source: 'vision/cameraSelector.ts : areaNeed, evaluateAreaCamera',
       },
       {
@@ -1145,7 +1146,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
           'fps_ROI tỉ lệ với số hàng là quy luật gần đúng (PixeLINK, VA Imaging); Allied Vision nói không có công thức chung — con số thật xem công cụ hãng.',
         ],
         evidence: 'calculated',
-        usedIn: ['camera', 'code'],
+        usedIn: ['camera', 'code', 'ocr'],
         source: 'vision/cameraSelector.ts : evaluateAreaCamera · vision/highSpeed.ts : exposureLimitedFps',
       },
       {
@@ -1276,6 +1277,47 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
         evidence: 'calculated',
         usedIn: ['code'],
         source: 'vision/codeReader.ts : evaluateReader, aovDeg',
+      },
+    ],
+  },
+
+  // ─────────────────────────────────────────────── 16. CHỌN CAMERA OCR ──
+  {
+    key: 'ocr',
+    title: '16. Trang Chọn camera OCR / OCV',
+    intro: 'Chốt 2026-10-27 (Q5–Q7). Camera dùng lại CAM-001/002 của trang Chọn camera; OCR là bài phát hiện nên nhoè 1 px (THR-005).',
+    entries: [
+      {
+        id: 'OCR-001',
+        title: 'mm/px theo chiều cao ký tự và độ dày nét; vùng nhìn khối chữ',
+        formula: [
+          'mm/px cần = min(chiều cao ký tự ÷ px/chiều cao, độ dày nét ÷ px/nét)   (chưa nhập nét → chỉ theo chiều cao)',
+          'khối chữ = chiều dài dòng × (chiều cao ký tự + (số dòng − 1) × khoảng cách dòng)   (khoảng cách chưa nhập = 1,5 × chiều cao)',
+          'vùng nhìn = khối chữ + 2 × dung sai vị trí mỗi trục',
+        ],
+        params: ['ocrPxPerCharHeight', 'ocrPxPerStroke'],
+        notes: ['Bộ chọn cũ cũng dùng ~20 px theo chiều cao ký tự (selector/derive.ts). OCV (kiểm chữ đúng / in đẹp) dùng cùng độ phân giải; kiểm chất lượng in chi tiết cần mịn hơn.'],
+        evidence: 'rule-of-thumb',
+        usedIn: ['ocr'],
+        source: 'vision/ocr.ts : ocrNeed',
+      },
+      {
+        id: 'OCR-002',
+        title: 'Kiểu in → kiểu đèn gợi ý',
+        formula: ['in phun / laser / in nhiệt (chữ phẳng trên mặt) → đèn vòm hoặc đèn vòng', 'dập nổi / khắc (chữ nổi lõm) → chiếu nghiêng góc thấp để nổi bóng'],
+        verdict: ['luôn LƯU Ý: phải chụp mẫu xác nhận — dẫn sang trang Chọn đèn'],
+        evidence: 'requires-sample-test',
+        usedIn: ['ocr'],
+        source: 'vision/ocr.ts : ocrNeed',
+      },
+      {
+        id: 'OCR-003',
+        title: 'Xử lý ảnh truyền thống hay OCR học sâu',
+        formula: ['nền phức tạp hoặc font thay đổi → cân nhắc OCR học sâu', 'in phun chấm rời → truyền thống, cần nối chấm (lọc hình thái) trước khi đọc', 'còn lại → truyền thống'],
+        notes: ['CLAUDE.md §4: chỉ gợi ý học sâu khi rule-based không đáp ứng được. Đây là gợi ý hiển thị, không loại camera.'],
+        evidence: 'rule-of-thumb',
+        usedIn: ['ocr'],
+        source: 'vision/ocr.ts : ocrNeed',
       },
     ],
   },

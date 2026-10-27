@@ -98,6 +98,9 @@ export const ENGINE_PARAMS = [
   { key: 'codePxPerModuleDpm', group: 'detection', default: 5, min: 1, max: 15, step: 0.1, unit: 'px' },
   // COD-002 (Q3): mã đang chạy phải nằm trong khung đủ cho bấy nhiêu lần chụp.
   { key: 'codeMinReads', group: 'detection', default: 3, min: 1, max: 20, step: 1 },
+  // OCR-001 (2026-10-27 Q5): px trên chiều cao ký tự và trên độ dày nét — lấy số chặt hơn.
+  { key: 'ocrPxPerCharHeight', group: 'detection', default: 20, min: 5, max: 60, step: 1, unit: 'px' },
+  { key: 'ocrPxPerStroke', group: 'detection', default: 3, min: 1, max: 10, step: 0.5, unit: 'px' },
   // MEC-001 — α suy từ vật liệu, µm/(m·K).
   { key: 'alphaAluminium', group: 'materials', default: 23, min: 1, max: 300, step: 0.5, unit: 'µm/(m·K)' },
   { key: 'alphaSteel', group: 'materials', default: 12, min: 1, max: 300, step: 0.5, unit: 'µm/(m·K)' },

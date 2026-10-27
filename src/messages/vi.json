@@ -22,7 +22,8 @@
     "projects": "Dự án",
     "light": "Đèn",
     "camera": "Camera",
-    "codeReader": "Đọc mã"
+    "codeReader": "Đọc mã",
+    "ocr": "OCR"
   },
   "language": {
     "label": "Ngôn ngữ",
@@ -1499,7 +1500,9 @@
         "codePxPerModule1d": "Đọc mã — px trên vạch hẹp nhất, mã 1D (COD-001)",
         "codePxPerModule2d": "Đọc mã — px trên một ô, mã 2D in (COD-001)",
         "codePxPerModuleDpm": "Đọc mã — px trên một ô, mã DPM (COD-001)",
-        "codeMinReads": "Đọc mã — số lần chụp tối thiểu khi mã đi qua khung (COD-002)"
+        "codeMinReads": "Đọc mã — số lần chụp tối thiểu khi mã đi qua khung (COD-002)",
+        "ocrPxPerCharHeight": "OCR — px theo chiều cao ký tự (OCR-001)",
+        "ocrPxPerStroke": "OCR — px trên độ dày nét (OCR-001)"
       },
       "errors": {
         "fix": "Có ô chưa hợp lệ — xem dòng báo đỏ.",
@@ -3765,6 +3768,125 @@
       "rollingShutter": "Rolling shutter: mã đang chạy sẽ bị méo.",
       "exposureOk": "Phơi tối đa {us} µs.",
       "readerExposureShort": "Phơi tối đa chỉ {us} µs (dưới {limit} µs): cần đầu đọc có đèn mạnh / chế độ tốc độ cao, hoặc đèn strobe ngoài."
+    }
+  },
+  "ocr": {
+    "title": "Chọn camera OCR",
+    "subtitle": "Tính độ phân giải, vùng nhìn, tốc độ cho bài đọc ký tự (OCR) / kiểm chữ (OCV), gợi ý đèn theo kiểu in, rồi lọc camera trong kho.",
+    "why": "Mọi con số tính theo công thức có mã. px theo chiều cao ký tự / độ dày nét là kinh nghiệm ngành (ngưỡng admin sửa được). Kết quả lý thuyết — nên chụp thử mẫu thật trước khi chốt.",
+    "emptyCatalog": "Kho chưa có camera nào đang dùng.",
+    "reset": "Làm lại",
+    "mode": {
+      "ocr": "OCR — đọc ra ký tự",
+      "ocv": "OCV — kiểm chữ đúng / in đủ"
+    },
+    "printType": {
+      "inkjet": "In phun (chấm)",
+      "laser": "Khắc laser",
+      "thermal": "In nhiệt / nhãn",
+      "embossed": "Dập nổi / khắc lõm"
+    },
+    "background": {
+      "plain": "Nền trơn",
+      "complex": "Nền phức tạp (hoa văn, bóng, cong)"
+    },
+    "font": {
+      "fixed": "Font cố định",
+      "varies": "Font thay đổi / viết tay"
+    },
+    "trigger": {
+      "photoSensor": "Cảm biến quang (phần cứng)",
+      "software": "Lệnh phần mềm",
+      "encoder": "Encoder"
+    },
+    "status": {
+      "pass": "Đạt",
+      "warn": "Lưu ý",
+      "info": "Chưa kiểm được",
+      "fail": "Loại"
+    },
+    "task": {
+      "title": "Chữ cần đọc",
+      "mode": "Bài toán",
+      "printType": "Kiểu in",
+      "charHeight": "Chiều cao ký tự (mm)",
+      "stroke": "Độ dày nét (mm)",
+      "strokeHint": "Không bắt buộc — có thì lấy số chặt hơn giữa chiều cao và nét.",
+      "textWidth": "Chiều dài dòng dài nhất (mm)",
+      "lines": "Số dòng",
+      "spacing": "Khoảng cách dòng (mm)",
+      "spacingHint": "Chân dòng tới chân dòng; để trống = 1,5 × chiều cao ký tự.",
+      "tolX": "Dung sai vị trí ngang (± mm)",
+      "tolY": "Dung sai vị trí dọc (± mm)",
+      "background": "Nền",
+      "font": "Font"
+    },
+    "speed": {
+      "title": "Tốc độ (không bắt buộc)",
+      "note": "Để trống tốc độ nếu chữ đứng yên khi chụp.",
+      "speed": "Tốc độ băng tải khi chụp (mm/s)",
+      "ppm": "Sản lượng (sản phẩm/phút)",
+      "trigger": "Nguồn trigger"
+    },
+    "need": {
+      "title": "Thông số cần",
+      "mmPerPx": "mm/px cần",
+      "byHeight": "{char} px theo chiều cao ký tự.",
+      "byStroke": "Độ dày nét quyết định: {stroke} px trên nét (chặt hơn {char} px theo chiều cao).",
+      "fov": "Vùng nhìn",
+      "fovNote": "Khối chữ {w} × {h} mm + 2 × dung sai vị trí.",
+      "pixels": "Pixel tối thiểu",
+      "megapixels": "≈ {mp} MP.",
+      "fps": "Số ảnh/giây",
+      "fpsMissing": "Nhập sản lượng để tính.",
+      "exposure": "Phơi sáng tối đa (chống nhoè)",
+      "exposureStatic": "Chữ đứng yên khi chụp — không giới hạn.",
+      "exposureNote": "Nhoè ≤ 1 px tại mm/px cần.",
+      "strobe": "Đèn strobe",
+      "strobeYes": "Bắt buộc",
+      "strobeNo": "Chưa cần",
+      "trigger": "Lệch vị trí khi trigger",
+      "triggerNote": "Để vùng nhìn dư ≥ {margin} mm theo chiều chạy.",
+      "lightTitle": "Đèn gợi ý (OCR-002)",
+      "toLight": "Chọn đèn",
+      "light": {
+        "domeOrRing": "Chữ in phẳng trên mặt: đèn vòm (bề mặt bóng / cong) hoặc đèn vòng (bề mặt mờ). Chụp mẫu để xác nhận.",
+        "lowAngle": "Chữ dập nổi / khắc lõm: chiếu nghiêng góc thấp để vết nổi bóng. Chụp mẫu để xác nhận."
+      },
+      "algoTitle": "Thuật toán (OCR-003)",
+      "algo": {
+        "traditional": "Xử lý ảnh truyền thống đọc được — ổn định, không cần tập ảnh huấn luyện.",
+        "dotJoin": "In phun chấm rời: dùng truyền thống, nối chấm (lọc hình thái) trước khi đọc; tỉ lệ đọc thấp mới cân nhắc học sâu.",
+        "deepLearning": "Nền phức tạp hoặc font thay đổi: thử truyền thống trước, nhưng nhiều khả năng cần OCR học sâu (Deep OCR) và tập ảnh mẫu."
+      },
+      "ocvNote": "OCV dùng cùng độ phân giải để so chữ; muốn chấm chất lượng in (nét đứt, nhoè mực) thì cần mịn hơn.",
+      "missing": "Nhập chiều cao ký tự và chiều dài dòng chữ."
+    },
+    "list": {
+      "showResults": "Hiển thị kết quả",
+      "stale": "Đã đổi thông số — bấm Hiển thị kết quả để tính lại.",
+      "title": "Camera trong kho",
+      "meta": "{pass} đạt · {warn} lưu ý · {info} chưa kiểm được · {fail} loại",
+      "showRejected": "Hiện cả camera bị loại",
+      "empty": "Không có camera nào đạt — bật \"Hiện cả camera bị loại\" để xem lý do.",
+      "noCameras": "Kho chưa có camera area scan.",
+      "colCamera": "Camera",
+      "colResolution": "Độ phân giải",
+      "colPixel": "Pixel",
+      "colMmPerPx": "mm/px",
+      "colMargin": "Dư",
+      "colFps": "fps thật / cần",
+      "colData": "MB/s",
+      "colInterface": "Giao tiếp",
+      "colShutter": "Shutter",
+      "colStatus": "Kết luận",
+      "details": "Chi tiết",
+      "hide": "Thu gọn",
+      "datasheet": "Datasheet",
+      "toLens": "Chọn ống kính",
+      "cameraHint": "Cần thêm ống kính, đèn và phần mềm OCR (Halcon, VisionPro…) — chọn ở trang Ống kính / Đèn.",
+      "foot": "Cùng bộ kiểm với trang Chọn camera (pixel, fps thật, băng thông, shutter, phơi sáng); giả định ống kính vừa khít vùng nhìn.",
+      "showMore": "Xem thêm {n} camera"
     }
   }
 }

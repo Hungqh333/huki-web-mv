@@ -22,7 +22,8 @@
     "projects": "Projects",
     "light": "Lighting",
     "camera": "Camera",
-    "codeReader": "Code reader"
+    "codeReader": "Code reader",
+    "ocr": "OCR"
   },
   "language": {
     "label": "Language",
@@ -1499,7 +1500,9 @@
         "codePxPerModule1d": "Code reading — px per narrowest bar, 1D (COD-001)",
         "codePxPerModule2d": "Code reading — px per cell, printed 2D (COD-001)",
         "codePxPerModuleDpm": "Code reading — px per cell, DPM (COD-001)",
-        "codeMinReads": "Code reading — minimum captures while a code crosses the view (COD-002)"
+        "codeMinReads": "Code reading — minimum captures while a code crosses the view (COD-002)",
+        "ocrPxPerCharHeight": "OCR — px across the character height (OCR-001)",
+        "ocrPxPerStroke": "OCR — px across the stroke width (OCR-001)"
       },
       "errors": {
         "fix": "Some fields are invalid — see the red lines.",
@@ -3765,6 +3768,125 @@
       "rollingShutter": "Rolling shutter: a moving code will be distorted.",
       "exposureOk": "Maximum exposure {us} µs.",
       "readerExposureShort": "Maximum exposure only {us} µs (under {limit} µs): needs a reader with strong light / high-speed mode, or an external strobe."
+    }
+  },
+  "ocr": {
+    "title": "OCR camera selector",
+    "subtitle": "Work out resolution, field of view and speed for character reading (OCR) / verification (OCV), suggest lighting by print type, then filter cameras in stock.",
+    "why": "Every figure comes from a formula with an ID. Pixels across the character height / stroke are an industry rule of thumb (editable admin threshold). Theoretical results — test real samples before committing.",
+    "emptyCatalog": "No active cameras in stock.",
+    "reset": "Reset",
+    "mode": {
+      "ocr": "OCR — read the characters",
+      "ocv": "OCV — verify text / print"
+    },
+    "printType": {
+      "inkjet": "Inkjet (dot)",
+      "laser": "Laser marking",
+      "thermal": "Thermal / label",
+      "embossed": "Embossed / engraved"
+    },
+    "background": {
+      "plain": "Plain background",
+      "complex": "Complex background (pattern, gloss, curved)"
+    },
+    "font": {
+      "fixed": "Fixed font",
+      "varies": "Varying font / handwriting"
+    },
+    "trigger": {
+      "photoSensor": "Photo sensor (hardware)",
+      "software": "Software command",
+      "encoder": "Encoder"
+    },
+    "status": {
+      "pass": "Pass",
+      "warn": "Note",
+      "info": "Not checked",
+      "fail": "Excluded"
+    },
+    "task": {
+      "title": "Text to read",
+      "mode": "Task",
+      "printType": "Print type",
+      "charHeight": "Character height (mm)",
+      "stroke": "Stroke width (mm)",
+      "strokeHint": "Optional — if given, the tighter of height and stroke is used.",
+      "textWidth": "Longest line length (mm)",
+      "lines": "Lines",
+      "spacing": "Line spacing (mm)",
+      "spacingHint": "Baseline to baseline; empty = 1.5 × character height.",
+      "tolX": "Horizontal position tolerance (± mm)",
+      "tolY": "Vertical position tolerance (± mm)",
+      "background": "Background",
+      "font": "Font"
+    },
+    "speed": {
+      "title": "Speed (optional)",
+      "note": "Leave speed empty if the text is stationary when captured.",
+      "speed": "Conveyor speed during capture (mm/s)",
+      "ppm": "Output (parts/min)",
+      "trigger": "Trigger source"
+    },
+    "need": {
+      "title": "Requirements",
+      "mmPerPx": "Required mm/px",
+      "byHeight": "{char} px across the character height.",
+      "byStroke": "Stroke width governs: {stroke} px per stroke (tighter than {char} px across the height).",
+      "fov": "Field of view",
+      "fovNote": "Text block {w} × {h} mm + 2 × position tolerance.",
+      "pixels": "Minimum pixels",
+      "megapixels": "≈ {mp} MP.",
+      "fps": "Images per second",
+      "fpsMissing": "Enter output to calculate.",
+      "exposure": "Maximum exposure (no blur)",
+      "exposureStatic": "Text is stationary when captured — no limit.",
+      "exposureNote": "Blur ≤ 1 px at the required mm/px.",
+      "strobe": "Strobe light",
+      "strobeYes": "Required",
+      "strobeNo": "Not needed yet",
+      "trigger": "Capture position shift",
+      "triggerNote": "Keep ≥ {margin} mm spare along the motion.",
+      "lightTitle": "Suggested lighting (OCR-002)",
+      "toLight": "Choose a light",
+      "light": {
+        "domeOrRing": "Text printed flat on the surface: dome light (glossy / curved) or ring light (matte). Test samples to confirm.",
+        "lowAngle": "Embossed / engraved text: low-angle light to cast the relief. Test samples to confirm."
+      },
+      "algoTitle": "Algorithm (OCR-003)",
+      "algo": {
+        "traditional": "Rule-based image processing can read it — stable, no training set needed.",
+        "dotJoin": "Dot-matrix inkjet: rule-based, join the dots (morphology) before reading; consider deep learning only if the read rate is low.",
+        "deepLearning": "Complex background or varying font: try rule-based first, but deep-learning OCR and a sample set are likely needed."
+      },
+      "ocvNote": "OCV uses the same resolution to compare text; grading print quality (broken strokes, ink smear) needs finer resolution.",
+      "missing": "Enter the character height and text line length."
+    },
+    "list": {
+      "showResults": "Show results",
+      "stale": "Inputs changed — press Show results to recalculate.",
+      "title": "Cameras in stock",
+      "meta": "{pass} pass · {warn} note · {info} not checked · {fail} excluded",
+      "showRejected": "Show excluded cameras",
+      "empty": "No camera passes — tick \"Show excluded cameras\" to see why.",
+      "noCameras": "No area-scan cameras in stock.",
+      "colCamera": "Camera",
+      "colResolution": "Resolution",
+      "colPixel": "Pixel",
+      "colMmPerPx": "mm/px",
+      "colMargin": "Margin",
+      "colFps": "Real fps / needed",
+      "colData": "MB/s",
+      "colInterface": "Interface",
+      "colShutter": "Shutter",
+      "colStatus": "Verdict",
+      "details": "Details",
+      "hide": "Collapse",
+      "datasheet": "Datasheet",
+      "toLens": "Choose a lens",
+      "cameraHint": "Also needs a lens, a light and OCR software (Halcon, VisionPro…) — choose them on the Lens / Lighting pages.",
+      "foot": "Same checks as the Camera selector (pixels, real fps, bandwidth, shutter, exposure); assumes a lens that exactly fits the field of view.",
+      "showMore": "Show {n} more cameras"
     }
   }
 }

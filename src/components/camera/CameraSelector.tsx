@@ -21,16 +21,22 @@ import {
   type LineCandidate,
 } from '@/lib/vision/cameraSelector';
 import { renderFormula } from '@/lib/vision/formulaTerms';
+import type { TriggerSource } from '@/lib/vision/highSpeed';
 import type { Check, CheckStatus } from '@/lib/vision/types';
 
 /**
  * Giao diện Bộ chọn camera (chốt 2026-10-27, Q1–Q8). Không tính gì ở đây — mọi con số
  * đến từ `@/lib/vision/cameraSelector`. Luồng giống trang Chọn ống kính: nhập → khung
- * "Thông số cần" tính ngay → bấm "Hiển thị kết quả" mới lọc kho.
+ * "Thông số cần" tính ngay → bấm "Hiển thị kết quả" mới lọc kho. Đợt 2 tốc độ cao (Q1–Q7):
+ * tab Area có Bảng tính tốc độ cao, fps thật, độ nhạy sáng; tab Line có TDI.
  */
 
 type Tab = 'area' | 'line';
 type Contrast = 'high' | 'medium' | 'low' | 'unknown';
+type Purpose = 'detect' | 'measure';
+
+/** Q7: chỉ dẫn link, không chép nội dung. */
+const BASLER_FPS_CALCULATOR = 'https://www.baslerweb.com/en/tools/frame-rate-calculator/';
 
 const inputClass =
   'w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100';
@@ -49,7 +55,26 @@ const PAGE = 30;
 const TABS: Tab[] = ['area', 'line'];
 const CONTRASTS: Contrast[] = ['high', 'medium', 'low', 'unknown'];
 const COLORS: CameraColorFilter[] = ['any', 'mono', 'color'];
-const EMPTY = { fovW: '', fovH: '', width: '', mmpx: '', defect: '', contrast: 'unknown' as Contrast, color: 'any' as CameraColorFilter, speed: '', ppm: '', images: '1', encoder: '' };
+const PURPOSES: Purpose[] = ['detect', 'measure'];
+const TRIGGERS: TriggerSource[] = ['photoSensor', 'software', 'encoder'];
+const EMPTY = {
+  fovW: '',
+  fovH: '',
+  width: '',
+  mmpx: '',
+  defect: '',
+  contrast: 'unknown' as Contrast,
+  color: 'any' as CameraColorFilter,
+  purpose: 'detect' as Purpose,
+  speed: '',
+  ppm: '',
+  images: '1',
+  trigger: 'photoSensor' as TriggerSource,
+  sensorMs: '',
+  sampleMs: '',
+  overlapped: 'yes' as 'yes' | 'no',
+  encoder: '',
+};
 
 const num = (value: string): number | null => {
   const n = Number(value.replace(',', '.'));
@@ -87,9 +112,14 @@ export function CameraSelector({ components, params }: { components: Component[]
       fovHeightMm: fovH,
       targetMmPerPx: target.mmPerPx,
       color: form.color,
+      measuring: form.purpose === 'measure',
       speedMmS: num(form.speed),
       partsPerMinute: num(form.ppm),
       imagesPerPart: Math.max(1, Math.round(num(form.images) ?? 1)),
+      triggerSource: form.trigger,
+      sensorResponseMs: num(form.sensorMs),
+      sampleExposureMs: num(form.sampleMs),
+      overlapped: form.overlapped === 'yes',
     };
   }, [form, target]);
   const lineInput = useMemo<LineCameraInput | null>(() => {
@@ -171,6 +201,9 @@ export function CameraSelector({ components, params }: { components: Component[]
             ) : (
               <NumberInput id="cam-width" label={t('task.lineWidth')} hint={t('task.lineWidthHint')} value={form.width} onChange={set('width')} />
             )}
+            {tab === 'area' ? (
+              <SelectInput id="cam-purpose" label={t('task.purpose')} value={form.purpose} options={PURPOSES} labelOf={(v) => t(`purpose.${v}`)} onChange={set('purpose')} />
+            ) : null}
             <NumberInput id="cam-mmpx" label={t('task.mmPerPx')} hint={t('task.mmPerPxHint')} value={form.mmpx} onChange={set('mmpx')} step="0.001" />
             <NumberInput id="cam-defect" label={t('task.defect')} hint={t('task.defectHint')} value={form.defect} onChange={set('defect')} step="0.01" />
             <div>
@@ -207,6 +240,12 @@ export function CameraSelector({ components, params }: { components: Component[]
               <>
                 <NumberInput id="cam-ppm" label={t('speed.ppm')} value={form.ppm} onChange={set('ppm')} />
                 <NumberInput id="cam-images" label={t('speed.images')} hint={t('speed.imagesHint')} value={form.images} onChange={set('images')} step="1" />
+                <SelectInput id="cam-trigger" label={t('speed.trigger')} value={form.trigger} options={TRIGGERS} labelOf={(v) => t(`trigger.${v}`)} onChange={set('trigger')} />
+                {form.trigger !== 'encoder' ? (
+                  <NumberInput id="cam-sensor-ms" label={t('speed.sensorMs')} hint={t('speed.sensorMsHint')} value={form.sensorMs} onChange={set('sensorMs')} step="0.01" />
+                ) : null}
+                <NumberInput id="cam-sample-ms" label={t('speed.sampleMs')} hint={t('speed.sampleMsHint')} value={form.sampleMs} onChange={set('sampleMs')} step="0.01" />
+                <SelectInput id="cam-overlap" label={t('speed.overlapped')} hint={t('speed.overlappedHint')} value={form.overlapped} options={['yes', 'no']} labelOf={(v) => t(`overlapped.${v}`)} onChange={set('overlapped')} />
               </>
             ) : (
               <NumberInput id="cam-encoder" label={t('speed.encoder')} hint={t('speed.encoderHint')} value={form.encoder} onChange={set('encoder')} step="0.1" />
@@ -216,18 +255,56 @@ export function CameraSelector({ components, params }: { components: Component[]
       </div>
 
       {/* ── Thông số cần ── */}
-      <Panel id="camera-need" title={t('need.title')}>
+      <Panel id="camera-need" title={t(tab === 'area' && need?.exposureMaxUs != null ? 'need.titleSpeed' : 'need.title')}>
         {tab === 'area' && need ? (
-          <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2 xl:grid-cols-4">
-            <NeedItem label={t('need.pixels')} value={`${need.pxLong} × ${need.pxShort} px`} note={t('need.megapixels', { mp: show(need.megapixels, 2) })} />
-            <NeedItem label={t('need.fps')} value={need.fpsNeeded !== null ? `${show(need.fpsNeeded, 2)} fps` : '—'} note={need.fpsNeeded === null ? t('need.fpsMissing') : undefined} />
-            <NeedItem label={t('need.exposure')} value={need.exposureMaxUs !== null ? `${show(need.exposureMaxUs, 0)} µs` : '—'} note={need.exposureMaxUs === null ? t('need.exposureStatic') : t('need.exposureNote')} />
-            <NeedItem
-              label={t('need.strobe')}
-              value={need.exposureMaxUs === null ? '—' : need.strobeRequired ? t('need.strobeYes') : t('need.strobeNo')}
-              status={need.exposureMaxUs === null ? undefined : need.strobeRequired ? 'warn' : 'pass'}
-            />
-          </dl>
+          <>
+            <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2 xl:grid-cols-4">
+              <NeedItem label={t('need.pixels')} value={`${need.pxLong} × ${need.pxShort} px`} note={t('need.megapixels', { mp: show(need.megapixels, 2) })} />
+              <NeedItem label={t('need.fps')} value={need.fpsNeeded !== null ? `${show(need.fpsNeeded, 2)} fps` : '—'} note={need.fpsNeeded === null ? t('need.fpsMissing') : undefined} />
+              {need.travelPerFrameMm !== null ? <NeedItem label={t('need.travel')} value={`${show(need.travelPerFrameMm, 1)} mm`} note={t('need.travelNote')} /> : null}
+              <NeedItem
+                label={t('need.exposure')}
+                value={need.exposureMaxUs !== null ? `${show(need.exposureMaxUs, 0)} µs` : '—'}
+                note={need.exposureMaxUs === null ? t('need.exposureStatic') : t('need.exposureNote', { px: need.blurPx })}
+              />
+              <NeedItem
+                label={t('need.strobe')}
+                value={need.exposureMaxUs === null ? '—' : need.strobeRequired ? t('need.strobeYes') : t('need.strobeNo')}
+                status={need.exposureMaxUs === null ? undefined : need.strobeRequired ? 'warn' : 'pass'}
+              />
+              {need.trigger ? (
+                need.trigger.source === 'encoder' ? (
+                  <NeedItem label={t('need.trigger')} value={t('need.triggerEncoder')} status="pass" note={t('need.triggerEncoderNote')} />
+                ) : (
+                  <NeedItem
+                    label={t('need.trigger')}
+                    value={`±${show(need.trigger.shiftMm, 3)} mm (${show(need.trigger.px, 1)} px)`}
+                    status={need.trigger.over ? 'warn' : 'pass'}
+                    note={t('need.triggerNote', {
+                      sensor: show(need.trigger.sensorMs, 3),
+                      camera: show(need.trigger.cameraMs, 3),
+                      share: show(need.trigger.share * 100, 1),
+                      margin: show(need.trigger.shiftMm * 2, 2),
+                      assumed: need.trigger.sensorAssumed ? t('need.assumed') : '',
+                    })}
+                  />
+                )
+              ) : null}
+              {need.light ? (
+                <NeedItem
+                  label={t('need.light')}
+                  value={`×${show(need.light.boost, 1)}`}
+                  status={need.light.verdict === 'continuous' ? 'pass' : need.light.verdict === 'overdrive' ? 'warn' : need.light.verdict === 'dutyTooHigh' || !need.light.assumed ? 'fail' : 'warn'}
+                  note={t(`need.lightNote.${need.light.verdict}`, {
+                    sample: show(need.light.sampleMs, 3),
+                    duty: need.light.duty === null ? '—' : need.light.duty * 100 < 0.01 ? '< 0.01' : show(need.light.duty * 100, 2),
+                    assumed: need.light.assumed ? t('need.assumed') : '',
+                  })}
+                />
+              ) : null}
+            </dl>
+            {need.trigger && need.trigger.source !== 'encoder' ? <p className={`mt-3 ${NOTE_CLASS}`}>{t('need.latencyNote')}</p> : null}
+          </>
         ) : tab === 'line' && lineNeed ? (
           <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2 xl:grid-cols-4">
             <NeedItem label={t('need.linePx')} value={`${lineNeed.px} px`} note={t('need.linePxNote')} />
@@ -279,6 +356,7 @@ export function CameraSelector({ components, params }: { components: Component[]
                       <th scope="col" className={th}>{t('list.colData')}</th>
                       <th scope="col" className={th}>{t('list.colInterface')}</th>
                       <th scope="col" className={th}>{t('list.colShutter')}</th>
+                      <th scope="col" className={th} title={t('list.colSensitivityHint')}>{t('list.colSensitivity')}</th>
                       <th scope="col" className={th}>{t('list.colStatus')}</th>
                     </tr>
                   ) : (
@@ -331,6 +409,36 @@ function NumberInput({ id, label, hint, value, onChange, step = 'any' }: { id: s
     <div>
       <label htmlFor={id} className={labelClass}>{label}</label>
       <input id={id} type="number" inputMode="decimal" min="0" step={step} value={value} onChange={(e) => onChange(e.target.value)} className={`mt-1.5 ${inputClass}`} />
+      {hint ? <p className={`mt-1 ${NOTE_CLASS}`}>{hint}</p> : null}
+    </div>
+  );
+}
+
+function SelectInput<V extends string>({
+  id,
+  label,
+  hint,
+  value,
+  options,
+  labelOf,
+  onChange,
+}: {
+  id: string;
+  label: string;
+  hint?: string;
+  value: V;
+  options: readonly V[];
+  labelOf: (value: V) => string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <div>
+      <label htmlFor={id} className={labelClass}>{label}</label>
+      <select id={id} value={value} onChange={(e) => onChange(e.target.value)} className={`mt-1.5 ${inputClass}`}>
+        {options.map((o) => (
+          <option key={o} value={o}>{labelOf(o)}</option>
+        ))}
+      </select>
       {hint ? <p className={`mt-1 ${NOTE_CLASS}`}>{hint}</p> : null}
     </div>
   );
@@ -421,17 +529,25 @@ function CameraRow({
         <td className={cell}>{show(a.mmPerPx, 4)}</td>
         <td className={cell}>{a.margin !== null ? `${show(a.margin, 2)}×` : '—'}</td>
         <td className={cell}>
-          {a.camera.maxFps !== null ? show(a.camera.maxFps, 1) : '—'}
+          {a.fpsReal !== null ? show(a.fpsReal, 1) : '—'}
           {a.fpsNeeded !== null ? <span className="text-slate-500"> / {show(a.fpsNeeded, 2)}</span> : null}
           {a.fpsRoi !== null ? <div className={NOTE_CLASS}>{t('list.roiFps', { fps: show(a.fpsRoi, 0) })}</div> : null}
+          {a.fpsLimiter !== null && a.fpsLimiter !== 'sensor' ? <div className={NOTE_CLASS}>{t(`limiter.${a.fpsLimiter}`)}</div> : null}
         </td>
         <td className={cell}>{a.dataRateMBs !== null ? show(a.dataRateMBs, 1) : '—'}</td>
         <td className={cell}>{iface}</td>
         <td className={cell}>{specString(spec, 'shutter') ? t(`shutter.${specString(spec, 'shutter')}`) : '—'}</td>
+        <td className={cell}>{a.sensitivityRel !== null ? `${Math.round(a.sensitivityRel * 100)}%` : '—'}</td>
         <td className="py-2 pr-4">{toggle}</td>
       </>
     );
-    if (a.exposureMaxUs !== null) extra = <DetailItem label={t('list.exposureMax')} value={`${show(a.exposureMaxUs, 0)} µs`} />;
+    extra = (
+      <>
+        <DetailItem label={t('list.fpsDatasheet')} value={a.camera.maxFps !== null ? `${show(a.camera.maxFps, 1)} fps` : '—'} />
+        {a.exposureMaxUs !== null ? <DetailItem label={t('list.exposureMax')} value={`${show(a.exposureMaxUs, 0)} µs`} /> : null}
+        <DetailItem label={t('list.dynamicRange')} value={a.dynamicRangeDb !== null ? `${show(a.dynamicRangeDb, 1)} dB` : '—'} />
+      </>
+    );
   } else {
     const l = c as LineCandidate;
     cells = (
@@ -445,7 +561,10 @@ function CameraRow({
         </td>
         <td className={cell}>{show(l.mmPerPx, 4)}</td>
         <td className={cell}>{l.cameraCount ?? '—'}</td>
-        <td className={cell}>{l.exposureUs !== null ? show(l.exposureUs, 1) : '—'}</td>
+        <td className={cell}>
+          {l.exposureUs !== null ? show(l.exposureUs, 1) : '—'}
+          {l.tdiStages !== null ? <div className={NOTE_CLASS}>{t('list.tdi', { n: l.tdiStages })}</div> : null}
+        </td>
         <td className={cell}>{l.dataRateMBs !== null ? show(l.dataRateMBs, 1) : '—'}</td>
         <td className={cell}>{iface}</td>
         <td className={cell}>{l.camera.mount ?? '—'}</td>
@@ -466,7 +585,7 @@ function CameraRow({
       <tr className={c.status === 'fail' ? 'opacity-60' : undefined}>{cells}</tr>
       {open ? (
         <tr className="bg-slate-50/60 dark:bg-slate-900/60">
-          <td colSpan={11} className="px-4 py-3">
+          <td colSpan={kind === 'area' ? 12 : 11} className="px-4 py-3">
             {extra ? <dl className="mb-3 grid gap-x-6 gap-y-2 sm:grid-cols-3">{extra}</dl> : null}
             {kind === 'line' ? <p className={`mb-3 ${NOTE_CLASS}`}>{t('list.lensHint')}</p> : null}
             <CheckList checks={c.checks} showFormulas={showFormulas} />
@@ -474,6 +593,11 @@ function CameraRow({
               {kind === 'line' ? (
                 <ActionLink href="/chon-ong-kinh" variant="text">
                   {t('list.toLens')}
+                </ActionLink>
+              ) : null}
+              {kind === 'area' && (c as AreaCandidate).fpsRoi !== null ? (
+                <ActionLink href={BASLER_FPS_CALCULATOR} external variant="text">
+                  {t('list.roiCalculator')}
                 </ActionLink>
               ) : null}
               {c.component.datasheet_url ? (

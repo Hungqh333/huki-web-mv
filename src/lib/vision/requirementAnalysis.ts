@@ -10,6 +10,7 @@ import { GRR_DIVISOR, K_SUBPIXEL, measurementBudget } from './resolution';
 import { completeness, toRuleResult, type Evidence, type RuleAssumedInput, type RuleInput, type RuleResult } from './rules';
 import { cameraTile, type CameraTile } from './tiling';
 import { fmt, round, type Check } from './types';
+import { blurPxFor, dutyText as formatDuty, maxExposureUs, strobeLight, triggerJitterMs, type TriggerSource } from './highSpeed';
 import { term } from './formulaTerms';
 
 /**
@@ -391,8 +392,9 @@ export function analyseRequirement(
   // ─── THR-005 / LGT-008: nhoè chuyển động → phơi sáng → strobe ───
   const speed = num('production.conveyorSpeed');
   const continuous = raw('production.motion') === 'continuous' && speed !== null && speed > 0;
-  const kBlur = params.blurPxAllowed;
-  const exposureMaxUs = continuous && governing !== null ? ((kBlur * governing) / speed!) * 1e6 : null;
+  // Q4 (2026-10-27): bài có dung sai đo dùng nhoè của bài đo (chặt hơn), còn lại của bài phát hiện lỗi.
+  const kBlur = blurPxFor(params, tolerances.length > 0);
+  const exposureMaxUs = continuous && governing !== null ? maxExposureUs(kBlur, governing, speed!) : null;
   if (exposureMaxUs !== null) {
     push(
       'THR-005',
@@ -438,12 +440,15 @@ export function analyseRequirement(
 
   // ─── THR-007: lệch vị trí chụp do sai lệch thời điểm trigger ───
   if (continuous) {
-    const source = raw('production.triggerSource');
+    const source = (raw('production.triggerSource') ?? 'photoSensor') as TriggerSource;
     const paths = ['production.motion', 'production.conveyorSpeed', 'production.triggerSource', 'production.triggerJitterMs'];
-    const jitterMs = num('production.triggerJitterMs');
+    const sensorMs = num('production.triggerJitterMs');
+    // Q3 (2026-10-27): lệch ngẫu nhiên = đáp ứng cảm biến + jitter camera (phần cứng µs / phần mềm ms).
+    const jitter = sensorMs !== null ? triggerJitterMs(source, sensorMs, params) : null;
     if (source === 'encoder') {
       push('THR-007', { key: 'triggerShift', status: 'pass', formula: 'encoder', noteKey: 'triggerEncoder' }, 'rule-of-thumb', paths);
-    } else if (jitterMs !== null) {
+    } else if (jitter !== null) {
+      const jitterMs = jitter.totalMs;
       const shiftMm = (speed! * jitterMs) / 1000;
       const shortSide = tile ? Math.min(tile.widthMm, tile.heightMm) : fovW !== null && fovH !== null ? Math.min(fovW, fovH) : null;
       const share = shortSide ? shiftMm / shortSide : null;
@@ -455,10 +460,10 @@ export function analyseRequirement(
           key: 'triggerShift',
           status: over ? 'warn' : 'pass',
           formula:
-            `${fmt(speed!)} mm/s × ${fmt(jitterMs, 3)} ms = ±${fmt(shiftMm, 3)} mm` +
+            `${fmt(speed!)} mm/s × (${fmt(sensorMs!, 3)} + ${fmt(jitter.cameraMs, 3)}) ms = ±${fmt(shiftMm, 3)} mm` +
             (px !== null ? ` = ${fmt(px, 1)} px` : '') +
             (share !== null ? ` · ${fmt(share * 100, 1)}% ${over ? '>' : '≤'} ${fmt(params.triggerShiftMaxShare * 100, 1)}%` : ''),
-          noteKey: over ? 'triggerShiftHigh' : 'triggerShiftOk',
+          noteKey: over ? (source === 'software' ? 'triggerShiftSoftware' : 'triggerShiftHigh') : 'triggerShiftOk',
           noteValues: { shift: round(shiftMm, 3), margin: round(2 * shiftMm, 2), px: px !== null ? round(px, 1) : '—' },
         },
         'calculated',
@@ -474,24 +479,22 @@ export function analyseRequirement(
     const sampleField = readField(req, 'production.sampleExposureMs');
     const stated = sampleField?.confidence === 'stated';
     if (sampleMs !== null && sampleMs > 0) {
-      const boost = (sampleMs * 1000) / exposureMaxUs;
-      const duty = fpsNeeded !== null ? exposureMaxUs * 1e-6 * fpsNeeded : null;
+      const { boost, duty, verdict } = strobeLight({ sampleExposureMs: sampleMs, exposureMaxUs, fps: fpsNeeded, params });
       const paths = ['production.sampleExposureMs', 'production.conveyorSpeed', ...ratePaths];
-      // Duty rất nhỏ (xung µs, vài ảnh/giây) làm tròn ra "0" — ghi "< 0.01" cho khỏi hiểu nhầm là không chớp.
-      const dutyText = duty === null ? '—' : duty * 100 < 0.01 ? '< 0.01' : fmt(duty * 100, 2);
+      const dutyText = formatDuty(duty, fmt);
       const values = { boost: round(boost, 1), us: Math.round(exposureMaxUs), duty: dutyText, maxBoost: params.strobeBoostMax, maxDuty: round(params.strobeMaxDuty * 100, 1) };
       const formula =
         `${fmt(sampleMs * 1000, 0)} µs ÷ ${fmt(exposureMaxUs, 0)} µs = ×${fmt(boost, 1)}` +
         (duty !== null ? ` · duty ${fmt(exposureMaxUs, 0)} µs × ${fmt(fpsNeeded!, 2)} ${term('framesPerSecond')} = ${dutyText}%` : '');
       let check: Check;
       let margin: number | null = null;
-      if (boost <= 1) {
+      if (verdict === 'continuous') {
         check = { key: 'lightBudget', status: 'pass', formula, noteKey: 'lightContinuousOk', noteValues: values };
         margin = 1 / boost;
-      } else if (duty !== null && duty > params.strobeMaxDuty) {
+      } else if (verdict === 'dutyTooHigh') {
         check = { key: 'lightBudget', status: 'fail', formula, noteKey: 'lightDutyTooHigh', noteValues: values };
-        margin = params.strobeMaxDuty / duty;
-      } else if (boost > params.strobeBoostMax) {
+        margin = params.strobeMaxDuty / duty!;
+      } else if (verdict === 'boostTooHigh') {
         // Số phơi lúc chụp mẫu là số THẬT → kết luận được; còn ước tính thì chỉ cảnh báo.
         check = { key: 'lightBudget', status: stated ? 'fail' : 'warn', formula, noteKey: 'lightBoostTooHigh', noteValues: values };
         margin = params.strobeBoostMax / boost;

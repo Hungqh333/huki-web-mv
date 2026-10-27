@@ -218,7 +218,7 @@ export const GOLDEN_CASES: GoldenCase[] = [
       overall: 60,
       limitingFactors: ['Lighting'],
     },
-    note: 'Tay: phơi sáng tối đa 0,5×0,0667/3000 s = 11 µs < 50 µs → LGT-008. THR-007 (2026-10-26): 3000 × 0,5 ms giả định = ±1,5 mm < 5 % cạnh ngắn → ĐẠT. LGT-024: 1 ms ước tính ÷ 11 µs = ×90 > ×10 → CẢNH BÁO (ước tính, không LOẠI). Chiếu sáng vẫn UNKNOWN 60 (xước cần mẫu) thấp hơn MARGINAL 70.',
+    note: 'Tay: phơi sáng tối đa 1 px (bài phát hiện lỗi, 2026-10-27) × 0,0667/3000 s = 22 µs < 50 µs → LGT-008. THR-007: 3000 × (0,5 ms giả định + 0,01 ms camera) = ±1,53 mm < 5 % cạnh ngắn → ĐẠT. LGT-024: 1 ms ước tính ÷ 22 µs = ×45 > ×10 → CẢNH BÁO (ước tính, không LOẠI). Chiếu sáng vẫn UNKNOWN 60 (xước cần mẫu) thấp hơn MARGINAL 70.',
   },
   {
     id: 'S-05',

@@ -72,8 +72,8 @@ export type Surface = 'matte' | 'glossy' | 'metallic' | 'black' | 'transparent' 
 export type DefectContrast = 'high' | 'medium' | 'low' | 'unknown';
 export type DefectVariability = 'low' | 'medium' | 'high' | 'unknown';
 export type Motion = 'static' | 'indexed' | 'continuous';
-/** Nguồn trigger chụp khi sản phẩm chạy liên tục — THR-007 (chốt 2026-10-26). */
-export type TriggerSource = 'photoSensor' | 'encoder';
+/** Nguồn trigger chụp khi sản phẩm chạy liên tục — THR-007 (chốt 2026-10-26; 'software' thêm 2026-10-27 Q3). */
+export type TriggerSource = 'photoSensor' | 'software' | 'encoder';
 export type MountingRigidity = 'rigid' | 'standard' | 'unknown';
 export type EnvironmentCondition = 'clean' | 'dust' | 'oil' | 'vibration' | 'variableLight' | 'highTemp';
 export type ResultInterface = 'digitalIO' | 'ethernetIP' | 'profinet' | 'modbus' | 'tcp';

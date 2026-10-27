@@ -129,8 +129,8 @@ test('đèn: đúng loại gợi ý, đủ cỡ (vòm theo đường chéo, nề
   const unknown = lightChecks(analysis, make('light', 'l', { light_type: 'dome', color: 'white' }));
   assert.equal(unknown[0].evidence, 'unknown');
 
-  // 0,0667 mm/px × 0,5 ÷ 1000 mm/s = 33 µs < 50 µs → LGT-008 → đèn phải chạy xung
-  const strobe = analysisOf({ 'production.motion': 'continuous', 'production.conveyorSpeed': 1000 });
+  // Bài phát hiện lỗi nhoè 1 px (2026-10-27 Q4): 1 × 0,0667 mm/px ÷ 2000 mm/s = 33 µs < 50 µs → LGT-008 → đèn phải chạy xung
+  const strobe = analysisOf({ 'production.motion': 'continuous', 'production.conveyorSpeed': 2000 });
   assert.ok(strobe.results.some((r) => r.ruleId === 'LGT-008'));
   assert.deepEqual(fails({ light_type: 'dome', color: 'white', size_mm: 100, strobe: 'no' }, strobe), ['lightNoStrobe']);
 });
@@ -219,7 +219,7 @@ test('camera màu cho bài không cần màu: cảnh báo, không loại; bài c
 });
 
 test('mọi câu diễn giải của bộ lọc có đủ vi/en', () => {
-  const moving = analysisOf({ 'production.motion': 'continuous', 'production.conveyorSpeed': 1000, 'object.colorInspection': true, 'environment.ipRequirement': 'ip67', 'environment.conditions': ['highTemp'], 'production.partsPerMinute': 600 });
+  const moving = analysisOf({ 'production.motion': 'continuous', 'production.conveyorSpeed': 2000, 'object.colorInspection': true, 'environment.ipRequirement': 'ip67', 'environment.conditions': ['highTemp'], 'production.partsPerMinute': 600 });
   const results = [
     ...cameraRequirementChecks(analysisOf(), camera('line', { camera_type: 'line' })),
     ...cameraRequirementChecks(analysisOf(), camera('small', { resolution_w_px: 640, resolution_h_px: 480 })),

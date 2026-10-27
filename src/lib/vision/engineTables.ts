@@ -56,7 +56,7 @@ export const DEFAULT_ROW_DEFS = [
   { key: 'motion', path: 'production.motion', kind: 'choice', options: ['static', 'indexed', 'continuous'] },
   // Tốc độ cao — 2026-10-26. Khoá dòng = khoá nhãn lựa chọn (designer.requirement.options.<key>).
   { key: 'imagesPerPart', path: 'production.imagesPerPart', kind: 'number', min: 1, max: 100, step: 1 },
-  { key: 'triggerSource', path: 'production.triggerSource', kind: 'choice', options: ['photoSensor', 'encoder'] },
+  { key: 'triggerSource', path: 'production.triggerSource', kind: 'choice', options: ['photoSensor', 'software', 'encoder'] },
   { key: 'triggerJitterMs', path: 'production.triggerJitterMs', kind: 'number', min: 0, max: 50, step: 0.05, unit: 'ms' },
   { key: 'rejectActuationMs', path: 'production.rejectActuationMs', kind: 'number', min: 0, max: 1000, step: 1, unit: 'ms' },
   { key: 'sampleExposureMs', path: 'production.sampleExposureMs', kind: 'number', min: 0.001, max: 1000, step: 0.01, unit: 'ms' },

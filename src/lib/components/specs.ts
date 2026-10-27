@@ -523,6 +523,12 @@ export const SPEC_FIELDS: Record<ComponentKind, SpecFieldDef[]> = {
     /* Không có chân trigger phần cứng thì không đồng bộ được với đèn strobe. */
     { key: 'trigger_io', type: 'select', options: YES_NO },
     { key: 'bit_depth', type: 'number', unit: 'bit', step: 1 },
+    /* EMVA 1288 (2026-10-27 Q5, tuỳ chọn): trang Chọn camera xếp camera "ăn sáng" hơn lên trước khi phải strobe. */
+    { key: 'qe_percent', type: 'number', unit: '%', step: 0.1 },
+    { key: 'saturation_e', type: 'number', unit: 'e⁻', step: 1 },
+    { key: 'dark_noise_e', type: 'number', unit: 'e⁻', step: 0.1 },
+    /* Line scan TDI / multiline (Q6): phơi hiệu dụng = số tầng × 1 ÷ tần số dòng. */
+    { key: 'tdi_stages', type: 'number', step: 1 },
     { key: 'temp_max_c', type: 'number', unit: '°C', step: 1 },
     { key: 'ip_rating', type: 'text' },
   ],

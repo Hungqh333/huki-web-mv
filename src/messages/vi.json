@@ -768,7 +768,8 @@
         "rejectDistanceUnknown": "Chưa có khoảng cách camera → điểm gạt loại — chưa kiểm được kết quả có kịp không.",
         "rejectWithin": "Kết quả có sau khoảng {latency} ms, sản phẩm tới điểm gạt sau {budget} ms — dư {margin}%. Số có dấu * là GIẢ ĐỊNH; xử lý tính lần chậm.",
         "rejectTight": "Chỉ dư {margin}% (dưới {min}%) trước khi sản phẩm tới điểm gạt. Lùi điểm gạt xa hơn hoặc rút ngắn xử lý. Số có dấu * là GIẢ ĐỊNH.",
-        "rejectTooLate": "Kết quả có sau khoảng {latency} ms nhưng sản phẩm tới điểm gạt sau {budget} ms — gạt nhầm sản phẩm khác. Lùi điểm gạt, rút ngắn xử lý, hoặc theo dõi sản phẩm bằng encoder."
+        "rejectTooLate": "Kết quả có sau khoảng {latency} ms nhưng sản phẩm tới điểm gạt sau {budget} ms — gạt nhầm sản phẩm khác. Lùi điểm gạt, rút ngắn xử lý, hoặc theo dõi sản phẩm bằng encoder.",
+        "triggerShiftSoftware": "Trigger phần mềm: vị trí chụp lệch tới ±{shift} mm ({px} px) — quá lớn. Đổi sang trigger phần cứng (cảm biến quang → chân trigger camera) hoặc encoder."
       },
       "lightingReason": {
         "scratch": "Xước và nứt nông chỉ nổi lên khi chiếu góc rất thấp, nền tối hẳn.",
@@ -1319,7 +1320,11 @@
         "accessory_type": "Loại phụ kiện",
         "accessory_for": "Lắp cho",
         "qty_basis": "Số lượng tính theo",
-        "front_focal_mm": "Tiêu điểm trước sF (từ mặt trước ống)"
+        "front_focal_mm": "Tiêu điểm trước sF (từ mặt trước ống)",
+        "qe_percent": "Hiệu suất lượng tử QE (EMVA 1288)",
+        "saturation_e": "Dung lượng bão hoà (EMVA 1288)",
+        "dark_noise_e": "Nhiễu tối (EMVA 1288)",
+        "tdi_stages": "Số tầng TDI / multiline (line scan)"
       },
       "errors": {
         "notAdmin": "Chỉ admin mới thực hiện được thao tác này.",
@@ -1472,14 +1477,17 @@
         "bwCameraLinkFull": "Camera Link Full",
         "bwCameraLinkDeca": "Camera Link Deca",
         "lensFovMaxRatio": "Chọn ống kính — vùng nhìn rộng tối đa so với vùng cần",
-        "blurPxAllowed": "Nhoè chuyển động cho phép (THR-005)",
+        "blurPxAllowed": "Nhoè chuyển động cho phép — bài đo (THR-005)",
         "strobeExposureLimitUs": "Phơi sáng dưới mức này bắt buộc strobe (LGT-008)",
         "cycleTriggerMs": "Thời gian trigger giả định (THR-003/008)",
         "cycleIoMs": "Thời gian trả IO giả định (THR-003/008)",
         "processWorstFactor": "Xử lý lần chậm = trung bình × hệ số (THR-008)",
         "triggerShiftMaxShare": "Lệch vị trí chụp tối đa so với cạnh ngắn vùng nhìn (THR-007)",
         "strobeBoostMax": "Strobe sáng gấp tối đa so với đèn liên tục (LGT-024)",
-        "strobeMaxDuty": "Duty tối đa của xung strobe (LGT-024)"
+        "strobeMaxDuty": "Duty tối đa của xung strobe (LGT-024)",
+        "blurPxDetect": "Nhoè chuyển động cho phép — bài phát hiện lỗi (THR-005)",
+        "cameraJitterHardwareMs": "Lệch thời điểm chụp của camera — trigger phần cứng (THR-007)",
+        "cameraJitterSoftwareMs": "Lệch thời điểm chụp của camera — trigger phần mềm (THR-007)"
       },
       "errors": {
         "fix": "Có ô chưa hợp lệ — xem dòng báo đỏ.",
@@ -2286,7 +2294,8 @@
           "tcp": "TCP/IP socket"
         },
         "triggerSource": {
-          "photoSensor": "Cảm biến quang",
+          "photoSensor": "Cảm biến quang (trigger phần cứng)",
+          "software": "Lệnh phần mềm (PLC / máy tính)",
           "encoder": "Encoder"
         }
       },
@@ -3409,7 +3418,8 @@
       "contrast": "Độ tương phản lỗi",
       "color": "Màu",
       "targetFromDefect": "Đang dùng {mmpx} mm/px (lỗi nhỏ nhất ÷ {n} px).",
-      "targetGiven": "Đang dùng {mmpx} mm/px."
+      "targetGiven": "Đang dùng {mmpx} mm/px.",
+      "purpose": "Bài toán"
     },
     "contrast": {
       "high": "Cao",
@@ -3437,7 +3447,14 @@
       "images": "Số ảnh mỗi sản phẩm",
       "imagesHint": "Nhiều góc / nhiều kiểu đèn thì nhân lên.",
       "encoder": "Encoder (µm/xung)",
-      "encoderHint": "Để trống nếu chưa có encoder."
+      "encoderHint": "Để trống nếu chưa có encoder.",
+      "trigger": "Nguồn trigger",
+      "sensorMs": "Đáp ứng cảm biến (ms)",
+      "sensorMsHint": "Theo datasheet cảm biến quang; để trống = 0,5 ms.",
+      "sampleMs": "Phơi lúc chụp mẫu (ms)",
+      "sampleMsHint": "Thời gian phơi ra ảnh tốt khi chụp thử với đèn liên tục; để trống = ước tính 1 ms.",
+      "overlapped": "Camera đọc chồng phơi",
+      "overlappedHint": "Hầu hết CMOS global shutter có (overlapped). Không → fps = 1 ÷ (đọc + phơi)."
     },
     "need": {
       "title": "Thông số cần",
@@ -3447,7 +3464,7 @@
       "fpsMissing": "Nhập sản lượng để tính.",
       "exposure": "Phơi sáng tối đa (chống nhoè)",
       "exposureStatic": "Vật đứng yên khi chụp — không giới hạn.",
-      "exposureNote": "Tại mm/px cần; camera mịn hơn thì ngắn hơn nữa.",
+      "exposureNote": "Nhoè ≤ {px} px tại mm/px cần; camera mịn hơn thì ngắn hơn nữa.",
       "strobe": "Đèn strobe",
       "strobeYes": "Bắt buộc",
       "strobeNo": "Chưa cần",
@@ -3460,6 +3477,22 @@
       "missing": {
         "area": "Nhập vùng nhìn và mm/px cần (hoặc lỗi nhỏ nhất).",
         "line": "Nhập bề rộng quét, tốc độ và mm/px cần (hoặc lỗi nhỏ nhất)."
+      },
+      "titleSpeed": "Bảng tính tốc độ cao",
+      "travel": "Vật đi giữa 2 ảnh",
+      "travelNote": "Tốc độ ÷ số ảnh/giây.",
+      "trigger": "Lệch vị trí khi trigger",
+      "triggerEncoder": "Theo encoder",
+      "triggerEncoderNote": "Vị trí chụp bám băng tải, không lệch thêm khi tốc độ đổi.",
+      "triggerNote": "Cảm biến {sensor} ms{assumed} + camera {camera} ms; bằng {share}% cạnh ngắn vùng nhìn — để vùng nhìn dư ≥ {margin} mm theo chiều chạy.",
+      "assumed": " (giả định)",
+      "latencyNote": "Phần trễ cố định (từ lúc có tín hiệu tới lúc camera bắt đầu phơi) không nằm trong số trên: bù bằng trigger delay hoặc dời vị trí cảm biến lên trước một đoạn = tốc độ × độ trễ.",
+      "light": "Đèn phải sáng gấp",
+      "lightNote": {
+        "continuous": "So với lúc chụp mẫu {sample} ms{assumed} — đèn liên tục đủ sáng.",
+        "overdrive": "So với lúc chụp mẫu {sample} ms{assumed} — cần strobe overdrive, duty {duty}%.",
+        "boostTooHigh": "So với lúc chụp mẫu {sample} ms{assumed} — quá mức overdrive thường đạt (~10×): đèn mạnh / gần hơn, khẩu mở hơn hoặc giảm tốc độ.",
+        "dutyTooHigh": "Duty {duty}% quá giới hạn overdrive — đèn quá nhiệt; giảm số ảnh/giây hoặc dùng đèn đủ sáng khi chạy liên tục."
       }
     },
     "status": {
@@ -3483,7 +3516,7 @@
       "colSensor": "Cảm biến",
       "colMmPerPx": "mm/px",
       "colMargin": "Dư",
-      "colFps": "fps tối đa / cần",
+      "colFps": "fps thật / cần",
       "colData": "MB/s",
       "colInterface": "Giao tiếp",
       "colShutter": "Shutter",
@@ -3503,9 +3536,15 @@
       "betaNeed": "Độ phóng đại cần (β)",
       "tileWidth": "Bề rộng một camera phủ",
       "lensHint": "Ống kính line scan cần vòng ảnh ≥ chiều dài cảm biến và β như trên.",
-      "footArea": "Xếp: đạt trước; trong nhóm đạt ưu tiên camera dư độ phân giải vừa đủ (≥ 1,3×), rồi giá. Giả định ống kính vừa khít vùng nhìn.",
+      "footArea": "Xếp: đạt trước; khi phải strobe, camera ăn sáng hơn (QE × pixel²) lên trước; rồi dư độ phân giải vừa đủ (≥ 1,3×), rồi giá. fps thật = min(cảm biến, thời gian phơi, cổng giao tiếp). Giả định ống kính vừa khít vùng nhìn.",
       "footLine": "Xếp: đạt trước, ít camera ghép trước, rồi dư độ phân giải vừa đủ, rồi giá. Pixel vuông: tần số dòng = tốc độ ÷ mm/px.",
-      "showMore": "Xem thêm {n} camera"
+      "showMore": "Xem thêm {n} camera",
+      "colSensitivity": "Độ nhạy",
+      "colSensitivityHint": "QE × diện tích pixel, so với camera nhạy nhất trong danh sách (cần khai QE).",
+      "fpsDatasheet": "fps tối đa (datasheet)",
+      "dynamicRange": "Dải động (EMVA)",
+      "tdi": "TDI {n} tầng",
+      "roiCalculator": "Kiểm fps khi cắt ROI — Basler Frame Rate Calculator"
     },
     "checks": {
       "color": "Màu",
@@ -3517,7 +3556,8 @@
       "lineWidth": "mm/px ngang",
       "lineRate": "Tần số dòng",
       "lineExposure": "Phơi mỗi dòng",
-      "encoder": "Encoder"
+      "encoder": "Encoder",
+      "sensitivity": "Độ nhạy sáng"
     },
     "notes": {
       "colorMismatch": "Camera không đúng loại màu đã chọn.",
@@ -3525,10 +3565,10 @@
       "pixelsOk": "Đạt {have} mm/px (cần {need}), dư {margin}×.",
       "pixelsShort": "Chỉ đạt {have} mm/px, cần {need} — cần ít nhất {px} px.",
       "pixelsUnknown": "Camera chưa khai độ phân giải.",
-      "fpsOk": "Cần {need} ảnh/giây, camera tối đa {max} fps.",
-      "fpsWithRoi": "Chụp hết khung không đủ ({max} fps), nhưng cắt ROI còn {rows} hàng thì ≈ {roi} fps — ước tính, kiểm lại datasheet.",
-      "fpsTight": "Cần {need} ảnh/giây, camera tối đa {max} fps — dư dưới {margin}%.",
-      "fpsTooLow": "Cần {need} ảnh/giây, camera chỉ tối đa {max} fps (kể cả cắt ROI).",
+      "fpsOk": "Cần {need} ảnh/giây, camera đạt {real} fps thật (datasheet {max} fps).",
+      "fpsWithRoi": "Hết khung chỉ {real} fps thật, nhưng cắt ROI còn {rows} hàng thì ≈ {roi} fps — ước tính, kiểm lại bằng công cụ của hãng.",
+      "fpsTight": "Cần {need} ảnh/giây, camera đạt {real} fps thật — dư dưới {margin}%.",
+      "fpsTooLow": "Cần {need} ảnh/giây, camera chỉ đạt {real} fps thật (kể cả cắt ROI, đã tính thời gian phơi và cổng giao tiếp).",
       "fpsUnknown": "Camera chưa khai fps tối đa.",
       "bandwidthOver": "Sinh {rate} MB/s, quá tỉ lệ dùng tối đa của {name} ({capacity} MB/s).",
       "rollingShutter": "Rolling shutter: vật chạy khi chụp sẽ bị méo ảnh.",
@@ -3545,10 +3585,32 @@
       "lineRateTooHigh": "Cần {khz} kHz, camera chỉ {max} kHz; pixel dọc chiều chạy thành {along} mm — quá mm/px cần.",
       "lineRateUnknown": "Camera chưa khai tần số dòng tối đa.",
       "lineExposureOk": "Phơi tối đa {us} µs mỗi dòng.",
-      "lineExposureShort": "Phơi tối đa chỉ {us} µs mỗi dòng (dưới {limit} µs): cần đèn dòng cường độ cao.",
+      "lineExposureShort": "Phơi hiệu dụng chỉ {us} µs mỗi dòng (TDI {stages} tầng, dưới {limit} µs): cần đèn dòng cường độ cao.",
       "encoderOk": "Encoder {um} µm/xung đủ mịn (cần ≤ {need} µm).",
       "encoderCoarse": "Encoder {um} µm/xung thô hơn một dòng ({need} µm) — ảnh dãn / nén khi tốc độ đổi.",
-      "encoderMissing": "Chưa có encoder: tốc độ băng tải đổi là ảnh dãn / nén theo. Nên trigger dòng bằng encoder."
+      "encoderMissing": "Chưa có encoder: tốc độ băng tải đổi là ảnh dãn / nén theo. Nên trigger dòng bằng encoder.",
+      "sensitivityKnown": "QE × pixel² = {value} µm² — số càng lớn càng cần ít sáng.",
+      "sensitivityUnknown": "Camera chưa khai QE (EMVA 1288) — chưa so được độ nhạy sáng.",
+      "lineExposureShortNoTdi": "Phơi tối đa chỉ {us} µs mỗi dòng (dưới {limit} µs): cần đèn dòng cường độ cao, hoặc camera TDI / multiline, hoặc binning.",
+      "lineExposureTdiOk": "Phơi hiệu dụng {us} µs mỗi dòng nhờ TDI {stages} tầng."
+    },
+    "purpose": {
+      "detect": "Phát hiện lỗi (nhoè ≤ 1 px)",
+      "measure": "Đo lường (nhoè ≤ 0,5 px)"
+    },
+    "trigger": {
+      "photoSensor": "Cảm biến quang (phần cứng)",
+      "software": "Lệnh phần mềm",
+      "encoder": "Encoder"
+    },
+    "overlapped": {
+      "yes": "Có",
+      "no": "Không"
+    },
+    "limiter": {
+      "sensor": "giới hạn bởi cảm biến",
+      "exposure": "giới hạn bởi thời gian phơi",
+      "interface": "giới hạn bởi cổng giao tiếp"
     }
   }
 }

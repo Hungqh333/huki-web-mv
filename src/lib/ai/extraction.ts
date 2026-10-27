@@ -161,7 +161,7 @@ Nghĩa các giá trị lựa chọn:
 - defectVariability: low = lỗi ổn định về hình dạng và vị trí; medium = có biến thiên; high = hình dạng / vị trí / màu thay đổi nhiều; unknown = mô tả nói chưa rõ.
 - measuredFeature: dimension = kích thước / khoảng cách; diameter = đường kính; angle = góc; position = vị trí tương đối.
 - motion: static = đứng yên; indexed = dừng từng bước để chụp; continuous = chạy liên tục khi chụp.
-- triggerSource: photoSensor = cảm biến quang / sensor phát hiện vật; encoder = encoder băng tải.
+- triggerSource: photoSensor = cảm biến quang / sensor phát hiện vật; software = PLC / máy tính gửi lệnh chụp bằng phần mềm; encoder = encoder băng tải.
 - environmentConditions: clean = sạch; dust = bụi; oil = dầu; vibration = rung; variableLight = ánh sáng môi trường thay đổi; highTemp = nhiệt độ cao.
 - ipRequirement: none = không yêu cầu; ip54 / ip65 / ip67 = cấp tương ứng.
 - resultInterface: digitalIO = tín hiệu I/O số (OK/NG); ethernetIP = EtherNet/IP; profinet = PROFINET; modbus = Modbus TCP; tcp = TCP/IP socket.`;

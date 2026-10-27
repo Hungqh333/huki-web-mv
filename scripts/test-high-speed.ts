@@ -5,8 +5,8 @@
  *
  * Bài chuẩn (số tính tay ghi cạnh từng assert):
  *   vật 60 × 50 mm, 1 camera, lỗi 0,15 mm tương phản cao → 3 px → 0,05 mm/px,
- *   chạy liên tục 1000 mm/s, 60 sản phẩm/phút.
- *   → t_max = 0,5 × 0,05 ÷ 1000 = 25 µs (LGT-008: < 50 µs → strobe).
+ *   chạy liên tục 2000 mm/s, 60 sản phẩm/phút.
+ *   → t_max = 1 px (bài phát hiện lỗi, đợt 2 Q4) × 0,05 ÷ 2000 = 25 µs (LGT-008: < 50 µs → strobe).
  *   Camera 2448 × 2048, 23 fps, GigE → khung 43,48 ms · truyền 5,01 MB ÷ 110 = 45,58 ms.
  */
 import { test } from 'node:test';
@@ -34,7 +34,7 @@ const BASE = {
   'detection.0.variability': 'low',
   'production.partsPerMinute': 60,
   'production.motion': 'continuous',
-  'production.conveyorSpeed': 1000,
+  'production.conveyorSpeed': 2000,
   'system.cameraCount': 1,
   'system.workingDistance': 300,
 };
@@ -81,7 +81,7 @@ test('bài chuẩn: t_max 25 µs, strobe bắt buộc, 1 ảnh/giây', () => {
   assert.ok(Math.abs(a.exposureMaxUs! - 25) < 1e-9, String(a.exposureMaxUs));
   assert.equal(rule(a.results, 'LGT-008')?.status, 'warn');
   assert.deepEqual([a.imagesPerPart, a.framesPerSecondNeeded], [1, 1]);
-  assert.deepEqual([a.conveyorSpeedMmS, a.rejectDistanceMm], [1000, null]);
+  assert.deepEqual([a.conveyorSpeedMmS, a.rejectDistanceMm], [2000, null]);
 });
 
 test('THR-006: fps cần = ảnh/sản phẩm × ppm ÷ 60; lọc camera theo fps tối đa', () => {
@@ -104,14 +104,17 @@ test('THR-006: fps cần = ảnh/sản phẩm × ppm ÷ 60; lọc camera theo fp
 });
 
 test('THR-007: Δx = v × sai lệch trigger; quá 5 % cạnh ngắn → cảnh báo; encoder → đạt', () => {
-  // Giả định 0,5 ms → 1000 × 0,5 ÷ 1000 = 0,5 mm = 10 px · 0,5 ÷ 50 = 1 % ≤ 5 %
+  // Giả định 0,5 ms + camera phần cứng 0,01 ms → 2000 × 0,51 ÷ 1000 = 1,02 mm = 20,4 px · 1,02 ÷ 50 = 2 % ≤ 5 %
   const ok = rule(analysisOf().results, 'THR-007')!;
-  assert.deepEqual([ok.status, ok.noteKey, ok.noteValues?.shift, ok.noteValues?.px, ok.noteValues?.margin], ['pass', 'triggerShiftOk', 0.5, 10, 1]);
+  assert.deepEqual([ok.status, ok.noteKey, ok.noteValues?.shift, ok.noteValues?.px, ok.noteValues?.margin], ['pass', 'triggerShiftOk', 1.02, 20.4, 2.04]);
   assert.ok(ok.inputsAssumed.some((i) => i.path === 'production.triggerJitterMs'), 'sai lech la gia dinh');
 
-  // 3 ms → 3 mm = 6 % > 5 %
+  // 3 ms → 2000 × 3,01 ÷ 1000 = 6,02 mm = 12 % > 5 %
   const high = rule(analysisOf({ 'production.triggerJitterMs': 3 }).results, 'THR-007')!;
-  assert.deepEqual([high.status, high.noteKey, high.noteValues?.shift], ['warn', 'triggerShiftHigh', 3]);
+  assert.deepEqual([high.status, high.noteKey, high.noteValues?.shift], ['warn', 'triggerShiftHigh', 6.02]);
+  // Trigger phần mềm (Q3): 0,5 + 1 ms → 3 mm = 6 % > 5 % → khuyên trigger phần cứng / encoder
+  const software = rule(analysisOf({ 'production.triggerSource': 'software' }).results, 'THR-007')!;
+  assert.deepEqual([software.status, software.noteKey, software.noteValues?.shift], ['warn', 'triggerShiftSoftware', 3]);
 
   const encoder = rule(analysisOf({ 'production.triggerSource': 'encoder' }).results, 'THR-007')!;
   assert.deepEqual([encoder.status, encoder.noteKey], ['pass', 'triggerEncoder']);
@@ -135,9 +138,9 @@ test('LGT-024: hệ số sáng = phơi lúc chụp mẫu ÷ t_max; duty = t_max 
   // 20 µs < 25 µs → đèn liên tục đủ
   assert.equal(rule(analysisOf({ 'production.sampleExposureMs': 0.02 }).results, 'LGT-024')!.noteKey, 'lightContinuousOk');
 
-  // Chậm 10 mm/s → t_max 2500 µs; mẫu 5 ms → ×2; 3000 sp/phút = 50 ảnh/s → duty 12,5 % > 10 % → LOẠI
-  const duty = rule(analysisOf({ 'production.conveyorSpeed': 10, 'production.partsPerMinute': 3000, 'production.sampleExposureMs': 5 }).results, 'LGT-024')!;
-  assert.deepEqual([duty.status, duty.noteKey, duty.noteValues?.duty], ['fail', 'lightDutyTooHigh', '12.5']);
+  // Chậm 10 mm/s → t_max 1 × 0,05 ÷ 10 = 5000 µs; mẫu 10 ms → ×2; 3000 sp/phút = 50 ảnh/s → duty 25 % > 10 % → LOẠI
+  const duty = rule(analysisOf({ 'production.conveyorSpeed': 10, 'production.partsPerMinute': 3000, 'production.sampleExposureMs': 10 }).results, 'LGT-024')!;
+  assert.deepEqual([duty.status, duty.noteKey, duty.noteValues?.duty], ['fail', 'lightDutyTooHigh', '25']);
 });
 
 test('THR-003 khâu chậm nhất, THR-008 độ trễ tới điểm gạt', () => {
@@ -148,24 +151,27 @@ test('THR-003 khâu chậm nhất, THR-008 độ trễ tới điểm gạt', () 
   assert.deepEqual([rule(base, 'THR-008')!.status, rule(base, 'THR-008')!.evidence], ['info', 'unknown']);
 
   // trễ = 1 + 43,48 + 45,58 + 300 × 1,5 + 10 + 20 (cơ cấu gạt giả định) = 570 ms
-  const late = rule(config({ 'production.rejectDistance': 300 }), 'THR-008')!;
+  // Ngân sách = 600 mm ÷ 2000 mm/s = 300 ms < 570 → gạt nhầm
+  const late = rule(config({ 'production.rejectDistance': 600 }), 'THR-008')!;
   assert.deepEqual([late.status, late.noteKey, late.noteValues?.latency, late.noteValues?.budget], ['fail', 'rejectTooLate', 570, 300]);
   assert.ok(late.inputsAssumed.some((i) => i.path === 'production.rejectActuationMs'));
-  assert.deepEqual([rule(config({ 'production.rejectDistance': 750 }), 'THR-008')!.noteKey], ['rejectTight'], 'du 24 % < 30 %');
-  assert.deepEqual([rule(config({ 'production.rejectDistance': 1000 }), 'THR-008')!.noteKey], ['rejectWithin'], 'du 43 %');
+  assert.deepEqual([rule(config({ 'production.rejectDistance': 1500 }), 'THR-008')!.noteKey], ['rejectTight'], '750 ms: du 24 % < 30 %');
+  assert.deepEqual([rule(config({ 'production.rejectDistance': 2000 }), 'THR-008')!.noteKey], ['rejectWithin'], '1000 ms: du 43 %');
 
   // Ngưỡng admin: hệ số lần chậm 1 → 420 ms
   const p = { ...DEFAULT_ENGINE_PARAMS, processWorstFactor: 1 };
-  const custom = evaluateConfiguration({ analysis: analyseRequirement(reqOf({ 'production.rejectDistance': 300 }), p), camera: CAMERA });
+  const custom = evaluateConfiguration({ analysis: analyseRequirement(reqOf({ 'production.rejectDistance': 600 }), p), camera: CAMERA });
   assert.equal(rule(custom, 'THR-008')!.noteValues?.latency, 420);
 
   assert.equal(rule(config({ 'production.motion': 'indexed' }), 'THR-008'), undefined, 'chi khi chay lien tuc');
 });
 
 test('ngưỡng admin thay hằng số: k_blur, ngưỡng strobe', () => {
-  const p = { ...DEFAULT_ENGINE_PARAMS, blurPxAllowed: 1, strobeExposureLimitUs: 40 };
+  const p = { ...DEFAULT_ENGINE_PARAMS, blurPxDetect: 2, strobeExposureLimitUs: 40 };
   const a = analyseRequirement(reqOf(), p);
-  assert.ok(Math.abs(a.exposureMaxUs! - 50) < 1e-9, '1 × 0,05 ÷ 1000 = 50 µs');
+  assert.ok(Math.abs(a.exposureMaxUs! - 50) < 1e-9, '2 × 0,05 ÷ 2000 = 50 µs');
+  // Có dung sai đo → nhoè của bài đo (0,5 px) thay cho bài phát hiện lỗi
+  assert.ok(Math.abs(analyseRequirement(reqOf({ 'measurement.0.tolerance': 0.5 })).exposureMaxUs! - 12.5) < 1e-9, '0,5 × 0,05 ÷ 2000');
   assert.equal(rule(a.results, 'LGT-008'), undefined, '50 ≥ 40 → khong bat strobe');
 });
 
@@ -199,10 +205,10 @@ test('câu hỏi, mục đích và chữ vi/en cho các luật mới', () => {
   for (const id of ['imagesPerPart', 'triggerSource', 'rejectDistance', 'sampleExposure']) assert.ok(ids.includes(id), id);
 
   const notes = [
-    'frameRateNeeded', 'triggerEncoder', 'triggerShiftOk', 'triggerShiftHigh', 'lightContinuousOk', 'lightNeedsOverdrive', 'lightBoostTooHigh', 'lightDutyTooHigh',
+    'frameRateNeeded', 'triggerEncoder', 'triggerShiftOk', 'triggerShiftHigh', 'triggerShiftSoftware', 'lightContinuousOk', 'lightNeedsOverdrive', 'lightBoostTooHigh', 'lightDutyTooHigh',
     'cameraFpsTooLow', 'cameraFpsTight', 'cameraFpsUnknown', 'rejectDistanceUnknown', 'rejectWithin', 'rejectTight', 'rejectTooLate',
   ];
-  const params = ['blurPxAllowed', 'strobeExposureLimitUs', 'cycleTriggerMs', 'cycleIoMs', 'processWorstFactor', 'triggerShiftMaxShare', 'strobeBoostMax', 'strobeMaxDuty'];
+  const params = ['blurPxAllowed', 'blurPxDetect', 'cameraJitterHardwareMs', 'cameraJitterSoftwareMs', 'strobeExposureLimitUs', 'cycleTriggerMs', 'cycleIoMs', 'processWorstFactor', 'triggerShiftMaxShare', 'strobeBoostMax', 'strobeMaxDuty'];
   for (const locale of ['vi', 'en']) {
     const m = JSON.parse(readFileSync(new URL(`../src/messages/${locale}.json`, import.meta.url), 'utf8'));
     for (const key of notes) assert.ok(m.selector.vision.notes[key], `${locale} notes.${key}`);
@@ -214,6 +220,6 @@ test('câu hỏi, mục đích và chữ vi/en cho các luật mới', () => {
     for (const key of ['imagesPerPart', 'triggerSource', 'triggerJitterMs', 'rejectActuationMs', 'sampleExposureMs']) {
       assert.ok(m.admin.tables.defaults.rows[key], `${locale} defaults.rows.${key}`);
     }
-    assert.deepEqual(Object.keys(m.designer.requirement.options.triggerSource), ['photoSensor', 'encoder']);
+    assert.deepEqual(Object.keys(m.designer.requirement.options.triggerSource), ['photoSensor', 'software', 'encoder']);
   }
 });

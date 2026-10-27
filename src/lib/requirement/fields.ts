@@ -64,7 +64,7 @@ export const CONTRASTS = ['high', 'medium', 'low', 'unknown'] as const;
 export const VARIABILITIES = ['low', 'medium', 'high', 'unknown'] as const;
 export const FEATURES = ['dimension', 'diameter', 'angle', 'position'] as const;
 export const MOTIONS = ['static', 'indexed', 'continuous'] as const;
-export const TRIGGER_SOURCES = ['photoSensor', 'encoder'] as const;
+export const TRIGGER_SOURCES = ['photoSensor', 'software', 'encoder'] as const;
 export const CONDITIONS = ['clean', 'dust', 'oil', 'vibration', 'variableLight', 'highTemp'] as const;
 export const IP_REQUIREMENTS = ['none', 'ip54', 'ip65', 'ip67'] as const;
 /** Giao tiếp trả kết quả cho PLC / robot — INT-001 (V1c, 2026-10-12). */

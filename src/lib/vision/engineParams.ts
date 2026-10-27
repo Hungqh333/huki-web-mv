@@ -61,6 +61,8 @@ export const ENGINE_PARAMS = [
   // Tốc độ cao — chốt 2026-10-26 (Q4: các hằng số trước đây cố định trong code).
   // THR-005: px nhoè cho phép · LGT-008: phơi sáng dưới mức này bắt buộc strobe.
   { key: 'blurPxAllowed', group: 'throughput', default: 0.5, min: 0.1, max: 2, step: 0.05, unit: 'px' },
+  // THR-005 đợt 2 (2026-10-27 Q4): bài chỉ phát hiện lỗi cho nhoè 1 px; blurPxAllowed ở trên là của bài ĐO.
+  { key: 'blurPxDetect', group: 'throughput', default: 1, min: 0.1, max: 3, step: 0.05, unit: 'px' },
   { key: 'strobeExposureLimitUs', group: 'throughput', default: 50, min: 1, max: 1000, step: 1, unit: 'µs' },
   // THR-003 / THR-008: trigger và trả IO giả định.
   { key: 'cycleTriggerMs', group: 'throughput', default: 1, min: 0, max: 100, step: 0.1, unit: 'ms' },
@@ -69,6 +71,9 @@ export const ENGINE_PARAMS = [
   { key: 'processWorstFactor', group: 'throughput', default: 1.5, min: 1, max: 5, step: 0.1, unit: '×' },
   // THR-007: lệch vị trí chụp quá tỉ lệ này cạnh ngắn vùng nhìn một camera thì cảnh báo.
   { key: 'triggerShiftMaxShare', group: 'throughput', default: 0.05, min: 0.005, max: 0.5, step: 0.005 },
+  // THR-007 đợt 2 (Q3): jitter của camera — trigger phần cứng cỡ µs, phần mềm cỡ ms (Baumer).
+  { key: 'cameraJitterHardwareMs', group: 'throughput', default: 0.01, min: 0, max: 10, step: 0.001, unit: 'ms' },
+  { key: 'cameraJitterSoftwareMs', group: 'throughput', default: 1, min: 0, max: 100, step: 0.1, unit: 'ms' },
   // LGT-024: strobe sáng gấp tối đa bao nhiêu lần đèn liên tục (overdrive) · duty tối đa của xung.
   { key: 'strobeBoostMax', group: 'throughput', default: 10, min: 1, max: 100, step: 0.5, unit: '×' },
   { key: 'strobeMaxDuty', group: 'throughput', default: 0.1, min: 0.001, max: 1, step: 0.001 },

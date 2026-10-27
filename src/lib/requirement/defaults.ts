@@ -17,6 +17,7 @@
  * lên DB + admin (là giả định về khách, phòng muốn chỉnh theo thị trường);
  * GRR_DIVISOR, K_SUBPIXEL, N_DET_BY_CONTRAST thì KHÔNG nên cho sửa qua admin.
  */
+import { DEFAULT_SAMPLE_EXPOSURE_MS, DEFAULT_SENSOR_RESPONSE_MS } from '../vision/highSpeed';
 import type { MATERIALS } from './fields';
 import type { AssumptionLevel, DefectContrast, Requirement } from './types';
 
@@ -140,7 +141,7 @@ export const FIELD_DEFAULTS: readonly FieldDefault[] = [
   },
   {
     path: 'production.triggerJitterMs',
-    value: 0.5,
+    value: DEFAULT_SENSOR_RESPONSE_MS,
     unit: 'ms',
     ruleIds: ['THR-007'],
     level: 'warning',
@@ -164,7 +165,7 @@ export const FIELD_DEFAULTS: readonly FieldDefault[] = [
   },
   {
     path: 'production.sampleExposureMs',
-    value: 1,
+    value: DEFAULT_SAMPLE_EXPOSURE_MS,
     unit: 'ms',
     ruleIds: ['LGT-024'],
     level: 'warning',

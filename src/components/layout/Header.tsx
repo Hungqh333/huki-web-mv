@@ -1,41 +1,30 @@
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { LanguageSwitcher } from './LanguageSwitcher';
-import { NavDropdown } from './NavDropdown';
 import { RoleBadge } from '@/components/auth/RoleBadge';
 import { SignOutButton } from '@/components/auth/SignOutButton';
 import { canUseSelector, getSessionContext, isAdmin } from '@/lib/auth';
 
 /*
- * Menu theo spec §0.2: Vision Engineer | Knowledge | Tools | Equipment | Projects.
+ * Menu PHẲNG — chốt 2026-10-27: bỏ menu xổ "Thiết bị" và mục "Công cụ" một-trang,
+ * bày thẳng mọi trang lên thanh menu, tên rút gọn (tiêu đề trong trang giữ nguyên).
  *
- * Ranh giới Công cụ / Thiết bị — dùng khi thêm trang mới:
- *   Công cụ  = tính ra CON SỐ (chỉ tiêu, chi phí...)
- *   Thiết bị = chọn ra MÓN HÀNG đi vào BOM
- * Máy tính (PC) là món hàng nên nằm dưới Thiết bị, dù route là /cong-cu-may-tinh.
+ * Ranh giới Công cụ / Thiết bị vẫn giữ để xếp thứ tự khi thêm trang mới:
+ *   Công cụ  = tính ra CON SỐ (chỉ tiêu, chi phí...) — đứng trước
+ *   Thiết bị = chọn ra MÓN HÀNG đi vào BOM — đứng sau
+ * Máy tính (PC) là món hàng nên nằm nhóm Thiết bị, dù route là /cong-cu-may-tinh.
  *
- * Mục phẳng. "Thiết bị" tách riêng bên dưới vì nó xổ xuống. "Dự án" (V1a mục 7)
- * đứng cuối theo spec và chỉ hiện cho Member trở lên — người khác không lưu được
- * dự án (RLS chặn), hiện ra chỉ để bấm vào bị đẩy đi.
+ * "Dự án" (V1a mục 7) đứng cuối theo spec và chỉ hiện cho Member trở lên — người
+ * khác không lưu được dự án (RLS chặn), hiện ra chỉ để bấm vào bị đẩy đi.
  */
 const navItems = [
   { href: '/', key: 'visionEngineer' },
   { href: '/cam-nang', key: 'knowledge' },
-  { href: '/cong-cu-chi-tieu', key: 'tools' },
-] as const;
-
-/*
- * Các trang nằm dưới "Thiết bị".
- *
- * Chọn thiết bị vision làm theo TỪNG bài toán, còn máy tính thì dùng chung
- * cho cả dự án — nhiều bài toán chạy trên một máy. Gộp vào một mục xổ xuống
- * để thấy được quan hệ đó; để ngang hàng trên menu thì đọc như hai phần rời.
- */
-const equipmentItems = [
+  // Công cụ
+  { href: '/cong-cu-chi-tieu', key: 'kpi' },
+  // Thiết bị — chọn ống kính (2026-10-17) và đèn (2026-10-22) ra món hàng trong kho.
   { href: '/cong-cu-chon-thiet-bi', key: 'selectorVision' },
-  // Chọn ống kính ra MÓN HÀNG (ống trong kho) → Thiết bị, không phải Công cụ (2026-10-17).
   { href: '/chon-ong-kinh', key: 'lens' },
-  // Chọn đèn ra món hàng (đèn trong kho) → Thiết bị (2026-10-22).
   { href: '/chon-den', key: 'light' },
   { href: '/cong-cu-may-tinh', key: 'pc' },
 ] as const;
@@ -63,32 +52,15 @@ export async function Header() {
           </span>
         </Link>
 
-        <nav className="order-3 -mx-4 flex w-full items-center gap-1 overflow-x-auto px-2 text-sm sm:order-none sm:mx-0 sm:w-auto sm:gap-4 sm:overflow-visible sm:px-0">
+        {/* Menu phẳng 7–9 mục không vừa chung một hàng với logo + cụm tài khoản (thiếu
+            ~240 px khi đăng nhập admin ở 1366 px) → luôn đứng riêng hàng dưới, mọi vai trò
+            nhìn giống nhau. Điện thoại cuộn ngang như cũ. */}
+        <nav className="order-3 -mx-4 flex w-full items-center gap-1 overflow-x-auto px-2 text-sm sm:mx-0 sm:gap-6 sm:px-0">
           {navItems.map((item) => (
             <Link key={item.href} href={item.href} className={navLinkClass}>
               {t(item.key)}
             </Link>
           ))}
-
-          {/* Điện thoại: hai mục phẳng. Thanh này cuộn ngang nên panel xổ
-              xuống sẽ bị cắt cụt — flat vừa đúng vừa dễ bấm hơn trên mobile. */}
-          <div className="contents sm:hidden">
-            {equipmentItems.map((item) => (
-              <Link key={item.href} href={item.href} className={navLinkClass}>
-                {t(item.key)}
-              </Link>
-            ))}
-          </div>
-
-          <NavDropdown
-            className="hidden sm:block"
-            label={t('equipment')}
-            items={equipmentItems.map((item) => ({
-              href: item.href,
-              label: t(item.key),
-              description: t(`${item.key}Desc`),
-            }))}
-          />
           {canUseSelector(role) ? (
             <Link href="/du-an" className={navLinkClass}>
               {t('projects')}

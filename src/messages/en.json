@@ -13,20 +13,14 @@
     "signIn": "Sign in",
     "signUp": "Sign up",
     "signOut": "Sign out",
-    "kpi": "KPI calculator",
+    "kpi": "KPI",
     "pc": "PC",
-    "selectorVision": "Vision equipment",
-    "selectorVisionDesc": "Camera, lens, lighting, cables — chosen per task.",
+    "selectorVision": "Equipment",
     "lens": "Lens",
-    "lensDesc": "Focal length, F# limit, and lenses in stock that fit your camera.",
-    "pcDesc": "Machine, interface card, software — shared across tasks.",
     "visionEngineer": "Vision Engineer",
     "knowledge": "Knowledge",
-    "tools": "Tools",
-    "equipment": "Equipment",
     "projects": "Projects",
-    "light": "Lighting",
-    "lightDesc": "Light type, colour, minimum size, and matching lights in stock for the task."
+    "light": "Lighting"
   },
   "language": {
     "label": "Language",

@@ -24,6 +24,8 @@ const navItems = [
   { href: '/cong-cu-chi-tieu', key: 'kpi' },
   // Thiết bị — chọn ống kính (2026-10-17) và đèn (2026-10-22) ra món hàng trong kho.
   { href: '/cong-cu-chon-thiet-bi', key: 'selectorVision' },
+  // Chọn camera area / line scan ra món hàng (camera trong kho) — 2026-10-27.
+  { href: '/chon-camera', key: 'camera' },
   { href: '/chon-ong-kinh', key: 'lens' },
   { href: '/chon-den', key: 'light' },
   { href: '/cong-cu-may-tinh', key: 'pc' },

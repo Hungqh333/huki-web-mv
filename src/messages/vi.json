@@ -20,7 +20,8 @@
     "visionEngineer": "Vision Engineer",
     "knowledge": "Cẩm nang",
     "projects": "Dự án",
-    "light": "Đèn"
+    "light": "Đèn",
+    "camera": "Camera"
   },
   "language": {
     "label": "Ngôn ngữ",
@@ -3378,6 +3379,176 @@
       "openReportLink": "Mở báo cáo trên ổ nội bộ",
       "button": "Dự án thực nghiệm",
       "matched": "{n} khớp bài toán"
+    }
+  },
+  "cameraSelector": {
+    "title": "Chọn camera",
+    "subtitle": "Lọc camera trong kho theo vùng nhìn, độ phân giải và tốc độ — area scan (kể cả tốc độ cao) và line scan.",
+    "why": "Mọi con số tính theo công thức có mã, giả định ống kính vừa khít vùng nhìn. Chọn ống kính thật ở trang Ống kính. Kết quả lý thuyết — nên chụp thử trước khi chốt.",
+    "emptyCatalog": "Kho chưa có camera nào đang dùng.",
+    "reset": "Làm lại",
+    "tabs": {
+      "label": "Loại camera",
+      "area": "Area scan / tốc độ cao",
+      "line": "Line scan"
+    },
+    "tabHint": {
+      "area": "Camera chụp cả khung — {area} camera trong kho. Để trống ô tốc độ thì chỉ lọc theo pixel; nhập tốc độ / sản lượng thì kiểm thêm fps, băng thông, shutter, phơi sáng.",
+      "line": "Camera quét từng dòng khi vật chạy qua (cuộn, tấm, băng liên tục) — {line} camera trong kho."
+    },
+    "task": {
+      "title": "Vùng nhìn và độ phân giải",
+      "fovWidth": "Vùng nhìn rộng (mm)",
+      "fovHeight": "Vùng nhìn cao (mm)",
+      "lineWidth": "Bề rộng cần quét (mm)",
+      "lineWidthHint": "Vuông góc với chiều vật chạy.",
+      "mmPerPx": "mm/px cần",
+      "mmPerPxHint": "Có thì dùng số này, bỏ qua ô lỗi nhỏ nhất.",
+      "defect": "Lỗi nhỏ nhất (mm)",
+      "defectHint": "Chưa biết mm/px thì nhập lỗi nhỏ nhất: mm/px = lỗi ÷ số px theo độ tương phản.",
+      "contrast": "Độ tương phản lỗi",
+      "color": "Màu",
+      "targetFromDefect": "Đang dùng {mmpx} mm/px (lỗi nhỏ nhất ÷ {n} px).",
+      "targetGiven": "Đang dùng {mmpx} mm/px."
+    },
+    "contrast": {
+      "high": "Cao",
+      "medium": "Trung bình",
+      "low": "Thấp",
+      "unknown": "Chưa rõ (tính như thấp)"
+    },
+    "color": {
+      "any": "Bất kỳ",
+      "mono": "Đơn sắc",
+      "color": "Màu"
+    },
+    "shutter": {
+      "global": "Global",
+      "rolling": "Rolling"
+    },
+    "speed": {
+      "titleArea": "Tốc độ (không bắt buộc)",
+      "titleLine": "Tốc độ",
+      "areaNote": "Để trống nếu vật đứng yên / dừng từng bước khi chụp.",
+      "speedOptional": "Tốc độ băng tải khi chụp (mm/s)",
+      "speedHint": "Chỉ nhập khi vật vẫn chạy lúc chụp.",
+      "speed": "Tốc độ vật chạy (mm/s)",
+      "ppm": "Sản lượng (sản phẩm/phút)",
+      "images": "Số ảnh mỗi sản phẩm",
+      "imagesHint": "Nhiều góc / nhiều kiểu đèn thì nhân lên.",
+      "encoder": "Encoder (µm/xung)",
+      "encoderHint": "Để trống nếu chưa có encoder."
+    },
+    "need": {
+      "title": "Thông số cần",
+      "pixels": "Pixel tối thiểu",
+      "megapixels": "≈ {mp} MP, cạnh dài cảm biến theo cạnh dài vùng nhìn.",
+      "fps": "Số ảnh/giây",
+      "fpsMissing": "Nhập sản lượng để tính.",
+      "exposure": "Phơi sáng tối đa (chống nhoè)",
+      "exposureStatic": "Vật đứng yên khi chụp — không giới hạn.",
+      "exposureNote": "Tại mm/px cần; camera mịn hơn thì ngắn hơn nữa.",
+      "strobe": "Đèn strobe",
+      "strobeYes": "Bắt buộc",
+      "strobeNo": "Chưa cần",
+      "linePx": "Pixel ngang tối thiểu",
+      "linePxNote": "Một camera; thiếu thì ghép nhiều camera.",
+      "lineRate": "Tần số dòng (pixel vuông)",
+      "lineRateNote": "Tốc độ ÷ mm/px cần.",
+      "lineExposure": "Phơi tối đa mỗi dòng",
+      "lineExposureNote": "Rất ngắn → cần đèn dòng cường độ cao.",
+      "missing": {
+        "area": "Nhập vùng nhìn và mm/px cần (hoặc lỗi nhỏ nhất).",
+        "line": "Nhập bề rộng quét, tốc độ và mm/px cần (hoặc lỗi nhỏ nhất)."
+      }
+    },
+    "status": {
+      "pass": "Đạt",
+      "warn": "Lưu ý",
+      "info": "Chưa kiểm được",
+      "fail": "Loại"
+    },
+    "list": {
+      "showResults": "Hiển thị kết quả",
+      "stale": "Đã đổi thông số — bấm Hiển thị kết quả để tính lại.",
+      "titleArea": "Camera area scan trong kho",
+      "titleLine": "Camera line scan trong kho",
+      "meta": "{pass} đạt · {warn} lưu ý · {info} chưa kiểm được · {fail} loại",
+      "showRejected": "Hiện cả camera bị loại",
+      "empty": "Không có camera nào đạt — bật \"Hiện cả camera bị loại\" để xem lý do.",
+      "noneInStock": "Kho chưa có camera loại này.",
+      "colCamera": "Camera",
+      "colResolution": "Độ phân giải",
+      "colPixel": "Pixel",
+      "colSensor": "Cảm biến",
+      "colMmPerPx": "mm/px",
+      "colMargin": "Dư",
+      "colFps": "fps tối đa / cần",
+      "colData": "MB/s",
+      "colInterface": "Giao tiếp",
+      "colShutter": "Shutter",
+      "colStatus": "Kết luận",
+      "colLinePx": "Số px",
+      "colLineRate": "kHz tối đa / cần",
+      "colCount": "Số camera",
+      "colLineExposure": "Phơi/dòng (µs)",
+      "colMount": "Ngàm",
+      "roiFps": "≈ {fps} fps khi cắt ROI",
+      "details": "Chi tiết",
+      "hide": "Thu gọn",
+      "datasheet": "Datasheet",
+      "toLens": "Chọn ống kính",
+      "exposureMax": "Phơi sáng tối đa với camera này",
+      "sensorLength": "Chiều dài cảm biến",
+      "betaNeed": "Độ phóng đại cần (β)",
+      "tileWidth": "Bề rộng một camera phủ",
+      "lensHint": "Ống kính line scan cần vòng ảnh ≥ chiều dài cảm biến và β như trên.",
+      "footArea": "Xếp: đạt trước; trong nhóm đạt ưu tiên camera dư độ phân giải vừa đủ (≥ 1,3×), rồi giá. Giả định ống kính vừa khít vùng nhìn.",
+      "footLine": "Xếp: đạt trước, ít camera ghép trước, rồi dư độ phân giải vừa đủ, rồi giá. Pixel vuông: tần số dòng = tốc độ ÷ mm/px.",
+      "showMore": "Xem thêm {n} camera"
+    },
+    "checks": {
+      "color": "Màu",
+      "pixels": "Pixel phủ vùng nhìn",
+      "fps": "Số ảnh/giây",
+      "bandwidth": "Băng thông",
+      "shutter": "Shutter",
+      "exposure": "Phơi sáng chống nhoè",
+      "lineWidth": "mm/px ngang",
+      "lineRate": "Tần số dòng",
+      "lineExposure": "Phơi mỗi dòng",
+      "encoder": "Encoder"
+    },
+    "notes": {
+      "colorMismatch": "Camera không đúng loại màu đã chọn.",
+      "colorUnknown": "Camera chưa khai màu / đơn sắc.",
+      "pixelsOk": "Đạt {have} mm/px (cần {need}), dư {margin}×.",
+      "pixelsShort": "Chỉ đạt {have} mm/px, cần {need} — cần ít nhất {px} px.",
+      "pixelsUnknown": "Camera chưa khai độ phân giải.",
+      "fpsOk": "Cần {need} ảnh/giây, camera tối đa {max} fps.",
+      "fpsWithRoi": "Chụp hết khung không đủ ({max} fps), nhưng cắt ROI còn {rows} hàng thì ≈ {roi} fps — ước tính, kiểm lại datasheet.",
+      "fpsTight": "Cần {need} ảnh/giây, camera tối đa {max} fps — dư dưới {margin}%.",
+      "fpsTooLow": "Cần {need} ảnh/giây, camera chỉ tối đa {max} fps (kể cả cắt ROI).",
+      "fpsUnknown": "Camera chưa khai fps tối đa.",
+      "bandwidthOver": "Sinh {rate} MB/s, quá tỉ lệ dùng tối đa của {name} ({capacity} MB/s).",
+      "rollingShutter": "Rolling shutter: vật chạy khi chụp sẽ bị méo ảnh.",
+      "shutterUnknown": "Camera chưa khai loại shutter.",
+      "exposureOk": "Phơi tối đa {us} µs — đèn liên tục vẫn dùng được.",
+      "exposureStrobe": "Phơi tối đa chỉ {us} µs (dưới {limit} µs): cần đèn strobe overdrive.",
+      "lineSingleCamera": "Một camera phủ hết bề rộng: {have} mm/px.",
+      "lineMultiCamera": "Cần {n} camera ghép, chồng lấn {overlap} mm: {have} mm/px mỗi camera.",
+      "lineTooManyCameras": "Cần hơn {max} camera — chọn camera nhiều pixel hơn.",
+      "lineWidthUnknown": "Camera chưa khai số pixel một dòng.",
+      "lineRateOk": "Cần {khz} kHz, camera tối đa {max} kHz.",
+      "lineRateTight": "Cần {khz} kHz, camera tối đa {max} kHz — dư dưới {margin}%.",
+      "lineRectPixel": "Không đủ nhanh cho pixel vuông ({khz} > {max} kHz); chạy ở tối đa thì pixel dọc chiều chạy dài {along} mm — vẫn trong mm/px cần nhưng ảnh bị kéo dãn, phải hiệu chỉnh tỉ lệ.",
+      "lineRateTooHigh": "Cần {khz} kHz, camera chỉ {max} kHz; pixel dọc chiều chạy thành {along} mm — quá mm/px cần.",
+      "lineRateUnknown": "Camera chưa khai tần số dòng tối đa.",
+      "lineExposureOk": "Phơi tối đa {us} µs mỗi dòng.",
+      "lineExposureShort": "Phơi tối đa chỉ {us} µs mỗi dòng (dưới {limit} µs): cần đèn dòng cường độ cao.",
+      "encoderOk": "Encoder {um} µm/xung đủ mịn (cần ≤ {need} µm).",
+      "encoderCoarse": "Encoder {um} µm/xung thô hơn một dòng ({need} µm) — ảnh dãn / nén khi tốc độ đổi.",
+      "encoderMissing": "Chưa có encoder: tốc độ băng tải đổi là ảnh dãn / nén theo. Nên trigger dòng bằng encoder."
     }
   }
 }

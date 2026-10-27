@@ -29,13 +29,15 @@ import { LEAD_TIME_ZERO_DAYS, MARGIN_FULL_SCORE, PRIOR_USE_FULL } from '@/lib/vi
 import { TIME_BUDGET_SAFETY } from '@/lib/vision/timing';
 import { LIGHT_WAVELENGTH_NM } from '@/lib/vision/lightColor';
 import { LEAKAGE_LIMIT, OVERKILL_LIMIT } from '@/lib/vision/experimentMetrics';
+import { LINE_EXPOSURE_BRIGHT_US, LINE_MAX_CAMERAS, RANK_MARGIN_TARGET } from '@/lib/vision/cameraSelector';
 
 /** Trang dùng công thức. */
-export type FormulaPage = 'design' | 'lens' | 'light' | 'oldSelector' | 'pc' | 'kpi';
+export type FormulaPage = 'design' | 'lens' | 'camera' | 'light' | 'oldSelector' | 'pc' | 'kpi';
 
 export const PAGE_LABEL: Record<FormulaPage, { label: string; href: string }> = {
   design: { label: 'Thiết kế hệ thống', href: '/thiet-ke-he-thong/yeu-cau' },
   lens: { label: 'Chọn ống kính', href: '/chon-ong-kinh' },
+  camera: { label: 'Chọn camera', href: '/chon-camera' },
   light: { label: 'Chọn đèn', href: '/chon-den' },
   oldSelector: { label: 'Bộ chọn thiết bị (cũ)', href: '/cong-cu-chon-thiet-bi' },
   pc: { label: 'Máy tính (PC)', href: '/cong-cu-may-tinh' },
@@ -1069,6 +1071,109 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
     ],
   },
 
+  // ───────────────────────────────────────────────── 14. CHỌN CAMERA ──
+  {
+    key: 'camera',
+    title: '14. Trang Chọn camera',
+    intro:
+      'Chốt 2026-10-27 (Q1–Q8). Hai tab: area scan (kể cả tốc độ cao) và line scan. Giả định ống kính vừa khít vùng nhìn (β lý tưởng) — ống thật chọn ở trang Chọn ống kính. Ô tốc độ để trống thì area scan chỉ lọc theo pixel.',
+    entries: [
+      {
+        id: 'CAM-000',
+        title: 'mm/px cần và xếp hạng',
+        formula: [
+          'mm/px cần = số nhập; không có thì lỗi nhỏ nhất ÷ px/lỗi theo độ tương phản (RES-001, chưa rõ = thấp)',
+          'xếp: đạt → lưu ý → chưa kiểm được → loại; line scan thêm ít camera ghép trước',
+          'trong nhóm: dư ≥ mức đích thì dư càng sát mức đích càng trước; dư < mức đích thì dư lớn trước; rồi giá thấp',
+        ],
+        params: ['pxPerDefectHigh', 'pxPerDefectMedium', 'pxPerDefectLow'],
+        constants: [{ name: 'mức dư đích (Q6)', value: RANK_MARGIN_TARGET }],
+        evidence: 'rule-of-thumb',
+        usedIn: ['camera'],
+        source: 'vision/cameraSelector.ts : targetMmPerPx, rankKey',
+      },
+      {
+        id: 'CAM-001',
+        title: 'Area scan: pixel, số ảnh/giây (có ROI), băng thông, phơi sáng',
+        formula: [
+          'mm/px thực = max(vùng nhìn dài ÷ px cạnh dài, vùng nhìn ngắn ÷ px cạnh ngắn) · dư = mm/px cần ÷ thực   (RES-004)',
+          'fps cần = số ảnh mỗi sản phẩm × ppm ÷ 60   (THR-006)',
+          'ROI: hàng cần = ⌈vùng nhìn ngắn ÷ mm/px thực⌉ · fps_ROI ≈ fps tối đa × hàng cảm biến ÷ hàng cần',
+          'MB/s = px cạnh dài × hàng đọc (hết khung, hoặc ROI nếu phải dùng) × byte/px × fps cần   (THR-002)',
+          't_max = k_blur × mm/px thực ÷ v   (THR-005, chỉ khi vật chạy lúc chụp)',
+        ],
+        verdict: [
+          'mm/px thực > cần → LOẠI',
+          'fps cần ≤ fps tối đa × (1 − dư tối thiểu) → ĐẠT; không đủ nhưng ROI đủ (cùng biên) → LƯU Ý (ước tính, xem datasheet); ROI cũng không đủ → LOẠI',
+          'MB/s > tỉ lệ dùng tối đa × băng thông → LOẠI',
+          'vật chạy + rolling shutter → LOẠI · t_max < ngưỡng strobe → LƯU Ý (cần strobe)',
+          'lọc màu: khác loại đã chọn → LOẠI',
+        ],
+        params: ['cycleMinMargin', 'interfaceMaxShare', 'blurPxAllowed', 'strobeExposureLimitUs'],
+        notes: ['fps_ROI tỉ lệ với số hàng là quy luật gần đúng cho cảm biến CMOS global shutter; con số thật xem datasheet / phần mềm hãng.'],
+        evidence: 'calculated',
+        usedIn: ['camera'],
+        source: 'vision/cameraSelector.ts : areaNeed, evaluateAreaCamera',
+      },
+      {
+        id: 'LSC-001',
+        title: 'Line scan: mm/px ngang và số camera ghép',
+        formula: [
+          'n = số camera nhỏ nhất để (bề rộng ÷ n + chồng lấn) ÷ px một dòng ≤ mm/px cần',
+          'chồng lấn = max(tỉ lệ × bề rộng ÷ n, px chồng lấn tối thiểu × mm/px cần); n = 1 không chồng lấn',
+          'β cần = chiều dài cảm biến ÷ bề rộng một camera phủ · chiều dài cảm biến = px × pixel (µm) ÷ 1000',
+        ],
+        verdict: ['n = 1 → ĐẠT · n > 1 → LƯU Ý (ghép ảnh)', 'n > tối đa → LOẠI'],
+        params: ['tileOverlapRatio', 'tileOverlapMinPx'],
+        constants: [{ name: 'số camera ghép tối đa', value: LINE_MAX_CAMERAS }],
+        evidence: 'calculated',
+        usedIn: ['camera'],
+        source: 'vision/cameraSelector.ts : lineCameraCount, evaluateLineCamera',
+      },
+      {
+        id: 'LSC-002',
+        title: 'Line scan: tần số dòng cho pixel vuông',
+        formula: ['tần số cần = v ÷ mm/px ngang thực   (Hz)', 'không với tới: pixel dọc chiều chạy = v ÷ tần số tối đa'],
+        verdict: [
+          'cần ≤ tối đa × (1 − dư tối thiểu) → ĐẠT; ≤ tối đa → LƯU Ý',
+          'cần > tối đa: pixel dọc ≤ mm/px cần → LƯU Ý (pixel chữ nhật, phải hiệu chỉnh tỉ lệ); lớn hơn → LOẠI',
+        ],
+        params: ['cycleMinMargin'],
+        evidence: 'calculated',
+        usedIn: ['camera'],
+        source: 'vision/cameraSelector.ts : LSC-002',
+      },
+      {
+        id: 'LSC-003',
+        title: 'Line scan: phơi tối đa mỗi dòng',
+        formula: ['t_dòng = 1 000 000 ÷ tần số chạy thật   (µs; tần số chạy = min(cần, tối đa))'],
+        verdict: ['t_dòng < ngưỡng → LƯU Ý: cần đèn dòng cường độ cao'],
+        constants: [{ name: 'ngưỡng phơi mỗi dòng (µs)', value: LINE_EXPOSURE_BRIGHT_US }],
+        evidence: 'rule-of-thumb',
+        usedIn: ['camera'],
+        source: 'vision/cameraSelector.ts : LSC-003',
+      },
+      {
+        id: 'LSC-004',
+        title: 'Line scan: băng thông mỗi camera',
+        formula: ['MB/s = px một dòng × tần số chạy × byte/px ÷ 10⁶'],
+        verdict: ['MB/s > tỉ lệ dùng tối đa × băng thông chuẩn (CXP nhân số làn) → LOẠI'],
+        params: ['interfaceMaxShare'],
+        evidence: 'calculated',
+        usedIn: ['camera'],
+        source: 'vision/cameraSelector.ts : LSC-004',
+      },
+      {
+        id: 'LSC-005',
+        title: 'Line scan: encoder',
+        formula: ['µm một dòng = v ÷ tần số chạy × 1000', 'encoder đủ mịn khi µm/xung ≤ µm một dòng'],
+        verdict: ['thô hơn → LƯU Ý (ảnh dãn / nén khi tốc độ đổi)', 'chưa có encoder → chưa kiểm được, khuyên dùng'],
+        evidence: 'calculated',
+        usedIn: ['camera'],
+        source: 'vision/cameraSelector.ts : LSC-005',
+      },
+    ],
+  },
 ];
 
 /** Mọi mã luật engine có trong sổ tay — test so với RULES. */

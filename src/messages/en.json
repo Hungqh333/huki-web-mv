@@ -20,7 +20,8 @@
     "visionEngineer": "Vision Engineer",
     "knowledge": "Knowledge",
     "projects": "Projects",
-    "light": "Lighting"
+    "light": "Lighting",
+    "camera": "Camera"
   },
   "language": {
     "label": "Language",
@@ -3378,6 +3379,176 @@
       "openReportLink": "Open report on the internal drive",
       "button": "Test projects",
       "matched": "{n} match"
+    }
+  },
+  "cameraSelector": {
+    "title": "Camera selector",
+    "subtitle": "Filter in-stock cameras by field of view, resolution and speed — area scan (including high speed) and line scan.",
+    "why": "Every figure comes from a formula with an ID, assuming a lens that exactly fits the field of view. Pick the real lens on the Lens page. Theoretical results — test before committing.",
+    "emptyCatalog": "No active cameras in stock.",
+    "reset": "Reset",
+    "tabs": {
+      "label": "Camera type",
+      "area": "Area scan / high speed",
+      "line": "Line scan"
+    },
+    "tabHint": {
+      "area": "Cameras that capture a full frame — {area} in stock. Leave the speed fields empty to filter by pixels only; enter speed / output to also check fps, bandwidth, shutter and exposure.",
+      "line": "Cameras that scan line by line as the part moves (web, sheet, continuous belt) — {line} in stock."
+    },
+    "task": {
+      "title": "Field of view and resolution",
+      "fovWidth": "Field of view width (mm)",
+      "fovHeight": "Field of view height (mm)",
+      "lineWidth": "Scan width (mm)",
+      "lineWidthHint": "Across the direction of motion.",
+      "mmPerPx": "Required mm/px",
+      "mmPerPxHint": "If given, used instead of the smallest defect.",
+      "defect": "Smallest defect (mm)",
+      "defectHint": "Without mm/px, enter the smallest defect: mm/px = defect ÷ pixels by contrast.",
+      "contrast": "Defect contrast",
+      "color": "Colour",
+      "targetFromDefect": "Using {mmpx} mm/px (smallest defect ÷ {n} px).",
+      "targetGiven": "Using {mmpx} mm/px."
+    },
+    "contrast": {
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low",
+      "unknown": "Unknown (treated as low)"
+    },
+    "color": {
+      "any": "Any",
+      "mono": "Mono",
+      "color": "Colour"
+    },
+    "shutter": {
+      "global": "Global",
+      "rolling": "Rolling"
+    },
+    "speed": {
+      "titleArea": "Speed (optional)",
+      "titleLine": "Speed",
+      "areaNote": "Leave empty if the part is stationary / indexed when captured.",
+      "speedOptional": "Conveyor speed during capture (mm/s)",
+      "speedHint": "Only when the part keeps moving during capture.",
+      "speed": "Part speed (mm/s)",
+      "ppm": "Output (parts/min)",
+      "images": "Images per part",
+      "imagesHint": "Several views / lighting modes multiply it.",
+      "encoder": "Encoder (µm/pulse)",
+      "encoderHint": "Leave empty if there is no encoder yet."
+    },
+    "need": {
+      "title": "Requirements",
+      "pixels": "Minimum pixels",
+      "megapixels": "≈ {mp} MP, long sensor side along the long field-of-view side.",
+      "fps": "Images per second",
+      "fpsMissing": "Enter output to calculate.",
+      "exposure": "Maximum exposure (no blur)",
+      "exposureStatic": "Part is stationary when captured — no limit.",
+      "exposureNote": "At the required mm/px; finer cameras need even shorter.",
+      "strobe": "Strobe light",
+      "strobeYes": "Required",
+      "strobeNo": "Not needed yet",
+      "linePx": "Minimum pixels across",
+      "linePxNote": "One camera; otherwise several cameras side by side.",
+      "lineRate": "Line rate (square pixels)",
+      "lineRateNote": "Speed ÷ required mm/px.",
+      "lineExposure": "Maximum exposure per line",
+      "lineExposureNote": "Very short → needs a high-intensity line light.",
+      "missing": {
+        "area": "Enter the field of view and required mm/px (or smallest defect).",
+        "line": "Enter scan width, speed and required mm/px (or smallest defect)."
+      }
+    },
+    "status": {
+      "pass": "Pass",
+      "warn": "Note",
+      "info": "Not checked",
+      "fail": "Excluded"
+    },
+    "list": {
+      "showResults": "Show results",
+      "stale": "Inputs changed — press Show results to recalculate.",
+      "titleArea": "Area-scan cameras in stock",
+      "titleLine": "Line-scan cameras in stock",
+      "meta": "{pass} pass · {warn} note · {info} not checked · {fail} excluded",
+      "showRejected": "Show excluded cameras",
+      "empty": "No camera passes — tick \"Show excluded cameras\" to see why.",
+      "noneInStock": "No cameras of this type in stock.",
+      "colCamera": "Camera",
+      "colResolution": "Resolution",
+      "colPixel": "Pixel",
+      "colSensor": "Sensor",
+      "colMmPerPx": "mm/px",
+      "colMargin": "Margin",
+      "colFps": "fps max / needed",
+      "colData": "MB/s",
+      "colInterface": "Interface",
+      "colShutter": "Shutter",
+      "colStatus": "Verdict",
+      "colLinePx": "Pixels",
+      "colLineRate": "kHz max / needed",
+      "colCount": "Cameras",
+      "colLineExposure": "Exposure/line (µs)",
+      "colMount": "Mount",
+      "roiFps": "≈ {fps} fps with ROI",
+      "details": "Details",
+      "hide": "Collapse",
+      "datasheet": "Datasheet",
+      "toLens": "Choose a lens",
+      "exposureMax": "Maximum exposure with this camera",
+      "sensorLength": "Sensor length",
+      "betaNeed": "Required magnification (β)",
+      "tileWidth": "Width covered per camera",
+      "lensHint": "A line-scan lens needs an image circle ≥ the sensor length and the β above.",
+      "footArea": "Order: passing first; among those, cameras with just-enough resolution margin (≥ 1.3×) first, then price. Assumes a lens that exactly fits the field of view.",
+      "footLine": "Order: passing first, fewer cameras first, then just-enough resolution margin, then price. Square pixels: line rate = speed ÷ mm/px.",
+      "showMore": "Show {n} more cameras"
+    },
+    "checks": {
+      "color": "Colour",
+      "pixels": "Pixels over field of view",
+      "fps": "Images per second",
+      "bandwidth": "Bandwidth",
+      "shutter": "Shutter",
+      "exposure": "Exposure against blur",
+      "lineWidth": "mm/px across",
+      "lineRate": "Line rate",
+      "lineExposure": "Exposure per line",
+      "encoder": "Encoder"
+    },
+    "notes": {
+      "colorMismatch": "Camera is not the selected colour type.",
+      "colorUnknown": "Camera has no colour / mono on record.",
+      "pixelsOk": "Reaches {have} mm/px (needs {need}), {margin}× margin.",
+      "pixelsShort": "Only {have} mm/px, needs {need} — at least {px} px required.",
+      "pixelsUnknown": "Camera has no resolution on record.",
+      "fpsOk": "Needs {need} images/s, camera tops out at {max} fps.",
+      "fpsWithRoi": "Full frame is too slow ({max} fps), but an ROI of {rows} rows gives ≈ {roi} fps — an estimate, check the datasheet.",
+      "fpsTight": "Needs {need} images/s, camera tops out at {max} fps — under {margin}% headroom.",
+      "fpsTooLow": "Needs {need} images/s, camera tops out at {max} fps (even with ROI).",
+      "fpsUnknown": "Camera has no maximum fps on record.",
+      "bandwidthOver": "Produces {rate} MB/s, beyond the usable share of {name} ({capacity} MB/s).",
+      "rollingShutter": "Rolling shutter: a moving part will be distorted.",
+      "shutterUnknown": "Camera has no shutter type on record.",
+      "exposureOk": "Maximum exposure {us} µs — continuous light still works.",
+      "exposureStrobe": "Maximum exposure only {us} µs (under {limit} µs): needs strobe overdrive.",
+      "lineSingleCamera": "One camera covers the full width: {have} mm/px.",
+      "lineMultiCamera": "Needs {n} cameras side by side, {overlap} mm overlap: {have} mm/px each.",
+      "lineTooManyCameras": "Needs more than {max} cameras — choose a camera with more pixels.",
+      "lineWidthUnknown": "Camera has no line width on record.",
+      "lineRateOk": "Needs {khz} kHz, camera tops out at {max} kHz.",
+      "lineRateTight": "Needs {khz} kHz, camera tops out at {max} kHz — under {margin}% headroom.",
+      "lineRectPixel": "Too slow for square pixels ({khz} > {max} kHz); at maximum rate pixels along the motion are {along} mm — within the required mm/px but the image is stretched and must be scaled.",
+      "lineRateTooHigh": "Needs {khz} kHz, camera only {max} kHz; pixels along the motion become {along} mm — beyond the required mm/px.",
+      "lineRateUnknown": "Camera has no maximum line rate on record.",
+      "lineExposureOk": "Maximum exposure {us} µs per line.",
+      "lineExposureShort": "Maximum exposure only {us} µs per line (under {limit} µs): needs a high-intensity line light.",
+      "encoderOk": "Encoder {um} µm/pulse is fine enough (needs ≤ {need} µm).",
+      "encoderCoarse": "Encoder {um} µm/pulse is coarser than one line ({need} µm) — the image stretches / compresses as speed changes.",
+      "encoderMissing": "No encoder: the image stretches / compresses whenever belt speed changes. Trigger lines from an encoder."
     }
   }
 }

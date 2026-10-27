@@ -6,6 +6,7 @@
     "components/specs.ts": "11fe761c74304aa1",
     "kpi/calc.ts": "a16ec5d2a6870d15",
     "requirement/assumptions.ts": "5dd68eb2bf2ee5db",
+    "vision/cameraSelector.ts": "e2b3536786e5111e",
     "vision/configurationRules.ts": "1400f5312edaee21",
     "vision/engineTables.ts": "3f8cf798b3c78788",
     "vision/equipmentFilter.ts": "9d527e7e0e4efdef",

@@ -3624,11 +3624,7 @@
       "interface": "limited by the interface"
     },
     "lineTitle": "Line-scan camera selector",
-    "lineSubtitle": "Filter in-stock line-scan cameras by scan width, resolution and part speed — web, sheet, continuous belt.",
-    "switch": {
-      "toLine": "Continuous web / sheet? Choose a line-scan camera",
-      "toArea": "Full-frame capture? Choose an area-scan camera"
-    }
+    "lineSubtitle": "Filter in-stock line-scan cameras by scan width, resolution and part speed — web, sheet, continuous belt."
   },
   "codeReader": {
     "title": "Code reader selector",

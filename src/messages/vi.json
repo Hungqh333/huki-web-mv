@@ -3624,11 +3624,7 @@
       "interface": "giới hạn bởi cổng giao tiếp"
     },
     "lineTitle": "Chọn camera line scan",
-    "lineSubtitle": "Lọc camera line scan trong kho theo bề rộng quét, độ phân giải và tốc độ vật chạy — cuộn, tấm, băng liên tục.",
-    "switch": {
-      "toLine": "Vật chạy liên tục dạng cuộn / tấm? Chọn camera line scan",
-      "toArea": "Chụp cả khung? Chọn camera area scan"
-    }
+    "lineSubtitle": "Lọc camera line scan trong kho theo bề rộng quét, độ phân giải và tốc độ vật chạy — cuộn, tấm, băng liên tục."
   },
   "codeReader": {
     "title": "Chọn đầu đọc mã",

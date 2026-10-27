@@ -160,11 +160,8 @@ export function CameraSelector({ components, params, kind }: { components: Compo
 
   return (
     <div className="space-y-6">
-      {/* Hai trang riêng (chốt 2026-10-27): /chon-camera = area scan, /chon-line-scan = line scan; dẫn chéo sang nhau. */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <ActionLink href={tab === 'area' ? '/chon-line-scan' : '/chon-camera'} variant="soft">
-          {t(tab === 'area' ? 'switch.toLine' : 'switch.toArea')}
-        </ActionLink>
+      {/* Hai trang riêng (chốt 2026-10-27): /chon-camera = area scan, /chon-line-scan = line scan — chuyển qua menu. */}
+      <div className="flex flex-wrap items-center justify-end gap-3">
         <button
           type="button"
           onClick={reset}

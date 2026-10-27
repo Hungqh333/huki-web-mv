@@ -3,7 +3,7 @@
   "files": {
     "components/match.ts": "3a373886dcd88a13",
     "components/pc.ts": "83616b93c01b42c9",
-    "components/specs.ts": "f324f6bc77b0a8f4",
+    "components/specs.ts": "20236348e8255e99",
     "kpi/calc.ts": "a16ec5d2a6870d15",
     "requirement/assumptions.ts": "5dd68eb2bf2ee5db",
     "vision/cameraSelector.ts": "da29a35803bbc428",

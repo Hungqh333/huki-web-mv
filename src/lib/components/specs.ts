@@ -46,6 +46,8 @@ export type Component = {
   lead_time_days?: number | null;
   supplier?: string | null;
   used_in_projects?: number;
+  /** Thiết bị thường dùng — admin đánh dấu ★ (migration 20261027000002). */
+  is_common?: boolean;
   datasheet_url: string | null;
   source: ComponentSource;
   notes_vi: string | null;

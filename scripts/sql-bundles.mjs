@@ -94,6 +94,12 @@ export const BUNDLES = {
       ['PHAN 1/1: MIGRATION — them loai linh kien "code_reader" (dau doc ma lien khoi) vao danh sach hop le', 'supabase/migrations/20261027000001_code_reader_kind.sql'],
     ],
   },
+  'component-common': {
+    out: 'CHAY-BUOC-NAY-THIET-BI-THUONG-DUNG.sql',
+    parts: [
+      ['PHAN 1/1: MIGRATION — them cot "thuong dung" (is_common) cho linh kien, admin danh dau sao o trang Danh muc thiet bi', 'supabase/migrations/20261027000002_component_common.sql'],
+    ],
+  },
   'converter-kind': {
     out: 'CHAY-BUOC-NAY-BO-NHAN.sql',
     parts: [

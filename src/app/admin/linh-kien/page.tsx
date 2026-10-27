@@ -28,7 +28,7 @@ export default async function AdminComponentsPage({
   const { data, error } = await fetchAllRows((from, to) => {
     let query = supabase
       .from('components')
-      .select('id, code, kind, brand, model, spec, price_vnd, source, is_active, sort_order');
+      .select('id, code, kind, brand, model, spec, price_vnd, source, is_active, is_common, sort_order');
     if (activeKind) query = query.eq('kind', activeKind);
     return query.order('kind').order('sort_order').order('id').range(from, to);
   });
@@ -105,6 +105,11 @@ export default async function AdminComponentsPage({
                   >
                     {component.code}
                   </Link>
+                  {component.is_common ? (
+                    <span title={t('commonLabel')} className="ml-1.5 text-amber-500">
+                      ★
+                    </span>
+                  ) : null}
                   {component.is_active ? null : (
                     <span className="ml-2 text-xs text-slate-400">{t('inactive')}</span>
                   )}

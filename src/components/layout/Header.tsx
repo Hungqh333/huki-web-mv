@@ -22,7 +22,9 @@ const navItems = [
   { href: '/cam-nang', key: 'knowledge' },
   // Công cụ
   { href: '/cong-cu-chi-tieu', key: 'kpi' },
-  // Thiết bị — chọn ống kính (2026-10-17) và đèn (2026-10-22) ra món hàng trong kho.
+  // Thiết bị — Danh mục thiết bị thường dùng đứng đầu nhóm (2026-10-27, Q6).
+  { href: '/thiet-bi', key: 'catalog' },
+  // Chọn ống kính (2026-10-17) và đèn (2026-10-22) ra món hàng trong kho.
   { href: '/cong-cu-chon-thiet-bi', key: 'selectorVision' },
   // Chọn camera area / line scan ra món hàng (camera trong kho) — 2026-10-27.
   { href: '/chon-camera', key: 'camera' },

@@ -30,6 +30,7 @@ export type ComponentDraft = {
   notes_en: string;
   sort_order: number;
   is_active: boolean;
+  is_common: boolean;
 };
 
 const inputClass =
@@ -260,6 +261,16 @@ export function ComponentForm({ draft }: { draft: ComponentDraft }) {
           className="size-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500 dark:border-slate-600"
         />
         {t('activeLabel')}
+      </label>
+
+      <label className="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          name="is_common"
+          defaultChecked={draft.is_common}
+          className="size-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500 dark:border-slate-600"
+        />
+        {t('commonLabel')}
       </label>
 
       <div className="flex flex-wrap gap-3">

@@ -112,6 +112,7 @@ export async function saveComponentAction(
     notes_en: nullable(formData, 'notes_en'),
     sort_order: sortOrder,
     is_active: formData.get('is_active') === 'on',
+    is_common: formData.get('is_common') === 'on',
   };
 
   const supabase = await createClient();
@@ -123,6 +124,19 @@ export async function saveComponentAction(
 
   revalidatePath('/admin/linh-kien');
   redirect('/admin/linh-kien?saved=1');
+}
+
+/**
+ * Bật / tắt ★ "thường dùng" ngay trên trang Danh mục thiết bị (chốt 2026-10-27 Q7).
+ * Chỉ admin; RLS components_write_admin chặn lần nữa ở database.
+ */
+export async function toggleCommonAction(id: string, common: boolean): Promise<{ ok: boolean; error?: string }> {
+  if (!(await requireAdmin())) return { ok: false, error: 'notAdmin' };
+  const supabase = await createClient();
+  const { error } = await supabase.from('components').update({ is_common: common }).eq('id', id);
+  if (error) return { ok: false, error: await dbError(error, 'toggleCommon') };
+  revalidatePath('/thiet-bi');
+  return { ok: true };
 }
 
 export async function deleteComponentAction(formData: FormData) {

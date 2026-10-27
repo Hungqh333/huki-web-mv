@@ -30,6 +30,7 @@ export default async function NewComponentPage() {
             notes_en: '',
             sort_order: 0,
             is_active: true,
+            is_common: false,
           }}
         />
       </div>

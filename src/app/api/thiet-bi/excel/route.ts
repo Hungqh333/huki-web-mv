@@ -3,6 +3,7 @@ import { getTranslations } from 'next-intl/server';
 import { canUseSelector, getSessionContext } from '@/lib/auth';
 import { CATALOG_COLUMNS, parseCodes, type CatalogItem } from '@/lib/catalog/catalog';
 import { devCatalog } from '@/lib/catalog/devCatalog';
+import { fetchAllRows } from '@/lib/components/fetchAll';
 import type { ComponentKind } from '@/lib/components/specs';
 import { buildCatalogWorkbook } from '@/lib/export/catalogWorkbook';
 import { hasSupabaseEnv } from '@/lib/supabase/env';
@@ -28,7 +29,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'forbidden' }, { status: 403 });
     }
     const supabase = await createClient();
-    const { data, error } = await supabase.from('components').select(CATALOG_COLUMNS).eq('is_active', true).in('code', codes);
+    // Tối đa 200 mã nên thường chỉ một trang; vẫn đi qua fetchAllRows như mọi chỗ đọc kho.
+    const { data, error } = await fetchAllRows((from, to) =>
+      supabase.from('components').select(CATALOG_COLUMNS).eq('is_active', true).in('code', codes).order('id').range(from, to)
+    );
     if (error) return NextResponse.json({ error: 'db' }, { status: 500 });
     items = (data ?? []) as CatalogItem[];
   }

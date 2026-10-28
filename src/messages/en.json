@@ -7,7 +7,6 @@
   "nav": {
     "home": "Home",
     "handbook": "Handbook",
-    "selector": "Equipment Selector",
     "account": "Account",
     "admin": "Admin",
     "signIn": "Sign in",
@@ -15,7 +14,7 @@
     "signOut": "Sign out",
     "kpi": "KPI",
     "pc": "PC",
-    "selectorVision": "Equipment",
+    "selectorVision": "Setup advisor",
     "lens": "Lens",
     "visionEngineer": "Vision Engineer",
     "knowledge": "Knowledge",
@@ -25,7 +24,25 @@
     "codeReader": "Code reader",
     "ocr": "OCR",
     "lineScan": "Line scan",
-    "catalog": "Catalog"
+    "catalog": "Catalog",
+    "equipment": "Select equipment",
+    "menuOpen": "Menu",
+    "menuClose": "Close",
+    "navLabel": "Main menu",
+    "equipmentGroups": {
+      "camera": "Cameras",
+      "optics": "Lenses and lighting",
+      "computing": "Processing"
+    },
+    "desc": {
+      "camera": "Cameras that capture full frames",
+      "lineScan": "Line-by-line capture for moving parts",
+      "codeReader": "Smart reader or camera plus software",
+      "ocr": "Read and verify printed characters",
+      "lens": "Focal length, working distance, stock filter",
+      "light": "Light type and color per task",
+      "pc": "PC, interface cards, software"
+    }
   },
   "catalog": {
     "title": "Equipment catalog",

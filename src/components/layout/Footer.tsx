@@ -25,7 +25,7 @@ export async function Footer() {
           <ul className="mt-2 space-y-1.5 text-slate-600 dark:text-slate-400">
             <li>
               <Link href="/cong-cu-chon-thiet-bi" className="hover:text-sky-700 dark:hover:text-sky-400">
-                {tNav('selector')}
+                {tNav('selectorVision')}
               </Link>
             </li>
             <li>

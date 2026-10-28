@@ -7,7 +7,6 @@
   "nav": {
     "home": "Trang chủ",
     "handbook": "Cẩm nang",
-    "selector": "Bộ chọn thiết bị",
     "account": "Tài khoản",
     "admin": "Quản trị",
     "signIn": "Đăng nhập",
@@ -15,7 +14,7 @@
     "signOut": "Đăng xuất",
     "kpi": "Chỉ tiêu",
     "pc": "Máy tính",
-    "selectorVision": "Chọn thiết bị",
+    "selectorVision": "Gợi ý cấu hình",
     "lens": "Ống kính",
     "visionEngineer": "Vision Engineer",
     "knowledge": "Cẩm nang",
@@ -25,7 +24,25 @@
     "codeReader": "Đọc mã",
     "ocr": "OCR",
     "lineScan": "Line scan",
-    "catalog": "Danh mục"
+    "catalog": "Danh mục",
+    "equipment": "Chọn thiết bị",
+    "menuOpen": "Menu",
+    "menuClose": "Đóng",
+    "navLabel": "Menu chính",
+    "equipmentGroups": {
+      "camera": "Camera",
+      "optics": "Ống kính, chiếu sáng",
+      "computing": "Xử lý"
+    },
+    "desc": {
+      "camera": "Camera chụp cả khung hình",
+      "lineScan": "Quét từng dòng cho vật chạy liên tục",
+      "codeReader": "Đầu đọc liền khối hoặc camera + phần mềm",
+      "ocr": "Đọc, kiểm tra ký tự in",
+      "lens": "Tiêu cự, khoảng làm việc, lọc ống trong kho",
+      "light": "Kiểu đèn, màu đèn theo bài toán",
+      "pc": "Máy, card giao tiếp, phần mềm"
+    }
   },
   "catalog": {
     "title": "Danh mục thiết bị",

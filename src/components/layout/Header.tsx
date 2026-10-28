@@ -1,46 +1,52 @@
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { LanguageSwitcher } from './LanguageSwitcher';
+import { MainNav, SectionNav, type NavGroup } from './MainNav';
 import { RoleBadge } from '@/components/auth/RoleBadge';
 import { SignOutButton } from '@/components/auth/SignOutButton';
 import { canUseSelector, getSessionContext, isAdmin } from '@/lib/auth';
 
 /*
- * Menu PHẲNG — chốt 2026-10-27: bỏ menu xổ "Thiết bị" và mục "Công cụ" một-trang,
- * bày thẳng mọi trang lên thanh menu, tên rút gọn (tiêu đề trong trang giữ nguyên).
+ * Menu — chốt 2026-10-28 (phương án C, thay menu phẳng 2026-10-27 đã dài 12–14 mục):
+ *   Vision Engineer · Cẩm nang · Chỉ tiêu · Danh mục · Gợi ý cấu hình · Chọn thiết bị ▾
+ *   · Dự án · Quản trị
+ * "Chọn thiết bị" là nhóm các trang chọn MÓN HÀNG theo loại (đi vào BOM); "Gợi ý cấu
+ * hình" là bộ chọn theo bài toán /cong-cu-chon-thiet-bi (ra cả bộ camera + đèn + ống).
+ * Thêm trang chọn mới: thêm vào equipmentSections, thanh phụ tự có.
  *
- * Ranh giới Công cụ / Thiết bị vẫn giữ để xếp thứ tự khi thêm trang mới:
- *   Công cụ  = tính ra CON SỐ (chỉ tiêu, chi phí...) — đứng trước
- *   Thiết bị = chọn ra MÓN HÀNG đi vào BOM — đứng sau
- * Máy tính (PC) là món hàng nên nằm nhóm Thiết bị, dù route là /cong-cu-may-tinh.
+ * Ranh giới Công cụ (ra CON SỐ, đứng trước) / Thiết bị (ra MÓN HÀNG, đứng sau) vẫn giữ.
+ * Máy tính (PC) là món hàng nên nằm nhóm Chọn thiết bị, dù route là /cong-cu-may-tinh.
  *
  * "Dự án" (V1a mục 7) đứng cuối theo spec và chỉ hiện cho Member trở lên — người
  * khác không lưu được dự án (RLS chặn), hiện ra chỉ để bấm vào bị đẩy đi.
  */
-const navItems = [
+const navBefore = [
   { href: '/', key: 'visionEngineer' },
   { href: '/cam-nang', key: 'knowledge' },
-  // Công cụ
   { href: '/cong-cu-chi-tieu', key: 'kpi' },
-  // Thiết bị — Danh mục thiết bị thường dùng đứng đầu nhóm (2026-10-27, Q6).
   { href: '/thiet-bi', key: 'catalog' },
-  // Chọn ống kính (2026-10-17) và đèn (2026-10-22) ra món hàng trong kho.
   { href: '/cong-cu-chon-thiet-bi', key: 'selectorVision' },
-  // Chọn camera area / line scan ra món hàng (camera trong kho) — 2026-10-27.
-  { href: '/chon-camera', key: 'camera' },
-  // Line scan tách trang riêng (2026-10-27).
-  { href: '/chon-line-scan', key: 'lineScan' },
-  // Chọn đầu đọc mã (đầu đọc liền khối hoặc camera + phần mềm) — 2026-10-27.
-  { href: '/chon-doc-ma', key: 'codeReader' },
-  // Chọn camera OCR / OCV — 2026-10-27.
-  { href: '/chon-ocr', key: 'ocr' },
-  { href: '/chon-ong-kinh', key: 'lens' },
-  { href: '/chon-den', key: 'light' },
-  { href: '/cong-cu-may-tinh', key: 'pc' },
 ] as const;
 
-const navLinkClass =
-  'inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-md px-2 text-slate-600 hover:bg-slate-100 hover:text-sky-700 sm:min-h-0 sm:px-0 sm:hover:bg-transparent dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-sky-400 dark:sm:hover:bg-transparent';
+const equipmentSections = [
+  {
+    key: 'camera',
+    items: [
+      { href: '/chon-camera', key: 'camera' },
+      { href: '/chon-line-scan', key: 'lineScan' },
+      { href: '/chon-doc-ma', key: 'codeReader' },
+      { href: '/chon-ocr', key: 'ocr' },
+    ],
+  },
+  {
+    key: 'optics',
+    items: [
+      { href: '/chon-ong-kinh', key: 'lens' },
+      { href: '/chon-den', key: 'light' },
+    ],
+  },
+  { key: 'computing', items: [{ href: '/cong-cu-may-tinh', key: 'pc' }] },
+] as const;
 
 export async function Header() {
   const t = await getTranslations('nav');
@@ -49,6 +55,18 @@ export async function Header() {
   // Chỉ để hiển thị đúng menu. Chặn truy cập thật nằm ở RLS trong database.
   const session = await getSessionContext();
   const role = session?.profile?.role ?? null;
+
+  const equipment: NavGroup = {
+    label: t('equipment'),
+    sections: equipmentSections.map((section) => ({
+      title: t(`equipmentGroups.${section.key}`),
+      items: section.items.map((item) => ({ href: item.href, label: t(item.key), description: t(`desc.${item.key}`) })),
+    })),
+  };
+  const after = [
+    ...(canUseSelector(role) ? [{ href: '/du-an', label: t('projects') }] : []),
+    ...(isAdmin(role) ? [{ href: '/admin', label: t('admin') }] : []),
+  ];
 
   return (
     <header className="border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
@@ -62,33 +80,21 @@ export async function Header() {
           </span>
         </Link>
 
-        {/* Menu phẳng 7–9 mục không vừa chung một hàng với logo + cụm tài khoản (thiếu
-            ~240 px khi đăng nhập admin ở 1366 px) → luôn đứng riêng hàng dưới, mọi vai trò
-            nhìn giống nhau. Điện thoại cuộn ngang như cũ. */}
-        <nav className="order-3 -mx-4 flex w-full items-center gap-1 overflow-x-auto px-2 text-sm sm:mx-0 sm:gap-6 sm:px-0">
-          {navItems.map((item) => (
-            <Link key={item.href} href={item.href} className={navLinkClass}>
-              {t(item.key)}
-            </Link>
-          ))}
-          {canUseSelector(role) ? (
-            <Link href="/du-an" className={navLinkClass}>
-              {t('projects')}
-            </Link>
-          ) : null}
-          {isAdmin(role) ? (
-            <Link href="/admin" className={navLinkClass}>
-              {t('admin')}
-            </Link>
-          ) : null}
-        </nav>
+        {/* 6–8 mục vẫn không vừa chung hàng với logo + cụm tài khoản admin → thanh menu
+            đứng riêng hàng dưới (lg); hẹp hơn thì nút Menu. */}
+        <MainNav
+          before={navBefore.map((item) => ({ href: item.href, label: t(item.key) }))}
+          group={equipment}
+          after={after}
+          labels={{ open: t('menuOpen'), close: t('menuClose'), navLabel: t('navLabel') }}
+        />
 
         {/*
           flex-wrap là bắt buộc: khi đăng nhập vai admin, cụm này có thêm badge
           vai trò, link Tài khoản và nút Đăng xuất — đo được 375px trên màn hình
           375px, tức tràn ngang nếu không cho xuống dòng.
         */}
-        <div className="ml-auto flex flex-wrap items-center justify-end gap-x-3 gap-y-2">
+        <div className="order-2 ml-auto flex flex-wrap items-center justify-end gap-x-3 gap-y-2 lg:order-1">
           <LanguageSwitcher />
 
           {session ? (
@@ -120,6 +126,7 @@ export async function Header() {
           )}
         </div>
       </div>
+      <SectionNav group={equipment} />
     </header>
   );
 }

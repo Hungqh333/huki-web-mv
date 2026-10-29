@@ -183,6 +183,29 @@ export function maxRingFNumber(pixelSizeUm: number, beta: number | null, lensTyp
 }
 
 /**
+ * OPT-001 telecentric — chốt 2026-10-29 (Q2). Kho thường chỉ ghi MỘT WD danh định (min = max), trong
+ * khi ống vẫn nét quanh đó vài mm: trong dải hãng ghi → đạt; lệch ≤ ±tolerance (tỉ lệ) ngoài dải →
+ * cảnh báo (đặt đúng WD danh định khi lắp); xa hơn → loại. Dùng chung Chọn ống kính + Thiết kế hệ thống.
+ */
+export function telecentricWdVerdict(wdMm: number, minMm: number | null, maxMm: number | null, tolerance: number): 'pass' | 'warn' | 'fail' | null {
+  if (minMm === null && maxMm === null) return null;
+  const lo = minMm ?? maxMm!;
+  const hi = maxMm ?? minMm!;
+  if (wdMm >= lo - 1e-9 && wdMm <= hi + 1e-9) return 'pass';
+  return wdMm >= lo * (1 - tolerance) - 1e-9 && wdMm <= hi * (1 + tolerance) + 1e-9 ? 'warn' : 'fail';
+}
+
+/**
+ * OPT-004 — chốt 2026-10-29 (Q3): ống thường giữ LOẠI khi F nhỏ nhất > F#max. Telecentric (F# làm
+ * việc cố định): vượt nhưng ≤ tolerance × F#max → CẢNH BÁO (giảm tương phản ở chi tiết cỡ pixel,
+ * chụp thử), xa hơn → LOẠI.
+ */
+export function diffractionVerdict(fNumberMin: number, fMax: number, lensType: string | null, tolerance: number): 'pass' | 'warn' | 'fail' {
+  if (fNumberMin <= fMax) return 'pass';
+  return lensType === 'telecentric' && fNumberMin <= fMax * tolerance + 1e-9 ? 'warn' : 'fail';
+}
+
+/**
  * Ngàm ống → ngàm camera (OPT-002). Ống C lên camera CS: thêm vòng đệm 5 mm.
  * Chiều ngược lại (CS lên C) không lấy nét được.
  */
@@ -314,6 +337,8 @@ export function evaluateConfiguration(input: ConfigurationInput): RuleResult[] {
           ? entocentricMagnification(lens.focalLengthMm, wd, lens.frontFocalMm ?? 0)
           : null;
     const optic = lens.lensType === 'telecentric' ? `${fmt(lens.magnification ?? 0, 3)}×` : `f ${fmt(lens.focalLengthMm ?? 0, 1)} mm`;
+    const teleWd =
+      lens.lensType === 'telecentric' && wd !== null ? telecentricWdVerdict(wd, lens.wdMinMm, lens.wdMaxMm, analysis.params.telecentricWdTolerance) : null;
 
     if (lens.lensType !== 'telecentric' && lens.wdMinMm !== null && wd !== null && wd < lens.wdMinMm) {
       push(
@@ -323,11 +348,7 @@ export function evaluateConfiguration(input: ConfigurationInput): RuleResult[] {
         paths,
         eq
       );
-    } else if (
-      lens.lensType === 'telecentric' &&
-      wd !== null &&
-      ((lens.wdMinMm !== null && wd < lens.wdMinMm) || (lens.wdMaxMm !== null && wd > lens.wdMaxMm))
-    ) {
+    } else if (teleWd === 'fail' && wd !== null) {
       push(
         'OPT-001',
         {
@@ -358,7 +379,7 @@ export function evaluateConfiguration(input: ConfigurationInput): RuleResult[] {
       const betaText =
         lens.lensType === 'telecentric'
           ? `β = ${fmt(beta, 4)}`
-          : `β = ${fmt(lens.focalLengthMm!, 1)} ÷ (${fmt(wd!)} − ${fmt(lens.focalLengthMm!, 1)}) = ${fmt(beta, 4)}`;
+          : `β = ${fmt(lens.focalLengthMm!, 1)} ÷ (${fmt(wd!)} − ${fmt(lens.frontFocalMm ?? 0, 1)}) = ${fmt(beta, 4)}`;
       const formula =
         `${betaText} · FOV ${fmt(fovLong, 1)} × ${fmt(fovShort, 1)} mm vs ${fmt(tileLong, 1)} × ${fmt(tileShort, 1)} mm · ` +
         `${fmt(pitch / 1000, 5)} ÷ ${fmt(beta, 4)} = ${fmt(actual, 5)} mm/px vs ${fmt(target, 5)} mm/px`;
@@ -375,6 +396,16 @@ export function evaluateConfiguration(input: ConfigurationInput): RuleResult[] {
       } else {
         check = { key: 'lensFov', status: 'pass', formula, noteKey: fIdeal !== null ? 'lensFovIdeal' : undefined, noteValues: { fIdeal: fIdeal ?? '—' } };
         margin = target / actual;
+      }
+      // Telecentric lệch WD danh định trong dung sai (Q2): đạt vùng nhìn vẫn hạ xuống cảnh báo.
+      if (teleWd === 'warn' && check.status === 'pass') {
+        check = {
+          ...check,
+          status: 'warn',
+          formula: `WD ${fmt(wd!)} mm ∉ [${fmt(lens.wdMinMm ?? lens.wdMaxMm ?? 0)}; ${fmt(lens.wdMaxMm ?? lens.wdMinMm ?? 0)}] mm (±${fmt(analysis.params.telecentricWdTolerance * 100, 1)} %) · ${formula}`,
+          noteKey: 'telecentricWdNear',
+          noteValues: { wd: wd!, wdMin: lens.wdMinMm ?? lens.wdMaxMm ?? '—', wdMax: lens.wdMaxMm ?? lens.wdMinMm ?? '—' },
+        };
       }
       push('OPT-001', check, 'calculated', paths, eq, margin);
     }
@@ -494,15 +525,18 @@ export function evaluateConfiguration(input: ConfigurationInput): RuleResult[] {
         ? `F#max = 2 × ${fmt(pitch!, 2)} ÷ (2,44 × ${WAVELENGTH_UM}) = ${fmt(fMax, 2)}`
         : `F#max = 2 × ${fmt(pitch!, 2)} ÷ (2,44 × ${WAVELENGTH_UM}) ÷ (1 + ${fmt(beta!, 4)}) = ${fmt(fMax, 2)}`;
     if (lens.fNumberMin !== null) {
-      const ok = lens.fNumberMin <= fMax;
+      const tolerance = analysis.params.telecentricDiffractionTolerance;
+      const verdict = diffractionVerdict(lens.fNumberMin, fMax, lens.lensType, tolerance);
       push(
         'OPT-004',
         {
           key: 'diffractionLimit',
-          status: ok ? 'pass' : 'fail',
-          formula: `${base} · F/${fmt(lens.fNumberMin, 1)} ${ok ? '≤' : '>'} F/${fmt(fMax, 2)}`,
-          noteKey: ok ? undefined : 'diffractionLensTooSlow',
-          noteValues: { fMin: lens.fNumberMin, fMax: round(fMax, 1) },
+          status: verdict,
+          formula:
+            `${base} · F/${fmt(lens.fNumberMin, 1)} ${verdict === 'pass' ? '≤' : '>'} F/${fmt(fMax, 2)}` +
+            (verdict === 'warn' ? ` · ≤ ${fmt(tolerance, 1)} × F/${fmt(fMax, 2)}` : ''),
+          noteKey: verdict === 'pass' ? undefined : verdict === 'warn' ? 'diffractionTeleWarn' : 'diffractionLensTooSlow',
+          noteValues: { fMin: lens.fNumberMin, fMax: round(fMax, 1), ratio: round(lens.fNumberMin / fMax, 2), limit: tolerance },
         },
         'calculated',
         [],

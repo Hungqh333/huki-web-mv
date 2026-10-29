@@ -54,6 +54,10 @@ export const ENGINE_PARAMS = [
   { key: 'converterMaxFactor', group: 'optics', default: 2, min: 1.1, max: 4, step: 0.1, unit: '×' },
   // LNS-005 (2026-10-26) — trang Chọn ống kính: vùng nhìn của ống rộng hơn vùng cần quá bấy nhiêu lần (trục sát nhất) thì loại.
   { key: 'lensFovMaxRatio', group: 'optics', default: 1.5, min: 1.05, max: 10, step: 0.05, unit: '×' },
+  // OPT-001 telecentric (chốt 2026-10-29 Q2): kho chỉ ghi MỘT WD danh định — lệch trong ±tỉ lệ này → CẢNH BÁO, ngoài → LOẠI.
+  { key: 'telecentricWdTolerance', group: 'optics', default: 0.02, min: 0, max: 0.2, step: 0.005 },
+  // OPT-004 telecentric (chốt 2026-10-29 Q3): F# làm việc vượt F#max nhưng ≤ bấy nhiêu lần → CẢNH BÁO, xa hơn → LOẠI.
+  { key: 'telecentricDiffractionTolerance', group: 'optics', default: 1.5, min: 1, max: 3, step: 0.1, unit: '×' },
   // THR-003 — dư dưới tỉ lệ này của nhịp là mỏng; thời gian xử lý giả định khi chưa đo.
   { key: 'cycleMinMargin', group: 'throughput', default: 0.3, min: 0, max: 0.9, step: 0.05 },
   { key: 'processMs', group: 'throughput', default: 300, min: 10, max: 5000, step: 10, unit: 'ms' },

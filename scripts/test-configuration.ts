@@ -182,6 +182,21 @@ test('OPT-004: khẩu mở lớn nhất của ống phải ≤ F#max', () => {
   assert.equal(find(run({ lens: { fNumberMin: null } }), 'OPT-004').evidence, 'unknown');
 });
 
+test('telecentric (chốt 2026-10-29 Q2, Q3) — cùng luật với trang Chọn ống kính', () => {
+  // β 0,1 → 84,5 × 70,7 mm phủ 60 × 50; WD danh định 300 / 300
+  const tele = { lensType: 'telecentric' as const, focalLengthMm: null, magnification: 0.1, wdMinMm: 300, wdMaxMm: 300, fNumberMin: 4 };
+  const at = (wd: number, lens: Partial<ConfigLens> = {}) => run({ analysis: { 'system.workingDistance': wd }, lens: { ...tele, ...lens } });
+  assert.equal(find(at(300), 'OPT-001').status, 'pass');
+  const near = find(at(305), 'OPT-001');
+  assert.deepEqual([near.status, near.noteKey], ['warn', 'telecentricWdNear'], '+1,7 % trong ±2 %');
+  assert.equal(find(at(320), 'OPT-001').noteKey, 'telecentricWdMismatch', '+6,7 % → loại');
+  // F#max 5,14: F/6,5 (1,26×) → cảnh báo; F/8 (1,56×) → loại; ống thường F/6,5 → loại
+  const warn = find(at(300, { fNumberMin: 6.5 }), 'OPT-004');
+  assert.deepEqual([warn.status, warn.noteKey], ['warn', 'diffractionTeleWarn']);
+  assert.equal(find(at(300, { fNumberMin: 8 }), 'OPT-004').status, 'fail');
+  assert.equal(find(run({ lens: { fNumberMin: 6.5 } }), 'OPT-004').status, 'fail');
+});
+
 test('OPT-005: độ sâu ↔ nhiễu xạ — ≤ F#max đạt, ≤ 1,5× cảnh báo, hơn nữa là xung đột', () => {
   const ok = find(run(), 'OPT-005');
   assert.equal(ok.status, 'pass');

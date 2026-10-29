@@ -9,6 +9,8 @@ import {
   mountFit,
   ringFNumberForDepth,
   sensorSizeMm,
+  telecentricWdVerdict,
+  diffractionVerdict,
   DOF_FASTEST_PRACTICAL_F,
   type ConfigCamera,
   type ConfigLens,
@@ -85,6 +87,8 @@ export type LensParams = Pick<
   | 'tubeMaxSegments'
   | 'converterMaxFactor'
   | 'lensFovMaxRatio'
+  | 'telecentricWdTolerance'
+  | 'telecentricDiffractionTolerance'
 >;
 type Params = LensParams;
 
@@ -178,6 +182,17 @@ export function betaToFit(sensorLongMm: number, sensorShortMm: number, fovWidthM
   const long = sensorLongMm / needLong;
   if (line || !(needShort > 0) || !(sensorShortMm > 0)) return long;
   return Math.min(long, sensorShortMm / needShort);
+}
+
+/**
+ * WD thật để hiện và so — làm tròn LÊN (Q1 2026-10-29): đặt đúng số hiện thì vùng nhìn luôn ≥ vùng cần;
+ * làm tròn xuống làm ống hụt vài phần mười mm và bị loại "vùng nhìn hẹp" ngay ở WD thật của nó.
+ * Bước 1 mm; khi vật rất gần tiêu điểm trước (WD − sF < 50 mm, chụp cận) bước 0,1 mm — tròn lên 1 mm
+ * ở đó đã làm vùng nhìn rộng thêm hàng chục %.
+ */
+export function roundUpWd(exactMm: number, frontFocalMm = 0): number {
+  const step = exactMm - frontFocalMm >= 50 ? 1 : 0.1;
+  return round(Math.ceil(exactMm / step - 1e-6) * step, 1);
 }
 
 /** OPT-012: WD = f × k ÷ β + sF (Newton, WD từ mặt trước ống — chốt 2026-10-26). */
@@ -402,10 +417,12 @@ export function lensNeed(input: LensSelectorInput): LensNeed | null {
   const aovLong = aov(actualLong);
   const aovShort = line ? null : aov(actualShort);
 
+  // Kích thước cảm biến KHÔNG làm tròn: vùng nhìn, WD thật tính từ đây (làm tròn 3 chữ số lệch tới 0,05 %
+  // và làm ống vừa khít bị loại — kiểm tra tự động 2026-10-29, F4). Chỉ làm tròn khi hiển thị.
   return {
-    sensorLongMm: round(sensor.longMm, 3),
-    sensorShortMm: round(sensor.shortMm, 3),
-    sensorDiagonalMm: round(cameraDiagonal(camera, sensor.diagonalMm), 3),
+    sensorLongMm: sensor.longMm,
+    sensorShortMm: sensor.shortMm,
+    sensorDiagonalMm: cameraDiagonal(camera, sensor.diagonalMm),
     beta: round(beta, 5),
     betaFormula: fit.formula,
     focalIdealMm: wd !== null && !tele ? round(focalLengthFor(beta / k, wd), 2) : null,
@@ -497,14 +514,15 @@ export function evaluateLens(
     } else {
       const min = lens.wdMinMm ?? lens.wdMaxMm!;
       const max = lens.wdMaxMm ?? lens.wdMinMm!;
-      // Telecentric chỉ nét quanh WD danh định — ngoài dải hãng ghi là không dùng được.
-      const ok = wd >= min - EPS && wd <= max + EPS;
+      // Telecentric chỉ nét quanh WD danh định — lệch trong dung sai thì cảnh báo, xa hơn thì loại (Q2 2026-10-29).
+      const tol = params.telecentricWdTolerance;
+      const verdict = telecentricWdVerdict(wd, lens.wdMinMm, lens.wdMaxMm, tol)!;
       checks.push({
         key: 'workingDistance',
-        status: ok ? 'pass' : 'fail',
-        formula: `WD ${fmt(wd)} mm ${ok ? '∈' : '∉'} [${fmt(min)}; ${fmt(max)}] mm`,
-        noteKey: ok ? undefined : 'wdOutOfRange',
-        noteValues: { min, max },
+        status: verdict,
+        formula: `WD ${fmt(wd)} mm ${verdict === 'pass' ? '∈' : '∉'} [${fmt(min)}; ${fmt(max)}] mm${verdict === 'pass' ? '' : ` · ±${fmt(tol * 100, 1)} % → [${fmt(min * (1 - tol), 1)}; ${fmt(max * (1 + tol), 1)}] mm`}`,
+        noteKey: verdict === 'pass' ? undefined : verdict === 'warn' ? 'wdNearNominal' : 'wdOutOfRange',
+        noteValues: { min, max, tol: round(tol * 100, 1) },
       });
     }
   } else if (lens.focalLengthMm !== null && wd === null) {
@@ -612,13 +630,15 @@ export function evaluateLens(
     const factor = effectiveFNumberFactor(beta, lens.lensType);
     const base = factor === 1 ? `F#max ${fmt(fMaxRing, 2)}` : `F#max ${fmt(fMaxRing * factor, 2)} ÷ (1 + ${fmt(beta!, 4)}) = ${fmt(fMaxRing, 2)}`;
     if (lens.fNumberMin !== null) {
-      const ok = lens.fNumberMin <= fMaxRing;
+      // Telecentric vượt ≤ ngưỡng lần F#max → cảnh báo; ống thường vẫn loại (Q3 2026-10-29).
+      const tol = params.telecentricDiffractionTolerance;
+      const verdict = diffractionVerdict(lens.fNumberMin, fMaxRing, lens.lensType, tol);
       checks.push({
         key: 'diffraction',
-        status: ok ? 'pass' : 'fail',
-        formula: `${base} · F/${fmt(lens.fNumberMin, 1)} ${ok ? '≤' : '>'} F/${fmt(fMaxRing, 2)}`,
-        noteKey: ok ? undefined : 'diffractionLensTooSlow',
-        noteValues: { fMin: lens.fNumberMin, fMax: round(fMaxRing, 1) },
+        status: verdict,
+        formula: `${base} · F/${fmt(lens.fNumberMin, 1)} ${verdict === 'pass' ? '≤' : '>'} F/${fmt(fMaxRing, 2)}${verdict === 'warn' ? ` · ≤ ${fmt(tol, 1)} × F/${fmt(fMaxRing, 2)}` : ''}`,
+        noteKey: verdict === 'pass' ? undefined : verdict === 'warn' ? 'diffractionTeleWarn' : 'diffractionLensTooSlow',
+        noteValues: { fMin: lens.fNumberMin, fMax: round(fMaxRing, 1), ratio: round(lens.fNumberMin / fMaxRing, 2), limit: tol },
       });
     } else unknown('diffraction', base, 'apertureUnknown', { fMax: round(fMaxRing, 1) });
   }
@@ -653,14 +673,15 @@ export function evaluateLens(
     const fit = betaToFit(need.sensorLongMm, need.sensorShortMm, input.fovWidthMm, input.fovHeightMm, line);
     if (fit !== null && fit > 0) {
       const k = variant?.converterFactor ?? 1;
-      const mm = realWorkingDistanceMm(lens.focalLengthMm, fit, k, sF);
+      const exact = realWorkingDistanceMm(lens.focalLengthMm, fit, k, sF);
+      const mm = roundUpWd(exact, sF);
       const tube = variant?.tube ?? null;
       const outside = tube !== null && (mm > tube.wdMaxMm + EPS || (tube.wdMinMm !== null && mm < tube.wdMinMm - EPS));
       realWd = {
         kind: 'focal',
-        mm: round(mm, 1),
+        mm,
         deltaMm: wd !== null ? round(mm - wd, 1) : null,
-        formula: `β = ${fmt(fit, 4)} · WD = ${fmt(lens.focalLengthMm, 1)} × ${fmt(k, 2)} ÷ ${fmt(fit, 4)} + ${fmt(sF, 1)} = ${fmt(mm, 0)} mm`,
+        formula: `β = ${fmt(fit, 4)} · WD = ${fmt(lens.focalLengthMm, 1)} × ${fmt(k, 2)} ÷ ${fmt(fit, 4)} + ${fmt(sF, 1)} = ${fmt(exact, 2)} → ${fmt(mm, Number.isInteger(mm) ? 0 : 1)} mm`,
         belowModMm: tube === null && lens.wdMinMm !== null && mm < lens.wdMinMm - EPS ? lens.wdMinMm : null,
         outsideTube: outside ? { minMm: tube.wdMinMm, maxMm: tube.wdMaxMm } : null,
       };

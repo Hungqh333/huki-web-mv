@@ -1,5 +1,5 @@
 {
-  "reviewedAt": "2026-10-27",
+  "reviewedAt": "2026-10-29",
   "files": {
     "components/match.ts": "3a373886dcd88a13",
     "components/pc.ts": "83616b93c01b42c9",
@@ -8,14 +8,14 @@
     "requirement/assumptions.ts": "5dd68eb2bf2ee5db",
     "vision/cameraSelector.ts": "da29a35803bbc428",
     "vision/codeReader.ts": "f4a81aee9d2e339e",
-    "vision/configurationRules.ts": "1400f5312edaee21",
+    "vision/configurationRules.ts": "46ccc93a6bc15d28",
     "vision/engineTables.ts": "27a0ab422b467c91",
     "vision/equipmentFilter.ts": "9d527e7e0e4efdef",
     "vision/experimentMatch.ts": "c95880e45b4716a8",
     "vision/experimentMetrics.ts": "23372c4539bb9e5f",
     "vision/feasibility.ts": "f387aef3bb2d7868",
     "vision/highSpeed.ts": "635862c244468a00",
-    "vision/lensSelector.ts": "e47915308db9b742",
+    "vision/lensSelector.ts": "b582db5cd0acc32b",
     "vision/lightColor.ts": "153aebbfd0828871",
     "vision/lighting.ts": "b71b89fd28a36274",
     "vision/lightMatrix.ts": "2de6fa36894ab1fe",

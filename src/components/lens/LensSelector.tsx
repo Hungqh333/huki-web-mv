@@ -93,7 +93,8 @@ function RealWdCell({ realWd }: { realWd: LensCandidate['realWd'] }) {
   const delta = realWd.deltaMm;
   return (
     <>
-      ≈ {show(realWd.mm, 0)} mm
+      {/* Engine đã làm tròn LÊN (1 mm, chụp cận 0,1 mm) — hiện đúng số đó, không làm tròn lại. */}
+      ≈ {show(realWd.mm, 1)} mm
       {delta !== null && Math.round(delta) !== 0 ? <div className={NOTE_CLASS}>{t('realWdDelta', { delta: `${delta > 0 ? '+' : '−'}${show(Math.abs(delta), 0)}` })}</div> : null}
       {delta !== null && Math.round(delta) === 0 ? <div className={NOTE_CLASS}>{t('realWdSame')}</div> : null}
       {realWd.belowModMm !== null ? <div className="text-xs font-medium text-red-700 dark:text-red-400">{t('realWdBelowMod', { mod: show(realWd.belowModMm, 0) })}</div> : null}

@@ -166,6 +166,30 @@ test('telecentric: lọc theo loại, kiểm WD trong dải, β cố định', (
   assert.equal(far.checks.find((k) => k.key === 'workingDistance')!.status, 'fail');
 });
 
+test('telecentric (chốt 2026-10-29 Q2, Q3): WD lệch trong ±2 % → cảnh báo; F# ≤ 1,5 × F#max → cảnh báo', () => {
+  // Kho chỉ ghi MỘT WD (110 / 110): 110 đạt; 112 (+1,8 %) cảnh báo; 113 (+2,7 %) loại
+  const tc = lens({ lens_type: 'telecentric', focal_length_mm: null, magnification: 0.1, wd_min_mm: 110, wd_max_mm: 110, f_number_min: 6.5, image_circle: '2/3' }, 'tc110');
+  const at = (wd: number) => selectLenses({ ...INPUT, workingDistanceMm: wd, fovWidthMm: 60, fovHeightMm: 50, lensKind: 'telecentric' }, [tc]).candidates[0];
+  const wdCheck = (wd: number) => at(wd).checks.find((k) => k.key === 'workingDistance')!;
+  assert.equal(wdCheck(110).status, 'pass');
+  assert.deepEqual([wdCheck(112).status, wdCheck(112).noteKey], ['warn', 'wdNearNominal']);
+  assert.deepEqual([wdCheck(113).status, wdCheck(113).noteKey], ['fail', 'wdOutOfRange']);
+  assert.equal(wdCheck(107.9).status, 'warn', '−1,9 %');
+  // F#max 5,14 (pitch 3,45 µm): F/6,5 = 1,26× → cảnh báo; F/8 = 1,56× → loại (test trên)
+  const diff = at(110).checks.find((k) => k.key === 'diffraction')!;
+  assert.deepEqual([diff.status, diff.noteKey], ['warn', 'diffractionTeleWarn']);
+  assert.equal(at(110).status, 'warn');
+  // Ống thường không có nấc cảnh báo: F/2,8 ở pitch 1,1 µm (F#max ≈ 1,6) vẫn loại
+  const small: ConfigCamera = { ...CAMERA, widthPx: 4000, heightPx: 3000, pixelSizeUm: 1.1, sensorFormat: null };
+  const f = selectLenses({ ...INPUT, camera: small }, [lens({ focal_length_mm: 16, f_number_min: 2.8 })]).candidates[0];
+  assert.equal(f.checks.find((k) => k.key === 'diffraction')!.status, 'fail');
+  // Ngưỡng sửa qua admin: dung sai 0 → 112 loại; nhiễu xạ 1,2× → F/6,5 loại
+  const strict = { ...DEFAULT_ENGINE_PARAMS, telecentricWdTolerance: 0, telecentricDiffractionTolerance: 1.2 };
+  const s = selectLenses({ ...INPUT, workingDistanceMm: 112, fovWidthMm: 60, fovHeightMm: 50, lensKind: 'telecentric' }, [tc], strict).candidates[0];
+  assert.equal(s.checks.find((k) => k.key === 'workingDistance')!.status, 'fail');
+  assert.equal(s.checks.find((k) => k.key === 'diffraction')!.status, 'fail');
+});
+
 test('ống chưa khai tiêu cự: không được xếp đạt', () => {
   const c = selectLenses(INPUT, [lens({ focal_length_mm: null })]).candidates[0];
   assert.equal(c.status, 'info');
@@ -444,24 +468,34 @@ test('[OPT-012] WD thật: khoảng cách để ống vừa khít vùng nhìn, c
   const l8 = lens({ focal_length_mm: 8, wd_min_mm: 200 }, 'wd8');
   const { candidates } = selectLenses(INPUT, [l16, l25, l8]);
   const real = (model: string) => candidates.find((c) => c.component.model === model)!.realWd!;
-  // 16 mm: 16 ÷ 0,070656 = 226,4 → gần hơn WD 300 là 73,6 mm
+  // 16 mm: 16 ÷ 0,070656 = 226,45 → làm tròn LÊN 227 (Q1 2026-10-29) → gần hơn WD 300 là 73 mm
   const r16 = real('wd16');
   assert.equal(r16.kind, 'focal');
   if (r16.kind === 'focal') {
-    close(r16.mm, 226.4, 0.1, 'WD thật 16');
-    close(r16.deltaMm, -73.6, 0.1, 'chênh 16');
+    assert.equal(r16.mm, 227, 'WD thật 16');
+    close(r16.deltaMm, -73, 1e-9, 'chênh 16');
     assert.equal(r16.belowModMm, null);
   }
-  // 25 mm: 25 ÷ 0,070656 = 353,8 → xa hơn 53,8 mm (ống này bị loại ở WD 300 nhưng WD thật vẫn hiện)
+  // 25 mm: 25 ÷ 0,070656 = 353,83 → 354, xa hơn 54 mm (ống này bị loại ở WD 300 nhưng WD thật vẫn hiện)
   const r25 = real('wd25');
-  if (r25.kind === 'focal') close(r25.deltaMm, 53.8, 0.1, 'chênh 25');
+  if (r25.kind === 'focal') close(r25.deltaMm, 54, 1e-9, 'chênh 25');
   // 8 mm: 113,2 mm < MOD 200 → báo dưới MOD
   const r8 = real('wd8');
   if (r8.kind === 'focal') assert.equal(r8.belowModMm, 200);
   // Không nhập WD: vẫn có WD thật, không có chênh
   const inputNoWd = { ...INPUT, workingDistanceMm: null };
   const noWd = evaluateLens(inputNoWd, lensNeed(INPUT)!, l16).realWd!;
-  assert.ok(noWd.kind === 'focal' && noWd.deltaMm === null && Math.abs(noWd.mm - 226.4) < 0.1);
+  assert.ok(noWd.kind === 'focal' && noWd.deltaMm === null && noWd.mm === 227);
+  // Nhập đúng WD thật đang hiện → ống phủ được vùng nhìn (làm tròn xuống 226 thì hụt — kiểm tra tự động F1)
+  const at = { ...INPUT, workingDistanceMm: 227 };
+  assert.ok(evaluateLens(at, lensNeed(at)!, l16).checks.filter((c) => c.key === 'fov').every((c) => c.status === 'pass'), 'đặt đúng WD thật');
+  const below = { ...INPUT, workingDistanceMm: 226 };
+  assert.equal(evaluateLens(below, lensNeed(below)!, l16).checks.find((c) => c.key === 'fov')!.noteKey, 'fovTooSmall');
+  // Chụp cận (WD − sF < 50 mm): bước 0,1 mm
+  const { roundUpWd } = await import('../src/lib/vision/lensSelector');
+  assert.equal(roundUpWd(240.3), 241);
+  assert.equal(roundUpWd(240), 240);
+  assert.equal(roundUpWd(22.04, 19.4), 22.1);
   // Telecentric: dải WD của hãng
   const tele = lens({ lens_type: 'telecentric', focal_length_mm: null, magnification: 0.1, wd_min_mm: 290, wd_max_mm: 310, image_circle: '2/3' }, 'wdtc');
   const rt = selectLenses({ ...INPUT, fovWidthMm: 60, fovHeightMm: 50, lensKind: 'telecentric' }, [tele]).candidates[0].realWd;

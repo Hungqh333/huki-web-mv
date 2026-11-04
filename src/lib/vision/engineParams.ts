@@ -126,13 +126,15 @@ export const ENGINE_PARAMS = [
   { key: 'pcPsuMaxShare', group: 'pc', default: 0.7, min: 0.3, max: 1, step: 0.05 },
   { key: 'pcCpuPeakW', group: 'pc', default: 219, min: 0, max: 1000, step: 1, unit: 'W' },
   { key: 'pcBaseLoadW', group: 'pc', default: 100, min: 0, max: 1000, step: 5, unit: 'W' },
-  // PC-RAM — RAM cần = đệm ảnh (số khung × MB/khung) + nền Windows/phần mềm + AI + huấn luyện.
+  // PC-RAM — RAM cần = (Windows + phần mềm vision + đệm ảnh + AI + huấn luyện) ÷ mức dùng tối đa.
+  // 2026-11-04 (Q1–Q2): nền 12 → 8 GB vì phần dự phòng đã nằm ở mức dùng tối đa 70%.
   { key: 'pcRamBufferFrames', group: 'pc', default: 20, min: 1, max: 200, step: 1 },
-  { key: 'pcRamBaseGb', group: 'pc', default: 12, min: 0, max: 256, step: 1, unit: 'GB' },
+  { key: 'pcRamBaseGb', group: 'pc', default: 8, min: 0, max: 256, step: 1, unit: 'GB' },
   { key: 'pcRamAiGb', group: 'pc', default: 8, min: 0, max: 256, step: 1, unit: 'GB' },
   { key: 'pcRamTrainGb', group: 'pc', default: 16, min: 0, max: 256, step: 1, unit: 'GB' },
   // 2026-11-04 Q1: camera màu — ảnh đệm sau giải Bayer ra RGB nặng gấp 3 ảnh đơn sắc.
   { key: 'pcRamColorFactor', group: 'pc', default: 3, min: 1, max: 4, step: 0.5, unit: '×' },
+  { key: 'pcRamMaxUse', group: 'pc', default: 0.7, min: 0.4, max: 1, step: 0.05 },
   // PC-RANK — huấn luyện tại máy cần VRAM tối thiểu; ảnh từ cỡ này chạy AI nên dùng cấp D.
   { key: 'pcTrainMinVramGb', group: 'pc', default: 16, min: 1, max: 256, step: 1, unit: 'GB' },
   { key: 'pcLargeImageMp', group: 'pc', default: 20, min: 1, max: 500, step: 1, unit: 'MP' },
@@ -150,6 +152,14 @@ export const ENGINE_PARAMS = [
   { key: 'pcPoePerCameraW', group: 'pc', default: 13, min: 0, max: 100, step: 0.5, unit: 'W' },
   // 2026-11-04 Q3: cổng LAN có sẵn trên máy để cho chức năng khác (PLC, MES, mạng nhà máy) — không cắm camera.
   { key: 'pcLanReservedPorts', group: 'pc', default: 1, min: 0, max: 4, step: 1 },
+  // PC-POWER (2026-11-04 Q1, Q4): công suất bản thân từng card cắm trong máy (ước theo datasheet dòng phổ biến,
+  // chưa gồm PoE / PoCXP cấp cho camera) và nguồn camera USB3 lấy qua cáp USB.
+  { key: 'pcCardGigePoeW', group: 'pc', default: 6, min: 0, max: 100, step: 0.5, unit: 'W' },
+  { key: 'pcCardTenGigeW', group: 'pc', default: 12, min: 0, max: 100, step: 0.5, unit: 'W' },
+  { key: 'pcCardUsbW', group: 'pc', default: 5, min: 0, max: 100, step: 0.5, unit: 'W' },
+  { key: 'pcCardClW', group: 'pc', default: 10, min: 0, max: 100, step: 0.5, unit: 'W' },
+  { key: 'pcCardCxpW', group: 'pc', default: 25, min: 0, max: 100, step: 0.5, unit: 'W' },
+  { key: 'pcUsbBusPowerW', group: 'pc', default: 4.5, min: 0, max: 15, step: 0.5, unit: 'W' },
   // PC-FPS — tô màu bảng fps: dưới ngưỡng thấp đỏ, tới ngưỡng cao vàng, trên nữa xanh.
   { key: 'pcFpsLow', group: 'pc', default: 10, min: 1, max: 1000, step: 1, unit: 'fps' },
   { key: 'pcFpsHigh', group: 'pc', default: 30, min: 1, max: 1000, step: 1, unit: 'fps' },

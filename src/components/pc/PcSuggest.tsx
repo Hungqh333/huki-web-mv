@@ -21,18 +21,22 @@ import type { PcNote, PcSuggestInput, PcSuggestResult } from '@/lib/pc/suggest';
 
 const DEBOUNCE_MS = 250;
 
-type Camera = { id: number; name: string; resolution: PcResolution; color: boolean; bit: number; fps: number; iface: PcInterface; inspectPerSec: number };
+type Camera = { id: number; name: string; resolution: PcResolution; color: boolean; poe: boolean; bit: number; fps: number; iface: PcInterface; inspectPerSec: number };
 type Storage = NonNullable<PcSuggestInput['storage']>;
 
 export type PcSuggestPrefill = { count: number; iface: PcInterface; rate: number | null; gpu: boolean };
 
 /** Mặc định như mẫu đã duyệt: hai camera GigE, AI suy luận, 24/7, không tính lưu ảnh. */
 const DEFAULT_CAMERAS: Omit<Camera, 'id' | 'name'>[] = [
-  { resolution: '2448x2048', color: false, bit: 8, fps: 10, iface: 'GigE', inspectPerSec: 2 },
-  { resolution: '4096x3000', color: false, bit: 8, fps: 5, iface: 'GigE', inspectPerSec: 1 },
+  { resolution: '2448x2048', color: false, poe: true, bit: 8, fps: 10, iface: 'GigE', inspectPerSec: 2 },
+  { resolution: '4096x3000', color: false, poe: true, bit: 8, fps: 5, iface: 'GigE', inspectPerSec: 1 },
 ];
+/** GigE / 2.5G / 5G: mặc định PoE từ card trong máy; giao tiếp khác luôn nguồn ngoài (chốt 2026-11-04). */
+const GIGE_FAMILY = new Set<PcInterface>(['GigE', '2.5GigE', '5GigE']);
 const DEFAULT_STORAGE: Storage = { hoursPerDay: 20, ngPercent: 1, ngDays: 30, ngFormat: 'png', okDays: 7, okEveryN: 10, okFormat: 'jpeg' };
 
+/** GB làm tròn lên 1 chữ số — RAM không bao giờ hiện thấp hơn số tính ra. */
+const gb1 = (gb: number) => (Math.ceil(gb * 10) / 10).toFixed(1);
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, Number.isFinite(value) ? value : min));
 
 const INPUT = 'w-full rounded-md border border-slate-300 bg-white px-2 py-1 text-[13px] dark:border-slate-700 dark:bg-slate-900';
@@ -56,7 +60,7 @@ export function PcSuggest({
   const t = useTranslations('pcVision.suggest');
   const [cameras, setCameras] = useState<Camera[]>(() => {
     const base = prefill
-      ? Array.from({ length: Math.min(prefill.count, 64) }, () => ({ ...DEFAULT_CAMERAS[0], iface: prefill.iface }))
+      ? Array.from({ length: Math.min(prefill.count, 64) }, () => ({ ...DEFAULT_CAMERAS[0], iface: prefill.iface, poe: GIGE_FAMILY.has(prefill.iface) }))
       : DEFAULT_CAMERAS;
     return base.map((c, i) => ({ ...c, id: i, name: '' }));
   });
@@ -74,7 +78,7 @@ export function PcSuggest({
   useEffect(() => {
     const id = ++request.current;
     const input: PcSuggestInput = {
-      cameras: cameras.map(({ resolution, color, bit, fps, iface, inspectPerSec }) => ({ resolution, color, bit, fps: clamp(fps, 0, 100_000), iface, inspectPerSec: clamp(inspectPerSec, 0, 100_000) })),
+      cameras: cameras.map(({ resolution, color, poe, bit, fps, iface, inspectPerSec }) => ({ resolution, color, poe: poe && GIGE_FAMILY.has(iface), bit, fps: clamp(fps, 0, 100_000), iface, inspectPerSec: clamp(inspectPerSec, 0, 100_000) })),
       ai,
       line247,
       // Ô trống / số ngoài khoảng → kẹp lại, để máy chủ không trả "ô nhập chưa hợp lệ" khi đang gõ.
@@ -135,7 +139,7 @@ export function PcSuggest({
           }
         />
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[900px] text-[13px]">
+          <table className="w-full min-w-[1000px] text-[13px]">
             <thead>
               <tr className="bg-slate-50 text-left text-xs font-medium text-slate-500 dark:bg-slate-900/60 dark:text-slate-400">
                 <th className="px-3 py-2">{t('col.name')}</th>
@@ -144,6 +148,7 @@ export function PcSuggest({
                 <th className="px-3 py-2">{t('col.bit')}</th>
                 <th className="px-3 py-2">{t('col.fps')}</th>
                 <th className="px-3 py-2">{t('col.iface')}</th>
+                <th className="px-3 py-2">{t('col.power')}</th>
                 {storageOn ? <th className="px-3 py-2">{t('col.inspect')}</th> : null}
                 <th className="px-3 py-2 text-right">{t('col.bandwidth')}</th>
                 <th className="px-3 py-2 text-right">{t('col.port')}</th>
@@ -186,13 +191,32 @@ export function PcSuggest({
                       <input type="number" min={0} value={cam.fps} onChange={(e) => setCam(cam.id, { fps: Number(e.target.value) })} className={INPUT} />
                     </td>
                     <td className="px-3 py-1.5">
-                      <select value={cam.iface} onChange={(e) => setCam(cam.id, { iface: e.target.value as PcInterface })} className={INPUT}>
+                      <select
+                        value={cam.iface}
+                        // Đổi giao tiếp → nguồn về mặc định: GigE dùng PoE, loại khác nguồn ngoài.
+                        onChange={(e) => {
+                          const iface = e.target.value as PcInterface;
+                          setCam(cam.id, { iface, poe: GIGE_FAMILY.has(iface) });
+                        }}
+                        className={INPUT}
+                      >
                         {PC_INTERFACE_KEYS.map((k) => (
                           <option key={k} value={k}>
                             {PC_INTERFACE_LABEL[k]}
                           </option>
                         ))}
                       </select>
+                    </td>
+                    <td className="px-3 py-1.5">
+                      {GIGE_FAMILY.has(cam.iface) ? (
+                        <select value={cam.poe ? 'poe' : 'external'} onChange={(e) => setCam(cam.id, { poe: e.target.value === 'poe' })} className={INPUT}>
+                          <option value="poe">{t('powerOption.poe')}</option>
+                          <option value="external">{t('powerOption.external')}</option>
+                        </select>
+                      ) : (
+                        // USB3 lấy nguồn qua cáp USB (tính vào nguồn máy); loại khác nguồn ngoài — chốt 2026-11-04.
+                        <span className={`block whitespace-nowrap px-2 py-1 ${PC_INFO_CLASS}`}>{t(cam.iface === 'USB3' ? 'powerOption.usb' : 'powerOption.external')}</span>
+                      )}
                     </td>
                     {storageOn ? (
                       <td className="w-24 px-3 py-1.5">
@@ -281,7 +305,25 @@ export function PcSuggest({
         ) : result ? (
           <div className="grid grid-cols-2 gap-3 px-4 py-4 lg:grid-cols-4">
             <Tile value={`${result.totalMbps.toFixed(0)} MB/s`} label={t('tile.bandwidth')} />
-            <Tile value={`~${Math.ceil(result.ramGb)} GB`} label={t('tile.ram')} />
+            <Tile
+              value={`${gb1(result.ramGb)} GB`}
+              label={
+                <>
+                  {t('tile.ram')}
+                  <br />
+                  {t('tile.ramParts', {
+                    parts: [
+                      t('tile.ramBase', { gb: gb1(result.ram.baseGb) }),
+                      t('tile.ramBuffer', { gb: gb1(result.ram.bufferGb) }),
+                      ...(result.ram.aiGb > 0 ? [t('tile.ramAi', { gb: gb1(result.ram.aiGb) })] : []),
+                      ...(result.ram.trainGb > 0 ? [t('tile.ramTrain', { gb: gb1(result.ram.trainGb) })] : []),
+                    ].join(' + '),
+                    sum: gb1(result.ram.sumGb),
+                    pct: Math.round(result.ram.maxUse * 100),
+                  })}
+                </>
+              }
+            />
             {result.storage ? (
               <Tile
                 value={`${result.storage.totalTb.toFixed(2)} TB`}
@@ -295,6 +337,19 @@ export function PcSuggest({
               />
             ) : null}
             <Tile value={t('tile.slots', { n: result.slots })} label={t('tile.slotsLabel')} />
+            {/* Công suất tổng của cấu hình được gợi ý (thẻ đầu tiên) — chốt 2026-11-04 Q3. */}
+            {fits[0] ? (
+              <Tile
+                value={t('tile.power', { w: Math.round(fits[0].power.loadW * 10) / 10 })}
+                label={t('tile.powerLabel', {
+                  name: configById.get(fits[0].configId ?? '')?.shortName ?? frameById.get(fits[0].frameId)?.slug ?? '',
+                  pct: Math.round(fits[0].power.share * 100),
+                  psu: fits[0].power.psuW,
+                })}
+              />
+            ) : (
+              <Tile value="—" label={t('tile.powerNone')} />
+            )}
           </div>
         ) : null}
       </section>

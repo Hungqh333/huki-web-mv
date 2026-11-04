@@ -1633,6 +1633,7 @@
         "pcRamAiGb": "RAM — extra when running AI (PC-RAM)",
         "pcRamTrainGb": "RAM — extra for on-machine training (PC-RAM)",
         "pcRamColorFactor": "RAM — colour camera buffer vs. mono, times (PC-RAM)",
+        "pcRamMaxUse": "RAM — maximum steady 24/7 use, the rest is headroom (PC-RAM)",
         "pcTrainMinVramGb": "Minimum VRAM for on-machine training (PC-RANK)",
         "pcLargeImageMp": "Images from this size running AI should use tier D (PC-RANK)",
         "pcDiskUsableShare": "Usable share of a drive for images (PC-STORE)",
@@ -1646,6 +1647,12 @@
         "pcCxpLanesPerCard": "CXP lanes per frame grabber (PC-SLOT)",
         "pcPoePerCameraW": "PoE per GigE camera powered from the card (PC-PSU)",
         "pcLanReservedPorts": "Built-in LAN ports kept for the plant network, no cameras (PC-SLOT)",
+        "pcCardGigePoeW": "GigE PoE card power, excluding PoE to cameras (PC-POWER)",
+        "pcCardTenGigeW": "10GigE card power (PC-POWER)",
+        "pcCardUsbW": "USB3 card power (PC-POWER)",
+        "pcCardClW": "CameraLink frame grabber power (PC-POWER)",
+        "pcCardCxpW": "CXP frame grabber power, excluding PoCXP (PC-POWER)",
+        "pcUsbBusPowerW": "Power per USB3 camera drawn over the USB cable (PC-POWER)",
         "pcFpsLow": "fps table — red below this (PC-FPS)",
         "pcFpsHigh": "fps table — green above this (PC-FPS)"
       },
@@ -4150,6 +4157,7 @@
         "resolution": "Resolution",
         "color": "Colour",
         "bit": "Bit",
+        "power": "Power",
         "fps": "fps",
         "iface": "Interface",
         "inspect": "Inspected images/s",
@@ -4160,6 +4168,11 @@
       "colorOption": {
         "mono": "Mono",
         "color": "Colour"
+      },
+      "powerOption": {
+        "poe": "PoE from PC",
+        "external": "External supply",
+        "usb": "Over USB cable"
       },
       "ai": "Run AI?",
       "aiOption": {
@@ -4195,11 +4208,19 @@
       "computing": "Computing…",
       "tile": {
         "bandwidth": "Total bandwidth",
-        "ram": "RAM needed",
+        "ram": "RAM needed (headroom included)",
+        "ramParts": "{parts} = {sum} GB, divided by {pct}% maximum use",
+        "ramBase": "Windows + software {gb}",
+        "ramBuffer": "image buffers {gb}",
+        "ramAi": "AI {gb}",
+        "ramTrain": "training {gb}",
         "storage": "Stored images: NG {ng} + OK {ok} TB",
         "raw": "If all raw images were kept: {raw} TB",
         "slots": "{n} slots",
-        "slotsLabel": "Camera cards needed with every GigE camera on a PoE card (built-in LAN kept for the plant network)"
+        "slotsLabel": "Camera cards needed with every GigE camera on a PoE card (built-in LAN kept for the plant network)",
+        "power": "{w} W",
+        "powerLabel": "Total power of the suggested configuration {name}: {pct}% of the {psu} W PSU. Details on the configuration card",
+        "powerNone": "Total power: no matching configuration yet"
       },
       "fitPanel": "Matching configurations",
       "fitMeta": "smallest sufficient configuration per frame · order: fits → fits with notes → unsuitable",
@@ -4223,8 +4244,8 @@
         "noGpu": "AI needs a discrete GPU, this frame has none",
         "slots": "Needs {need} camera card slots{lan, plural, =0 {} other { (# GigE cameras on spare LAN ports)}}, machine has {have} slots",
         "ports": "Ports and slots OK: needs {need} card slots ({have} free){lan, plural, =0 {} other { + # GigE cameras on spare LAN ports}}",
-        "ram": "RAM needed ~{need}GB → {ram}GB",
-        "ramShort": "RAM needed ~{need}GB, the frame's largest configuration has {max}GB",
+        "ram": "RAM needed {need}GB → {ram}GB",
+        "ramShort": "RAM needed {need}GB, the frame's largest configuration has {max}GB",
         "noConfig": "Frame has no configuration in use",
         "storageData": "Stored images ~{need}TB → capacity ~{cap}TB (data drive)",
         "storageSsd": "Stored images ~{need}TB → capacity ~{cap}TB (image partition on system SSD)",
@@ -4232,7 +4253,8 @@
         "trainVram": "On-machine training: {vram}GB VRAM is likely short, prefer ≥ {min}GB",
         "line247Unknown": "24/7 line: RAM/SSD grade unknown, check first",
         "line247Commercial": "24/7 line with commercial RAM/SSD: only if the customer accepts it in writing",
-        "power": "Peak load ~{load}W = {pct}% of PSU (incl. {poe}W PoE), above {max}%: power the cameras from an external PoE switch",
+        "power": "Total power: peak load {peak}W{cards, plural, =0 {} other { + card {cards}W}}{n, plural, =0 {} other { + PoE # × {w}W}}{usbN, plural, =0 {} other { + USB3 # × {usbW}W}} = {load}W / PSU {psu}W ({pct}%), above {max}%: power cameras from an external PoE switch or choose a frame with a larger PSU",
+        "powerOk": "Total power: peak load {peak}W{cards, plural, =0 {} other { + card {cards}W}}{n, plural, =0 {} other { + PoE # × {w}W}}{usbN, plural, =0 {} other { + USB3 # × {usbW}W}} = {load}W / PSU {psu}W ({pct}%, limit {max}%)",
         "largeImageAi": "Images from {mp}MP running AI: consider tier D",
         "dataDriveC": "Commercial data drive on a 24/7 line: software must not hang when the drive fails or fills, monitor SMART, high-TBW drive (no QLC)"
       }

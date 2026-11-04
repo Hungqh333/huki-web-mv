@@ -1633,6 +1633,7 @@
         "pcRamAiGb": "RAM — cộng thêm khi chạy AI (PC-RAM)",
         "pcRamTrainGb": "RAM — cộng thêm khi huấn luyện tại máy (PC-RAM)",
         "pcRamColorFactor": "RAM — đệm ảnh camera màu gấp mấy lần đơn sắc (PC-RAM)",
+        "pcRamMaxUse": "RAM — mức dùng tối đa khi chạy ổn định 24/7, phần còn lại là dự phòng (PC-RAM)",
         "pcTrainMinVramGb": "VRAM tối thiểu để huấn luyện tại máy (PC-RANK)",
         "pcLargeImageMp": "Ảnh từ cỡ này chạy AI thì nên cấp D (PC-RANK)",
         "pcDiskUsableShare": "Phần ổ dùng được để chứa ảnh (PC-STORE)",
@@ -1646,6 +1647,12 @@
         "pcCxpLanesPerCard": "Số làn CXP mỗi frame grabber (PC-SLOT)",
         "pcPoePerCameraW": "PoE mỗi camera GigE cấp từ card (PC-PSU)",
         "pcLanReservedPorts": "Số cổng LAN có sẵn để cho mạng nhà máy, không cắm camera (PC-SLOT)",
+        "pcCardGigePoeW": "Công suất card GigE PoE, chưa gồm PoE cấp camera (PC-POWER)",
+        "pcCardTenGigeW": "Công suất card 10GigE (PC-POWER)",
+        "pcCardUsbW": "Công suất card USB3 (PC-POWER)",
+        "pcCardClW": "Công suất frame grabber CameraLink (PC-POWER)",
+        "pcCardCxpW": "Công suất frame grabber CXP, chưa gồm PoCXP (PC-POWER)",
+        "pcUsbBusPowerW": "Nguồn mỗi camera USB3 lấy qua cáp USB (PC-POWER)",
         "pcFpsLow": "Bảng fps — dưới mức này tô đỏ (PC-FPS)",
         "pcFpsHigh": "Bảng fps — trên mức này tô xanh (PC-FPS)"
       },
@@ -4150,6 +4157,7 @@
         "resolution": "Độ phân giải",
         "color": "Màu",
         "bit": "Bit",
+        "power": "Nguồn",
         "fps": "fps",
         "iface": "Giao tiếp",
         "inspect": "Ảnh kiểm/giây",
@@ -4160,6 +4168,11 @@
       "colorOption": {
         "mono": "Đơn sắc",
         "color": "Màu"
+      },
+      "powerOption": {
+        "poe": "PoE từ máy",
+        "external": "Nguồn ngoài",
+        "usb": "Qua cáp USB"
       },
       "ai": "Chạy AI?",
       "aiOption": {
@@ -4195,11 +4208,19 @@
       "computing": "Đang tính…",
       "tile": {
         "bandwidth": "Tổng băng thông",
-        "ram": "RAM cần",
+        "ram": "RAM cần (đã gồm dự phòng)",
+        "ramParts": "{parts} = {sum} GB, chia {pct}% dùng tối đa",
+        "ramBase": "Windows + phần mềm {gb}",
+        "ramBuffer": "đệm ảnh {gb}",
+        "ramAi": "AI {gb}",
+        "ramTrain": "huấn luyện {gb}",
         "storage": "Ảnh lưu: NG {ng} + OK {ok} TB",
         "raw": "Nếu lưu hết ảnh thô: {raw} TB",
         "slots": "{n} khe",
-        "slotsLabel": "Card camera cần khi mọi camera GigE qua card PoE (cổng LAN có sẵn để cho mạng nhà máy)"
+        "slotsLabel": "Card camera cần khi mọi camera GigE qua card PoE (cổng LAN có sẵn để cho mạng nhà máy)",
+        "power": "{w} W",
+        "powerLabel": "Công suất tổng của cấu hình gợi ý {name}: {pct}% nguồn {psu} W. Chi tiết ghi trong thẻ cấu hình",
+        "powerNone": "Công suất tổng: chưa có cấu hình phù hợp"
       },
       "fitPanel": "Cấu hình phù hợp",
       "fitMeta": "mỗi khung lấy cấu hình nhỏ nhất đủ dùng · xếp: đạt → có lưu ý → không hợp",
@@ -4223,8 +4244,8 @@
         "noGpu": "Chạy AI cần GPU rời, khung này không có",
         "slots": "Cần {need} khe card camera{lan, plural, =0 {} other { (# camera GigE cắm cổng LAN dư)}}, máy có {have} khe",
         "ports": "Cổng, khe đủ: cần {need} khe card ({have} trống){lan, plural, =0 {} other { + # camera GigE cắm cổng LAN dư}}",
-        "ram": "RAM cần ~{need}GB → {ram}GB",
-        "ramShort": "RAM cần ~{need}GB, cấu hình lớn nhất của khung có {max}GB",
+        "ram": "RAM cần {need}GB → {ram}GB",
+        "ramShort": "RAM cần {need}GB, cấu hình lớn nhất của khung có {max}GB",
         "noConfig": "Khung chưa có cấu hình đang dùng",
         "storageData": "Ảnh lưu ~{need}TB → chứa được ~{cap}TB (ổ dữ liệu)",
         "storageSsd": "Ảnh lưu ~{need}TB → chứa được ~{cap}TB (phân vùng ảnh trên SSD hệ thống)",
@@ -4232,7 +4253,8 @@
         "trainVram": "Huấn luyện tại máy: VRAM {vram}GB dễ thiếu, nên ≥ {min}GB",
         "line247Unknown": "Dây chuyền 24/7: chưa rõ RAM/SSD có phải dòng công nghiệp, kiểm tra trước",
         "line247Commercial": "Dây chuyền 24/7 dùng RAM/SSD dòng thường: chỉ dùng khi khách chấp nhận bằng văn bản",
-        "power": "Tải đỉnh ~{load}W = {pct}% nguồn (có PoE {poe}W), vượt {max}%: cấp PoE bằng switch ngoài",
+        "power": "Công suất tổng: tải đỉnh {peak}W{cards, plural, =0 {} other { + card {cards}W}}{n, plural, =0 {} other { + PoE # × {w}W}}{usbN, plural, =0 {} other { + USB3 # × {usbW}W}} = {load}W / nguồn {psu}W ({pct}%), vượt {max}%: cấp PoE bằng switch PoE ngoài hoặc chọn khung nguồn lớn hơn",
+        "powerOk": "Công suất tổng: tải đỉnh {peak}W{cards, plural, =0 {} other { + card {cards}W}}{n, plural, =0 {} other { + PoE # × {w}W}}{usbN, plural, =0 {} other { + USB3 # × {usbW}W}} = {load}W / nguồn {psu}W ({pct}%, ngưỡng {max}%)",
         "largeImageAi": "Ảnh từ {mp}MP chạy AI: cân nhắc cấp D",
         "dataDriveC": "Ổ dữ liệu dòng C trên dây chuyền 24/7: phần mềm không treo khi ổ lỗi/đầy, theo dõi SMART, ổ TBW cao (không QLC)"
       }

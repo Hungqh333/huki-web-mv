@@ -124,6 +124,11 @@ export const PC_CHECKLIST: ChecklistGroup[] = [
         en: '24h test run at 100% trigger: zero lost frames, no creeping RAM use, CPU/GPU < 85°C',
         required: B,
       },
+      {
+        vi: 'Sau 24h chạy thử: ghi RAM đỉnh (Task Manager → Hiệu suất → Bộ nhớ → Đã cam kết) vào hồ sơ dự án; phải ≤ 70% RAM máy — số này dùng để hiệu chỉnh công thức RAM của tab Gợi ý',
+        en: 'After the 24h test run: record peak RAM (Task Manager → Performance → Memory → Committed) in the project file; must be ≤ 70% of installed RAM — used to calibrate the RAM formula of the Suggest tab',
+        required: B,
+      },
     ],
   },
 ];

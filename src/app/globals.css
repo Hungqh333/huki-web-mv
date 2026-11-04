@@ -22,3 +22,25 @@
  *   chạy song song với các class dark: dùng khắp dự án. Hai cơ chế cùng lúc là
  *   nguồn lỗi khó lần khi ai đó sửa màu sau này.
  */
+
+/*
+ * In checklist PC Vision (tab Checklist ổn định, /cong-cu-may-tinh?tab=checklist).
+ * Chỉ áp khi trang có vùng .pc-print-area — các trang khác in như cũ. Ẩn menu, tab,
+ * chân trang, nút; ép chữ đen nền trắng để giao diện tối không in ra chữ trắng trên giấy.
+ */
+@media print {
+  body:has(.pc-print-area) header,
+  body:has(.pc-print-area) footer,
+  body:has(.pc-print-area) nav,
+  body:has(.pc-print-area) .pc-print-hide,
+  body:has(.pc-print-area) h1 + p {
+    display: none !important;
+  }
+  .pc-print-area,
+  .pc-print-area * {
+    color: #000 !important;
+    background: transparent !important;
+    border-color: #999 !important;
+    box-shadow: none !important;
+  }
+}

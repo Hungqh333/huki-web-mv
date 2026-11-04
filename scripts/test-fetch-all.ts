@@ -4,7 +4,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 import { fetchAllRows } from '../src/lib/components/fetchAll';
 
@@ -41,7 +41,8 @@ test('lỗi ở giữa: trả lỗi kèm phần đã đọc, không lặp vô h�
 });
 
 test('mọi chỗ ĐỌC nhiều dòng kho thiết bị đều đi qua fetchAllRows', () => {
-  const files = execSync('git ls-files src', { encoding: 'utf8' }).split('\n').filter((f) => /\.(ts|tsx)$/.test(f));
+  // File đã xoá nhưng chưa commit vẫn nằm trong git ls-files — bỏ qua.
+  const files = execSync('git ls-files src', { encoding: 'utf8' }).split('\n').filter((f) => /\.(ts|tsx)$/.test(f) && existsSync(f));
   for (const file of files) {
     const text = readFileSync(file, 'utf8');
     if (!text.includes(".from('components')")) continue;

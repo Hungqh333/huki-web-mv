@@ -774,6 +774,155 @@ begin
     'Xoá dự án xoá luôn các revision');
 end $$;
 
+-- =============================================================================
+-- PC VISION (2026-11-03): Member+ xem, Admin thêm / sửa, không xoá; mã do CSDL ghép,
+-- trường tạo mã khoá, mã không cấp lại, mọi thay đổi vào lịch sử.
+-- Dùng khung thử riêng (PN RLS-T…) để không phụ thuộc dữ liệu thật hay seed.
+-- =============================================================================
+
+insert into public.pc_frames (slug, tier, name_vi, chassis_pn, cpu, gpu, vram_gb, psu_w, os, ram_line, ssd_line, card_slots, lan_ports, peak_load_w)
+values
+  ('RLSA', 'A', 'Thử A', 'RLS-T1', 'I5-12400', '0', 0, 250, 'W11P', '?', '?', 0, 1, 120),
+  ('RLSB', 'B', 'Thử B', 'RLS-T2-0001', 'I7-14700', '0', 0, 650, 'W11P', 'I', 'I', 3, 1, 330),
+  ('RLSD', 'D', 'Thử D', 'RLS-T2-0001', 'I9-14900', '5080', 16, 1300, 'W11P', 'I', 'I', 2, 1, 680);
+insert into public.pc_configs (frame_id, short_name, ram_gb, ssd_gb, data_kind, data_gb, data_line, code)
+select f.id, v.n, v.r, v.s, v.k, v.g, v.l, 'gõ tay bị bỏ qua'
+  from (values ('RLSA', 'A1', 16, 256, null, null, null), ('RLSB', 'B1', 16, 512, null, null, null),
+               ('RLSB', 'B2', 32, 512, 'D', 1024, 'C'), ('RLSD', 'D3', 128, 1024, 'D', 2048, 'C'))
+       as v (slug, n, r, s, k, g, l)
+  join public.pc_frames f on f.slug = v.slug;
+
+do $$
+begin
+  perform pg_temp.assert_eq((select count(*) from public.pc_configs where code in (
+    'RLS-T1-I5-12400-G0-P250-R16?-S256?-D0-W11P',
+    'RLS-T2-0001-I7-14700-G0-P650-R16I-S512I-D0-W11P',
+    'RLS-T2-0001-I7-14700-G0-P650-R32I-S512I-D1TC-W11P',
+    'RLS-T2-0001-I9-14900-G5080V16-P1300-R128I-S1TI-D2TC-W11P')), 4, 'Mã PC do CSDL ghép đúng quy tắc, bỏ qua mã gõ tay');
+  perform set_config('rls_test.pc_frames', (select count(*) from public.pc_frames)::text, true);
+  perform set_config('rls_test.pc_configs', (select count(*) from public.pc_configs)::text, true);
+end $$;
+
+-- --- REGISTERED: không thấy gì --------------------------------------------------
+select set_config('request.jwt.claims', '{"sub":"aaaaaaaa-0000-4000-8000-000000000001","role":"authenticated"}', true);
+set local role authenticated;
+
+do $$
+begin
+  perform pg_temp.assert_eq((select count(*) from public.pc_frames), 0, 'Registered KHÔNG thấy khung PC');
+  perform pg_temp.assert_eq((select count(*) from public.pc_configs), 0, 'Registered KHÔNG thấy cấu hình PC');
+end $$;
+
+-- --- MEMBER: xem được, không ghi được, không thấy lịch sử ----------------------
+reset role;
+select set_config('request.jwt.claims', '{"sub":"aaaaaaaa-0000-4000-8000-000000000002","role":"authenticated"}', true);
+set local role authenticated;
+
+do $$
+begin
+  perform pg_temp.assert_eq((select count(*) from public.pc_frames), current_setting('rls_test.pc_frames')::bigint, 'Member thấy mọi khung PC');
+  perform pg_temp.assert_eq((select count(*) from public.pc_configs), current_setting('rls_test.pc_configs')::bigint, 'Member thấy mọi cấu hình PC');
+  perform pg_temp.assert_eq((select count(*) from public.pc_change_log), 0, 'Member KHÔNG thấy lịch sử PC');
+  perform pg_temp.assert_eq((select count(*) from public.pc_issued_codes), 0, 'Member KHÔNG thấy danh sách mã đã cấp');
+  update public.pc_configs set short_name = 'HACK' where code like 'RLS-T%';
+  perform pg_temp.assert_eq((select count(*) from public.pc_configs where short_name = 'HACK'), 0, 'Member không sửa được cấu hình PC');
+  begin
+    insert into public.pc_configs (frame_id, short_name, ram_gb, ssd_gb, code)
+      values ((select id from public.pc_frames where slug = 'RLSB'), 'HACK', 128, 512, '');
+    raise exception 'FAIL: Member ghi thẳng được pc_configs';
+  exception when insufficient_privilege then
+    raise notice 'PASS: Member bị chặn ghi pc_configs';
+  end;
+  begin
+    perform public.pc_add_config(
+      (select to_jsonb(f) from public.pc_frames f where slug = 'RLSB'),
+      '{"short_name":"HACK","ram_gb":128,"ssd_gb":512}'::jsonb);
+    raise exception 'FAIL: Member thêm được cấu hình PC';
+  exception when insufficient_privilege then
+    raise notice 'PASS: Member bị chặn thêm cấu hình PC';
+  end;
+end $$;
+
+-- --- ADMIN: thêm, sửa phần cho phép; trường tạo mã khoá; không xoá ------------
+reset role;
+select set_config('request.jwt.claims', '{"sub":"aaaaaaaa-0000-4000-8000-000000000004","role":"authenticated"}', true);
+set local role authenticated;
+
+do $$
+declare
+  v_frame jsonb := (select to_jsonb(f) from public.pc_frames f where slug = 'RLSB');
+  v_code text;
+begin
+  v_code := public.pc_add_config(v_frame, '{"short_name":"B4","ram_gb":128,"ssd_gb":1024,"data_kind":"H","data_gb":4096,"data_line":"C"}'::jsonb);
+  if v_code <> 'RLS-T2-0001-I7-14700-G0-P650-R128I-S1TI-H4TC-W11P' then
+    raise exception 'FAIL: mã cấu hình mới sai: %', v_code;
+  end if;
+  raise notice 'PASS: Admin thêm cấu hình vào khung có sẵn, mã ghép đúng';
+
+  -- Khung mới: thêm cùng cấu hình trong một lần gọi.
+  v_code := public.pc_add_config(
+    v_frame || '{"gpu":"5060TI","vram_gb":16,"psu_w":850,"tier":"C","name_vi":"AI 5060 Ti","card_slots":2,"lan_ports":1,"peak_load_w":500}'::jsonb,
+    '{"short_name":"X1","ram_gb":32,"ssd_gb":1024}'::jsonb);
+  if v_code <> 'RLS-T2-0001-I7-14700-G5060TIV16-P850-R32I-S1TI-D0-W11P' then
+    raise exception 'FAIL: mã cấu hình khung mới sai: %', v_code;
+  end if;
+  perform pg_temp.assert_eq((select count(*) from public.pc_frames), current_setting('rls_test.pc_frames')::bigint + 1, 'Admin thêm khung mới kèm cấu hình');
+
+  begin
+    perform public.pc_add_config(v_frame, '{"short_name":"B2bis","ram_gb":32,"ssd_gb":512,"data_kind":"D","data_gb":1024,"data_line":"C"}'::jsonb);
+    raise exception 'FAIL: cấp trùng mã B2';
+  exception when unique_violation then
+    raise notice 'PASS: chặn trùng mã cấu hình PC';
+  end;
+
+  begin
+    update public.pc_configs set ram_gb = 64 where code = 'RLS-T2-0001-I7-14700-G0-P650-R16I-S512I-D0-W11P';
+    raise exception 'FAIL: sửa được RAM của cấu hình đã cấp mã';
+  exception when object_not_in_prerequisite_state then
+    raise notice 'PASS: trường tạo mã của cấu hình đã khoá';
+  end;
+  begin
+    update public.pc_frames set psu_w = 1000 where slug = 'RLSB';
+    raise exception 'FAIL: sửa được nguồn của khung';
+  exception when object_not_in_prerequisite_state then
+    raise notice 'PASS: phần cố định của khung đã khoá';
+  end;
+  begin
+    update public.pc_frames set ram_line = 'C' where slug = 'RLSB';
+    raise exception 'FAIL: đổi được dòng RAM I → C của khung';
+  exception when object_not_in_prerequisite_state then
+    raise notice 'PASS: dòng RAM/SSD đã chốt không đổi được';
+  end;
+
+  update public.pc_configs set short_name = 'B1x', status = 'retired' where code = 'RLS-T2-0001-I7-14700-G0-P650-R16I-S512I-D0-W11P';
+  perform pg_temp.assert_eq((select count(*) from public.pc_configs where short_name = 'B1x' and status = 'retired'), 1,
+    'Admin đổi tên ngắn và trạng thái cấu hình');
+
+  -- Khung chưa rõ dòng: được đổi '?' → I; mã A1 ghép lại, mã cũ vẫn trong danh sách đã cấp.
+  update public.pc_frames set ram_line = 'I', ssd_line = 'I' where slug = 'RLSA';
+  perform pg_temp.assert_eq((select count(*) from public.pc_configs where code = 'RLS-T1-I5-12400-G0-P250-R16I-S256I-D0-W11P'), 1,
+    'Đổi dòng ? → I ghép lại mã cấu hình của khung');
+  perform pg_temp.assert_eq((select count(*) from public.pc_issued_codes where code = 'RLS-T1-I5-12400-G0-P250-R16?-S256?-D0-W11P'), 1,
+    'Mã cũ có ? vẫn giữ trong danh sách đã cấp');
+
+  begin
+    delete from public.pc_configs where short_name = 'B1x';
+    raise exception 'FAIL: Admin xoá cứng được cấu hình PC';
+  exception when insufficient_privilege then
+    raise notice 'PASS: không xoá cứng được cấu hình PC';
+  end;
+
+  perform pg_temp.assert_eq((select count(*) from public.pc_change_log
+    where actor_id = 'aaaaaaaa-0000-4000-8000-000000000004'), 6,
+    'Lịch sử PC ghi đủ thay đổi của Admin (2 thêm cấu hình, 1 khung mới, 1 sửa cấu hình, 1 sửa khung, 1 ghép lại mã)');
+  perform pg_temp.assert_eq((select count(*) from public.pc_change_log
+    where actor_id = 'aaaaaaaa-0000-4000-8000-000000000004' and action = 'update' and before is not null and after is not null), 3,
+    'Lịch sử PC giữ giá trị trước / sau');
+end $$;
+
+reset role;
+select set_config('request.jwt.claims', '', true);
+
 do $$ begin raise notice '=== TẤT CẢ KIỂM TRA RLS ĐÃ QUA ==='; end $$;
 
 -- Không ghi gì vào database.

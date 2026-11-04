@@ -14,7 +14,7 @@
 
 import { DEFAULT_ENGINE_TABLES, engineTablesFingerprint, type EngineTables } from './engineTables';
 
-export const ENGINE_PARAM_GROUPS = ['levels', 'ranking', 'optics', 'throughput', 'budget', 'equipment', 'detection', 'materials', 'interfaces'] as const;
+export const ENGINE_PARAM_GROUPS = ['levels', 'ranking', 'optics', 'throughput', 'budget', 'equipment', 'detection', 'materials', 'interfaces', 'pc'] as const;
 export type EngineParamGroup = (typeof ENGINE_PARAM_GROUPS)[number];
 /** Nhóm là hằng số vật lý / quy ước đo / thông số chuẩn — mở theo chốt 2026-10-16, trang admin cảnh báo đỏ. */
 export const SENSITIVE_GROUPS: readonly EngineParamGroup[] = ['detection', 'materials', 'interfaces'];
@@ -112,6 +112,7 @@ export const ENGINE_PARAMS = [
   { key: 'alphaPlastic', group: 'materials', default: 120, min: 1, max: 300, step: 0.5, unit: 'µm/(m·K)' },
   // THR-001/002 — băng thông thực dụng từng chuẩn giao tiếp, MB/s (components/specs.ts INTERFACE_BANDWIDTH).
   { key: 'bwGigE', group: 'interfaces', default: 110, min: 1, max: 20000, step: 1, unit: 'MB/s' },
+  { key: 'bwTwoFiveGigE', group: 'interfaces', default: 280, min: 1, max: 20000, step: 1, unit: 'MB/s' },
   { key: 'bwUsbThree', group: 'interfaces', default: 350, min: 1, max: 20000, step: 1, unit: 'MB/s' },
   { key: 'bwFiveGigE', group: 'interfaces', default: 550, min: 1, max: 20000, step: 1, unit: 'MB/s' },
   { key: 'bwTenGigE', group: 'interfaces', default: 1100, min: 1, max: 20000, step: 1, unit: 'MB/s' },
@@ -121,11 +122,39 @@ export const ENGINE_PARAMS = [
   { key: 'bwCameraLinkMedium', group: 'interfaces', default: 510, min: 1, max: 20000, step: 1, unit: 'MB/s' },
   { key: 'bwCameraLinkFull', group: 'interfaces', default: 680, min: 1, max: 20000, step: 1, unit: 'MB/s' },
   { key: 'bwCameraLinkDeca', group: 'interfaces', default: 850, min: 1, max: 20000, step: 1, unit: 'MB/s' },
+  // PC-PSU (PC Vision, chốt 2026-11-03) — ước tải đỉnh khung PC mới; tải đỉnh + PoE ≤ tỉ lệ này của nguồn.
+  { key: 'pcPsuMaxShare', group: 'pc', default: 0.7, min: 0.3, max: 1, step: 0.05 },
+  { key: 'pcCpuPeakW', group: 'pc', default: 219, min: 0, max: 1000, step: 1, unit: 'W' },
+  { key: 'pcBaseLoadW', group: 'pc', default: 100, min: 0, max: 1000, step: 5, unit: 'W' },
+  // PC-RAM — RAM cần = đệm ảnh (số khung × MB/khung) + nền Windows/phần mềm + AI + huấn luyện.
+  { key: 'pcRamBufferFrames', group: 'pc', default: 20, min: 1, max: 200, step: 1 },
+  { key: 'pcRamBaseGb', group: 'pc', default: 12, min: 0, max: 256, step: 1, unit: 'GB' },
+  { key: 'pcRamAiGb', group: 'pc', default: 8, min: 0, max: 256, step: 1, unit: 'GB' },
+  { key: 'pcRamTrainGb', group: 'pc', default: 16, min: 0, max: 256, step: 1, unit: 'GB' },
+  // PC-RANK — huấn luyện tại máy cần VRAM tối thiểu; ảnh từ cỡ này chạy AI nên dùng cấp D.
+  { key: 'pcTrainMinVramGb', group: 'pc', default: 16, min: 1, max: 256, step: 1, unit: 'GB' },
+  { key: 'pcLargeImageMp', group: 'pc', default: 20, min: 1, max: 500, step: 1, unit: 'MP' },
+  // PC-STORE — dung lượng lưu ảnh và sức chứa của cấu hình.
+  { key: 'pcDiskUsableShare', group: 'pc', default: 0.9, min: 0.5, max: 1, step: 0.05 },
+  { key: 'pcSystemReserveGb', group: 'pc', default: 150, min: 0, max: 2000, step: 10, unit: 'GB' },
+  { key: 'pcPngRatio', group: 'pc', default: 0.5, min: 0.01, max: 1, step: 0.01, unit: '×' },
+  { key: 'pcJpegRatio', group: 'pc', default: 0.1, min: 0.01, max: 1, step: 0.01, unit: '×' },
+  // PC-SLOT — số cổng mỗi card / frame grabber; PoE mỗi camera GigE cấp từ card trong máy.
+  { key: 'pcGigePortsPerCard', group: 'pc', default: 4, min: 1, max: 16, step: 1 },
+  { key: 'pcTenGigePortsPerCard', group: 'pc', default: 2, min: 1, max: 16, step: 1 },
+  { key: 'pcUsbPortsPerCard', group: 'pc', default: 4, min: 1, max: 16, step: 1 },
+  { key: 'pcClBasePerGrabber', group: 'pc', default: 2, min: 1, max: 8, step: 1 },
+  { key: 'pcCxpLanesPerCard', group: 'pc', default: 4, min: 1, max: 16, step: 1 },
+  { key: 'pcPoePerCameraW', group: 'pc', default: 13, min: 0, max: 100, step: 0.5, unit: 'W' },
+  // PC-FPS — tô màu bảng fps: dưới ngưỡng thấp đỏ, tới ngưỡng cao vàng, trên nữa xanh.
+  { key: 'pcFpsLow', group: 'pc', default: 10, min: 1, max: 1000, step: 1, unit: 'fps' },
+  { key: 'pcFpsHigh', group: 'pc', default: 30, min: 1, max: 1000, step: 1, unit: 'fps' },
 ] as const satisfies readonly EngineParamDef[];
 
 /** Khoá chuẩn giao tiếp (INTERFACE_BANDWIDTH) → khoá ngưỡng. Khoá database chỉ nhận chữ cái. */
 export const BANDWIDTH_PARAM_KEYS = {
   GigE: 'bwGigE',
+  '2.5GigE': 'bwTwoFiveGigE',
   USB3: 'bwUsbThree',
   '5GigE': 'bwFiveGigE',
   '10GigE': 'bwTenGigE',
@@ -152,7 +181,8 @@ export type EngineParamError =
   | { key: EngineParamKey; code: 'levelOrder' }
   | { key: EngineParamKey; code: 'telecentricOrder' }
   | { key: EngineParamKey; code: 'weightsSum'; sum: number }
-  | { key: EngineParamKey; code: 'pxOrder' };
+  | { key: EngineParamKey; code: 'pxOrder' }
+  | { key: EngineParamKey; code: 'fpsOrder' };
 
 const RANKING_KEYS = ENGINE_PARAMS.filter((p) => p.group === 'ranking').map((p) => p.key);
 
@@ -168,6 +198,7 @@ export function validateEngineParams(params: EngineParams): EngineParamError[] {
   if (!(params.telecentricPracticalMaxMm < params.telecentricFeasibleMaxMm)) errors.push({ key: 'telecentricFeasibleMaxMm', code: 'telecentricOrder' });
   if (!(params.pxPerDefectHigh <= params.pxPerDefectMedium)) errors.push({ key: 'pxPerDefectMedium', code: 'pxOrder' });
   if (!(params.pxPerDefectMedium <= params.pxPerDefectLow)) errors.push({ key: 'pxPerDefectLow', code: 'pxOrder' });
+  if (!(params.pcFpsLow < params.pcFpsHigh)) errors.push({ key: 'pcFpsHigh', code: 'fpsOrder' });
   const sum = RANKING_KEYS.reduce((acc, key) => acc + params[key], 0);
   if (Math.abs(sum - 1) > 0.001) errors.push({ key: 'weightResolutionMargin', code: 'weightsSum', sum: Math.round(sum * 1000) / 1000 });
   return errors;

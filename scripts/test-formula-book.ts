@@ -8,7 +8,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 
 import { FORMULA_BOOK, documentedParams, documentedRules } from '../src/lib/formulaBook/book';
 import { ENGINE_PARAMS } from '../src/lib/vision/engineParams';
@@ -63,7 +63,8 @@ test('sổ tay chỉ render ở máy chủ — không file client nào import', 
   const untracked = execSync('git ls-files --others --exclude-standard src', { encoding: 'utf8' })
     .split('\n')
     .filter((f) => /\.tsx?$/.test(f));
-  const offenders = [...new Set([...files, ...untracked])].filter((file) => {
+  // File đã xoá nhưng chưa commit vẫn nằm trong git ls-files — bỏ qua.
+  const offenders = [...new Set([...files, ...untracked])].filter(existsSync).filter((file) => {
     const text = readFileSync(file, 'utf8');
     return /^['"]use client['"]/m.test(text) && text.includes('formulaBook');
   });

@@ -106,6 +106,13 @@ export const BUNDLES = {
       ['PHAN 1/1: MIGRATION — them loai linh kien "converter" (bo nhan tieu cu) vao danh sach hop le', 'supabase/migrations/20261020000001_converter_kind.sql'],
     ],
   },
+  'pc-vision': {
+    out: 'CHAY-BUOC-NAY-PC-VISION.sql',
+    parts: [
+      ['PHAN 1/2: MIGRATION — bang khung + cau hinh PC, ma tu ghep, lich su sua, RLS (Member+ xem, Admin ghi, khong xoa)', 'supabase/migrations/20261103000001_pc_vision.sql'],
+      ['PHAN 2/2: SEED — 6 khung, 13 cau hinh PC de xuat ban dau', 'supabase/seed_pc.sql'],
+    ],
+  },
   projects: {
     out: 'CHAY-BUOC-NAY-DUAN.sql',
     parts: [

@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="vi" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PC Vision</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--app:#F4F6F9;--panel:#FFFFFF;--panel2:#F6F9FB;--panel3:#EFF3F7;--ink:#101826;--ink2:#54626F;--ink3:#8A96A4;--line:#E2E8EE;--line2:#CBD5DF;
+--hieu:#3B3F9E;--hieuBg:#EDEEF9;--red:#CF3328;--redBg:#FCEDEB;--amber:#AE6E05;--amberBg:#FCF3DE;
+--green:#177F53;--greenBg:#E3F4EC;--blue:#2360A8;--blueBg:#E9F0FA;--violet:#6644A4;--violetBg:#F0EAFA;--teal:#0B7269;--tealBg:#E0F1EF}
+:root[data-theme="dark"]{--app:#0E131A;--panel:#161C25;--panel2:#1B222D;--panel3:#212A36;--ink:#E5E9EF;--ink2:#A4AEBB;--ink3:#748190;--line:#28313D;--line2:#3A4551;
+--hieu:#7277E4;--hieuBg:#262A4C;--red:#F2675C;--redBg:#3E1D1B;--amber:#E2A23A;--amberBg:#3A2B12;
+--green:#43BE86;--greenBg:#173326;--blue:#6BA7EF;--blueBg:#1A2C44;--violet:#AA8DE8;--violetBg:#2D2443;--teal:#41B9AD;--tealBg:#123431}
+*{box-sizing:border-box}
+body{margin:0;background:var(--app);color:var(--ink);font:13px/1.45 Inter,system-ui,"Segoe UI",sans-serif}
+.wrap{max-width:1280px;margin:0 auto;padding:18px 16px 60px}
+.top{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.top h1{font-size:18px;margin:0 10px 0 0}
+.pa{border:1px solid var(--line2);background:var(--panel);color:var(--ink);border-radius:8px;padding:7px 12px;cursor:pointer;font:inherit}
+.pa.on{background:var(--hieu);border-color:var(--hieu);color:#fff;font-weight:600}
+.pa.nho{padding:4px 9px;font-size:12px}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);margin-bottom:14px;overflow-x:auto}
+.tab{padding:9px 14px;cursor:pointer;color:var(--ink2);border-bottom:2px solid transparent;white-space:nowrap}
+.tab.on{color:var(--ink);border-bottom-color:var(--hieu);font-weight:600}
+.giai{color:var(--ink2);margin:0 0 12px;max-width:980px}
+.giai b{color:var(--ink)}
+.mono{font-family:ui-monospace,Consolas,monospace;font-size:12px}
+.p{display:inline-block;font-size:11px;font-weight:500;border-radius:99px;padding:1px 8px;white-space:nowrap;line-height:1.5}
+.p-amb{background:var(--amberBg);color:var(--amber)}.p-red{background:var(--redBg);color:var(--red)}.p-vio{background:var(--violetBg);color:var(--violet)}
+.p-teal{background:var(--tealBg);color:var(--teal)}.p-gr{background:var(--panel3);color:var(--ink2)}.p-blue{background:var(--blueBg);color:var(--blue)}
+.p-green{background:var(--greenBg);color:var(--green)}
+.k{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.k + .k{margin-top:12px}
+.kh{padding:10px 14px;border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.kh h3{margin:0;font-size:14px}
+.kb{padding:12px 14px}
+table{width:100%;border-collapse:collapse}
+th{font-size:11px;font-weight:500;color:var(--ink3);text-align:left;padding:8px 10px;background:var(--panel2);border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:7px 10px;border-top:1px solid var(--line);vertical-align:top}
+.mo{color:var(--ink3)}
+.cap{font-weight:600;white-space:nowrap}
+.chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.f-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.f-row > div{display:flex;flex-direction:column;justify-content:flex-end}
+label{display:block;font-size:11px;color:var(--ink3);margin-bottom:3px}
+input,select{width:100%;background:var(--panel2);border:1px solid var(--line2);color:var(--ink);border-radius:7px;padding:6px 8px;font:inherit}
+input[type=checkbox]{width:auto}
+.ma-xem{font-family:ui-monospace,Consolas,monospace;font-size:14px;font-weight:600;background:var(--hieuBg);color:var(--ink);padding:10px 12px;border-radius:8px;word-break:break-all}
+.loi{color:var(--red);font-size:12px;margin-top:6px}
+.ok{color:var(--green)}
+.so{font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.tong{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px}
+.o-tong{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:9px 12px}
+.o-tong .n{font-size:20px;font-weight:600}
+.o-tong .t{font-size:11px;color:var(--ink3)}
+.goi{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px;border-left:4px solid var(--line2);background:var(--panel)}
+.goi.dat{border-left-color:var(--green)}
+.goi.can{border-left-color:var(--amber)}
+.goi.khong{border-left-color:var(--red);opacity:.75}
+.goi .h{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.goi ul{margin:6px 0 0;padding-left:18px}
+.goi li{margin:2px 0}
+.c-xanh{background:var(--greenBg)}.c-vang{background:var(--amberBg)}.c-do{background:var(--redBg)}
+.ck td:first-child{width:28px}
+.nhom td{background:var(--panel3);font-weight:600}
+.phu{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:flex-start;justify-content:center;padding:40px 12px;overflow:auto}
+.phu.mo-ra{display:flex}
+.hop{background:var(--panel);border:1px solid var(--line2);border-radius:12px;max-width:820px;width:100%;padding:16px}
+.hop h3{margin:0 0 4px}
+.note{font-size:12px;color:var(--ink3);margin-top:10px}
+.an-nho{}
+.cap-o{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 5px;margin-right:7px;border-radius:5px;background:var(--hieu);color:#fff;font-size:11px;font-weight:600;vertical-align:1px}
+.chk{display:flex;flex-wrap:wrap;gap:4px 14px}
+.chk label{display:inline-flex;gap:5px;align-items:center;font-size:12px;color:var(--ink);margin:0;cursor:pointer}
+@media (max-width:760px){.an-nho{display:none}td,th{padding:6px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <h1>PC Vision</h1>
+    <span class="mo">Mẫu duyệt — 13 cấu hình trong 6 khung</span>
+    <span style="flex:1"></span>
+    <span class="mo">Xem như:</span>
+    <button class="pa nho on" data-ai="tp">Anh (được sửa)</button>
+    <button class="pa nho" data-ai="ks">Kỹ sư (chỉ xem)</button>
+    <button class="pa nho" id="nen">Nền sáng</button>
+  </div>
+  <div class="tabs" id="tabs">
+    <div class="tab on" data-t="dm">Danh mục cấu hình</div>
+    <div class="tab" data-t="gy">Gợi ý cấu hình</div>
+    <div class="tab" data-t="fps">Bảng fps</div>
+    <div class="tab" data-t="ck">Checklist ổn định</div>
+  </div>
+  <div id="noi"></div>
+</div>
+
+<div class="phu" id="phu"><div class="hop" id="hop"></div></div>
+
+<script>
+// ------------------------------------------------------------------ du lieu mau
+//  KH = khung (phan co dinh + nang luc). CH = cau hinh cu the trong khung, xep tu nho den lon (Goi y lay cai dau tien du dung).
+const PN = "RT-661R-Q670-A10-0001";
+const KH = [
+  {id:"A", cap:"A", ten:"Cơ bản", pn:"EBS-I10", cpu:"I5-12400", gpu:"0", vram:0, p:250, os:"W11P", rd:"?", sd:"?",
+   khe:0, lan:1, tai:120, dung:"Thuật toán cổ điển: đo, đếm, có/không, đọc code", khong:"AI · lắp thêm card mạng", ghi:"Chưa biết RAM/SSD dòng nào — chờ kiểm tra"},
+  {id:"B", cap:"B", ten:"Tiêu chuẩn", pn:PN, cpu:"I7-14700", gpu:"0", vram:0, p:650, os:"W11P", rd:"I", sd:"I",
+   khe:3, lan:1, tai:330, dung:"Cổ điển nhiều cam, ảnh lớn; AI nhẹ chạy CPU nếu chấp nhận chậm", khong:"AI tốc độ cao", ghi:""},
+  {id:"Ct", cap:"C", ten:"AI tiết kiệm", pn:PN, cpu:"I7-14700", gpu:"5070", vram:12, p:1000, os:"W11P", rd:"I", sd:"I",
+   khe:2, lan:1, tai:570, dung:"AI suy luận: phân loại, phân đoạn lỗi, OCR khó", khong:"Nhiều cam cổ điển song song", ghi:""},
+  {id:"C", cap:"C", ten:"AI", pn:PN, cpu:"I9-14900", gpu:"5070", vram:12, p:1000, os:"W11P", rd:"I", sd:"I",
+   khe:2, lan:1, tai:570, dung:"AI suy luận + cổ điển nhiều cam", khong:"Huấn luyện model lớn tại máy", ghi:""},
+  {id:"D", cap:"D", ten:"AI cao", pn:PN, cpu:"I9-14900", gpu:"5080", vram:16, p:1300, os:"W11P", rd:"I", sd:"I",
+   khe:2, lan:1, tai:680, dung:"AI nặng, ảnh 20MP+, line scan, huấn luyện tại máy", khong:"—", ghi:"Card ~2.5 khe: đo thực tế"},
+  {id:"P", cap:"P", ten:"Phụ trợ", pn:"LR-H610M-XA22", cpu:"I5-12400", gpu:"0", vram:0, p:450, os:"W11P", rd:"C", sd:"C",
+   khe:0, lan:0, tai:180, dung:"HMI hiển thị cho smart camera", khong:"Thu ảnh, dây chuyền 24/7", ghi:"Linh kiện dòng thường"},
+];
+const CH = [
+  {kh:"A", ten:"A1", r:16, s:"256", d:"D0", dd:""},
+  {kh:"B", ten:"B1", r:16, s:"512", d:"D0", dd:""},  {kh:"B", ten:"B2", r:32, s:"512", d:"D1T", dd:"C"}, {kh:"B", ten:"B3", r:64, s:"512", d:"D2T", dd:"C"},
+  {kh:"Ct", ten:"Ct1", r:32, s:"1T", d:"D0", dd:""}, {kh:"Ct", ten:"Ct2", r:32, s:"512", d:"D2T", dd:"C"},
+  {kh:"C", ten:"C1", r:32, s:"1T", d:"D0", dd:""},   {kh:"C", ten:"C2", r:64, s:"1T", d:"D0", dd:""},    {kh:"C", ten:"C3", r:64, s:"512", d:"D2T", dd:"C"},
+  {kh:"D", ten:"D1", r:64, s:"1T", d:"D0", dd:""},   {kh:"D", ten:"D2", r:64, s:"512", d:"D4T", dd:"C"}, {kh:"D", ten:"D3", r:128, s:"1T", d:"D2T", dd:"C"},
+  {kh:"P", ten:"P1", r:16, s:"256", d:"D0", dd:""},
+];
+const khOf = (c) => KH.find(k => k.id === c.kh);
+const tenKhung = (k) => `<span class="cap-o">${k.cap}</span>${k.ten}`;   // o chu cap + ten khung
+const G_ = (k) => "G" + (k.gpu === "0" ? "0" : k.gpu.toUpperCase() + "V" + k.vram);
+const dau = (k) => [k.pn, k.cpu, G_(k), "P" + k.p].join("-");                                       // phan co dinh dau ma
+const giua = (k, c) => ["R" + c.r + k.rd, "S" + c.s + k.sd, c.d === "D0" ? "D0" : c.d + c.dd].join("-"); // RAM-SSD-o du lieu
+const ma = (c, k = khOf(c)) => [dau(k), giua(k, c), k.os].join("-");
+const RX = /^[A-Z0-9][A-Z0-9-]*-(I[3579]|U[579]|RZ[3579])-\d{3,5}[A-Z]{0,2}-G(0|\d{4}(TI|S)?V\d{1,2})-P\d{3,4}-R\d{1,3}[IC]-S(\d{3}|\d{1,2}T)[IC]-(D0|[DH](\d{3}|\d{1,2}T)[IC])-(W11[PL]|LNX|NOS)$/;
+const gb = (s) => s.endsWith("T") ? parseFloat(s) * 1024 : parseFloat(s);
+const tenO = (s) => s.endsWith("T") ? s.replace("T", "TB") : s + "GB";
+const dongHang = (k) => k.rd === "I" && k.sd === "I" ? '<span class="p p-green">RAM + SSD công nghiệp</span>'
+  : (k.rd === "?" || k.sd === "?") ? '<span class="p p-amb">Chưa rõ dòng RAM/SSD</span>' : '<span class="p p-red">RAM/SSD dòng thường</span>';
+//  Dung luong anh chua duoc: co o du lieu -> 90% o du lieu; khong co -> phan vung anh tren SSD (90% tru ~150GB cho Windows + phan mem + model)
+const choAnh = (c) => c.d === "D0" ? Math.max(0, gb(c.s) * 0.9 - 150) / 1024 : gb(c.d.slice(1)) / 1024 * 0.9;
+let vaiTro = "tp";
+
+// ------------------------------------------------------------------ tab 1: danh muc
+function veDanhMuc() {
+  const nhom = KH.map(k => {
+    const ds = CH.map((c, i) => ({c, i})).filter(x => x.c.kh === k.id);
+    return `<tr class="nhom"><td colspan="6"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <span>${tenKhung(k)}</span>
+        <span class="p p-gr">${k.cpu.replace("-", " ")}</span>
+        <span class="p ${k.gpu === "0" ? "p-gr" : "p-vio"}">${k.gpu === "0" ? "Không GPU" : "RTX " + k.gpu + " · " + k.vram + "GB"}</span>
+        <span class="p p-gr">Nguồn ${k.p}W</span>
+        <span class="p p-gr">${k.khe === 0 && k.lan === 0 ? "Không thu ảnh" : `${k.lan} LAN + ${k.khe} khe card`}</span>
+        ${dongHang(k)}</div>
+        <div class="mo" style="font-weight:400;font-size:12px;margin-top:3px">Dùng cho: ${k.dung} · Không dùng cho: ${k.khong}${k.ghi ? ` · <span style="color:var(--amber)">${k.ghi}</span>` : ""}</div></td></tr>`
+      + ds.map(({c, i}) => `<tr>
+        <td class="cap" style="padding-left:18px">${c.ten}</td>
+        <td class="mono"><span class="mo">${dau(k)}-</span><b>${giua(k, c)}</b><span class="mo">-${k.os}</span></td>
+        <td class="so">${c.r}GB</td><td class="so">${tenO(c.s)}</td>
+        <td class="so">${c.d === "D0" ? '<span class="mo">—</span>' : tenO(c.d.slice(1)) + ` <span class="mo">(${c.dd})</span>`}</td>
+        <td>${vaiTro === "tp" ? `<button class="pa nho" onclick="moForm(${i})">Sửa</button>` : ""}</td></tr>`).join("");
+  }).join("");
+  return `
+  <p class="giai">Cấu hình chia theo <b>khung</b> (chassis, CPU, GPU, nguồn). Trong mỗi khung có vài cấu hình cụ thể, khác nhau ở phần <b>in đậm</b> của mã: RAM – SSD hệ thống – ổ dữ liệu.
+  Chỉ <b>anh</b> thêm/sửa (máy chủ kiểm tra lại, không chỉ ẩn nút).</p>
+  <div class="k">
+    <div class="kh"><h3>Danh mục cấu hình (${CH.length})</h3><span style="flex:1"></span>
+      <input placeholder="Tìm mã, CPU, GPU…" style="width:220px">
+      <select style="width:auto"><option>Đang dùng</option><option>Ngừng dùng</option><option>Tất cả</option></select>
+      ${vaiTro === "tp" ? '<button class="pa on" onclick="moForm(-1)">+ Thêm cấu hình</button>' : ""}</div>
+    <div style="overflow-x:auto"><table><thead><tr><th style="width:70px">Cấu hình</th><th>Mã</th><th class="so" style="width:70px">RAM</th><th class="so" style="width:90px">SSD hệ thống</th>
+      <th class="so" style="width:100px">Ổ dữ liệu</th><th style="width:60px"></th></tr></thead><tbody>${nhom}</tbody></table></div>
+  </div>
+  <p class="note">RAM luôn 2 thanh cùng lô, chốt lúc đặt hàng. Ổ dữ liệu dòng C (cho phép cả dây chuyền 24/7, kèm điều kiện ở checklist); RAM + SSD hệ thống vẫn dòng I.
+  Cấu hình không dùng nữa → "Ngừng dùng", mã không cấp lại.</p>`;
+}
+
+// ------------------------------------------------------------------ form them/sua cau hinh
+let SUA = -1;
+function moForm(i) {
+  SUA = i;
+  const c = i >= 0 ? {...khOf(CH[i]), ...CH[i]} : {...KH[3], kh:"", ten:"", r:32, s:"512", d:"D1T", dd:"C"};
+  const chon = (id, ds, v) => `<select id="${id}">${ds.map(x => `<option ${String(x) === String(v) ? "selected" : ""}>${x}</option>`).join("")}</select>`;
+  document.getElementById("hop").innerHTML = `
+    <h3>${i >= 0 ? "Sửa cấu hình " + c.ten : "Thêm cấu hình"}</h3>
+    <p class="mo" style="margin:0 0 12px">Chọn từng thành phần — mã tự ghép, không gõ tay. Phần khung trùng khung đã có thì tự xếp vào khung đó. Máy chủ kiểm tra lại mã và chống trùng.</p>
+    <div class="mo" style="font-size:12px;margin-bottom:4px"><b style="color:var(--ink)">Khung</b></div>
+    <div class="f-row">
+      <div><label>PN chassis (đúng như hãng)</label><input id="f-pn" value="${c.pn}" list="ds-pn">
+        <datalist id="ds-pn"><option>${PN}</option><option>EBS-I10</option><option>LR-H610M-XA22</option></datalist></div>
+      <div><label>CPU (dòng-số model)</label><input id="f-cpu" value="${c.cpu}"></div>
+      <div><label>Chip GPU (0 = không có)</label>${chon("f-gpu", ["0", "5060", "5060Ti", "5070", "5070Ti", "5080", "5090", "4070S"], c.gpu)}</div>
+      <div><label>VRAM GB</label>${chon("f-vram", [0, 8, 12, 16, 24, 32], c.vram)}</div>
+      <div><label>Nguồn W</label>${chon("f-p", [250, 450, 500, 650, 850, 1000, 1200, 1300, 1600], c.p)}</div>
+      <div><label>Hệ điều hành</label>${chon("f-os", ["W11P", "W11L", "LNX", "NOS"], c.os)}</div>
+    </div>
+    <div class="mo" style="font-size:12px;margin:12px 0 4px"><b style="color:var(--ink)">RAM – SSD – ổ dữ liệu</b></div>
+    <div class="f-row">
+      <div><label>RAM GB</label>${chon("f-r", [8, 16, 32, 64, 128], c.r)}</div>
+      <div><label>Dòng RAM</label>${chon("f-rd", ["I", "C"], c.rd)}</div>
+      <div><label>SSD hệ thống</label>${chon("f-s", ["256", "512", "1T", "2T"], c.s)}</div>
+      <div><label>Dòng SSD</label>${chon("f-sd", ["I", "C"], c.sd)}</div>
+      <div><label>Ổ dữ liệu</label>${chon("f-d", ["D0", "D512", "D1T", "D2T", "D4T", "H2T", "H4T"], c.d)}</div>
+      <div><label>Dòng ổ dữ liệu</label>${chon("f-dd", ["C", "I"], c.dd || "C")}</div>
+    </div>
+    <div style="margin:14px 0 4px" class="mo">Mã sẽ cấp</div>
+    <div class="ma-xem" id="f-ma"></div><div id="f-loi"></div>
+    <div class="f-row" style="margin-top:14px">
+      <div><label>Tên ngắn</label><input value="${c.ten}" placeholder="vd C4"></div>
+    </div>
+    <div id="f-khmoi" style="margin-top:10px"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
+      <button class="pa" onclick="dongForm()">Huỷ</button><button class="pa on" onclick="dongForm()">Lưu</button></div>`;
+  document.querySelectorAll("#hop input,#hop select").forEach(e => e.oninput = tinhMaForm);
+  tinhMaForm();
+  document.getElementById("phu").classList.add("mo-ra");
+}
+function tinhMaForm() {
+  const v = (id) => document.getElementById(id).value;
+  const k = {pn:v("f-pn").trim().toUpperCase(), cpu:v("f-cpu").trim().toUpperCase(), gpu:v("f-gpu"), vram:v("f-vram"), p:v("f-p"), os:v("f-os"), rd:v("f-rd"), sd:v("f-sd")};
+  const c = {r:v("f-r"), s:v("f-s"), d:v("f-d"), dd:v("f-dd")};
+  const m = ma(c, k);
+  document.getElementById("f-ma").textContent = m;
+  const loi = [];
+  if (!RX.test(m)) loi.push("Mã chưa đúng quy tắc (kiểm tra CPU dạng I9-14900).");
+  if (k.gpu !== "0" && k.vram === "0") loi.push("Có GPU thì phải chọn VRAM.");
+  if (k.gpu === "0" && k.vram !== "0") loi.push("Không GPU thì VRAM = 0.");
+  if (CH.some((x, j) => j !== SUA && ma(x) === m)) loi.push("Mã này đã có trong danh mục.");
+  const khoa = (x) => [x.pn, x.cpu, x.gpu.toUpperCase(), x.vram, x.p, x.os, x.rd, x.sd].join("|");
+  const kh = KH.find(x => khoa(x) === khoa(k));
+  const tai = (k.gpu === "0" ? 0 : ({"5060":150, "5060Ti":180, "5070":250, "5070Ti":300, "5080":360, "5090":575, "4070S":220}[k.gpu] || 300)) + 219 + 100;
+  const pt = Math.round(tai / k.p * 100);
+  document.getElementById("f-loi").innerHTML = (loi.length ? loi.map(x => `<div class="loi">✕ ${x}</div>`).join("") : '<div class="ok" style="margin-top:6px;font-size:12px">✓ Mã hợp lệ</div>')
+    + `<div style="font-size:12px;margin-top:4px;color:${pt > 70 ? "var(--red)" : "var(--ink3)"}">Tải đỉnh ước ~${tai}W = ${pt}% nguồn ${pt > 70 ? "— vượt 70%, nên nguồn lớn hơn" : "(ngưỡng 70%)"}</div>`
+    + `<div style="font-size:12px;margin-top:4px">${kh ? `Thuộc khung <b>${tenKhung(kh)}</b>` : '<span style="color:var(--blue)">Khung mới — nhập thêm thông tin khung bên dưới</span>'}</div>`;
+  document.getElementById("f-khmoi").innerHTML = kh ? "" : `<div class="f-row">
+      <div><label>Cấp</label><select><option>A</option><option>B</option><option selected>C</option><option>D</option><option>Phụ trợ</option></select></div>
+      <div><label>Tên khung</label><input placeholder="vd AI 5060 Ti"></div>
+      <div><label>Khe trống cho card camera</label><input type="number" value="2"></div>
+      <div><label>Cổng LAN onboard dành cho cam</label><input type="number" value="1"></div>
+      <div><label>Tải đỉnh ước tính (W, chưa tính PoE)</label><input type="number" value="${tai}"></div></div>
+    <div style="margin-top:8px"><label>Dùng cho / Không dùng cho</label><input placeholder="Dùng cho…" style="margin-bottom:6px"><input placeholder="Không dùng cho…"></div>`;
+}
+function dongForm() { document.getElementById("phu").classList.remove("mo-ra"); }
+document.getElementById("phu").onclick = (e) => { if (e.target.id === "phu") dongForm(); };
+
+// ------------------------------------------------------------------ tab 2: goi y
+//  MB/s huu dung moi cong / moi camera. CameraLink: 85MHz (Base 3 tap, Medium 6, Full 8, Deca 10). CXP-12: 1250 MB/s moi lane.
+const GT = {"GigE":115, "2.5GigE":280, "5GigE":570, "10GigE":1150, "USB3":380, "CL Base":255, "CL Medium":510, "CL Full":680, "CL Deca":850,
+            "CXP-12 ×1":1250, "CXP-12 ×4":5000};
+const DP = {"1.3MP (1280×1024)":[1280,1024], "2.3MP (1920×1200)":[1920,1200], "5MP (2448×2048)":[2448,2048],
+            "12MP (4096×3000)":[4096,3000], "20MP (5472×3648)":[5472,3648], "25MP (5120×5120)":[5120,5120]};
+const NEN = [["1", "Ảnh thô (BMP)"], ["0.5", "PNG (~½)"], ["0.1", "JPEG (~1/10)"]];
+let CAM = [
+  {ten:"Cam trên", dp:"5MP (2448×2048)", bit:8, fps:10, gt:"GigE", luu:2},
+  {ten:"Cam cạnh", dp:"12MP (4096×3000)", bit:8, fps:5, gt:"GigE", luu:1},
+];
+//  luuAnh = co tinh luu anh hay khong. Tach NG / OK: NG giu lau, anh goc; OK giu it ngay, nen JPEG, chi luu 1 tren N anh
+let CHUNG = {ai:"suy_luan", ca:true, luuAnh:false, gio:20, ng:1, ngNgay:30, ngNen:0.5, okNgay:7, okN:10, okNen:0.1};
+function themCam() { CAM.push({ten:"Cam " + (CAM.length + 1), dp:"5MP (2448×2048)", bit:8, fps:10, gt:"GigE", luu:1}); ve(); }
+function tinh() {
+  const r = CAM.map(c => {
+    const [w, h] = DP[c.dp]; const mbk = w * h * (c.bit <= 8 ? 1 : c.bit <= 12 ? 1.5 : 2) / 1e6;
+    return {...c, mbk, mbs: mbk * c.fps, pt: mbk * c.fps / GT[c.gt]};
+  });
+  const tongMbs = r.reduce((a, x) => a + x.mbs, 0);
+  const dem = r.reduce((a, x) => a + x.mbk * 20, 0) / 1024;
+  //  RAM can = bo dem anh (20 khung/cam) + ~12GB Windows & phan mem vision + 8GB neu chay AI + 16GB neu huan luyen
+  const canRam = dem + 12 + (CHUNG.ai !== "khong" ? 8 : 0) + (CHUNG.ai === "huan_luyen" ? 16 : 0);
+  //  MB anh kiem moi ngay -> TB can giu
+  const mbNgay = r.reduce((a, x) => a + x.mbk * x.luu, 0) * 3600 * CHUNG.gio;
+  const ng = CHUNG.ng / 100;
+  const tbNG = mbNgay * ng * CHUNG.ngNen * CHUNG.ngNgay / 1e6;
+  const tbOK = mbNgay * (1 - ng) * CHUNG.okNen * CHUNG.okNgay / Math.max(1, CHUNG.okN) / 1e6;
+  const tbTho = mbNgay * Math.max(CHUNG.ngNgay, CHUNG.okNgay) / 1e6;   // neu luu het anh tho - de so sanh
+  const dem_gt = (g) => r.filter(x => x.gt === g).length;
+  const gige = dem_gt("GigE") + dem_gt("2.5GigE") + dem_gt("5GigE");
+  const khe = Math.ceil(Math.max(0, gige - 1) / 4) + Math.ceil(dem_gt("10GigE") / 2) + Math.ceil(dem_gt("USB3") / 4)
+    + Math.ceil(dem_gt("CL Base") / 2) + dem_gt("CL Medium") + dem_gt("CL Full") + dem_gt("CL Deca")   // frame grabber: 2 cam Base / 1 cam con lai
+    + Math.ceil(dem_gt("CXP-12 ×1") / 4) + dem_gt("CXP-12 ×4");
+  const poe = gige * 13;
+  return {r, tongMbs, dem, canRam, tbNG, tbOK, tb: CHUNG.luuAnh ? tbNG + tbOK : 0, tbTho, gige, khe, poe, maxDim: Math.max(...r.map(x => DP[x.dp][0]))};
+}
+//  Danh gia mot khung: kiem phan co dinh, roi lay cau hinh nho nhat trong khung du RAM (+ du cho anh neu bat tinh luu anh)
+function danhGia(k, kq) {
+  const dat = [], can = [], khong = [], tin = [];
+  const ds = CH.filter(c => c.kh === k.id);
+  if (k.khe === 0 && k.lan === 0) khong.push("Máy phụ trợ — không thu ảnh trực tiếp");
+  if (CHUNG.ai !== "khong" && k.gpu === "0") khong.push("Chạy AI cần GPU rời — khung này không có");
+  if (CHUNG.ai === "huan_luyen" && k.vram && k.vram < 16) can.push(`Huấn luyện tại máy: VRAM ${k.vram}GB dễ thiếu — nên ≥ 16GB`);
+  const camLan = kq.gige > 0 ? 1 : 0;
+  if (kq.khe > k.khe || (kq.gige > 0 && k.lan < 1 && k.khe === 0)) khong.push(`Cần ${kq.khe} khe card camera + ${camLan} cổng LAN — máy có ${k.khe} khe`);
+  else dat.push(`Cổng/khe đủ: cần ${kq.khe} khe card (${k.khe} trống) + ${camLan} cổng LAN onboard`);
+  const duRam = (c) => c.r >= kq.canRam, duAnh = (c) => !CHUNG.luuAnh || choAnh(c) >= kq.tb;
+  let c = ds.find(x => duRam(x) && duAnh(x));
+  if (c) {
+    dat.push(`RAM cần ~${Math.ceil(kq.canRam)}GB → ${c.r}GB`);
+    if (CHUNG.luuAnh) dat.push(`Ảnh lưu ~${kq.tb.toFixed(2)}TB → chứa được ~${choAnh(c).toFixed(2)}TB ${c.d === "D0" ? "(phân vùng ảnh trên SSD hệ thống)" : "(ổ dữ liệu)"}`);
+  } else if ((c = ds.find(duRam))) {
+    dat.push(`RAM cần ~${Math.ceil(kq.canRam)}GB → ${c.r}GB`);
+    c = ds.filter(duRam).sort((a, b) => choAnh(b) - choAnh(a))[0];
+    can.push(`Ảnh lưu ~${kq.tb.toFixed(1)}TB, cấu hình lớn nhất khung chứa ~${choAnh(c).toFixed(1)}TB → dùng NAS, giảm số ngày giữ, hoặc thêm cấu hình ổ lớn hơn`);
+  } else {
+    c = ds[ds.length - 1];
+    khong.push(`RAM cần ~${Math.ceil(kq.canRam)}GB — cấu hình lớn nhất của khung có ${Math.max(...ds.map(x => x.r))}GB`);
+  }
+  if (c.d !== "D0" && c.dd === "C" && CHUNG.ca) tin.push("Ổ dữ liệu dòng C trên dây chuyền 24/7: phần mềm không treo khi ổ lỗi/đầy, theo dõi SMART, ổ TBW cao (không QLC)");
+  if (CHUNG.ca && (k.rd !== "I" || k.sd !== "I")) {
+    if (k.rd === "?" || k.sd === "?") can.push("Dây chuyền 24/7: chưa rõ RAM/SSD có phải dòng công nghiệp — kiểm tra trước");
+    else can.push("Dây chuyền 24/7: khung dùng RAM/SSD dòng thường — không đạt");
+  }
+  const tai = k.tai + (k.khe > 0 ? kq.poe : 0);   // PoE cap tu card trong may
+  if (tai / k.p > 0.7) can.push(`Tải đỉnh ~${tai}W = ${Math.round(tai / k.p * 100)}% nguồn (có PoE ${kq.poe}W) → cấp PoE bằng switch ngoài`);
+  if (kq.maxDim >= 5000 && k.cap !== "D" && CHUNG.ai !== "khong") can.push("Ảnh ≥ 20MP chạy AI: cân nhắc cấp D");
+  const muc = khong.length ? "khong" : can.length ? "can" : "dat";
+  return {k, c, dat, can, khong, tin, muc};
+}
+function veGoiY() {
+  const kq = tinh();
+  const hang = kq.r.map((c, i) => `<tr>
+    <td><input value="${c.ten}" oninput="CAM[${i}].ten=this.value"></td>
+    <td><select onchange="CAM[${i}].dp=this.value;ve()">${Object.keys(DP).map(x => `<option ${x === c.dp ? "selected" : ""}>${x}</option>`).join("")}</select></td>
+    <td><select onchange="CAM[${i}].bit=+this.value;ve()">${[8, 10, 12].map(x => `<option ${x === c.bit ? "selected" : ""}>${x}</option>`).join("")}</select></td>
+    <td><input type="number" value="${c.fps}" style="width:70px" onchange="CAM[${i}].fps=+this.value;ve()"></td>
+    <td><select onchange="CAM[${i}].gt=this.value;ve()">${Object.keys(GT).map(x => `<option ${x === c.gt ? "selected" : ""}>${x}</option>`).join("")}</select></td>
+    ${CHUNG.luuAnh ? `<td><input type="number" step="0.1" value="${c.luu}" style="width:70px" onchange="CAM[${i}].luu=+this.value;ve()"></td>` : ""}
+    <td class="so">${c.mbs.toFixed(0)} MB/s</td>
+    <td class="so ${c.pt > 0.7 ? "c-do" : "c-xanh"}">${Math.round(c.pt * 100)}%${c.pt > 0.7 ? `<div style="font-size:11px">tối đa ${Math.floor(GT[c.gt] * 0.7 / c.mbk)} fps</div>` : ""}</td>
+    <td><button class="pa nho" onclick="CAM.splice(${i},1);ve()">✕</button></td></tr>`).join("");
+  //  Xep: dat -> dat co luu y (it luu y truoc) -> khong hop; cung muc thi giu thu tu danh muc (cap thap truoc).
+  const dg = KH.map((k, i) => ({...danhGia(k, kq), i})).sort((a, b) =>
+    ({dat:0, can:1, khong:2}[a.muc] - {dat:0, can:1, khong:2}[b.muc]) || (a.can.length - b.can.length) || (a.i - b.i));
+  const hop = dg.filter(x => x.muc !== "khong"), loai = dg.filter(x => x.muc === "khong");
+  const the = hop.map((x, j) => `<div class="goi ${x.muc}">
+    <div class="h"><b>${x.c.ten}</b><span class="mo">${tenKhung(x.k)}</span>
+      ${x.muc === "dat" ? '<span class="p p-green">Đạt</span>' : '<span class="p p-amb">Đạt, có lưu ý</span>'}
+      ${j === 0 ? '<span class="p p-blue">Gợi ý — cấp thấp nhất đáp ứng được</span>' : ""}</div>
+    <div class="mono" style="margin-top:4px">${ma(x.c)}</div>
+    <ul>${x.can.map(s => `<li style="color:var(--amber)">! ${s}</li>`).join("")}${x.tin.map(s => `<li style="color:var(--blue)">i ${s}</li>`).join("")}${x.dat.map(s => `<li class="mo">✓ ${s}</li>`).join("")}</ul></div>`).join("")
+    + (hop.length ? "" : '<p style="color:var(--red)">Không cấu hình nào trong danh mục đáp ứng — cần cấu hình mới (đề xuất với anh).</p>')
+    + (loai.length ? `<details style="margin-top:8px"><summary class="mo" style="cursor:pointer">Không hợp (${loai.length}) — bấm xem lý do</summary>`
+      + loai.map(x => `<div class="goi khong" style="margin-top:6px"><div class="h"><b>${tenKhung(x.k)}</b></div>
+        <ul>${x.khong.map(s => `<li style="color:var(--red)">✕ ${s}</li>`).join("")}</ul></div>`).join("") + "</details>" : "");
+  const chonNen = (key) => `<select onchange="CHUNG.${key}=+this.value;ve()">${NEN.map(([v, t]) => `<option value="${v}" ${+v === CHUNG[key] ? "selected" : ""}>${t}</option>`).join("")}</select>`;
+  const so = (key, nhan, step) => `<div><label>${nhan}</label><input type="number" ${step ? `step="${step}"` : ""} value="${CHUNG[key]}" onchange="CHUNG.${key}=+this.value;ve()"></div>`;
+  return `
+  <p class="giai">Nhập camera của dự án → phần mềm tính băng thông, RAM (và dung lượng ảnh lưu nếu bật) rồi với mỗi khung <b>chọn cấu hình nhỏ nhất đủ dùng</b> trong danh mục.
+  Chỉ tính để xem, không lưu. Số cam thực chạy được còn phụ thuộc thời gian xử lý thuật toán → vẫn phải chạy thử 24h.</p>
+  <div class="k"><div class="kh"><h3>Camera của dự án</h3><span style="flex:1"></span>
+    <button class="pa nho" onclick="themCam()">+ Thêm camera</button></div>
+    <div style="overflow-x:auto"><table><thead><tr><th>Tên</th><th>Độ phân giải</th><th>Bit</th><th>fps</th><th>Giao tiếp</th>${CHUNG.luuAnh ? "<th>Ảnh kiểm/giây</th>" : ""}<th>Băng thông</th><th>% cổng</th><th></th></tr></thead>
+    <tbody>${hang}</tbody></table></div>
+    <div class="kb f-row">
+      <div><label>Chạy AI?</label><select onchange="CHUNG.ai=this.value;ve()">
+        ${[["khong","Không"],["suy_luan","Có — suy luận"],["huan_luyen","Có — huấn luyện tại máy"]].map(([v, t]) => `<option value="${v}" ${CHUNG.ai === v ? "selected" : ""}>${t}</option>`).join("")}</select></div>
+      <div><label>Dây chuyền 24/7?</label><select onchange="CHUNG.ca=this.value==='1';ve()"><option value="1" ${CHUNG.ca ? "selected" : ""}>Có — RAM/SSD hệ thống dòng I</option><option value="0" ${CHUNG.ca ? "" : "selected"}>Không (demo / lab)</option></select></div>
+      <div><label>Tính dung lượng lưu ảnh?</label><select onchange="CHUNG.luuAnh=this.value==='1';ve()"><option value="0" ${CHUNG.luuAnh ? "" : "selected"}>Không</option><option value="1" ${CHUNG.luuAnh ? "selected" : ""}>Có</option></select></div>
+    </div>
+    ${CHUNG.luuAnh ? `<div class="kb" style="padding-top:0"><div class="mo" style="font-size:12px;margin-bottom:6px"><b style="color:var(--ink)">Lưu ảnh</b> — tách ảnh lỗi (NG) và ảnh đạt (OK); ổ đầy thì tự xoá ảnh cũ nhất</div>
+      <div class="f-row">
+        ${so("gio", "Giờ chạy / ngày")}
+        ${so("ng", "Tỉ lệ NG (%)", "0.1")}
+        ${so("ngNgay", "Giữ ảnh NG (ngày)")}
+        <div><label>Ảnh NG lưu dạng</label>${chonNen("ngNen")}</div>
+        ${so("okNgay", "Giữ ảnh OK (ngày, 0 = bỏ)")}
+        ${so("okN", "Ảnh OK: lưu 1 trên N")}
+        <div><label>Ảnh OK lưu dạng</label>${chonNen("okNen")}</div>
+      </div></div>` : ""}</div>
+  <div class="k"><div class="kh"><h3>Kết quả tính</h3></div><div class="kb tong">
+    <div class="o-tong"><div class="n">${kq.tongMbs.toFixed(0)} MB/s</div><div class="t">Tổng băng thông</div></div>
+    <div class="o-tong"><div class="n">~${Math.ceil(kq.canRam)} GB</div><div class="t">RAM cần</div></div>
+    ${CHUNG.luuAnh ? `<div class="o-tong"><div class="n">${kq.tb.toFixed(2)} TB</div><div class="t">Ảnh lưu: NG ${kq.tbNG.toFixed(2)} + OK ${kq.tbOK.toFixed(2)} TB<br>Nếu lưu hết ảnh thô: ${kq.tbTho.toFixed(1)} TB</div></div>` : ""}
+    <div class="o-tong"><div class="n">${kq.khe} khe</div><div class="t">Card camera cần (+ ${kq.gige ? 1 : 0} cổng LAN onboard)</div></div>
+  </div></div>
+  <div class="k"><div class="kh"><h3>Cấu hình phù hợp</h3><span class="mo">mỗi khung lấy cấu hình nhỏ nhất đủ dùng · xếp: đạt → có lưu ý → không hợp</span></div><div class="kb">${the}</div></div>`;
+}
+
+// ------------------------------------------------------------------ tab 3: fps
+let PHOI = 0;   // thoi gian phoi sang (ms), 0 = khong xet
+function veFps() {
+  const ds = Object.entries(DP);
+  const tran = PHOI > 0 ? Math.floor(1000 / PHOI) : Infinity;
+  const hang = ds.map(([t, [w, h]]) => { const mb = w * h / 1e6;
+    return `<tr><td>${t}</td><td class="so">${mb.toFixed(1)}</td>${Object.values(GT).map(v => { const fc = Math.floor(v / mb), f = Math.min(fc, tran);
+      return `<td class="so ${f < 10 ? "c-do" : f <= 30 ? "c-vang" : "c-xanh"}" ${f < fc ? `title="Cáp cho ${fc} fps, bị exposure giới hạn"` : ""}>${f}${f < fc ? "*" : ""}</td>`; }).join("")}</tr>`; }).join("");
+  return `<p class="giai">Số trong bảng là <b>fps tối đa theo dây cáp</b> (ảnh 8 bit, mono hoặc Bayer; 10/12 bit chia cho 1.5). fps thật = <b>nhỏ nhất</b> của:
+    ① giới hạn cáp (bảng này) · ② fps tối đa của cảm biến (datasheet) · ③ giới hạn exposure: phơi sáng chồng lấn (overlap, đa số global shutter) ≤ 1000 / exposure(ms);
+    không chồng lấn ≤ 1000 / (exposure + thời gian đọc cảm biến) · ④ tốc độ trigger và thời gian xử lý thuật toán.
+    Nhiều cam GigE dồn qua một switch về một cổng PC thì <b>chia nhau</b> 115 MB/s.</p>
+  <div class="f-row" style="max-width:420px;margin-bottom:12px">
+    <div><label>Thời gian phơi sáng (ms, 0 = không xét)</label><input type="number" step="0.1" value="${PHOI}" onchange="PHOI=+this.value;ve()"></div>
+    <div class="mo" style="font-size:12px">${PHOI > 0 ? `Exposure ${PHOI}ms → tối đa ${tran} fps (chồng lấn). Ô có * = bị exposure giới hạn.` : ""}</div></div>
+  <div class="k" style="overflow-x:auto"><table><thead><tr><th>Độ phân giải</th><th class="so">MB/khung</th>${Object.entries(GT).map(([g, v]) => `<th class="so">${g}<div class="mo" style="font-weight:400">${v} MB/s</div></th>`).join("")}</tr></thead>
+  <tbody>${hang}</tbody></table></div>
+  <p class="note"><span class="p p-red">&lt; 10 fps</span> <span class="p p-amb">10–30</span> <span class="p p-green">&gt; 30</span>
+    · CameraLink: số cho 1 camera / 1 cổng frame grabber, 85MHz. CXP-12 ×4 = camera dùng 4 lane.</p>`;
+}
+
+// ------------------------------------------------------------------ tab 4: checklist
+const CK = [
+  ["Phần cứng", [["Máy dây chuyền 24/7: RAM + SSD hệ thống dòng I (mã có R…I và S…I); không trộn RAM khác lô / khác hãng", 1],
+    ["RAM luôn 2 thanh cùng lô; dung lượng chốt lúc đặt hàng, không cắm thêm sau khi giao", 1],
+    ["Ảnh lưu ở phân vùng riêng hoặc ổ dữ liệu, không lưu ổ C", 1],
+    ["Ổ dữ liệu dòng C trên dây chuyền 24/7: phần mềm không treo khi ổ lỗi/đầy; theo dõi SMART; chọn ổ TBW cao, không dùng QLC", 1], ["Không dùng HDD trong tủ máy rung", 0],
+    ["Card mạng camera chip Intel (i350/i210 GigE, X710/X550 10GigE); cố định card bằng giá chống rung", 1],
+    ["Máy có GPU RTX 50: nguồn chuẩn ATX 3.1, dây 12V-2x6 nguyên bản từ nguồn, không dùng dây chuyển đổi", 1],
+    ["GPU: cắm chặt đầu nguồn 12V-2x6 tới khi khớp hẳn, không bẻ cáp gần đầu cắm", 1], ["UPS; nhiệt độ tủ ≤ 40°C, có lọc bụi", 1]]],
+  ["BIOS", [["BIOS mới nhất có microcode Intel 0x12B trở lên (CPU đời 13/14)", 1], ["Công suất mặc định Intel, không ép xung", 1],
+    ["Restore on AC Power Loss = Power On; bật watchdog nếu có", 1], ["Tắt ASPM / PCIe power saving", 1]]],
+  ["Windows", [["Ưu tiên Windows IoT Enterprise LTSC", 0], ["Win11 Pro: hoãn cập nhật, tắt tự khởi động lại", 1],
+    ["Power plan High Performance; tắt Sleep, Hibernate, Fast Startup, USB selective suspend, PCIe Link State PM", 1],
+    ["Loại trừ thư mục ảnh + phần mềm khỏi Defender quét", 1], ["Tự đăng nhập + phần mềm tự chạy; đồng bộ giờ NTP với PLC/MES", 1],
+    ["Tự xoá ảnh xoay vòng: ảnh OK và ảnh NG giữ số ngày riêng; ổ đầy thì xoá ảnh cũ nhất", 1]]],
+  ["Mạng camera", [["Mỗi cam 1 cổng, mỗi cổng 1 dải IP, IP tĩnh; không chung cổng với PLC/MES", 1],
+    ["Jumbo frame 9000; Receive Buffers tối đa; tắt Energy Efficient Ethernet", 1], ["Chỉ 1 filter driver của 1 hãng camera trên mỗi card", 1],
+    ["Nhiều cam qua 1 switch: giới hạn băng thông từng cam", 1], ["USB3: tối đa 2 cam / 1 bộ điều khiển; cáp khoá vít", 1]]],
+  ["GPU / phần mềm", [["Cố định phiên bản driver NVIDIA (Studio), tắt tự cập nhật; ghi phiên bản CUDA/TensorRT", 1]]],
+  ["Đồng bộ & FAT", [["Mỗi khung có 1 bản ghi ổ đĩa chuẩn (image); các cấu hình cùng khung dùng chung image", 0],
+    ["Chạy thử 24h ở 100% trigger: mất khung = 0, RAM không tăng dần, CPU/GPU < 85°C", 1]]],
+];
+function veCk() {
+  return `<p class="giai">Nội dung tham khảo, áp dụng cho <b>mọi PC</b> trước khi giao. Bản đầu chỉ hiển thị (không ghi nhận tick theo từng máy). Có nút <b>In / tải PDF</b> để kỹ sư mang theo khi cài máy.</p>
+  <div class="k"><div class="kh"><h3>Checklist ổn định</h3><span style="flex:1"></span><button class="pa nho">In / tải PDF</button></div>
+  <table class="ck"><tbody>${CK.map(([n, ds]) => `<tr class="nhom"><td colspan="3">${n}</td></tr>` + ds.map(([s, b], i) =>
+    `<tr><td class="mo">${i + 1}</td><td>${s}</td><td style="width:110px">${b ? '<span class="p p-red">Bắt buộc</span>' : '<span class="p p-gr">Khuyến nghị</span>'}</td></tr>`).join("")).join("")}</tbody></table></div>`;
+}
+
+// ------------------------------------------------------------------ dieu khien
+let TAB = "dm";
+function ve() {
+  document.getElementById("noi").innerHTML = {dm:veDanhMuc, gy:veGoiY, fps:veFps, ck:veCk}[TAB]();
+  document.querySelectorAll(".tab").forEach(t => t.classList.toggle("on", t.dataset.t === TAB));
+}
+document.getElementById("tabs").onclick = (e) => { if (e.target.dataset.t) { TAB = e.target.dataset.t; ve(); } };
+document.querySelectorAll("[data-ai]").forEach(b => b.onclick = () => {
+  vaiTro = b.dataset.ai; document.querySelectorAll("[data-ai]").forEach(x => x.classList.toggle("on", x === b)); ve(); });
+document.getElementById("nen").onclick = (e) => {
+  const sang = document.documentElement.dataset.theme === "dark";
+  document.documentElement.dataset.theme = sang ? "light" : "dark"; e.target.textContent = sang ? "Nền tối" : "Nền sáng"; };
+ve();
+</script>
+</body>
+</html>

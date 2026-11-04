@@ -218,6 +218,40 @@ const MUTATIONS = [
     sql: `grant select on public.engine_tables to anon;
           create policy "engine_tables_select_anon" on public.engine_tables for select to anon using (true);`,
   },
+  {
+    name: 'PC Vision: Registered xem duoc khung PC',
+    sql: `drop policy "pc_frames_select_member" on public.pc_frames;
+          create policy "pc_frames_select_member" on public.pc_frames for select to authenticated using (true);`,
+  },
+  {
+    name: 'PC Vision: Member ghi duoc cau hinh',
+    sql: `drop policy "pc_configs_insert_admin" on public.pc_configs;
+          create policy "pc_configs_insert_admin" on public.pc_configs for insert to authenticated with check (public.is_member_plus());`,
+  },
+  {
+    name: 'PC Vision: Member xem duoc lich su',
+    sql: `drop policy "pc_change_log_select_admin" on public.pc_change_log;
+          create policy "pc_change_log_select_admin" on public.pc_change_log for select to authenticated using (public.is_member_plus());`,
+  },
+  {
+    name: 'PC Vision: bo khoa truong tao ma (trigger chi chay khi them)',
+    sql: `drop trigger pc_configs_code on public.pc_configs;
+          create trigger pc_configs_code before insert on public.pc_configs
+            for each row execute function public.pc_configs_before_write();`,
+  },
+  {
+    name: 'PC Vision: cho Admin xoa cung',
+    sql: `grant delete on public.pc_configs to authenticated;
+          create policy "pc_configs_delete_admin" on public.pc_configs for delete to authenticated using (public.is_admin());`,
+  },
+  {
+    name: 'PC Vision: tat ghi lich su cau hinh',
+    sql: `drop trigger pc_configs_log on public.pc_configs;`,
+  },
+  {
+    name: 'PC Vision: khong giu ma da cap',
+    sql: `drop trigger pc_configs_issue on public.pc_configs;`,
+  },
 ];
 
 let caught = 0;

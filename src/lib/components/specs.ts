@@ -146,6 +146,9 @@ export const SENSOR_FORMAT_KEYS: string[] = Object.keys(SENSOR_FORMATS).sort(
  */
 export const INTERFACE_BANDWIDTH: Record<string, number> = {
   GigE: 110,
+  /* 2.5GigE: chốt 2026-11-03 (PC Vision Q2) — số 280 MB/s theo gói bàn giao PC Vision,
+     cùng mức giảm trừ overhead như GigE (lý thuyết 312,5 MB/s). */
+  '2.5GigE': 280,
   USB3: 350,
   '5GigE': 550,
   '10GigE': 1100,

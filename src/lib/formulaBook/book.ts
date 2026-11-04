@@ -16,6 +16,7 @@
  * giao diện khách hàng.
  */
 import { DEFAULT_CAMERAS_PER_PC, PC_BANDWIDTH_HEADROOM } from '@/lib/components/pc';
+import { GPU_BOARD_POWER_W, GPU_FALLBACK_W } from '@/lib/pc/power';
 import { CYCLE_DEFAULTS, DOF_FASTEST_PRACTICAL_F } from '@/lib/vision/configurationRules';
 import type { EngineParamKey } from '@/lib/vision/engineParams';
 import { UNKNOWN_SCORE } from '@/lib/vision/feasibility';
@@ -43,7 +44,7 @@ export const PAGE_LABEL: Record<FormulaPage, { label: string; href: string }> = 
   ocr: { label: 'Chọn camera OCR', href: '/chon-ocr' },
   light: { label: 'Chọn đèn', href: '/chon-den' },
   oldSelector: { label: 'Bộ chọn thiết bị (cũ)', href: '/cong-cu-chon-thiet-bi' },
-  pc: { label: 'Máy tính (PC)', href: '/cong-cu-may-tinh' },
+  pc: { label: 'PC Vision', href: '/cong-cu-may-tinh' },
   kpi: { label: 'Bộ tính chỉ tiêu', href: '/cong-cu-chi-tieu' },
 };
 
@@ -441,7 +442,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
           'lọc camera: MB/s ≤ tỉ lệ × băng thông chuẩn của camera (CXP nhân số làn); MB/s nhân số ảnh mỗi sản phẩm',
         ],
         verdict: ['không chuẩn nào đủ → LOẠI'],
-        params: ['interfaceMaxShare', 'bwGigE', 'bwUsbThree', 'bwFiveGigE', 'bwTenGigE', 'bwCxpSix', 'bwCxpTwelve', 'bwCameraLinkBase', 'bwCameraLinkMedium', 'bwCameraLinkFull', 'bwCameraLinkDeca'],
+        params: ['interfaceMaxShare', 'bwGigE', 'bwTwoFiveGigE', 'bwUsbThree', 'bwFiveGigE', 'bwTenGigE', 'bwCxpSix', 'bwCxpTwelve', 'bwCameraLinkBase', 'bwCameraLinkMedium', 'bwCameraLinkFull', 'bwCameraLinkDeca'],
         evidence: 'calculated',
         usedIn: ['design', 'oldSelector', 'pc'],
         source: 'vision/requirementAnalysis.ts : THR-002 · components/specs.ts : INTERFACE_BANDWIDTH',
@@ -1088,25 +1089,140 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
   // ─────────────────────────────────────────────────────────── 12. MÁY TÍNH ──
   {
     key: 'pc',
-    title: '12. Trang Máy tính (PC)',
+    title: '12. PC Vision (trang Máy tính) + máy tính trong bảng vật tư bộ chọn cũ',
     entries: [
       {
         id: 'PC-001',
-        title: 'Số camera một máy gánh được',
+        title: 'Bảng vật tư bộ chọn cũ: số camera một máy gánh được',
         formula: ['= max_cameras khai trong kho; không khai → khe PCIe × số cổng card; không có cả hai → mặc định', 'theo băng thông: ⌊trần × băng thông một cổng ÷ MB/s mỗi camera⌋'],
         constants: [
           { name: 'camera/máy mặc định', value: DEFAULT_CAMERAS_PER_PC },
           { name: 'trần băng thông một máy (× một cổng)', value: PC_BANDWIDTH_HEADROOM },
         ],
-        usedIn: ['pc'],
+        usedIn: ['oldSelector'],
         source: 'components/pc.ts : camerasPerPc, maxCamerasByBandwidth',
       },
       {
         id: 'PC-002',
-        title: 'Số máy & số card',
+        title: 'Bảng vật tư bộ chọn cũ: số máy & số card',
         formula: ['số máy = ⌈tổng camera ÷ camera/máy⌉ — xếp máy cần ÍT bộ hơn lên trước', 'số card = ⌈camera mỗi máy ÷ số cổng card⌉ × số máy (card không chia được cho hai máy)'],
+        usedIn: ['oldSelector'],
+        source: 'components/pc.ts : pickPc, pickCard, cardUnits, planPc',
+      },
+      {
+        id: 'PC-PSU',
+        title: 'PC Vision: ước tải đỉnh khung mới so với nguồn',
+        formula: [
+          'tải đỉnh ước tính (W) = W GPU theo chip + W CPU + phần còn lại của máy — chưa tính PoE',
+          'tỉ lệ = tải đỉnh ÷ công suất nguồn',
+        ],
+        verdict: ['tỉ lệ > ngưỡng → CẢNH BÁO trên form "nên nguồn lớn hơn" (không chặn lưu)'],
+        notes: [
+          'Chỉ dùng gợi ý tải đỉnh khi thêm khung mới; khung đã có dùng số tải đỉnh Admin nhập.',
+          'Cơ sở chốt 03/11/2026: B ~330W → 650W (67%), C ~570W → 1000W (67%), D ~680W → 1300W (60%).',
+        ],
+        params: ['pcPsuMaxShare', 'pcCpuPeakW', 'pcBaseLoadW', 'pcPoePerCameraW'],
+        constants: [
+          ...Object.entries(GPU_BOARD_POWER_W).map(([chip, watt]) => ({ name: `W GPU ${chip}`, value: watt })),
+          { name: 'W GPU chip khác', value: GPU_FALLBACK_W },
+        ],
+        evidence: 'rule-of-thumb',
         usedIn: ['pc'],
-        source: 'components/pc.ts : pickPc, pickCard, cardUnits, planPcForLines',
+        source: 'pc/code.ts : estimatePeakLoadW · pc/power.ts : pcPowerModel',
+      },
+      {
+        id: 'PC-BW',
+        title: 'PC Vision gợi ý: băng thông từng camera',
+        formula: [
+          'MB mỗi khung = W × H × byte/px ÷ 1e6 — 8 bit: 1 · 10/12 bit: 1,5 · 16 bit: 2',
+          'MB/s = MB mỗi khung × fps; % cổng = MB/s ÷ băng thông giao tiếp (CXP-12 ×4 = 4 × một làn)',
+          'vượt ngưỡng → fps tối đa = ⌊băng thông × ngưỡng ÷ MB mỗi khung⌋',
+        ],
+        verdict: ['% cổng > ngưỡng → LƯU Ý (ô đỏ, hiện fps tối đa)'],
+        notes: ['Băng thông dùng chung bảng ngưỡng engine (chốt Q2 ngày 03/11/2026), không dùng số riêng của gói bàn giao.'],
+        params: ['interfaceMaxShare', 'bwGigE', 'bwTwoFiveGigE', 'bwFiveGigE', 'bwTenGigE', 'bwUsbThree', 'bwCameraLinkBase', 'bwCameraLinkMedium', 'bwCameraLinkFull', 'bwCameraLinkDeca', 'bwCxpTwelve'],
+        evidence: 'calculated',
+        usedIn: ['pc'],
+        source: 'pc/suggest.ts : mbPerFrame, interfaceBandwidth, suggestPc',
+      },
+      {
+        id: 'PC-RAM',
+        title: 'PC Vision gợi ý: RAM cần',
+        formula: [
+          'RAM cần (GB) = Σ(MB mỗi khung × số khung đệm) ÷ 1024 + nền + (chạy AI: + AI) + (huấn luyện: + huấn luyện)',
+          'mỗi khung: lấy cấu hình NHỎ NHẤT có RAM ≥ RAM cần',
+        ],
+        verdict: ['RAM cần > cấu hình lớn nhất của khung → LOẠI (không hợp)'],
+        params: ['pcRamBufferFrames', 'pcRamBaseGb', 'pcRamAiGb', 'pcRamTrainGb'],
+        evidence: 'rule-of-thumb',
+        usedIn: ['pc'],
+        source: 'pc/suggest.ts : suggestPc',
+      },
+      {
+        id: 'PC-STORE',
+        title: 'PC Vision gợi ý: dung lượng lưu ảnh (khi bật)',
+        formula: [
+          'MB ảnh mỗi ngày = Σ(MB mỗi khung × ảnh kiểm/giây) × 3600 × giờ chạy',
+          'ảnh NG (TB) = MB/ngày × tỉ lệ NG × hệ số nén NG × ngày giữ NG ÷ 1e6',
+          'ảnh OK (TB) = MB/ngày × (1 − tỉ lệ NG) × hệ số nén OK × ngày giữ OK ÷ N ÷ 1e6',
+          'nếu lưu hết ảnh thô = MB/ngày × max(ngày giữ NG, ngày giữ OK) ÷ 1e6 — chỉ để so',
+          'sức chứa cấu hình: có ổ dữ liệu = ổ (TB) × tỉ lệ dùng; không có = (SSD GB × tỉ lệ dùng − chừa) ÷ 1024',
+        ],
+        verdict: ['không cấu hình nào đủ chỗ → LƯU Ý: dùng NAS, giảm ngày giữ hoặc thêm cấu hình ổ lớn hơn'],
+        notes: ['Hệ số nén: ảnh thô 1, PNG và JPEG theo ngưỡng.'],
+        params: ['pcPngRatio', 'pcJpegRatio', 'pcDiskUsableShare', 'pcSystemReserveGb'],
+        evidence: 'calculated',
+        usedIn: ['pc'],
+        source: 'pc/suggest.ts : imageCapacityTb, suggestPc',
+      },
+      {
+        id: 'PC-SLOT',
+        title: 'PC Vision gợi ý: số khe card camera, PoE',
+        formula: [
+          'khe = ⌈max(0, cam GigE/2.5G/5G − LAN onboard) ÷ cổng/card⌉ + ⌈10GigE ÷ cổng/card⌉ + ⌈USB3 ÷ cổng/card⌉',
+          '      + ⌈CL Base ÷ cam/grabber⌉ + CL Medium + CL Full + CL Deca + ⌈CXP ×1 ÷ làn/card⌉ + CXP ×4',
+          'LAN onboard = 1 camera GigE khi khung có cổng LAN dành cho camera',
+          'PoE = W mỗi camera × số camera GigE',
+        ],
+        verdict: ['khe cần > khe trống của khung → LOẠI (không hợp)'],
+        params: ['pcGigePortsPerCard', 'pcTenGigePortsPerCard', 'pcUsbPortsPerCard', 'pcClBasePerGrabber', 'pcCxpLanesPerCard', 'pcPoePerCameraW'],
+        evidence: 'calculated',
+        usedIn: ['pc'],
+        source: 'pc/suggest.ts : cardSlots, suggestPc',
+      },
+      {
+        id: 'PC-RANK',
+        title: 'PC Vision gợi ý: đánh giá và xếp các khung',
+        formula: [
+          'KHÔNG HỢP: khung phụ trợ (0 khe, 0 LAN) · chạy AI mà không GPU · thiếu khe card · RAM cần > cấu hình lớn nhất',
+          'LƯU Ý: huấn luyện mà VRAM < ngưỡng · ảnh vượt sức chứa · 24/7 mà RAM/SSD là ? hoặc dòng C · (tải đỉnh + PoE) ÷ nguồn > ngưỡng · ảnh ≥ ngưỡng MP chạy AI trên khung không phải D',
+          'THÔNG TIN: ổ dữ liệu dòng C trên 24/7 — nhắc điều kiện (không treo, SMART, TBW cao, không QLC)',
+          'xếp: Đạt → Đạt có lưu ý (ít lưu ý trước) → Không hợp; cùng mức giữ thứ tự danh mục; thẻ đầu gắn "Gợi ý"',
+        ],
+        notes: [
+          'Chỉ xét khung và cấu hình Đang dùng.',
+          '24/7 + dòng C là lưu ý, câu "chỉ khi khách chấp nhận bằng văn bản" (chốt Q7 ngày 03/11/2026).',
+          'Đối chiếu tự động với mẫu đã duyệt docs/pc-vision/1_mau_trang_pc_vision.html (scripts/test-pc-suggest.ts).',
+        ],
+        params: ['pcTrainMinVramGb', 'pcLargeImageMp', 'pcPsuMaxShare'],
+        evidence: 'rule-of-thumb',
+        usedIn: ['pc'],
+        source: 'pc/suggest.ts : suggestPc',
+      },
+      {
+        id: 'PC-FPS',
+        title: 'PC Vision: bảng fps tối đa theo dây cáp',
+        formula: [
+          'fps theo cáp = ⌊băng thông giao tiếp ÷ MB mỗi khung (8 bit)⌋ — 6 độ phân giải × 11 giao tiếp',
+          'có thời gian phơi sáng: fps = min(fps theo cáp, ⌊1000 ÷ exposure(ms)⌋) — ô bị chặn có dấu *',
+          'fps thật = nhỏ nhất của: cáp · fps tối đa cảm biến · exposure (không chồng lấn: 1000 ÷ (exposure + thời gian đọc)) · trigger + thời gian xử lý',
+        ],
+        verdict: ['fps < ngưỡng thấp → LƯU Ý (ô đỏ)', 'ngưỡng thấp ≤ fps ≤ ngưỡng cao → LƯU Ý (ô vàng)', 'fps > ngưỡng cao → ĐẠT (ô xanh)'],
+        notes: ['10/12 bit thì chia cho 1,5. Camera Link: 1 camera / 1 cổng frame grabber. Nhiều cam GigE qua một switch về một cổng thì chia nhau băng thông.'],
+        params: ['pcFpsLow', 'pcFpsHigh', 'bwGigE', 'bwTwoFiveGigE', 'bwFiveGigE', 'bwTenGigE', 'bwUsbThree', 'bwCameraLinkBase', 'bwCameraLinkMedium', 'bwCameraLinkFull', 'bwCameraLinkDeca', 'bwCxpTwelve'],
+        evidence: 'calculated',
+        usedIn: ['pc'],
+        source: 'pc/fps.ts : fpsTable, exposureFpsCap, fpsBand',
       },
     ],
   },

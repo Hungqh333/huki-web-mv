@@ -13,7 +13,7 @@
     "signUp": "Sign up",
     "signOut": "Sign out",
     "kpi": "KPI",
-    "pc": "PC",
+    "pc": "PC Vision",
     "selectorVision": "Setup advisor",
     "lens": "Lens",
     "visionEngineer": "Vision Engineer",
@@ -41,7 +41,7 @@
       "ocr": "Read and verify printed characters",
       "lens": "Focal length, working distance, stock filter",
       "light": "Light type and color per task",
-      "pc": "PC, interface cards, software"
+      "pc": "PC configuration catalog, suggestions per camera"
     }
   },
   "catalog": {
@@ -1551,6 +1551,10 @@
         "interfaces": {
           "title": "Camera interface bandwidth",
           "hint": "THR-001 / THR-002: PRACTICAL bandwidth (after overhead), not the theoretical figure. CoaXPress is per lane."
+        },
+        "pc": {
+          "title": "PC Vision",
+          "hint": "PC Vision: new-frame peak load, required RAM, image storage, card slots, PoE and frame ranking thresholds (PC-PSU, PC-RAM, PC-STORE, PC-SLOT, PC-RANK)."
         }
       },
       "params": {
@@ -1619,7 +1623,29 @@
         "codePxPerModuleDpm": "Code reading — px per cell, DPM (COD-001)",
         "codeMinReads": "Code reading — minimum captures while a code crosses the view (COD-002)",
         "ocrPxPerCharHeight": "OCR — px across the character height (OCR-001)",
-        "ocrPxPerStroke": "OCR — px across the stroke width (OCR-001)"
+        "ocrPxPerStroke": "OCR — px across the stroke width (OCR-001)",
+        "pcPsuMaxShare": "Max peak load vs. PSU rating (PC-PSU)",
+        "pcCpuPeakW": "CPU peak power used for the estimate (PC-PSU)",
+        "pcBaseLoadW": "Rest of the machine: board, RAM, drives, fans (PC-PSU)",
+        "bwTwoFiveGigE": "2.5GigE",
+        "pcRamBufferFrames": "RAM — buffered frames per camera (PC-RAM)",
+        "pcRamBaseGb": "RAM — Windows + vision software base (PC-RAM)",
+        "pcRamAiGb": "RAM — extra when running AI (PC-RAM)",
+        "pcRamTrainGb": "RAM — extra for on-machine training (PC-RAM)",
+        "pcTrainMinVramGb": "Minimum VRAM for on-machine training (PC-RANK)",
+        "pcLargeImageMp": "Images from this size running AI should use tier D (PC-RANK)",
+        "pcDiskUsableShare": "Usable share of a drive for images (PC-STORE)",
+        "pcSystemReserveGb": "SSD reserve for Windows + software + models (PC-STORE)",
+        "pcPngRatio": "PNG size vs. raw image (PC-STORE)",
+        "pcJpegRatio": "JPEG size vs. raw image (PC-STORE)",
+        "pcGigePortsPerCard": "Ports per GigE / 2.5G / 5G card (PC-SLOT)",
+        "pcTenGigePortsPerCard": "Ports per 10GigE card (PC-SLOT)",
+        "pcUsbPortsPerCard": "Ports per USB3 card (PC-SLOT)",
+        "pcClBasePerGrabber": "Camera Link Base cameras per frame grabber (PC-SLOT)",
+        "pcCxpLanesPerCard": "CXP lanes per frame grabber (PC-SLOT)",
+        "pcPoePerCameraW": "PoE per GigE camera powered from the card (PC-PSU)",
+        "pcFpsLow": "fps table — red below this (PC-FPS)",
+        "pcFpsHigh": "fps table — green above this (PC-FPS)"
       },
       "errors": {
         "fix": "Some fields are invalid — see the red lines.",
@@ -1629,7 +1655,8 @@
         "telecentricOrder": "Must be greater than the \"reasonably priced\" threshold.",
         "weightsSum": "The six weights add up to {sum}; they must add up to 1.",
         "saved": "Thresholds saved. The Requirements page uses them from the next load.",
-        "pxOrder": "Must be greater than or equal to the higher-contrast level."
+        "pxOrder": "Must be greater than or equal to the higher-contrast level.",
+        "fpsOrder": "Must be greater than the red threshold."
       },
       "sensitiveWarning": "Physical constant / standard spec — a wrong value changes the result of EVERY project. Only change it with a datasheet or real measurement."
     },
@@ -2208,44 +2235,6 @@
     "system": "System"
   },
   "pcPlanner": {
-    "title": "PC configuration",
-    "subtitle": "Add up every task in a project before choosing the PC, because tasks usually share one machine.",
-    "why": "The equipment selector works one task at a time, so putting the PC inside each task BOM would quote three PCs for a three-task project. This page works the other way round: one row per task, sum the cameras and the bandwidth, then decide whether one PC is enough.",
-    "emptyCatalog": "The catalog is empty. Add PCs, interface cards and software under Admin → Components.",
-    "linesTitle": "Tasks sharing this PC",
-    "linesHint": "One row per task. Camera count is the total for that task, already multiplied by its stations. The rate is for ONE camera.",
-    "addLine": "+ Add task",
-    "removeLine": "Remove this row",
-    "labelPlaceholder": "Task {n}",
-    "colLabel": "Task",
-    "colCameras": "Cameras",
-    "colInterface": "Interface",
-    "colRate": "MB/s per cam",
-    "colGpu": "Needs GPU",
-    "totalCameras": "Total cameras",
-    "totalRate": "Total bandwidth",
-    "interfacesUsed": "Interfaces",
-    "gpuNeeded": "Needs GPU",
-    "yes": "Yes",
-    "no": "No",
-    "mixedInterfaces": "This project mixes interfaces ({list}). The PC must support all of them, and each one needs its own card.",
-    "splitReason": {
-      "slots": "One PC handles only {max} cameras, so it must be split into {count} machines.",
-      "bandwidth": "Total bandwidth exceeds one PC ({max} cameras per PC), so it must be split into {count} machines."
-    },
-    "bomTitle": "PC bill of materials",
-    "bomNote": "Windows, Office and monitor licences are per MACHINE, so their quantity follows the PC count, not the task count.",
-    "optionsTitle": "Bundled with the PC",
-    "colName": "Item",
-    "colDevice": "Model / Brand",
-    "colSpec": "Spec",
-    "colQty": "Qty",
-    "noOption": "Not in the catalog yet",
-    "rows": {
-      "pc": "Industrial PC",
-      "card": "{interface} interface card",
-      "software": "Vision software"
-    },
     "locked": {
       "title": "Member access required",
       "bodyRegistered": "Your account is Registered. Contact an administrator to be granted Member access.",
@@ -4003,6 +3992,265 @@
       "cameraHint": "Also needs a lens, a light and OCR software (Halcon, VisionPro…) — choose them on the Lens / Lighting pages.",
       "foot": "Same checks as the Camera selector (pixels, real fps, bandwidth, shutter, exposure); assumes a lens that exactly fits the field of view.",
       "showMore": "Show {n} more cameras"
+    }
+  },
+  "pcVision": {
+    "title": "PC Vision",
+    "subtitle": "Catalog of industrial PC configurations for machine vision projects, with configuration suggestions per camera set.",
+    "tabs": {
+      "label": "PC Vision sections",
+      "catalog": "Configuration catalog",
+      "suggest": "Configuration suggestion",
+      "fps": "fps table",
+      "checklist": "Stability checklist"
+    },
+    "catalog": {
+      "intro": "Configurations are grouped by frame (chassis, CPU, GPU, PSU). Within a frame, configurations differ in the bold part of the code: RAM – system SSD – data drive.",
+      "introAdmin": "Only Admins add or edit; the server and database re-check, not just hide buttons.",
+      "panelTitle": "Configuration catalog",
+      "count": "{configs} configurations · {frames} frames",
+      "search": "Search code, CPU, GPU…",
+      "statusFilter": "Status filter",
+      "status": {
+        "active": "In use",
+        "retired": "Retired",
+        "all": "All"
+      },
+      "add": "+ Add configuration",
+      "col": {
+        "config": "Config",
+        "code": "Code",
+        "ram": "RAM",
+        "ssd": "System SSD",
+        "data": "Data drive"
+      },
+      "edit": "Edit",
+      "editFrame": "Edit frame",
+      "noGpu": "No GPU",
+      "gpu": "{gpu} · {vram}GB",
+      "psu": "PSU {w}W",
+      "ports": "{lan} LAN + {slots} card slots",
+      "noCapture": "No image acquisition",
+      "lineIndustrial": "Industrial RAM + SSD",
+      "lineUnknown": "RAM/SSD grade unknown",
+      "lineCommercial": "Commercial RAM/SSD",
+      "useFor": "Use for: {text}",
+      "notFor": "Not for: {text}",
+      "empty": "No configuration matches.",
+      "footnote": "RAM is always 2 sticks from the same lot, fixed at ordering. Commercial (C) data drives are allowed even on 24/7 lines, under the checklist conditions; RAM + system SSD stay industrial (I). Configurations no longer used move to Retired; their codes are never reissued.",
+      "loadError": "Could not read the PC catalog. The tables may not exist yet: paste CHAY-BUOC-NAY-PC-VISION.sql into the Supabase SQL Editor."
+    },
+    "form": {
+      "addTitle": "Add configuration",
+      "editTitle": "Edit configuration {name}",
+      "addHint": "Pick each part; the code is composed automatically, never typed. A frame matching an existing one is filed under it. The server re-checks the code and duplicates.",
+      "frameSection": "Frame",
+      "partsSection": "RAM – SSD – data drive",
+      "pn": "Chassis PN (as the vendor writes it)",
+      "cpu": "CPU (series-model)",
+      "gpu": "GPU chip",
+      "gpuNone": "None",
+      "vram": "VRAM GB",
+      "psu": "PSU W",
+      "os": "Operating system",
+      "osOption": {
+        "W11P": "W11P · Win 11 Pro",
+        "W11L": "W11L · Win 11 IoT LTSC",
+        "LNX": "LNX · Linux",
+        "NOS": "NOS · none"
+      },
+      "ram": "RAM GB",
+      "ramLine": "RAM grade",
+      "ssd": "System SSD",
+      "ssdLine": "SSD grade",
+      "data": "Data drive",
+      "dataNone": "None (D0)",
+      "dataLine": "Data drive grade",
+      "line": {
+        "I": "I · industrial",
+        "C": "C · commercial",
+        "unknown": "? · unknown"
+      },
+      "codeLabel": "Code to be issued",
+      "codeOk": "Code is valid",
+      "errors": {
+        "pn": "Chassis PN may only contain capitals, digits and hyphens.",
+        "cpu": "CPU format is wrong, e.g. I9-14900.",
+        "gpuNoVram": "With a GPU, choose its VRAM.",
+        "vramNoGpu": "Without a GPU, VRAM must be 0.",
+        "regex": "The code does not follow the rule.",
+        "duplicate": "This code has already been issued (including retired configurations) and is never reissued.",
+        "locked": "Code-forming fields are locked.",
+        "frameNew": "New frame: enter the frame name.",
+        "notAllowed": "Only Admins can edit the PC catalog.",
+        "invalid": "Invalid data, check the fields.",
+        "db": "Could not save: {message}"
+      },
+      "power": "Estimated peak load ~{load}W = {pct}% of PSU (limit {max}%)",
+      "powerOver": "Estimated peak load ~{load}W = {pct}% of PSU: above {max}%, choose a larger PSU",
+      "inFrame": "Belongs to frame",
+      "newFrame": "New frame: enter the frame details below",
+      "tier": "Tier",
+      "frameNameVi": "Frame name (Vietnamese)",
+      "frameNameEn": "Frame name (English)",
+      "slots": "Free slots for camera cards",
+      "lan": "Onboard LAN ports for cameras",
+      "peak": "Estimated peak load (W, excluding PoE)",
+      "useForVi": "Use for (Vietnamese)",
+      "useForEn": "Use for (English)",
+      "notForVi": "Not for (Vietnamese)",
+      "notForEn": "Not for (English)",
+      "noteVi": "Note (Vietnamese)",
+      "noteEn": "Note (English)",
+      "shortName": "Short name",
+      "shortNamePlaceholder": "e.g. C4",
+      "status": "Status",
+      "lockedNote": "RAM, SSD and data drive are locked by the code. To change them, add a new configuration and retire this one.",
+      "copyAsNew": "Add a new configuration from this one",
+      "frameTitle": "Edit frame {name}",
+      "frameLockedNote": "The fixed part of the code (PN, CPU, GPU, PSU, OS) is locked. RAM/SSD grade can only change while it is ?; after the change the frame's configuration codes are recomposed and the old codes are never reissued.",
+      "cancel": "Cancel",
+      "save": "Save",
+      "saving": "Saving…",
+      "saved": "Saved {code}"
+    },
+    "history": {
+      "title": "Change history",
+      "meta": "last {n} changes",
+      "note": "Admins only. Recorded in the database: who, when, before / after.",
+      "empty": "No changes yet.",
+      "system": "SQL paste",
+      "action": {
+        "insert": "Added",
+        "update": "Edited",
+        "delete": "Deleted"
+      },
+      "table": {
+        "pc_frames": "Frame",
+        "pc_configs": "Configuration"
+      },
+      "col": {
+        "at": "When",
+        "who": "Who",
+        "what": "Item",
+        "change": "Change"
+      }
+    },
+    "suggest": {
+      "intro": "Enter the project's cameras → bandwidth, RAM (and image storage if enabled) are computed, then for each frame the smallest sufficient configuration in the catalog is picked. View only, nothing is saved. How many cameras really run also depends on algorithm processing time, so a 24h test run is still required.",
+      "cameraPanel": "Project cameras",
+      "cameraMeta": "{n} cameras",
+      "addCamera": "+ Add camera",
+      "removeCamera": "Remove this camera",
+      "camName": "Cam {n}",
+      "col": {
+        "name": "Name",
+        "resolution": "Resolution",
+        "bit": "Bit",
+        "fps": "fps",
+        "iface": "Interface",
+        "inspect": "Inspected images/s",
+        "bandwidth": "Bandwidth",
+        "port": "% of port"
+      },
+      "maxFps": "max {fps} fps",
+      "ai": "Run AI?",
+      "aiOption": {
+        "none": "No",
+        "inference": "Yes · inference",
+        "training": "Yes · on-machine training"
+      },
+      "line247": "24/7 line?",
+      "line247Option": {
+        "yes": "Yes · industrial RAM/system SSD",
+        "no": "No (demo / lab)"
+      },
+      "storageToggle": "Compute image storage?",
+      "storageOption": {
+        "no": "No",
+        "yes": "Yes"
+      },
+      "storageTitle": "Image storage",
+      "storageHint": "Defect (NG) and good (OK) images are kept separately; when the drive is full the oldest images are deleted.",
+      "hoursPerDay": "Running hours / day",
+      "ngPercent": "NG rate (%)",
+      "ngDays": "Keep NG images (days)",
+      "ngFormat": "NG image format",
+      "okDays": "Keep OK images (days, 0 = none)",
+      "okEveryN": "OK images: keep 1 in N",
+      "okFormat": "OK image format",
+      "format": {
+        "raw": "Raw (BMP)",
+        "png": "PNG",
+        "jpeg": "JPEG"
+      },
+      "resultPanel": "Computed",
+      "computing": "Computing…",
+      "tile": {
+        "bandwidth": "Total bandwidth",
+        "ram": "RAM needed",
+        "storage": "Stored images: NG {ng} + OK {ok} TB",
+        "raw": "If all raw images were kept: {raw} TB",
+        "slots": "{n} slots",
+        "slotsLabel": "Camera cards needed (+ {lan} onboard LAN port)"
+      },
+      "fitPanel": "Matching configurations",
+      "fitMeta": "smallest sufficient configuration per frame · order: fits → fits with notes → unsuitable",
+      "level": {
+        "ok": "Fits",
+        "warn": "Fits, with notes"
+      },
+      "recommended": "Suggested · lowest tier that meets the need",
+      "noneFits": "No configuration in the catalog meets the need: a new configuration is required.",
+      "rejected": "Unsuitable ({n}) · click for reasons",
+      "noCameras": "Add at least one camera to compute.",
+      "errors": {
+        "denied": "Member access or higher is needed for suggestions.",
+        "invalid": "Invalid input, check the numbers.",
+        "failed": "Could not read the PC catalog to compare."
+      },
+      "prefill": "Filled from the bill of materials: {count} {iface} cameras{rate}. Check resolution, bit depth and fps.",
+      "prefillRate": ", {rate} MB/s each",
+      "notes": {
+        "aux": "Auxiliary machine: no direct image acquisition",
+        "noGpu": "AI needs a discrete GPU, this frame has none",
+        "slots": "Needs {need} camera card slots + {lan} LAN port, machine has {have} slots",
+        "ports": "Ports and slots OK: needs {need} card slots ({have} free) + {lan} onboard LAN port",
+        "ram": "RAM needed ~{need}GB → {ram}GB",
+        "ramShort": "RAM needed ~{need}GB, the frame's largest configuration has {max}GB",
+        "noConfig": "Frame has no configuration in use",
+        "storageData": "Stored images ~{need}TB → capacity ~{cap}TB (data drive)",
+        "storageSsd": "Stored images ~{need}TB → capacity ~{cap}TB (image partition on system SSD)",
+        "storageOver": "Stored images ~{need}TB, the frame's largest configuration holds ~{cap}TB: use a NAS, keep fewer days, or add a configuration with a larger drive",
+        "trainVram": "On-machine training: {vram}GB VRAM is likely short, prefer ≥ {min}GB",
+        "line247Unknown": "24/7 line: RAM/SSD grade unknown, check first",
+        "line247Commercial": "24/7 line with commercial RAM/SSD: only if the customer accepts it in writing",
+        "power": "Peak load ~{load}W = {pct}% of PSU (incl. {poe}W PoE), above {max}%: power the cameras from an external PoE switch",
+        "largeImageAi": "Images from {mp}MP running AI: consider tier D",
+        "dataDriveC": "Commercial data drive on a 24/7 line: software must not hang when the drive fails or fills, monitor SMART, high-TBW drive (no QLC)"
+      }
+    },
+    "fps": {
+      "intro": "Values are the <b>maximum fps allowed by the cable</b> (8-bit images, mono or Bayer; divide by 1.5 for 10/12 bit). Real fps = the <b>smallest</b> of: ① cable limit (this table) · ② sensor maximum fps (datasheet) · ③ exposure limit: overlapping exposure (most global shutters) ≤ 1000 / exposure(ms); non-overlapping ≤ 1000 / (exposure + sensor readout time) · ④ trigger rate and algorithm processing time. Several GigE cameras sharing one switch uplink to one PC port <b>share</b> its bandwidth.",
+      "exposure": "Exposure time (ms, 0 = ignore)",
+      "exposureNote": "Exposure {ms} ms → at most {fps} fps (overlapping). Cells with * are limited by exposure.",
+      "title": "Maximum fps",
+      "meta": "6 resolutions × 11 interfaces",
+      "resolution": "Resolution",
+      "mbPerFrame": "MB/frame",
+      "cappedTitle": "Cable allows {fps} fps, limited by exposure",
+      "bandLow": "< {n} fps",
+      "bandMid": "{low}–{high}",
+      "bandHigh": "> {n}",
+      "footnote": "Camera Link: per camera on one frame grabber port. CXP-12 ×4 = camera using 4 lanes."
+    },
+    "checklist": {
+      "intro": "Reference content for <b>every PC</b> before delivery. This first version is display only (no per-machine ticking). Use <b>Print / save PDF</b> to take it along when installing.",
+      "title": "Stability checklist",
+      "meta": "{n} items",
+      "print": "Print / save PDF",
+      "required": "Required",
+      "recommended": "Recommended"
     }
   }
 }

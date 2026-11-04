@@ -13,7 +13,7 @@
     "signUp": "Đăng ký",
     "signOut": "Đăng xuất",
     "kpi": "Chỉ tiêu",
-    "pc": "Máy tính",
+    "pc": "PC Vision",
     "selectorVision": "Gợi ý cấu hình",
     "lens": "Ống kính",
     "visionEngineer": "Vision Engineer",
@@ -41,7 +41,7 @@
       "ocr": "Đọc, kiểm tra ký tự in",
       "lens": "Tiêu cự, khoảng làm việc, lọc ống trong kho",
       "light": "Kiểu đèn, màu đèn theo bài toán",
-      "pc": "Máy, card giao tiếp, phần mềm"
+      "pc": "Danh mục cấu hình PC, gợi ý theo camera"
     }
   },
   "catalog": {
@@ -1551,6 +1551,10 @@
         "interfaces": {
           "title": "Băng thông giao tiếp camera",
           "hint": "THR-001 / THR-002: băng thông THỰC DỤNG (đã trừ overhead), không phải số lý thuyết. CoaXPress tính cho MỘT làn."
+        },
+        "pc": {
+          "title": "PC Vision",
+          "hint": "PC Vision: ước tải đỉnh khung mới, RAM cần, dung lượng lưu ảnh, số khe card, PoE và các ngưỡng xếp hạng khung (PC-PSU, PC-RAM, PC-STORE, PC-SLOT, PC-RANK)."
         }
       },
       "params": {
@@ -1619,7 +1623,29 @@
         "codePxPerModuleDpm": "Đọc mã — px trên một ô, mã DPM (COD-001)",
         "codeMinReads": "Đọc mã — số lần chụp tối thiểu khi mã đi qua khung (COD-002)",
         "ocrPxPerCharHeight": "OCR — px theo chiều cao ký tự (OCR-001)",
-        "ocrPxPerStroke": "OCR — px trên độ dày nét (OCR-001)"
+        "ocrPxPerStroke": "OCR — px trên độ dày nét (OCR-001)",
+        "pcPsuMaxShare": "Tải đỉnh tối đa so với công suất nguồn (PC-PSU)",
+        "pcCpuPeakW": "Công suất đỉnh CPU dùng để ước tải (PC-PSU)",
+        "pcBaseLoadW": "Phần còn lại của máy: main, RAM, ổ, quạt (PC-PSU)",
+        "bwTwoFiveGigE": "2.5GigE",
+        "pcRamBufferFrames": "RAM — số khung đệm mỗi camera (PC-RAM)",
+        "pcRamBaseGb": "RAM — nền Windows + phần mềm vision (PC-RAM)",
+        "pcRamAiGb": "RAM — cộng thêm khi chạy AI (PC-RAM)",
+        "pcRamTrainGb": "RAM — cộng thêm khi huấn luyện tại máy (PC-RAM)",
+        "pcTrainMinVramGb": "VRAM tối thiểu để huấn luyện tại máy (PC-RANK)",
+        "pcLargeImageMp": "Ảnh từ cỡ này chạy AI thì nên cấp D (PC-RANK)",
+        "pcDiskUsableShare": "Phần ổ dùng được để chứa ảnh (PC-STORE)",
+        "pcSystemReserveGb": "Chừa trên SSD cho Windows + phần mềm + model (PC-STORE)",
+        "pcPngRatio": "Hệ số nén PNG so với ảnh thô (PC-STORE)",
+        "pcJpegRatio": "Hệ số nén JPEG so với ảnh thô (PC-STORE)",
+        "pcGigePortsPerCard": "Số cổng mỗi card GigE / 2.5G / 5G (PC-SLOT)",
+        "pcTenGigePortsPerCard": "Số cổng mỗi card 10GigE (PC-SLOT)",
+        "pcUsbPortsPerCard": "Số cổng mỗi card USB3 (PC-SLOT)",
+        "pcClBasePerGrabber": "Số camera Camera Link Base mỗi frame grabber (PC-SLOT)",
+        "pcCxpLanesPerCard": "Số làn CXP mỗi frame grabber (PC-SLOT)",
+        "pcPoePerCameraW": "PoE mỗi camera GigE cấp từ card (PC-PSU)",
+        "pcFpsLow": "Bảng fps — dưới mức này tô đỏ (PC-FPS)",
+        "pcFpsHigh": "Bảng fps — trên mức này tô xanh (PC-FPS)"
       },
       "errors": {
         "fix": "Có ô chưa hợp lệ — xem dòng báo đỏ.",
@@ -1629,7 +1655,8 @@
         "telecentricOrder": "Phải lớn hơn ngưỡng \"giá hợp lý\".",
         "weightsSum": "Sáu trọng số đang cộng lại bằng {sum}, phải bằng 1.",
         "saved": "Đã lưu ngưỡng. Trang Yêu cầu dùng ngay từ lần tải sau.",
-        "pxOrder": "Phải lớn hơn hoặc bằng mức độ tương phản cao hơn."
+        "pxOrder": "Phải lớn hơn hoặc bằng mức độ tương phản cao hơn.",
+        "fpsOrder": "Phải lớn hơn ngưỡng tô đỏ."
       },
       "sensitiveWarning": "Hằng số vật lý / thông số chuẩn — sửa nhầm sẽ đổi kết quả của MỌI dự án. Chỉ sửa khi có datasheet hoặc số đo thực tế."
     },
@@ -2208,44 +2235,6 @@
     "system": "Hệ thống"
   },
   "pcPlanner": {
-    "title": "Cấu hình máy tính",
-    "subtitle": "Gộp mọi bài toán của một dự án lại rồi mới chọn máy — vì các bài toán thường chạy chung một máy.",
-    "why": "Bộ chọn thiết bị làm việc theo từng bài toán, nên nếu máy tính nằm trong bảng vật tư của mỗi bài thì ba bài toán sẽ ra ba máy. Trang này đi ngược lại: nhập mỗi bài một dòng, cộng số camera và băng thông, rồi mới quyết cần một máy hay hai.",
-    "emptyCatalog": "Chưa có linh kiện nào trong catalog. Thêm máy tính, card giao tiếp và phần mềm ở trang Quản trị → Linh kiện.",
-    "linesTitle": "Các bài toán dùng chung máy",
-    "linesHint": "Mỗi bài toán một dòng. Số camera là tổng của bài đó, đã nhân theo số trạm. Băng thông là của MỘT camera.",
-    "addLine": "+ Thêm bài toán",
-    "removeLine": "Bỏ dòng này",
-    "labelPlaceholder": "Bài toán {n}",
-    "colLabel": "Bài toán",
-    "colCameras": "Số camera",
-    "colInterface": "Chuẩn giao tiếp",
-    "colRate": "MB/s mỗi cam",
-    "colGpu": "Cần GPU",
-    "totalCameras": "Tổng camera",
-    "totalRate": "Tổng băng thông",
-    "interfacesUsed": "Chuẩn giao tiếp",
-    "gpuNeeded": "Cần GPU",
-    "yes": "Có",
-    "no": "Không",
-    "mixedInterfaces": "Dự án dùng nhiều chuẩn giao tiếp ({list}). Máy phải đỡ được cả hai, và mỗi chuẩn cần card riêng của nó.",
-    "splitReason": {
-      "slots": "Một máy chỉ gánh được {max} camera nên phải tách thành {count} máy.",
-      "bandwidth": "Tổng băng thông vượt sức một máy ({max} camera/máy) nên phải tách thành {count} máy."
-    },
-    "bomTitle": "Danh mục vật tư máy tính",
-    "bomNote": "Bản quyền Windows, Office và màn hình tính theo MÁY, nên số lượng đi theo số máy chứ không theo số bài toán.",
-    "optionsTitle": "Hàng đi kèm máy tính",
-    "colName": "Tên vật tư",
-    "colDevice": "Mã thiết bị / Hãng",
-    "colSpec": "Thông số",
-    "colQty": "SL",
-    "noOption": "Chưa có trong catalog",
-    "rows": {
-      "pc": "Máy tính công nghiệp",
-      "card": "Card giao tiếp {interface}",
-      "software": "Phần mềm xử lý ảnh"
-    },
     "locked": {
       "title": "Cần quyền Member trở lên",
       "bodyRegistered": "Tài khoản của bạn đang ở mức Registered. Liên hệ quản trị để được cấp quyền Member.",
@@ -4003,6 +3992,265 @@
       "cameraHint": "Cần thêm ống kính, đèn và phần mềm OCR (Halcon, VisionPro…) — chọn ở trang Ống kính / Đèn.",
       "foot": "Cùng bộ kiểm với trang Chọn camera (pixel, fps thật, băng thông, shutter, phơi sáng); giả định ống kính vừa khít vùng nhìn.",
       "showMore": "Xem thêm {n} camera"
+    }
+  },
+  "pcVision": {
+    "title": "PC Vision",
+    "subtitle": "Danh mục cấu hình PC công nghiệp cho dự án machine vision, kèm gợi ý cấu hình theo camera.",
+    "tabs": {
+      "label": "Các phần của trang PC Vision",
+      "catalog": "Danh mục cấu hình",
+      "suggest": "Gợi ý cấu hình",
+      "fps": "Bảng fps",
+      "checklist": "Checklist ổn định"
+    },
+    "catalog": {
+      "intro": "Cấu hình chia theo khung (chassis, CPU, GPU, nguồn). Trong mỗi khung có vài cấu hình, khác nhau ở phần in đậm của mã: RAM – SSD hệ thống – ổ dữ liệu.",
+      "introAdmin": "Chỉ Admin thêm, sửa; máy chủ và CSDL kiểm lại, không chỉ ẩn nút.",
+      "panelTitle": "Danh mục cấu hình",
+      "count": "{configs} cấu hình · {frames} khung",
+      "search": "Tìm mã, CPU, GPU…",
+      "statusFilter": "Lọc trạng thái",
+      "status": {
+        "active": "Đang dùng",
+        "retired": "Ngừng dùng",
+        "all": "Tất cả"
+      },
+      "add": "+ Thêm cấu hình",
+      "col": {
+        "config": "Cấu hình",
+        "code": "Mã",
+        "ram": "RAM",
+        "ssd": "SSD hệ thống",
+        "data": "Ổ dữ liệu"
+      },
+      "edit": "Sửa",
+      "editFrame": "Sửa khung",
+      "noGpu": "Không GPU",
+      "gpu": "{gpu} · {vram}GB",
+      "psu": "Nguồn {w}W",
+      "ports": "{lan} LAN + {slots} khe card",
+      "noCapture": "Không thu ảnh",
+      "lineIndustrial": "RAM + SSD công nghiệp",
+      "lineUnknown": "Chưa rõ dòng RAM/SSD",
+      "lineCommercial": "RAM/SSD dòng thường",
+      "useFor": "Dùng cho: {text}",
+      "notFor": "Không dùng cho: {text}",
+      "empty": "Không có cấu hình nào khớp.",
+      "footnote": "RAM luôn 2 thanh cùng lô, chốt lúc đặt hàng. Ổ dữ liệu dòng C được phép cả trên dây chuyền 24/7, kèm điều kiện ở checklist; RAM + SSD hệ thống vẫn dòng I. Cấu hình không dùng nữa chuyển sang Ngừng dùng, mã không cấp lại.",
+      "loadError": "Chưa đọc được danh mục PC. Có thể bảng chưa được tạo: dán file CHAY-BUOC-NAY-PC-VISION.sql vào Supabase SQL Editor."
+    },
+    "form": {
+      "addTitle": "Thêm cấu hình",
+      "editTitle": "Sửa cấu hình {name}",
+      "addHint": "Chọn từng thành phần, mã tự ghép, không gõ tay. Phần khung trùng khung đã có thì tự xếp vào khung đó. Máy chủ kiểm tra lại mã và chống trùng.",
+      "frameSection": "Khung",
+      "partsSection": "RAM – SSD – ổ dữ liệu",
+      "pn": "PN chassis (đúng như hãng)",
+      "cpu": "CPU (dòng-số model)",
+      "gpu": "Chip GPU",
+      "gpuNone": "Không có",
+      "vram": "VRAM GB",
+      "psu": "Nguồn W",
+      "os": "Hệ điều hành",
+      "osOption": {
+        "W11P": "W11P · Win 11 Pro",
+        "W11L": "W11L · Win 11 IoT LTSC",
+        "LNX": "LNX · Linux",
+        "NOS": "NOS · không cài"
+      },
+      "ram": "RAM GB",
+      "ramLine": "Dòng RAM",
+      "ssd": "SSD hệ thống",
+      "ssdLine": "Dòng SSD",
+      "data": "Ổ dữ liệu",
+      "dataNone": "Không có (D0)",
+      "dataLine": "Dòng ổ dữ liệu",
+      "line": {
+        "I": "I · công nghiệp",
+        "C": "C · thường",
+        "unknown": "? · chưa rõ"
+      },
+      "codeLabel": "Mã sẽ cấp",
+      "codeOk": "Mã hợp lệ",
+      "errors": {
+        "pn": "PN chassis chỉ gồm chữ in hoa, số và dấu gạch nối.",
+        "cpu": "CPU chưa đúng dạng, ví dụ I9-14900.",
+        "gpuNoVram": "Có GPU thì phải chọn VRAM.",
+        "vramNoGpu": "Không GPU thì VRAM = 0.",
+        "regex": "Mã chưa đúng quy tắc.",
+        "duplicate": "Mã này đã cấp (kể cả cấu hình đã ngừng dùng), không cấp lại.",
+        "locked": "Trường tạo mã đã khoá.",
+        "frameNew": "Khung mới: nhập tên khung.",
+        "notAllowed": "Chỉ Admin được sửa danh mục PC.",
+        "invalid": "Dữ liệu chưa hợp lệ, kiểm tra lại các ô.",
+        "db": "Không lưu được: {message}"
+      },
+      "power": "Tải đỉnh ước ~{load}W = {pct}% nguồn (ngưỡng {max}%)",
+      "powerOver": "Tải đỉnh ước ~{load}W = {pct}% nguồn: vượt {max}%, nên chọn nguồn lớn hơn",
+      "inFrame": "Thuộc khung",
+      "newFrame": "Khung mới: nhập thêm thông tin khung bên dưới",
+      "tier": "Cấp",
+      "frameNameVi": "Tên khung",
+      "frameNameEn": "Tên khung (tiếng Anh)",
+      "slots": "Khe trống cho card camera",
+      "lan": "Cổng LAN onboard cho camera",
+      "peak": "Tải đỉnh ước tính (W, chưa tính PoE)",
+      "useForVi": "Dùng cho",
+      "useForEn": "Dùng cho (tiếng Anh)",
+      "notForVi": "Không dùng cho",
+      "notForEn": "Không dùng cho (tiếng Anh)",
+      "noteVi": "Ghi chú",
+      "noteEn": "Ghi chú (tiếng Anh)",
+      "shortName": "Tên ngắn",
+      "shortNamePlaceholder": "vd C4",
+      "status": "Trạng thái",
+      "lockedNote": "RAM, SSD và ổ dữ liệu đã khoá theo mã. Muốn đổi thì thêm cấu hình mới rồi chuyển cấu hình này sang Ngừng dùng.",
+      "copyAsNew": "Thêm cấu hình mới từ cấu hình này",
+      "frameTitle": "Sửa khung {name}",
+      "frameLockedNote": "Phần cố định của mã (PN, CPU, GPU, nguồn, hệ điều hành) đã khoá. Dòng RAM/SSD chỉ đổi được khi đang là ?; đổi xong, mã các cấu hình của khung được ghép lại, mã cũ không cấp lại.",
+      "cancel": "Huỷ",
+      "save": "Lưu",
+      "saving": "Đang lưu…",
+      "saved": "Đã lưu {code}"
+    },
+    "history": {
+      "title": "Lịch sử thay đổi",
+      "meta": "{n} thay đổi gần nhất",
+      "note": "Chỉ Admin thấy. Ghi ở CSDL: ai sửa, lúc nào, giá trị trước / sau.",
+      "empty": "Chưa có thay đổi.",
+      "system": "Dán SQL",
+      "action": {
+        "insert": "Thêm",
+        "update": "Sửa",
+        "delete": "Xoá"
+      },
+      "table": {
+        "pc_frames": "Khung",
+        "pc_configs": "Cấu hình"
+      },
+      "col": {
+        "at": "Lúc",
+        "who": "Ai",
+        "what": "Mục",
+        "change": "Thay đổi"
+      }
+    },
+    "suggest": {
+      "intro": "Nhập camera của dự án → phần mềm tính băng thông, RAM (và dung lượng ảnh lưu nếu bật), rồi với mỗi khung chọn cấu hình nhỏ nhất đủ dùng trong danh mục. Chỉ tính để xem, không lưu. Số camera thực chạy được còn phụ thuộc thời gian xử lý thuật toán, vẫn phải chạy thử 24h.",
+      "cameraPanel": "Camera của dự án",
+      "cameraMeta": "{n} camera",
+      "addCamera": "+ Thêm camera",
+      "removeCamera": "Bỏ camera này",
+      "camName": "Cam {n}",
+      "col": {
+        "name": "Tên",
+        "resolution": "Độ phân giải",
+        "bit": "Bit",
+        "fps": "fps",
+        "iface": "Giao tiếp",
+        "inspect": "Ảnh kiểm/giây",
+        "bandwidth": "Băng thông",
+        "port": "% cổng"
+      },
+      "maxFps": "tối đa {fps} fps",
+      "ai": "Chạy AI?",
+      "aiOption": {
+        "none": "Không",
+        "inference": "Có · suy luận",
+        "training": "Có · huấn luyện tại máy"
+      },
+      "line247": "Dây chuyền 24/7?",
+      "line247Option": {
+        "yes": "Có · RAM/SSD hệ thống dòng I",
+        "no": "Không (demo / lab)"
+      },
+      "storageToggle": "Tính dung lượng lưu ảnh?",
+      "storageOption": {
+        "no": "Không",
+        "yes": "Có"
+      },
+      "storageTitle": "Lưu ảnh",
+      "storageHint": "Tách ảnh lỗi (NG) và ảnh đạt (OK); ổ đầy thì tự xoá ảnh cũ nhất.",
+      "hoursPerDay": "Giờ chạy / ngày",
+      "ngPercent": "Tỉ lệ NG (%)",
+      "ngDays": "Giữ ảnh NG (ngày)",
+      "ngFormat": "Ảnh NG lưu dạng",
+      "okDays": "Giữ ảnh OK (ngày, 0 = bỏ)",
+      "okEveryN": "Ảnh OK: lưu 1 trên N",
+      "okFormat": "Ảnh OK lưu dạng",
+      "format": {
+        "raw": "Ảnh thô (BMP)",
+        "png": "PNG",
+        "jpeg": "JPEG"
+      },
+      "resultPanel": "Kết quả tính",
+      "computing": "Đang tính…",
+      "tile": {
+        "bandwidth": "Tổng băng thông",
+        "ram": "RAM cần",
+        "storage": "Ảnh lưu: NG {ng} + OK {ok} TB",
+        "raw": "Nếu lưu hết ảnh thô: {raw} TB",
+        "slots": "{n} khe",
+        "slotsLabel": "Card camera cần (+ {lan} cổng LAN onboard)"
+      },
+      "fitPanel": "Cấu hình phù hợp",
+      "fitMeta": "mỗi khung lấy cấu hình nhỏ nhất đủ dùng · xếp: đạt → có lưu ý → không hợp",
+      "level": {
+        "ok": "Đạt",
+        "warn": "Đạt, có lưu ý"
+      },
+      "recommended": "Gợi ý · cấp thấp nhất đáp ứng được",
+      "noneFits": "Không cấu hình nào trong danh mục đáp ứng: cần cấu hình mới.",
+      "rejected": "Không hợp ({n}) · bấm xem lý do",
+      "noCameras": "Thêm ít nhất một camera để tính.",
+      "errors": {
+        "denied": "Cần quyền Member trở lên để tính gợi ý.",
+        "invalid": "Ô nhập chưa hợp lệ, kiểm tra lại các số.",
+        "failed": "Chưa đọc được danh mục PC để so."
+      },
+      "prefill": "Điền từ bảng vật tư: {count} camera {iface}{rate}. Kiểm lại độ phân giải, bit và fps.",
+      "prefillRate": ", {rate} MB/s mỗi camera",
+      "notes": {
+        "aux": "Máy phụ trợ: không thu ảnh trực tiếp",
+        "noGpu": "Chạy AI cần GPU rời, khung này không có",
+        "slots": "Cần {need} khe card camera + {lan} cổng LAN, máy có {have} khe",
+        "ports": "Cổng, khe đủ: cần {need} khe card ({have} trống) + {lan} cổng LAN onboard",
+        "ram": "RAM cần ~{need}GB → {ram}GB",
+        "ramShort": "RAM cần ~{need}GB, cấu hình lớn nhất của khung có {max}GB",
+        "noConfig": "Khung chưa có cấu hình đang dùng",
+        "storageData": "Ảnh lưu ~{need}TB → chứa được ~{cap}TB (ổ dữ liệu)",
+        "storageSsd": "Ảnh lưu ~{need}TB → chứa được ~{cap}TB (phân vùng ảnh trên SSD hệ thống)",
+        "storageOver": "Ảnh lưu ~{need}TB, cấu hình lớn nhất của khung chứa ~{cap}TB: dùng NAS, giảm số ngày giữ, hoặc thêm cấu hình ổ lớn hơn",
+        "trainVram": "Huấn luyện tại máy: VRAM {vram}GB dễ thiếu, nên ≥ {min}GB",
+        "line247Unknown": "Dây chuyền 24/7: chưa rõ RAM/SSD có phải dòng công nghiệp, kiểm tra trước",
+        "line247Commercial": "Dây chuyền 24/7 dùng RAM/SSD dòng thường: chỉ dùng khi khách chấp nhận bằng văn bản",
+        "power": "Tải đỉnh ~{load}W = {pct}% nguồn (có PoE {poe}W), vượt {max}%: cấp PoE bằng switch ngoài",
+        "largeImageAi": "Ảnh từ {mp}MP chạy AI: cân nhắc cấp D",
+        "dataDriveC": "Ổ dữ liệu dòng C trên dây chuyền 24/7: phần mềm không treo khi ổ lỗi/đầy, theo dõi SMART, ổ TBW cao (không QLC)"
+      }
+    },
+    "fps": {
+      "intro": "Số trong bảng là <b>fps tối đa theo dây cáp</b> (ảnh 8 bit, mono hoặc Bayer; 10/12 bit chia cho 1,5). fps thật = <b>nhỏ nhất</b> của: ① giới hạn cáp (bảng này) · ② fps tối đa của cảm biến (datasheet) · ③ giới hạn exposure: phơi sáng chồng lấn (overlap, đa số global shutter) ≤ 1000 / exposure(ms); không chồng lấn ≤ 1000 / (exposure + thời gian đọc cảm biến) · ④ tốc độ trigger và thời gian xử lý thuật toán. Nhiều cam GigE dồn qua một switch về một cổng PC thì <b>chia nhau</b> băng thông.",
+      "exposure": "Thời gian phơi sáng (ms, 0 = không xét)",
+      "exposureNote": "Exposure {ms} ms → tối đa {fps} fps (chồng lấn). Ô có * = bị exposure giới hạn.",
+      "title": "Bảng fps tối đa",
+      "meta": "6 độ phân giải × 11 giao tiếp",
+      "resolution": "Độ phân giải",
+      "mbPerFrame": "MB/khung",
+      "cappedTitle": "Cáp cho {fps} fps, bị exposure giới hạn",
+      "bandLow": "< {n} fps",
+      "bandMid": "{low}–{high}",
+      "bandHigh": "> {n}",
+      "footnote": "Camera Link: số cho 1 camera / 1 cổng frame grabber. CXP-12 ×4 = camera dùng 4 làn."
+    },
+    "checklist": {
+      "intro": "Nội dung tham khảo, áp dụng cho <b>mọi PC</b> trước khi giao. Bản đầu chỉ hiển thị (không ghi nhận tick theo từng máy). Có nút <b>In / tải PDF</b> để kỹ sư mang theo khi cài máy.",
+      "title": "Checklist ổn định",
+      "meta": "{n} mục",
+      "print": "In / tải PDF",
+      "required": "Bắt buộc",
+      "recommended": "Khuyến nghị"
     }
   }
 }

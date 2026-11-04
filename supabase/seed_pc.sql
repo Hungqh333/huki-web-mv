@@ -1,6 +1,7 @@
 -- =============================================================================
 -- PC Vision — 6 khung, 13 cấu hình đề xuất ban đầu (gói bàn giao 03/11/2026 mục 3).
 -- Hùng thêm / sửa tiếp trên trang /cong-cu-may-tinh. Mã do trigger ghép.
+-- 2026-11-04: Hùng xác nhận khung A (EBS-I10) dùng RAM + SSD công nghiệp → dòng I (trước là '?').
 -- Dán lại nhiều lần không sao: khung khớp theo slug, cấu hình khớp theo khung + tên ngắn.
 -- =============================================================================
 
@@ -8,10 +9,10 @@ insert into public.pc_frames (
   slug, tier, name_vi, name_en, chassis_pn, cpu, gpu, vram_gb, psu_w, os, ram_line, ssd_line,
   card_slots, lan_ports, peak_load_w, use_for_vi, use_for_en, not_for_vi, not_for_en, note_vi, note_en, sort_order)
 values
-  ('A', 'A', 'Cơ bản', 'Basic', 'EBS-I10', 'I5-12400', '0', 0, 250, 'W11P', '?', '?', 0, 1, 120,
+  ('A', 'A', 'Cơ bản', 'Basic', 'EBS-I10', 'I5-12400', '0', 0, 250, 'W11P', 'I', 'I', 0, 1, 120,
    'Thuật toán cổ điển: đo, đếm, có/không, đọc code', 'Classic algorithms: measuring, counting, presence, code reading',
    'AI · lắp thêm card', 'AI · add-in cards',
-   'Chưa biết RAM/SSD dòng nào, chờ kiểm tra', 'RAM/SSD grade unknown, pending check', 10),
+   null, null, 10),
   ('B', 'B', 'Tiêu chuẩn', 'Standard', 'RT-661R-Q670-A10-0001', 'I7-14700', '0', 0, 650, 'W11P', 'I', 'I', 3, 1, 330,
    'Cổ điển nhiều camera, ảnh lớn', 'Classic, many cameras, large images',
    'AI tốc độ cao', 'High-speed AI', null, null, 20),

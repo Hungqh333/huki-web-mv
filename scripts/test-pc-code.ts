@@ -31,7 +31,7 @@ const PN = 'RT-661R-Q670-A10-0001';
 
 /** Mã của 13 cấu hình theo gói bàn giao mục 3 (khung + phần R-S-D). */
 const EXPECTED: Record<string, string> = {
-  A1: 'EBS-I10-I5-12400-G0-P250-R16?-S256?-D0-W11P',
+  A1: 'EBS-I10-I5-12400-G0-P250-R16I-S256I-D0-W11P',
   B1: `${PN}-I7-14700-G0-P650-R16I-S512I-D0-W11P`,
   B2: `${PN}-I7-14700-G0-P650-R32I-S512I-D1TC-W11P`,
   B3: `${PN}-I7-14700-G0-P650-R64I-S512I-D2TC-W11P`,
@@ -70,8 +70,10 @@ test('seed: 6 khung, 13 cấu hình, mã ghép khớp gói bàn giao', () => {
 
 test('mã đúng regex, trừ mã có ? của khung chưa rõ dòng RAM/SSD', () => {
   for (const [name, code] of Object.entries(EXPECTED)) {
-    assert.equal(PC_CODE_REGEX.test(code), name !== 'A1', name);
+    assert.ok(PC_CODE_REGEX.test(code), name);
   }
+  // Khung chưa rõ dòng RAM/SSD (dấu ?) cố ý không qua regex — chưa được đặt hàng.
+  assert.ok(!PC_CODE_REGEX.test('EBS-I10-I5-12400-G0-P250-R16?-S256?-D0-W11P'));
   // Ví dụ trong quy tắc gửi hãng.
   assert.ok(PC_CODE_REGEX.test('RT-661R-Q670-A10-0001-I9-14900-G5070V12-P1000-R64I-S2TI-D0-W11P'));
   assert.ok(PC_CODE_REGEX.test('EBS-I10-U7-265-G5060TIV16-P650-R32I-S512I-H4TC-W11L'));

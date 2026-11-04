@@ -26,6 +26,7 @@ import {
   type PcSuggestInput,
 } from '../src/lib/pc/suggest';
 import { fpsTable } from '../src/lib/pc/fps';
+import { PC_RESOLUTIONS, resolutionLabel } from '../src/lib/pc/options';
 import { DEFAULT_ENGINE_PARAMS as P } from '../src/lib/vision/engineParams';
 
 // ── Nạp logic của mẫu ──
@@ -39,10 +40,8 @@ const MOCK_IFACE: Record<PcInterface, string> = {
   'CameraLink-Base': 'CL Base', 'CameraLink-Medium': 'CL Medium', 'CameraLink-Full': 'CL Full', 'CameraLink-Deca': 'CL Deca',
   'CXP-12x1': 'CXP-12 ×1', 'CXP-12x4': 'CXP-12 ×4',
 };
-const MOCK_RES: Record<PcResolution, string> = {
-  '1.3MP': '1.3MP (1280×1024)', '2.3MP': '2.3MP (1920×1200)', '5MP': '5MP (2448×2048)',
-  '12MP': '12MP (4096×3000)', '20MP': '20MP (5472×3648)', '25MP': '25MP (5120×5120)',
-};
+/** Nhãn độ phân giải trong DP của mẫu — mẫu chỉ có 6 mức; loadMock() nạp đủ danh sách hiện tại vào DP. */
+const MOCK_RES = (key: PcResolution) => resolutionLabel(key);
 const MOCK_AI: Record<PcAiMode, string> = { none: 'khong', inference: 'suy_luan', training: 'huan_luyen' };
 const MOCK_FMT: Record<PcImageFormat, number> = { raw: 1, png: 0.5, jpeg: 0.1 };
 
@@ -54,16 +53,22 @@ function loadMock() {
   const context = vm.createContext({ document });
   const api = vm.runInContext(
     `${script}
-     ;({ KH, GT, tinh, danhGia, set: (cam, chung) => { CAM = cam; CHUNG = chung; }, fps: (ms) => { PHOI = ms; return veFps(); } })`,
+     ;({ KH, GT, DP, tinh, danhGia, set: (cam, chung) => { CAM = cam; CHUNG = chung; }, fps: (ms) => { PHOI = ms; return veFps(); } })`,
     context
   ) as {
     KH: { id: string }[];
     GT: Record<string, number>;
+    DP: Record<string, [number, number]>;
     tinh: () => MockKq;
     danhGia: (k: unknown, kq: MockKq) => MockVerdict;
     set: (cam: MockCam[], chung: MockChung) => void;
     fps: (exposureMs: number) => string;
   };
+  // Khung A: Hùng xác nhận RAM + SSD công nghiệp (2026-11-04) — mẫu vẫn ghi '?', chỉnh cho khớp danh mục.
+  for (const k of api.KH as { id: string; rd: string; sd: string }[]) if (k.id === 'A') k.rd = k.sd = 'I';
+  // 2026-11-04: danh sách độ phân giải mở rộng từ kho thật — thay DP của mẫu bằng đủ danh sách, đúng thứ tự.
+  for (const key of Object.keys(api.DP)) delete api.DP[key];
+  for (const key of PC_RESOLUTION_KEYS) api.DP[MOCK_RES(key)] = [PC_RESOLUTIONS[key][0], PC_RESOLUTIONS[key][1]];
   // Q2: băng thông theo bảng engine, không theo số của mẫu.
   for (const key of PC_INTERFACE_KEYS) api.GT[MOCK_IFACE[key]] = interfaceBandwidth(P, key);
   return api;
@@ -73,7 +78,7 @@ function loadMock() {
 function runMock(api: ReturnType<typeof loadMock>, input: PcSuggestInput) {
   const s = input.storage;
   api.set(
-    input.cameras.map((c, i) => ({ ten: `Cam ${i}`, dp: MOCK_RES[c.resolution], bit: c.bit, fps: c.fps, gt: MOCK_IFACE[c.iface], luu: c.inspectPerSec })),
+    input.cameras.map((c, i) => ({ ten: `Cam ${i}`, dp: MOCK_RES(c.resolution), bit: c.bit, fps: c.fps, gt: MOCK_IFACE[c.iface], luu: c.inspectPerSec })),
     {
       ai: MOCK_AI[input.ai], ca: input.line247, luuAnh: s !== null,
       gio: s?.hoursPerDay ?? 20, ng: s?.ngPercent ?? 1, ngNgay: s?.ngDays ?? 30, ngNen: MOCK_FMT[s?.ngFormat ?? 'png'],
@@ -128,8 +133,8 @@ const nameOf = new Map(seed.configs.map((c) => [c.id, c.shortName]));
 test('khớp mẫu đã duyệt trên ví dụ mặc định của mẫu (2 cam GigE, AI suy luận, 24/7)', () => {
   const input: PcSuggestInput = {
     cameras: [
-      { resolution: '5MP', bit: 8, fps: 10, iface: 'GigE', inspectPerSec: 2 },
-      { resolution: '12MP', bit: 8, fps: 5, iface: 'GigE', inspectPerSec: 1 },
+      { resolution: '2448x2048', bit: 8, fps: 10, iface: 'GigE', inspectPerSec: 2 },
+      { resolution: '4096x3000', bit: 8, fps: 5, iface: 'GigE', inspectPerSec: 1 },
     ],
     ai: 'inference',
     line247: true,
@@ -142,7 +147,7 @@ test('khớp mẫu đã duyệt trên ví dụ mặc định của mẫu (2 cam 
   assert.equal(Math.round(out.totalMbps), 112);
   assert.deepEqual(
     out.frames.map((f) => `${slugOf.get(f.frameId)}:${f.level}:${f.configId ? nameOf.get(f.configId) : '-'}`),
-    ['Ct:ok:Ct1', 'C:ok:C1', 'D:ok:D1', 'B:no:B2', 'A:no:A1', 'P:no:P1']
+    ['Ct:ok:Ct1', 'C:ok:C1', 'D:ok:D1', 'A:no:A1', 'B:no:B2', 'P:no:P1']
   );
 });
 
@@ -167,15 +172,16 @@ test('khớp logic mẫu trên 300 bộ camera ngẫu nhiên', () => {
     for (const f of mine.frames) for (const key of [f.level, ...f.warn.map((w) => w.key)]) seen.set(key, (seen.get(key) ?? 0) + 1);
   }
   // Bộ ngẫu nhiên phải chạm đủ ba mức và mọi loại lưu ý, nếu không phép so khớp chưa nói được gì.
-  for (const key of ['ok', 'warn', 'no', 'trainVram', 'storageOver', 'line247Unknown', 'line247Commercial', 'power', 'largeImageAi']) {
+  // line247Unknown: danh mục không còn khung '?' — kiểm riêng ở test dưới.
+  for (const key of ['ok', 'warn', 'no', 'trainVram', 'storageOver', 'line247Commercial', 'power', 'largeImageAi']) {
     assert.ok((seen.get(key) ?? 0) > 0, `bộ ngẫu nhiên chưa có ca "${key}"`);
   }
 });
 
 test('công thức từng phần', () => {
-  assert.equal(mbPerFrame('5MP', 8), 2448 * 2048 / 1e6);
-  assert.equal(mbPerFrame('5MP', 12), (2448 * 2048 * 1.5) / 1e6);
-  assert.equal(mbPerFrame('5MP', 16), (2448 * 2048 * 2) / 1e6);
+  assert.equal(mbPerFrame('2448x2048', 8), 2448 * 2048 / 1e6);
+  assert.equal(mbPerFrame('2448x2048', 12), (2448 * 2048 * 1.5) / 1e6);
+  assert.equal(mbPerFrame('2448x2048', 16), (2448 * 2048 * 2) / 1e6);
   assert.equal(interfaceBandwidth(P, 'CXP-12x4'), 4 * P.bwCxpTwelve);
   assert.equal(interfaceBandwidth(P, '2.5GigE'), 280);
   const c3 = seed.configs.find((c) => c.shortName === 'C3')!;
@@ -186,7 +192,7 @@ test('công thức từng phần', () => {
 
 test('Q7: 24/7 trên khung dòng thường là LƯU Ý, không phải loại', () => {
   const out = suggestPc(
-    { cameras: [{ resolution: '1.3MP', bit: 8, fps: 5, iface: 'GigE', inspectPerSec: 1 }], ai: 'none', line247: true, storage: null },
+    { cameras: [{ resolution: '1280x1024', bit: 8, fps: 5, iface: 'GigE', inspectPerSec: 1 }], ai: 'none', line247: true, storage: null },
     seed.frames.map((f) => (f.slug === 'B' ? { ...f, ramLine: 'C' as const } : f)),
     seed.configs,
     P
@@ -198,7 +204,7 @@ test('Q7: 24/7 trên khung dòng thường là LƯU Ý, không phải loại', (
 
 test('khung / cấu hình ngừng dùng không được gợi ý', () => {
   const out = suggestPc(
-    { cameras: [{ resolution: '5MP', bit: 8, fps: 10, iface: 'GigE', inspectPerSec: 1 }], ai: 'inference', line247: true, storage: null },
+    { cameras: [{ resolution: '2448x2048', bit: 8, fps: 10, iface: 'GigE', inspectPerSec: 1 }], ai: 'inference', line247: true, storage: null },
     seed.frames.map((f) => (f.slug === 'Ct' ? { ...f, status: 'retired' as const } : f)),
     seed.configs.map((c) => (c.shortName === 'C1' ? { ...c, status: 'retired' as const } : c)),
     P
@@ -218,7 +224,18 @@ test('bảng fps khớp veFps() của mẫu: số, dấu * và màu, ở nhiều
       band[m[1] as keyof typeof band],
     ]);
     const got = fpsTable(P, exposure).rows.flatMap((row) => row.cells.map((c) => [c.fps, c.limitedByExposure, c.band]));
-    assert.equal(want.length, 6 * 11, 'mẫu phải có 66 ô');
+    assert.equal(want.length, PC_RESOLUTION_KEYS.length * 11, 'mẫu phải có đủ ô');
     assert.deepEqual(got, want, `exposure ${exposure} ms`);
   }
+});
+
+test('khung chưa rõ dòng RAM/SSD (?) trên dây chuyền 24/7 → lưu ý kiểm tra trước', () => {
+  const out = suggestPc(
+    { cameras: [{ resolution: '1280x1024', bit: 8, fps: 5, iface: 'GigE', inspectPerSec: 1 }], ai: 'none', line247: true, storage: null },
+    seed.frames.map((f) => (f.slug === 'A' ? { ...f, ramLine: '?' as const, ssdLine: '?' as const } : f)),
+    seed.configs,
+    P
+  );
+  const a = out.frames.find((f) => slugOf.get(f.frameId) === 'A')!;
+  assert.deepEqual(a.warn.map((w) => w.key), ['line247Unknown']);
 });

@@ -4,15 +4,16 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import type { PcSuggestResponse } from '@/app/actions/pcSuggest';
 import { NOTE_CLASS, PanelHeader } from '@/components/ui/PanelHeader';
-import { PcCode } from './PcCode';
+import { PcCodeParts } from './PcCode';
+import { PC_INFO_CLASS } from './styles';
 import type { PcConfig, PcFrame } from '@/lib/pc/code';
 import {
   PC_BITS,
   PC_IMAGE_FORMATS,
   PC_INTERFACE_KEYS,
   PC_INTERFACE_LABEL,
-  PC_RESOLUTIONS,
   PC_RESOLUTION_KEYS,
+  resolutionLabel,
   type PcInterface,
   type PcResolution,
 } from '@/lib/pc/options';
@@ -27,14 +28,14 @@ export type PcSuggestPrefill = { count: number; iface: PcInterface; rate: number
 
 /** Mặc định như mẫu đã duyệt: hai camera GigE, AI suy luận, 24/7, không tính lưu ảnh. */
 const DEFAULT_CAMERAS: Omit<Camera, 'id' | 'name'>[] = [
-  { resolution: '5MP', bit: 8, fps: 10, iface: 'GigE', inspectPerSec: 2 },
-  { resolution: '12MP', bit: 8, fps: 5, iface: 'GigE', inspectPerSec: 1 },
+  { resolution: '2448x2048', bit: 8, fps: 10, iface: 'GigE', inspectPerSec: 2 },
+  { resolution: '4096x3000', bit: 8, fps: 5, iface: 'GigE', inspectPerSec: 1 },
 ];
 const DEFAULT_STORAGE: Storage = { hoursPerDay: 20, ngPercent: 1, ngDays: 30, ngFormat: 'png', okDays: 7, okEveryN: 10, okFormat: 'jpeg' };
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, Number.isFinite(value) ? value : min));
 
-const INPUT = 'w-full rounded-md border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-700 dark:bg-slate-900';
+const INPUT = 'w-full rounded-md border border-slate-300 bg-white px-2 py-1 text-[13px] dark:border-slate-700 dark:bg-slate-900';
 const PANEL = 'rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900';
 
 /**
@@ -134,7 +135,7 @@ export function PcSuggest({
           }
         />
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[820px] text-sm">
+          <table className="w-full min-w-[820px] text-[13px]">
             <thead>
               <tr className="bg-slate-50 text-left text-xs font-medium text-slate-500 dark:bg-slate-900/60 dark:text-slate-400">
                 <th className="px-3 py-2">{t('col.name')}</th>
@@ -160,7 +161,7 @@ export function PcSuggest({
                       <select value={cam.resolution} onChange={(e) => setCam(cam.id, { resolution: e.target.value as PcResolution })} className={INPUT}>
                         {PC_RESOLUTION_KEYS.map((k) => (
                           <option key={k} value={k}>
-                            {k} ({PC_RESOLUTIONS[k][0]}×{PC_RESOLUTIONS[k][1]})
+                            {resolutionLabel(k)}
                           </option>
                         ))}
                       </select>
@@ -245,7 +246,7 @@ export function PcSuggest({
         {storageOn ? (
           <div className="border-t border-slate-100 px-4 py-3 dark:border-slate-800">
             <p className="mb-2 text-xs">
-              <b>{t('storageTitle')}</b> <span className={NOTE_CLASS}>· {t('storageHint')}</span>
+              <b>{t('storageTitle')}</b> <span className={PC_INFO_CLASS}>· {t('storageHint')}</span>
             </p>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
               {(['hoursPerDay', 'ngPercent', 'ngDays'] as const).map((key) => (
@@ -295,7 +296,7 @@ export function PcSuggest({
       {result && cameras.length > 0 ? (
         <section className={PANEL}>
           <PanelHeader title={t('fitPanel')} meta={t('fitMeta')} />
-          <div className="space-y-2 px-4 py-4">
+          <div className="space-y-2 px-4 py-4 text-[13px]">
             {fits.map((v, j) => {
               const frame = frameById.get(v.frameId);
               const config = v.configId ? configById.get(v.configId) : undefined;
@@ -315,14 +316,15 @@ export function PcSuggest({
                     >
                       {t(`level.${v.level === 'ok' ? 'ok' : 'warn'}`)}
                     </span>
-                    {j === 0 ? <span className="rounded-full bg-sky-100 px-2 py-px text-[11px] font-medium text-sky-800 dark:bg-sky-950/60 dark:text-sky-300">{t('recommended')}</span> : null}
+                    {/* "Gợi ý": chữ thường, không thêm viên màu — mức Đạt / Lưu ý đã có viên riêng. */}
+                    {j === 0 ? <span className="text-xs font-medium text-slate-700 dark:text-slate-200">{t('recommended')}</span> : null}
                   </div>
                   {config ? (
-                    <p className="mt-1 text-xs">
-                      <PcCode text={config.code} />
+                    <p className="mt-1">
+                      <PcCodeParts frame={frame} config={config} />
                     </p>
                   ) : null}
-                  <ul className="mt-1.5 space-y-0.5 text-sm">
+                  <ul className="mt-1.5 space-y-0.5">
                     {v.warn.map((n) => (
                       <li key={n.key} className="text-amber-700 dark:text-amber-400">! {note(n)}</li>
                     ))}
@@ -330,7 +332,7 @@ export function PcSuggest({
                       <li key={n.key} className="text-sky-700 dark:text-sky-400">i {note(n)}</li>
                     ))}
                     {v.ok.map((n) => (
-                      <li key={n.key} className={NOTE_CLASS}>✓ {note(n)}</li>
+                      <li key={n.key} className={PC_INFO_CLASS}>✓ {note(n)}</li>
                     ))}
                   </ul>
                 </div>
@@ -346,7 +348,7 @@ export function PcSuggest({
                     return frame ? (
                       <div key={v.frameId} className="rounded-xl border border-l-4 border-slate-200 border-l-red-500 px-3 py-2 opacity-80 dark:border-slate-700">
                         <FrameName frame={frame} />
-                        <ul className="mt-1 space-y-0.5 text-sm">
+                        <ul className="mt-1 space-y-0.5">
                           {v.no.map((n) => (
                             <li key={n.key} className="text-red-600 dark:text-red-400">✕ {note(n)}</li>
                           ))}
@@ -367,7 +369,7 @@ export function PcSuggest({
 function FrameName({ frame }: { frame: PcFrame }) {
   const en = useLocale() === 'en';
   return (
-    <span className="inline-flex items-center text-sm text-slate-600 dark:text-slate-300">
+    <span className="inline-flex items-center text-xs text-slate-500 dark:text-slate-400">
       <span className="mr-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded bg-indigo-600 px-1 text-[11px] font-semibold text-white">{frame.tier}</span>
       {en ? frame.nameEn || frame.nameVi : frame.nameVi}
     </span>
@@ -378,7 +380,7 @@ function Tile({ value, label }: { value: string; label: React.ReactNode }) {
   return (
     <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 dark:border-slate-700 dark:bg-slate-800/50">
       <div className="text-xl font-semibold tabular-nums">{value}</div>
-      <div className={NOTE_CLASS}>{label}</div>
+      <div className={PC_INFO_CLASS}>{label}</div>
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { NOTE_CLASS, PanelHeader } from '@/components/ui/PanelHeader';
 import type { FpsTable } from '@/lib/pc/fps';
 import { PC_INTERFACE_LABEL, PC_RESOLUTIONS } from '@/lib/pc/options';
 import { PcExposureInput } from './PcExposureInput';
+import { PC_INFO_CLASS } from './styles';
 
 const BAND_CLASS = {
   low: 'bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300',
@@ -28,9 +29,9 @@ export async function PcFpsTable({ table, exposureMs }: { table: FpsTable; expos
       </div>
 
       <section className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <PanelHeader title={t('title')} meta={t('meta')} />
+        <PanelHeader title={t('title')} meta={t('meta', { rows: table.rows.length, cols: table.interfaces.length })} />
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[900px] text-sm">
+          <table className="w-full min-w-[900px] text-[13px]">
             <thead>
               <tr className="bg-slate-50 text-xs font-medium text-slate-500 dark:bg-slate-900/60 dark:text-slate-400">
                 <th className="px-3 py-2 text-left">{t('resolution')}</th>
@@ -38,7 +39,7 @@ export async function PcFpsTable({ table, exposureMs }: { table: FpsTable; expos
                 {table.interfaces.map((i) => (
                   <th key={i.key} className="px-2 py-2 text-right">
                     {PC_INTERFACE_LABEL[i.key]}
-                    <div className="font-normal">{i.mbps} MB/s</div>
+                    <div className={PC_INFO_CLASS}>{i.mbps} MB/s</div>
                   </th>
                 ))}
               </tr>
@@ -47,7 +48,7 @@ export async function PcFpsTable({ table, exposureMs }: { table: FpsTable; expos
               {table.rows.map((row) => (
                 <tr key={row.resolution} className="border-t border-slate-100 dark:border-slate-800">
                   <td className="whitespace-nowrap px-3 py-1.5">
-                    {row.resolution} <span className={NOTE_CLASS}>({PC_RESOLUTIONS[row.resolution][0]}×{PC_RESOLUTIONS[row.resolution][1]})</span>
+                    {PC_RESOLUTIONS[row.resolution][2]}MP <span className={PC_INFO_CLASS}>({PC_RESOLUTIONS[row.resolution][0]}×{PC_RESOLUTIONS[row.resolution][1]})</span>
                   </td>
                   <td className="px-3 py-1.5 text-right tabular-nums">{row.mbPerFrame.toFixed(1)}</td>
                   {row.cells.map((cell, i) => (

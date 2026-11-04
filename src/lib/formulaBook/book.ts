@@ -1213,7 +1213,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
         id: 'PC-FPS',
         title: 'PC Vision: bảng fps tối đa theo dây cáp',
         formula: [
-          'fps theo cáp = ⌊băng thông giao tiếp ÷ MB mỗi khung (8 bit)⌋ — 6 độ phân giải × 11 giao tiếp',
+          'fps theo cáp = ⌊băng thông giao tiếp ÷ MB mỗi khung (8 bit)⌋ — 30 độ phân giải (lấy theo kho camera thật, pc/options.ts) × 11 giao tiếp',
           'có thời gian phơi sáng: fps = min(fps theo cáp, ⌊1000 ÷ exposure(ms)⌋) — ô bị chặn có dấu *',
           'fps thật = nhỏ nhất của: cáp · fps tối đa cảm biến · exposure (không chồng lấn: 1000 ÷ (exposure + thời gian đọc)) · trigger + thời gian xử lý',
         ],

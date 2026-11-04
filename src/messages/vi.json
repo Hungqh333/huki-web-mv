@@ -41,7 +41,7 @@
       "ocr": "Đọc, kiểm tra ký tự in",
       "lens": "Tiêu cự, khoảng làm việc, lọc ống trong kho",
       "light": "Kiểu đèn, màu đèn theo bài toán",
-      "pc": "Danh mục cấu hình PC, gợi ý theo camera"
+      "pc": "Danh mục PC thường dùng, gợi ý theo camera"
     }
   },
   "catalog": {
@@ -3999,7 +3999,7 @@
     "subtitle": "Danh mục cấu hình PC công nghiệp cho dự án machine vision, kèm gợi ý cấu hình theo camera.",
     "tabs": {
       "label": "Các phần của trang PC Vision",
-      "catalog": "Danh mục cấu hình",
+      "catalog": "Danh mục thường dùng",
       "suggest": "Gợi ý cấu hình",
       "fps": "Bảng fps",
       "checklist": "Checklist ổn định"
@@ -4007,7 +4007,7 @@
     "catalog": {
       "intro": "Cấu hình chia theo khung (chassis, CPU, GPU, nguồn). Trong mỗi khung có vài cấu hình, khác nhau ở phần in đậm của mã: RAM – SSD hệ thống – ổ dữ liệu.",
       "introAdmin": "Chỉ Admin thêm, sửa; máy chủ và CSDL kiểm lại, không chỉ ẩn nút.",
-      "panelTitle": "Danh mục cấu hình",
+      "panelTitle": "Danh mục thường dùng",
       "count": "{configs} cấu hình · {frames} khung",
       "search": "Tìm mã, CPU, GPU…",
       "statusFilter": "Lọc trạng thái",
@@ -4235,7 +4235,7 @@
       "exposure": "Thời gian phơi sáng (ms, 0 = không xét)",
       "exposureNote": "Exposure {ms} ms → tối đa {fps} fps (chồng lấn). Ô có * = bị exposure giới hạn.",
       "title": "Bảng fps tối đa",
-      "meta": "6 độ phân giải × 11 giao tiếp",
+      "meta": "{rows} độ phân giải × {cols} giao tiếp",
       "resolution": "Độ phân giải",
       "mbPerFrame": "MB/khung",
       "cappedTitle": "Cáp cho {fps} fps, bị exposure giới hạn",

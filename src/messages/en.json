@@ -41,7 +41,7 @@
       "ocr": "Read and verify printed characters",
       "lens": "Focal length, working distance, stock filter",
       "light": "Light type and color per task",
-      "pc": "PC configuration catalog, suggestions per camera"
+      "pc": "Common PC configurations, suggestions per camera"
     }
   },
   "catalog": {
@@ -3999,7 +3999,7 @@
     "subtitle": "Catalog of industrial PC configurations for machine vision projects, with configuration suggestions per camera set.",
     "tabs": {
       "label": "PC Vision sections",
-      "catalog": "Configuration catalog",
+      "catalog": "Common configurations",
       "suggest": "Configuration suggestion",
       "fps": "fps table",
       "checklist": "Stability checklist"
@@ -4007,7 +4007,7 @@
     "catalog": {
       "intro": "Configurations are grouped by frame (chassis, CPU, GPU, PSU). Within a frame, configurations differ in the bold part of the code: RAM – system SSD – data drive.",
       "introAdmin": "Only Admins add or edit; the server and database re-check, not just hide buttons.",
-      "panelTitle": "Configuration catalog",
+      "panelTitle": "Common configurations",
       "count": "{configs} configurations · {frames} frames",
       "search": "Search code, CPU, GPU…",
       "statusFilter": "Status filter",
@@ -4235,7 +4235,7 @@
       "exposure": "Exposure time (ms, 0 = ignore)",
       "exposureNote": "Exposure {ms} ms → at most {fps} fps (overlapping). Cells with * are limited by exposure.",
       "title": "Maximum fps",
-      "meta": "6 resolutions × 11 interfaces",
+      "meta": "{rows} resolutions × {cols} interfaces",
       "resolution": "Resolution",
       "mbPerFrame": "MB/frame",
       "cappedTitle": "Cable allows {fps} fps, limited by exposure",

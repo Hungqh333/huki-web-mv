@@ -20,7 +20,7 @@ import { createClient } from '@/lib/supabase/server';
  * PC Vision — mục riêng trên menu (chốt 2026-11-03, Q1: thay nội dung trang Máy tính cũ,
  * giữ địa chỉ /cong-cu-may-tinh). Member trở lên xem (Q4), Admin thêm / sửa (Q3).
  *
- * Tab Danh mục cấu hình (đợt 1) và Gợi ý cấu hình (đợt 2, tính ở máy chủ — suggestPcAction).
+ * Tab Danh mục thường dùng (đợt 1; tên đổi 2026-11-04) và Gợi ý cấu hình (đợt 2, tính ở máy chủ — suggestPcAction).
  * Gợi ý thay công cụ cũ PcPlanner và vẫn nhận số camera / giao tiếp / băng thông bấm sang từ
  * bảng vật tư (?cameras=…&interface=…&rate=…&gpu=1). Tab Bảng fps (đợt 3, máy chủ tính, ô phơi
  * sáng đổi ?phoi=) và Checklist ổn định (đợt 3, chỉ hiển thị, In / tải PDF).

@@ -1624,6 +1624,8 @@
         "codeMinReads": "Code reading — minimum captures while a code crosses the view (COD-002)",
         "ocrPxPerCharHeight": "OCR — px across the character height (OCR-001)",
         "ocrPxPerStroke": "OCR — px across the stroke width (OCR-001)",
+        "robotVisionDivisor": "Robot guidance — vision gets the pick error ÷ this factor (ROB-001)",
+        "robotSubpixel": "Robot guidance — pattern search repeats to 1/this factor px (ROB-001)",
         "pcPsuMaxShare": "Max peak load vs. PSU rating (PC-PSU)",
         "pcCpuPeakW": "CPU peak power used for the estimate (PC-PSU)",
         "pcBaseLoadW": "Rest of the machine: board, RAM, drives, fans (PC-PSU)",
@@ -3546,7 +3548,22 @@
       "color": "Colour",
       "targetFromDefect": "Using {mmpx} mm/px (smallest defect ÷ {n} px).",
       "targetGiven": "Using {mmpx} mm/px.",
-      "purpose": "Task"
+      "task": "Task",
+      "defectHintTask": "mm/px = defect ÷ pixels by contrast.",
+      "tolerance": "Tolerance to measure (± mm)",
+      "toleranceHint": "Tightest tolerance on the drawing, as ±.",
+      "axisHint": "Only used when the code moves while being read (speed box on the right).",
+      "robotAccuracy": "Pick / place accuracy (± mm)",
+      "robotAccuracyHint": "Allowed error at the robot gripper.",
+      "robot3d": "Does the part change height or tilt?",
+      "robotAreaW": "Area the part may lie in — width (mm)",
+      "robotAreaH": "Area the part may lie in — height (mm)",
+      "robotAreaHint": "Where the part centre can land on the conveyor / tray.",
+      "robotPartW": "Part size — width (mm)",
+      "robotPartH": "Part size — height (mm)",
+      "robotPartHint": "Added to the field of view so the whole part is always in the image.",
+      "mmPerPxOverride": "mm/px entered directly (optional)",
+      "mmPerPxOverrideHint": "If given, used instead of the mm/px the task computes."
     },
     "contrast": {
       "high": "High",
@@ -3721,9 +3738,47 @@
       "lineExposureShortNoTdi": "Maximum exposure only {us} µs per line (under {limit} µs): needs a high-intensity line light, or a TDI / multiline camera, or binning.",
       "lineExposureTdiOk": "Effective exposure {us} µs per line thanks to {stages} TDI stages."
     },
-    "purpose": {
-      "detect": "Defect detection (blur ≤ 1 px)",
-      "measure": "Measurement (blur ≤ 0.5 px)"
+    "taskType": {
+      "inspection": "Appearance inspection",
+      "measurement": "Measurement",
+      "ocr": "OCR / OCV",
+      "code": "Barcode reading",
+      "robot": "Robot guidance"
+    },
+    "taskHint": {
+      "inspection": "Surface defect detection: mm/px from the smallest defect and its contrast; 1 px blur allowed.",
+      "measurement": "Dimensional measurement: mm/px from the tolerance (measurement error budget); 0.5 px blur allowed.",
+      "ocr": "Reading / verifying text: mm/px from character height and stroke width; field of view computed from the text block.",
+      "code": "Reading 1D / 2D / DPM codes: mm/px from the module size; field of view computed from the code size.",
+      "robot": "2D location for robot picking: mm/px from the pick accuracy; field of view = area the part may lie in + part size; 0.5 px blur allowed."
+    },
+    "taskResult": {
+      "overridden": "Using {mmpx} mm/px entered directly (the task computes {derived} mm/px).",
+      "measurement": "Using {mmpx} mm/px for a ±{tol} mm tolerance.",
+      "ocr": "Using {mmpx} mm/px ({by}).",
+      "ocrBy": {
+        "height": "from character height",
+        "stroke": "from stroke width"
+      },
+      "code": "Using {mmpx} mm/px ({n} px per module).",
+      "robot": "Vision share of the error ±{budget} mm → using {mmpx} mm/px.",
+      "fovAuto": "Field of view computed: {w} × {h} mm.",
+      "robot3dWarn": "The part changes height or its out-of-plane tilt is needed → a 3D camera is required. This page only covers 2D location; the results below are for reference only.",
+      "deepLink": {
+        "ocr": "Lighting and reading algorithm advice → OCR camera page",
+        "code": "Smart code readers and read count → Code reader page"
+      }
+    },
+    "taskMissing": {
+      "inspection": "Enter the field of view and smallest defect (or mm/px).",
+      "measurement": "Enter the field of view and tolerance (or mm/px).",
+      "ocr": "Enter the character height and line length.",
+      "code": "Enter the module size and code width.",
+      "robot": "Enter the pick accuracy and the area the part may lie in."
+    },
+    "robot3d": {
+      "no": "No — flat part, same height",
+      "yes": "Yes — height / tilt needed"
     },
     "trigger": {
       "photoSensor": "Photo sensor (hardware)",

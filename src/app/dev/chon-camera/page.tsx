@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import { CameraSelector } from '@/components/camera/CameraSelector';
 import { FormulaVisibilityProvider } from '@/components/ui/FormulaVisibility';
 import { seedCatalog } from '@/lib/devSeedCatalog';
+import { taskFromSlug } from '@/lib/vision/cameraTask';
 
 /**
  * Xem trước Bộ chọn camera area scan — CHỈ CHẠY Ở MÁY LOCAL, không cần đăng nhập, kho
@@ -11,7 +12,9 @@ import { seedCatalog } from '@/lib/devSeedCatalog';
 export default async function DevCameraSelectorPage({ searchParams }: PageProps<'/dev/chon-camera'>) {
   if (process.env.NODE_ENV === 'production') notFound();
   // ?cong-thuc=an — xem như người không phải admin (bảo vệ công thức, 2026-10-21).
-  const hide = (await searchParams)['cong-thuc'] === 'an';
+  const query = await searchParams;
+  const hide = query['cong-thuc'] === 'an';
+  const slug = query['bai-toan'];
   return (
     <section className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
       <p className="mb-6 rounded-md bg-amber-100 px-3 py-2 text-sm text-amber-900 dark:bg-amber-950/50 dark:text-amber-200">
@@ -24,7 +27,7 @@ export default async function DevCameraSelectorPage({ searchParams }: PageProps<
         </a>
       </p>
       <FormulaVisibilityProvider show={!hide}>
-        <CameraSelector components={seedCatalog().filter((c) => c.kind === 'camera')} kind="area" />
+        <CameraSelector components={seedCatalog().filter((c) => c.kind === 'camera')} kind="area" initialTask={taskFromSlug(typeof slug === 'string' ? slug : null)} />
       </FormulaVisibilityProvider>
     </section>
   );

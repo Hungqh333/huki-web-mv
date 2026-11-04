@@ -20,6 +20,8 @@ import {
   type LineCameraInput,
   type LineCandidate,
 } from '@/lib/vision/cameraSelector';
+import { CAMERA_TASKS, TASK_DEFAULT_COLOR, TASK_SLUG, taskCamera, type CameraTask, type TaskCamera, type TaskInput } from '@/lib/vision/cameraTask';
+import { CODE_TYPES, type CodeType } from '@/lib/vision/codeReader';
 import { renderFormula } from '@/lib/vision/formulaTerms';
 import type { TriggerSource } from '@/lib/vision/highSpeed';
 import type { Check, CheckStatus } from '@/lib/vision/types';
@@ -33,7 +35,6 @@ import type { Check, CheckStatus } from '@/lib/vision/types';
 
 type Tab = 'area' | 'line';
 type Contrast = 'high' | 'medium' | 'low' | 'unknown';
-type Purpose = 'detect' | 'measure';
 
 /** Q7: chỉ dẫn link, không chép nội dung. */
 const BASLER_FPS_CALCULATOR = 'https://www.baslerweb.com/en/tools/frame-rate-calculator/';
@@ -54,9 +55,10 @@ const STATUS_CLASS: Record<CheckStatus, string> = {
 const PAGE = 30;
 const CONTRASTS: Contrast[] = ['high', 'medium', 'low', 'unknown'];
 const COLORS: CameraColorFilter[] = ['any', 'mono', 'color'];
-const PURPOSES: Purpose[] = ['detect', 'measure'];
 const TRIGGERS: TriggerSource[] = ['photoSensor', 'software', 'encoder'];
 const EMPTY = {
+  // Bài toán (chốt 2026-10-31 Q1–Q5) — chỉ area scan; line scan giữ lỗi nhỏ nhất / mm/px.
+  task: 'inspection' as CameraTask,
   fovW: '',
   fovH: '',
   width: '',
@@ -64,7 +66,25 @@ const EMPTY = {
   defect: '',
   contrast: 'unknown' as Contrast,
   color: 'any' as CameraColorFilter,
-  purpose: 'detect' as Purpose,
+  tolerance: '',
+  charHeight: '',
+  stroke: '',
+  textWidth: '',
+  lines: '1',
+  spacing: '',
+  tolX: '',
+  tolY: '',
+  codeType: 'datamatrix' as CodeType,
+  module: '',
+  codeW: '',
+  codeH: '',
+  axis: 'x' as 'x' | 'y',
+  accuracy: '',
+  areaW: '',
+  areaH: '',
+  partW: '',
+  partH: '',
+  robot3d: 'no' as 'yes' | 'no',
   speed: '',
   ppm: '',
   images: '1',
@@ -79,6 +99,51 @@ const num = (value: string): number | null => {
   const n = Number(value.replace(',', '.'));
   return value.trim() !== '' && Number.isFinite(n) && n > 0 ? n : null;
 };
+/** Dung sai vị trí: để trống = 0. */
+const numOrZero = (value: string): number => num(value) ?? 0;
+
+/** Ô bài toán → đầu vào engine (cameraTask.ts). null khi thiếu số bắt buộc của bài đó. */
+function taskInputOf(form: typeof EMPTY): TaskInput | null {
+  switch (form.task) {
+    case 'inspection':
+    case 'measurement': {
+      const fovW = num(form.fovW);
+      const fovH = num(form.fovH);
+      if (fovW === null || fovH === null) return null;
+      return form.task === 'inspection'
+        ? { task: 'inspection', fovWidthMm: fovW, fovHeightMm: fovH, defectMm: num(form.defect), contrast: form.contrast }
+        : { task: 'measurement', fovWidthMm: fovW, fovHeightMm: fovH, toleranceMm: num(form.tolerance) };
+    }
+    case 'ocr': {
+      const charHeight = num(form.charHeight);
+      const textWidth = num(form.textWidth);
+      if (charHeight === null || textWidth === null) return null;
+      return {
+        task: 'ocr',
+        ocr: { charHeightMm: charHeight, strokeMm: num(form.stroke), textWidthMm: textWidth, lines: Math.max(1, Math.round(num(form.lines) ?? 1)), lineSpacingMm: num(form.spacing), toleranceXMm: numOrZero(form.tolX), toleranceYMm: numOrZero(form.tolY) },
+      };
+    }
+    case 'code': {
+      const moduleMm = num(form.module);
+      const codeW = num(form.codeW);
+      if (moduleMm === null || codeW === null) return null;
+      return {
+        task: 'code',
+        code: { codeType: form.codeType, moduleMm, codeWidthMm: codeW, codeHeightMm: num(form.codeH) ?? codeW, toleranceXMm: numOrZero(form.tolX), toleranceYMm: numOrZero(form.tolY), motionAxis: form.axis },
+      };
+    }
+    case 'robot': {
+      const accuracy = num(form.accuracy);
+      const areaW = num(form.areaW);
+      const areaH = num(form.areaH);
+      if (accuracy === null || areaW === null || areaH === null) return null;
+      return {
+        task: 'robot',
+        robot: { accuracyMm: accuracy, areaWidthMm: areaW, areaHeightMm: areaH, partWidthMm: numOrZero(form.partW), partHeightMm: numOrZero(form.partH), needs3d: form.robot3d === 'yes' },
+      };
+    }
+  }
+}
 const show = (value: number | null | undefined, digits = 2) =>
   value === null || value === undefined ? '—' : String(Math.round(value * 10 ** digits) / 10 ** digits);
 
@@ -87,7 +152,7 @@ function StatusBadge({ status }: { status: CheckStatus }) {
   return <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${STATUS_CLASS[status]}`}>{t(status)}</span>;
 }
 
-export function CameraSelector({ components, params, kind }: { components: Component[]; params?: CameraParams; kind: Tab }) {
+export function CameraSelector({ components, params, kind, initialTask = 'inspection' }: { components: Component[]; params?: CameraParams; kind: Tab; initialTask?: CameraTask }) {
   const t = useTranslations('cameraSelector');
   const showFormulas = useShowFormulas();
   const cameras = useMemo(() => components.filter((c) => c.kind === 'camera'), [components]);
@@ -95,33 +160,43 @@ export function CameraSelector({ components, params, kind }: { components: Compo
 
   // Mỗi trang một họ camera (2026-10-27): area scan ở /chon-camera, line scan ở /chon-line-scan.
   const tab = kind;
-  const [form, setForm] = useState(EMPTY);
+  const [form, setForm] = useState(() => ({ ...EMPTY, task: initialTask, color: TASK_DEFAULT_COLOR[initialTask] }));
   const [showRejected, setShowRejected] = useState(false);
   const [limit, setLimit] = useState(PAGE);
   const [open, setOpen] = useState<string | null>(null);
   const set = (key: keyof typeof EMPTY) => (value: string) => setForm((prev) => ({ ...prev, [key]: value }));
+  // Q1: đổi bài toán → màu mặc định của bài đó + ghi ?bai-toan= lên URL để gửi link.
+  const setTask = (value: string) => {
+    const task = value as CameraTask;
+    setForm((prev) => ({ ...prev, task, color: TASK_DEFAULT_COLOR[task] }));
+    const url = new URL(window.location.href);
+    url.searchParams.set('bai-toan', TASK_SLUG[task]);
+    window.history.replaceState(window.history.state, '', url);
+  };
 
+  // Line scan: lỗi nhỏ nhất / mm/px như trước (Q5 — chưa chia bài toán).
   const target = targetMmPerPx({ mmPerPx: num(form.mmpx), defectMm: num(form.defect), contrast: form.contrast }, params);
 
-  const areaInput = useMemo<AreaCameraInput | null>(() => {
-    const fovW = num(form.fovW);
-    const fovH = num(form.fovH);
-    if (fovW === null || fovH === null || !target) return null;
-    return {
-      fovWidthMm: fovW,
-      fovHeightMm: fovH,
-      targetMmPerPx: target.mmPerPx,
-      color: form.color,
-      measuring: form.purpose === 'measure',
-      speedMmS: num(form.speed),
-      partsPerMinute: num(form.ppm),
-      imagesPerPart: Math.max(1, Math.round(num(form.images) ?? 1)),
-      triggerSource: form.trigger,
-      sensorResponseMs: num(form.sensorMs),
-      sampleExposureMs: num(form.sampleMs),
-      overlapped: form.overlapped === 'yes',
-    };
-  }, [form, target]);
+  const areaTask = useMemo<TaskCamera | null>(() => {
+    const taskInput = taskInputOf(form);
+    if (!taskInput) return null;
+    return taskCamera(
+      taskInput,
+      {
+        mmPerPxOverride: num(form.mmpx),
+        color: form.color,
+        speedMmS: num(form.speed),
+        partsPerMinute: num(form.ppm),
+        imagesPerPart: Math.max(1, Math.round(num(form.images) ?? 1)),
+        triggerSource: form.trigger,
+        sensorResponseMs: num(form.sensorMs),
+        sampleExposureMs: num(form.sampleMs),
+        overlapped: form.overlapped === 'yes',
+      },
+      params
+    );
+  }, [form, params]);
+  const areaInput: AreaCameraInput | null = areaTask?.camera ?? null;
   const lineInput = useMemo<LineCameraInput | null>(() => {
     const width = num(form.width);
     const speed = num(form.speed);
@@ -151,7 +226,7 @@ export function CameraSelector({ components, params, kind }: { components: Compo
   const lineNeed = lineInput && tab === 'line' ? { rateKhz: lineInput.speedMmS / lineInput.targetMmPerPx / 1000, exposureUs: (lineInput.targetMmPerPx / lineInput.speedMmS) * 1e6, px: Math.ceil(lineInput.widthMm / lineInput.targetMmPerPx - 1e-9) } : null;
 
   const reset = () => {
-    setForm(EMPTY);
+    setForm({ ...EMPTY, task: form.task, color: TASK_DEFAULT_COLOR[form.task] });
     setShown(null);
     setShowRejected(false);
     setLimit(PAGE);
@@ -175,44 +250,26 @@ export function CameraSelector({ components, params, kind }: { components: Compo
       <div className="grid gap-6 lg:grid-cols-2">
         {/* ── Vùng nhìn + độ phân giải ── */}
         <Panel id="camera-task" title={t('task.title')}>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {tab === 'area' ? (
-              <>
-                <NumberInput id="cam-fov-w" label={t('task.fovWidth')} value={form.fovW} onChange={set('fovW')} />
-                <NumberInput id="cam-fov-h" label={t('task.fovHeight')} value={form.fovH} onChange={set('fovH')} />
-              </>
-            ) : (
-              <NumberInput id="cam-width" label={t('task.lineWidth')} hint={t('task.lineWidthHint')} value={form.width} onChange={set('width')} />
-            )}
-            {tab === 'area' ? (
-              <SelectInput id="cam-purpose" label={t('task.purpose')} value={form.purpose} options={PURPOSES} labelOf={(v) => t(`purpose.${v}`)} onChange={set('purpose')} />
-            ) : null}
-            <NumberInput id="cam-mmpx" label={t('task.mmPerPx')} hint={t('task.mmPerPxHint')} value={form.mmpx} onChange={set('mmpx')} step="0.001" />
-            <NumberInput id="cam-defect" label={t('task.defect')} hint={t('task.defectHint')} value={form.defect} onChange={set('defect')} step="0.01" />
-            <div>
-              <label htmlFor="cam-contrast" className={labelClass}>{t('task.contrast')}</label>
-              <select id="cam-contrast" value={form.contrast} onChange={(e) => set('contrast')(e.target.value)} className={`mt-1.5 ${inputClass}`}>
-                {CONTRASTS.map((c) => (
-                  <option key={c} value={c}>{t(`contrast.${c}`)}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label htmlFor="cam-color" className={labelClass}>{t('task.color')}</label>
-              <select id="cam-color" value={form.color} onChange={(e) => set('color')(e.target.value)} className={`mt-1.5 ${inputClass}`}>
-                {COLORS.map((c) => (
-                  <option key={c} value={c}>{t(`color.${c}`)}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-          {target ? (
-            <p className={`mt-3 ${NOTE_CLASS}`}>
-              {target.pxPerDefect !== null
-                ? t('task.targetFromDefect', { mmpx: show(target.mmPerPx, 4), n: target.pxPerDefect })
-                : t('task.targetGiven', { mmpx: show(target.mmPerPx, 4) })}
-            </p>
-          ) : null}
+          {tab === 'area' ? (
+            <AreaTaskFields form={form} set={set} setTask={setTask} result={areaTask} />
+          ) : (
+            <>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <NumberInput id="cam-width" label={t('task.lineWidth')} hint={t('task.lineWidthHint')} value={form.width} onChange={set('width')} />
+                <NumberInput id="cam-mmpx" label={t('task.mmPerPx')} hint={t('task.mmPerPxHint')} value={form.mmpx} onChange={set('mmpx')} step="0.001" />
+                <NumberInput id="cam-defect" label={t('task.defect')} hint={t('task.defectHint')} value={form.defect} onChange={set('defect')} step="0.01" />
+                <SelectInput id="cam-contrast" label={t('task.contrast')} value={form.contrast} options={CONTRASTS} labelOf={(v) => t(`contrast.${v}`)} onChange={set('contrast')} />
+                <SelectInput id="cam-color" label={t('task.color')} value={form.color} options={COLORS} labelOf={(v) => t(`color.${v}`)} onChange={set('color')} />
+              </div>
+              {target ? (
+                <p className={`mt-3 ${NOTE_CLASS}`}>
+                  {target.pxPerDefect !== null
+                    ? t('task.targetFromDefect', { mmpx: show(target.mmPerPx, 4), n: target.pxPerDefect })
+                    : t('task.targetGiven', { mmpx: show(target.mmPerPx, 4) })}
+                </p>
+              ) : null}
+            </>
+          )}
         </Panel>
 
         {/* ── Tốc độ ── */}
@@ -295,7 +352,7 @@ export function CameraSelector({ components, params, kind }: { components: Compo
             <NeedItem label={t('need.lineExposure')} value={`${show(lineNeed.exposureUs, 1)} µs`} note={lineNeed.exposureUs < LINE_EXPOSURE_BRIGHT_US ? t('need.lineExposureNote') : undefined} />
           </dl>
         ) : (
-          <p className={NOTE_CLASS}>{t(`need.missing.${tab}`)}</p>
+          <p className={NOTE_CLASS}>{t(tab === 'area' ? `taskMissing.${form.task}` : `need.missing.${tab}`)}</p>
         )}
       </Panel>
 
@@ -384,6 +441,118 @@ export function CameraSelector({ components, params, kind }: { components: Compo
         </Panel>
       ) : null}
     </div>
+  );
+}
+
+/**
+ * Ô "Bài toán" + ô nhập riêng từng bài (chốt 2026-10-31 Q1–Q4). OCR / Đọc mã chỉ có các ô quyết
+ * định mm/px và vùng nhìn (Q2) — phần đèn, thuật toán, đầu đọc mã ở trang chuyên sâu.
+ */
+function AreaTaskFields({
+  form,
+  set,
+  setTask,
+  result,
+}: {
+  form: typeof EMPTY;
+  set: (key: keyof typeof EMPTY) => (value: string) => void;
+  setTask: (value: string) => void;
+  result: TaskCamera | null;
+}) {
+  const t = useTranslations('cameraSelector');
+  const tCode = useTranslations('codeReader');
+  const tOcr = useTranslations('ocr');
+  const task = form.task;
+  const fov = (
+    <>
+      <NumberInput id="cam-fov-w" label={t('task.fovWidth')} value={form.fovW} onChange={set('fovW')} />
+      <NumberInput id="cam-fov-h" label={t('task.fovHeight')} value={form.fovH} onChange={set('fovH')} />
+    </>
+  );
+  const tolerances = (
+    <>
+      <NumberInput id="cam-tol-x" label={tOcr('task.tolX')} value={form.tolX} onChange={set('tolX')} step="0.1" />
+      <NumberInput id="cam-tol-y" label={tOcr('task.tolY')} value={form.tolY} onChange={set('tolY')} step="0.1" />
+    </>
+  );
+
+  let note: string | null = null;
+  if (result) {
+    const d = result.detail;
+    const mmpx = show(result.camera.targetMmPerPx, 4);
+    const fovText = { w: show(result.camera.fovWidthMm, 1), h: show(result.camera.fovHeightMm, 1) };
+    if (result.overridden) note = t('taskResult.overridden', { mmpx, derived: result.derivedMmPerPx !== null ? show(result.derivedMmPerPx, 4) : '—' });
+    else if (d.task === 'inspection') note = t('task.targetFromDefect', { mmpx, n: d.pxPerDefect ?? '—' });
+    else if (d.task === 'measurement') note = t('taskResult.measurement', { mmpx, tol: d.budget ? show(d.budget.toleranceMm, 4) : '—' });
+    else if (d.task === 'ocr') note = t('taskResult.ocr', { mmpx, by: t(`taskResult.ocrBy.${d.geometry.governedBy}`) });
+    else if (d.task === 'code') note = t('taskResult.code', { mmpx, n: d.need.pxPerModule });
+    else note = t('taskResult.robot', { mmpx, budget: show(d.need.visionBudgetMm, 3) });
+    if (task === 'ocr' || task === 'code' || task === 'robot') note += ' ' + t('taskResult.fovAuto', fovText);
+  }
+
+  return (
+    <>
+      <SelectInput id="cam-task" label={t('task.task')} value={task} options={CAMERA_TASKS} labelOf={(v) => t(`taskType.${v}`)} onChange={setTask} />
+      <p className={`mt-1 ${NOTE_CLASS}`}>{t(`taskHint.${task}`)}</p>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        {task === 'inspection' ? (
+          <>
+            {fov}
+            <NumberInput id="cam-defect" label={t('task.defect')} hint={t('task.defectHintTask')} value={form.defect} onChange={set('defect')} step="0.01" />
+            <SelectInput id="cam-contrast" label={t('task.contrast')} value={form.contrast} options={CONTRASTS} labelOf={(v) => t(`contrast.${v}`)} onChange={set('contrast')} />
+          </>
+        ) : null}
+        {task === 'measurement' ? (
+          <>
+            {fov}
+            <NumberInput id="cam-tolerance" label={t('task.tolerance')} hint={t('task.toleranceHint')} value={form.tolerance} onChange={set('tolerance')} step="0.001" />
+          </>
+        ) : null}
+        {task === 'ocr' ? (
+          <>
+            <NumberInput id="cam-char-h" label={tOcr('task.charHeight')} value={form.charHeight} onChange={set('charHeight')} step="0.1" />
+            <NumberInput id="cam-stroke" label={tOcr('task.stroke')} hint={tOcr('task.strokeHint')} value={form.stroke} onChange={set('stroke')} step="0.01" />
+            <NumberInput id="cam-text-w" label={tOcr('task.textWidth')} value={form.textWidth} onChange={set('textWidth')} />
+            <NumberInput id="cam-lines" label={tOcr('task.lines')} value={form.lines} onChange={set('lines')} step="1" />
+            <NumberInput id="cam-spacing" label={tOcr('task.spacing')} hint={tOcr('task.spacingHint')} value={form.spacing} onChange={set('spacing')} step="0.1" />
+            {tolerances}
+          </>
+        ) : null}
+        {task === 'code' ? (
+          <>
+            <SelectInput id="cam-code-type" label={tCode('task.codeType')} value={form.codeType} options={CODE_TYPES} labelOf={(v) => tCode(`codeType.${v}`)} onChange={set('codeType')} />
+            <NumberInput id="cam-module" label={tCode('task.module')} hint={tCode('task.moduleHint')} value={form.module} onChange={set('module')} step="0.01" />
+            <NumberInput id="cam-code-w" label={tCode('task.codeWidth')} value={form.codeW} onChange={set('codeW')} />
+            <NumberInput id="cam-code-h" label={tCode('task.codeHeight')} hint={tCode('task.codeHeightHint')} value={form.codeH} onChange={set('codeH')} />
+            {tolerances}
+            <SelectInput id="cam-axis" label={tCode('speed.axis')} hint={t('task.axisHint')} value={form.axis} options={['x', 'y'] as const} labelOf={(v) => tCode(`axis.${v}`)} onChange={set('axis')} />
+          </>
+        ) : null}
+        {task === 'robot' ? (
+          <>
+            <NumberInput id="cam-accuracy" label={t('task.robotAccuracy')} hint={t('task.robotAccuracyHint')} value={form.accuracy} onChange={set('accuracy')} step="0.01" />
+            <SelectInput id="cam-robot-3d" label={t('task.robot3d')} value={form.robot3d} options={['no', 'yes'] as const} labelOf={(v) => t(`robot3d.${v}`)} onChange={set('robot3d')} />
+            <NumberInput id="cam-area-w" label={t('task.robotAreaW')} hint={t('task.robotAreaHint')} value={form.areaW} onChange={set('areaW')} />
+            <NumberInput id="cam-area-h" label={t('task.robotAreaH')} value={form.areaH} onChange={set('areaH')} />
+            <NumberInput id="cam-part-w" label={t('task.robotPartW')} hint={t('task.robotPartHint')} value={form.partW} onChange={set('partW')} />
+            <NumberInput id="cam-part-h" label={t('task.robotPartH')} value={form.partH} onChange={set('partH')} />
+          </>
+        ) : null}
+        <NumberInput id="cam-mmpx" label={t('task.mmPerPxOverride')} hint={t('task.mmPerPxOverrideHint')} value={form.mmpx} onChange={set('mmpx')} step="0.001" />
+        <SelectInput id="cam-color" label={t('task.color')} value={form.color} options={COLORS} labelOf={(v) => t(`color.${v}`)} onChange={set('color')} />
+      </div>
+      {note ? <p className={`mt-3 ${NOTE_CLASS}`}>{note}</p> : null}
+      {task === 'robot' && form.robot3d === 'yes' ? (
+        <p className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">{t('taskResult.robot3dWarn')}</p>
+      ) : null}
+      {task === 'ocr' || task === 'code' ? (
+        <div className="mt-3">
+          <ActionLink href={task === 'ocr' ? '/chon-ocr' : '/chon-doc-ma'} variant="text">
+            {t(`taskResult.deepLink.${task}`)}
+          </ActionLink>
+        </div>
+      ) : null}
+    </>
   );
 }
 

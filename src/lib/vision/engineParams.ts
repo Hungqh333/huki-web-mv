@@ -105,6 +105,10 @@ export const ENGINE_PARAMS = [
   // OCR-001 (2026-10-27 Q5): px trên chiều cao ký tự và trên độ dày nét — lấy số chặt hơn.
   { key: 'ocrPxPerCharHeight', group: 'detection', default: 20, min: 5, max: 60, step: 1, unit: 'px' },
   { key: 'ocrPxPerStroke', group: 'detection', default: 3, min: 1, max: 10, step: 0.5, unit: 'px' },
+  // ROB-001 (2026-10-31 Q4): vision được 1/3 sai số gắp (còn lại cho robot + hiệu chuẩn tay–mắt),
+  // tìm mẫu lặp lại được 1/3 px → mm/px = a ÷ 3 × 3 = a.
+  { key: 'robotVisionDivisor', group: 'detection', default: 3, min: 1, max: 10, step: 0.5, unit: '÷' },
+  { key: 'robotSubpixel', group: 'detection', default: 3, min: 1, max: 10, step: 0.5, unit: '×' },
   // MEC-001 — α suy từ vật liệu, µm/(m·K).
   { key: 'alphaAluminium', group: 'materials', default: 23, min: 1, max: 300, step: 0.5, unit: 'µm/(m·K)' },
   { key: 'alphaSteel', group: 'materials', default: 12, min: 1, max: 300, step: 0.5, unit: 'µm/(m·K)' },

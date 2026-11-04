@@ -7,6 +7,7 @@ import { contactMailto } from '@/lib/contact';
 import type { Component } from '@/lib/components/specs';
 import { fetchAllRows } from '@/lib/components/fetchAll';
 import { loadEngineParams } from '@/lib/engineParamsLoad';
+import { taskFromSlug } from '@/lib/vision/cameraTask';
 import { hasSupabaseEnv } from '@/lib/supabase/env';
 import { createClient } from '@/lib/supabase/server';
 
@@ -32,7 +33,9 @@ async function getCameras(supabase: Awaited<ReturnType<typeof createClient>>): P
   return (data ?? []) as Component[];
 }
 
-export default async function CameraSelectorPage() {
+export default async function CameraSelectorPage({ searchParams }: PageProps<'/chon-camera'>) {
+  const slug = (await searchParams)['bai-toan'];
+  const initialTask = taskFromSlug(typeof slug === 'string' ? slug : null);
   const t = await getTranslations('cameraSelector');
   const tPc = await getTranslations('pcPlanner');
   const session = await getSessionContext();
@@ -77,7 +80,7 @@ export default async function CameraSelectorPage() {
         {cameras.length > 0 ? (
           // Công thức chỉ admin thấy (bảo vệ công thức, chốt 2026-10-21).
           <FormulaVisibilityProvider show={isAdmin(role)}>
-            <CameraSelector components={cameras} params={engine.params} kind="area" />
+            <CameraSelector components={cameras} params={engine.params} kind="area" initialTask={initialTask} />
           </FormulaVisibilityProvider>
         ) : (
           <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">{t('emptyCatalog')}</p>

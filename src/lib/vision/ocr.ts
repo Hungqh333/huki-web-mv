@@ -65,7 +65,11 @@ export type OcrNeed = {
   speed: AreaNeed;
 };
 
-export function ocrNeed(input: OcrInput, params: EngineParams = DEFAULT_ENGINE_PARAMS): OcrNeed {
+export type OcrGeometryInput = Pick<OcrInput, 'charHeightMm' | 'strokeMm' | 'textWidthMm' | 'lines' | 'lineSpacingMm' | 'toleranceXMm' | 'toleranceYMm'>;
+export type OcrGeometry = Omit<OcrNeed, 'light' | 'algorithm' | 'speed'>;
+
+/** OCR-001 phần hình học — dùng chung cho trang Chọn camera OCR và ô "Bài toán: OCR" của trang Chọn camera. */
+export function ocrGeometry(input: OcrGeometryInput, params: EngineParams = DEFAULT_ENGINE_PARAMS): OcrGeometry {
   const pxPerChar = params.ocrPxPerCharHeight;
   const pxPerStroke = params.ocrPxPerStroke;
   const mmPerPxByHeight = input.charHeightMm / pxPerChar;
@@ -76,10 +80,6 @@ export function ocrNeed(input: OcrInput, params: EngineParams = DEFAULT_ENGINE_P
   const spacing = input.lineSpacingMm ?? DEFAULT_LINE_SPACING_FACTOR * input.charHeightMm;
   const blockWidthMm = input.textWidthMm;
   const blockHeightMm = input.charHeightMm + (lines - 1) * spacing;
-  const fovWidthMm = blockWidthMm + 2 * input.toleranceXMm;
-  const fovHeightMm = blockHeightMm + 2 * input.toleranceYMm;
-  const light: LightAdvice = input.printType === 'embossed' ? 'lowAngle' : 'domeOrRing';
-  const algorithm: AlgorithmAdvice = input.background === 'complex' || input.font === 'varies' ? 'deepLearning' : input.printType === 'inkjet' ? 'dotJoin' : 'traditional';
   return {
     pxPerChar,
     pxPerStroke,
@@ -89,12 +89,16 @@ export function ocrNeed(input: OcrInput, params: EngineParams = DEFAULT_ENGINE_P
     mmPerPx,
     blockWidthMm,
     blockHeightMm,
-    fovWidthMm,
-    fovHeightMm,
-    light,
-    algorithm,
-    speed: areaNeed(cameraInputForOcr(input, { fovWidthMm, fovHeightMm, mmPerPx }), params),
+    fovWidthMm: blockWidthMm + 2 * input.toleranceXMm,
+    fovHeightMm: blockHeightMm + 2 * input.toleranceYMm,
   };
+}
+
+export function ocrNeed(input: OcrInput, params: EngineParams = DEFAULT_ENGINE_PARAMS): OcrNeed {
+  const geometry = ocrGeometry(input, params);
+  const light: LightAdvice = input.printType === 'embossed' ? 'lowAngle' : 'domeOrRing';
+  const algorithm: AlgorithmAdvice = input.background === 'complex' || input.font === 'varies' ? 'deepLearning' : input.printType === 'inkjet' ? 'dotJoin' : 'traditional';
+  return { ...geometry, light, algorithm, speed: areaNeed(cameraInputForOcr(input, geometry), params) };
 }
 
 /** Đầu vào trang Chọn camera tương ứng — OCR là bài phát hiện (nhoè 1 px), 1 ảnh mỗi sản phẩm. */

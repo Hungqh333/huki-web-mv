@@ -1624,6 +1624,8 @@
         "codeMinReads": "Đọc mã — số lần chụp tối thiểu khi mã đi qua khung (COD-002)",
         "ocrPxPerCharHeight": "OCR — px theo chiều cao ký tự (OCR-001)",
         "ocrPxPerStroke": "OCR — px trên độ dày nét (OCR-001)",
+        "robotVisionDivisor": "Dẫn hướng robot — vision được sai số gắp ÷ hệ số này (ROB-001)",
+        "robotSubpixel": "Dẫn hướng robot — tìm mẫu lặp lại được 1/hệ số px (ROB-001)",
         "pcPsuMaxShare": "Tải đỉnh tối đa so với công suất nguồn (PC-PSU)",
         "pcCpuPeakW": "Công suất đỉnh CPU dùng để ước tải (PC-PSU)",
         "pcBaseLoadW": "Phần còn lại của máy: main, RAM, ổ, quạt (PC-PSU)",
@@ -3546,7 +3548,22 @@
       "color": "Màu",
       "targetFromDefect": "Đang dùng {mmpx} mm/px (lỗi nhỏ nhất ÷ {n} px).",
       "targetGiven": "Đang dùng {mmpx} mm/px.",
-      "purpose": "Bài toán"
+      "task": "Bài toán",
+      "defectHintTask": "mm/px = lỗi ÷ số px theo độ tương phản.",
+      "tolerance": "Dung sai cần đo (± mm)",
+      "toleranceHint": "Dung sai nhỏ nhất trên bản vẽ, dạng ±.",
+      "axisHint": "Chỉ dùng khi mã chạy qua lúc đọc (ô tốc độ bên phải).",
+      "robotAccuracy": "Độ chính xác gắp / đặt (± mm)",
+      "robotAccuracyHint": "Sai số cho phép ở đầu gắp của robot.",
+      "robot3d": "Vật đổi chiều cao hoặc nghiêng?",
+      "robotAreaW": "Vùng vật có thể nằm — rộng (mm)",
+      "robotAreaH": "Vùng vật có thể nằm — cao (mm)",
+      "robotAreaHint": "Khoảng tâm vật có thể rơi vào trên băng tải / khay.",
+      "robotPartW": "Cỡ vật — rộng (mm)",
+      "robotPartH": "Cỡ vật — cao (mm)",
+      "robotPartHint": "Cộng vào vùng nhìn để vật luôn nằm trọn trong ảnh.",
+      "mmPerPxOverride": "mm/px nhập thẳng (không bắt buộc)",
+      "mmPerPxOverrideHint": "Có số này thì dùng thay cho mm/px bài toán tính ra."
     },
     "contrast": {
       "high": "Cao",
@@ -3721,9 +3738,47 @@
       "lineExposureShortNoTdi": "Phơi tối đa chỉ {us} µs mỗi dòng (dưới {limit} µs): cần đèn dòng cường độ cao, hoặc camera TDI / multiline, hoặc binning.",
       "lineExposureTdiOk": "Phơi hiệu dụng {us} µs mỗi dòng nhờ TDI {stages} tầng."
     },
-    "purpose": {
-      "detect": "Phát hiện lỗi (nhoè ≤ 1 px)",
-      "measure": "Đo lường (nhoè ≤ 0,5 px)"
+    "taskType": {
+      "inspection": "Kiểm tra ngoại quan",
+      "measurement": "Đo lường",
+      "ocr": "OCR / OCV",
+      "code": "Đọc mã vạch",
+      "robot": "Dẫn hướng robot"
+    },
+    "taskHint": {
+      "inspection": "Phát hiện lỗi bề mặt: mm/px theo lỗi nhỏ nhất và độ tương phản; nhoè cho phép 1 px.",
+      "measurement": "Đo kích thước: mm/px theo dung sai (ngân sách sai số đo); nhoè cho phép 0,5 px.",
+      "ocr": "Đọc / kiểm chữ: mm/px theo chiều cao ký tự và độ dày nét; vùng nhìn tự tính từ khối chữ.",
+      "code": "Đọc mã 1D / 2D / DPM: mm/px theo cỡ module; vùng nhìn tự tính từ kích thước mã.",
+      "robot": "Định vị 2D cho robot gắp: mm/px theo độ chính xác gắp; vùng nhìn = vùng vật có thể nằm + cỡ vật; nhoè cho phép 0,5 px."
+    },
+    "taskResult": {
+      "overridden": "Đang dùng {mmpx} mm/px nhập thẳng (bài toán tính ra {derived} mm/px).",
+      "measurement": "Đang dùng {mmpx} mm/px cho dung sai ±{tol} mm.",
+      "ocr": "Đang dùng {mmpx} mm/px ({by}).",
+      "ocrBy": {
+        "height": "theo chiều cao ký tự",
+        "stroke": "theo độ dày nét"
+      },
+      "code": "Đang dùng {mmpx} mm/px ({n} px mỗi module).",
+      "robot": "Phần sai số dành cho vision ±{budget} mm → đang dùng {mmpx} mm/px.",
+      "fovAuto": "Vùng nhìn tự tính {w} × {h} mm.",
+      "robot3dWarn": "Vật đổi chiều cao hoặc cần biết góc nghiêng ngoài mặt phẳng → cần camera 3D. Trang này chỉ tính định vị 2D; kết quả dưới đây chỉ để tham khảo.",
+      "deepLink": {
+        "ocr": "Gợi ý đèn và thuật toán đọc chữ → trang Chọn camera OCR",
+        "code": "Đầu đọc mã liền khối và số lần đọc → trang Chọn đầu đọc mã"
+      }
+    },
+    "taskMissing": {
+      "inspection": "Nhập vùng nhìn và lỗi nhỏ nhất (hoặc mm/px) để tính.",
+      "measurement": "Nhập vùng nhìn và dung sai (hoặc mm/px) để tính.",
+      "ocr": "Nhập chiều cao ký tự và chiều dài dòng để tính.",
+      "code": "Nhập cỡ module và chiều rộng mã để tính.",
+      "robot": "Nhập độ chính xác gắp và vùng vật có thể nằm để tính."
+    },
+    "robot3d": {
+      "no": "Không — vật phẳng, cùng độ cao",
+      "yes": "Có — cần biết chiều cao / góc nghiêng"
     },
     "trigger": {
       "photoSensor": "Cảm biến quang (phần cứng)",

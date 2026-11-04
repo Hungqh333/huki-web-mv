@@ -4,6 +4,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import type { PcSuggestResponse } from '@/app/actions/pcSuggest';
 import { NOTE_CLASS, PanelHeader } from '@/components/ui/PanelHeader';
+import { PcCode } from './PcCode';
 import type { PcConfig, PcFrame } from '@/lib/pc/code';
 import {
   PC_BITS,
@@ -316,7 +317,11 @@ export function PcSuggest({
                     </span>
                     {j === 0 ? <span className="rounded-full bg-sky-100 px-2 py-px text-[11px] font-medium text-sky-800 dark:bg-sky-950/60 dark:text-sky-300">{t('recommended')}</span> : null}
                   </div>
-                  {config ? <p className="mt-1 break-all font-mono text-xs">{config.code}</p> : null}
+                  {config ? (
+                    <p className="mt-1 text-xs">
+                      <PcCode text={config.code} />
+                    </p>
+                  ) : null}
                   <ul className="mt-1.5 space-y-0.5 text-sm">
                     {v.warn.map((n) => (
                       <li key={n.key} className="text-amber-700 dark:text-amber-400">! {note(n)}</li>

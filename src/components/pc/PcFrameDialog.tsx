@@ -6,6 +6,7 @@ import { useState, useTransition } from 'react';
 import { updatePcFrameAction } from '@/app/actions/pcVision';
 import { NOTE_CLASS } from '@/components/ui/PanelHeader';
 import { PC_TIERS, frameCodeHead, type PcFrame, type PcLine } from '@/lib/pc/code';
+import { PcCode } from './PcCode';
 import { Buttons, INPUT, Labeled, Modal, Section, Select } from './PcConfigDialog';
 
 /** Sửa khung: chỉ phần không tạo mã. Dòng RAM/SSD chỉ đổi được khi đang là '?' (CSDL chặn phần còn lại). */
@@ -55,8 +56,8 @@ export function PcFrameDialog({ frame, onClose }: { frame: PcFrame; onClose: () 
 
   return (
     <Modal title={t('frameTitle', { name: `${frame.tier} · ${en ? frame.nameEn || frame.nameVi : frame.nameVi}` })} onClose={onClose}>
-      <p className="break-all rounded-lg bg-indigo-50 px-3 py-2.5 font-mono text-sm font-semibold text-slate-900 dark:bg-indigo-950/50 dark:text-slate-100">
-        {frameCodeHead(frame)}-R…{frame.ramLine}-S…{frame.ssdLine}-…-{frame.os}
+      <p className="rounded-lg bg-indigo-50 px-3 py-2.5 text-sm font-semibold text-slate-900 dark:bg-indigo-950/50 dark:text-slate-100">
+        <PcCode text={`${frameCodeHead(frame)}-R…${frame.ramLine}-S…${frame.ssdLine}-…-${frame.os}`} />
       </p>
       <p className={`mt-2 ${NOTE_CLASS}`}>{t('frameLockedNote')}</p>
       <Section title="">

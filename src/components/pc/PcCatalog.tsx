@@ -12,6 +12,7 @@ import {
   type PcFrame,
   type PcPowerModel,
 } from '@/lib/pc/code';
+import { PcCode } from './PcCode';
 import { PcConfigDialog, type PcConfigDraft } from './PcConfigDialog';
 import { PcFrameDialog } from './PcFrameDialog';
 
@@ -177,9 +178,13 @@ export function PcCatalog({
                       {c.shortName}
                       {c.status === 'retired' ? <span className={`ml-1 ${NOTE_CLASS}`}>({t('status.retired')})</span> : null}
                     </td>
-                    <td className="break-all px-3 py-1.5 font-mono text-xs">
-                      <span className="text-slate-400 dark:text-slate-500">{frameCodeHead(frame)}-</span>
-                      <b className="text-slate-900 dark:text-slate-100">{configCodeMiddle(frame, c)}</b>
+                    <td className="px-3 py-1.5 text-xs">
+                      <span className="text-slate-400 dark:text-slate-500">
+                        <PcCode text={`${frameCodeHead(frame)}-`} />
+                      </span>
+                      <b className="text-slate-900 dark:text-slate-100">
+                        <PcCode text={configCodeMiddle(frame, c)} />
+                      </b>
                       <span className="text-slate-400 dark:text-slate-500">-{frame.os}</span>
                     </td>
                     <td className="px-3 py-1.5 text-right tabular-nums">{c.ramGb}GB</td>

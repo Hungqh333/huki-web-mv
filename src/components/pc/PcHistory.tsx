@@ -34,7 +34,7 @@ export async function PcHistory({ entries }: { entries: PcHistoryEntry[] }) {
                 <td className="whitespace-nowrap px-3 py-1.5">
                   {t(`action.${e.action}`)} {t(`table.${e.table}`).toLowerCase()} <b>{(en && e.labelEn) || e.label}</b>
                 </td>
-                <td className="px-3 py-1.5 font-mono text-xs">
+                <td className="px-3 py-1.5 text-xs">
                   {e.changes.map((c) => (
                     <div key={c.field} className="break-all">
                       <span className="text-slate-500">{c.field}:</span>{' '}

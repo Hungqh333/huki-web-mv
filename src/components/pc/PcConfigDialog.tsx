@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState, useTransition, type ReactNode } from 'react';
 import { addPcConfigAction, updatePcConfigAction, type PcActionResult } from '@/app/actions/pcVision';
 import { NOTE_CLASS } from '@/components/ui/PanelHeader';
+import { PcCode } from './PcCode';
 import {
   PC_DATA_DRIVES,
   PC_GPUS,
@@ -227,7 +228,9 @@ function AddForm({
       </Section>
 
       <p className={`mt-4 mb-1 ${NOTE_CLASS}`}>{t('codeLabel')}</p>
-      <p className="break-all rounded-lg bg-indigo-50 px-3 py-2.5 font-mono text-sm font-semibold text-slate-900 dark:bg-indigo-950/50 dark:text-slate-100">{code}</p>
+      <p className="rounded-lg bg-indigo-50 px-3 py-2.5 text-sm font-semibold text-slate-900 dark:bg-indigo-950/50 dark:text-slate-100">
+        <PcCode text={code} />
+      </p>
       <div className="mt-2 space-y-1 text-sm">
         {errors.length === 0 ? (
           <p className="text-emerald-700 dark:text-emerald-400">✓ {t('codeOk')}</p>
@@ -322,7 +325,9 @@ function EditForm({
 
   return (
     <>
-      <p className="break-all rounded-lg bg-indigo-50 px-3 py-2.5 font-mono text-sm font-semibold text-slate-900 dark:bg-indigo-950/50 dark:text-slate-100">{config.code}</p>
+      <p className="rounded-lg bg-indigo-50 px-3 py-2.5 text-sm font-semibold text-slate-900 dark:bg-indigo-950/50 dark:text-slate-100">
+        <PcCode text={config.code} />
+      </p>
       <p className={`mt-2 ${NOTE_CLASS}`}>{t('lockedNote')}</p>
       {frame ? (
         <button

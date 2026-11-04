@@ -131,6 +131,8 @@ export const ENGINE_PARAMS = [
   { key: 'pcRamBaseGb', group: 'pc', default: 12, min: 0, max: 256, step: 1, unit: 'GB' },
   { key: 'pcRamAiGb', group: 'pc', default: 8, min: 0, max: 256, step: 1, unit: 'GB' },
   { key: 'pcRamTrainGb', group: 'pc', default: 16, min: 0, max: 256, step: 1, unit: 'GB' },
+  // 2026-11-04 Q1: camera màu — ảnh đệm sau giải Bayer ra RGB nặng gấp 3 ảnh đơn sắc.
+  { key: 'pcRamColorFactor', group: 'pc', default: 3, min: 1, max: 4, step: 0.5, unit: '×' },
   // PC-RANK — huấn luyện tại máy cần VRAM tối thiểu; ảnh từ cỡ này chạy AI nên dùng cấp D.
   { key: 'pcTrainMinVramGb', group: 'pc', default: 16, min: 1, max: 256, step: 1, unit: 'GB' },
   { key: 'pcLargeImageMp', group: 'pc', default: 20, min: 1, max: 500, step: 1, unit: 'MP' },
@@ -146,6 +148,8 @@ export const ENGINE_PARAMS = [
   { key: 'pcClBasePerGrabber', group: 'pc', default: 2, min: 1, max: 8, step: 1 },
   { key: 'pcCxpLanesPerCard', group: 'pc', default: 4, min: 1, max: 16, step: 1 },
   { key: 'pcPoePerCameraW', group: 'pc', default: 13, min: 0, max: 100, step: 0.5, unit: 'W' },
+  // 2026-11-04 Q3: cổng LAN có sẵn trên máy để cho chức năng khác (PLC, MES, mạng nhà máy) — không cắm camera.
+  { key: 'pcLanReservedPorts', group: 'pc', default: 1, min: 0, max: 4, step: 1 },
   // PC-FPS — tô màu bảng fps: dưới ngưỡng thấp đỏ, tới ngưỡng cao vàng, trên nữa xanh.
   { key: 'pcFpsLow', group: 'pc', default: 10, min: 1, max: 1000, step: 1, unit: 'fps' },
   { key: 'pcFpsHigh', group: 'pc', default: 30, min: 1, max: 1000, step: 1, unit: 'fps' },

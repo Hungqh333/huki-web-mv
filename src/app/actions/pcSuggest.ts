@@ -25,6 +25,7 @@ const INPUT = z.object({
       z.object({
         resolution: z.enum(PC_RESOLUTION_KEYS as [string, ...string[]]),
         bit: z.union([z.literal(8), z.literal(10), z.literal(12), z.literal(16)]),
+        color: z.boolean(),
         fps: num(0, 100_000),
         iface: z.enum(PC_INTERFACE_KEYS),
         inspectPerSec: num(0, 100_000),

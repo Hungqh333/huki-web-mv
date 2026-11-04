@@ -1632,6 +1632,7 @@
         "pcRamBaseGb": "RAM — nền Windows + phần mềm vision (PC-RAM)",
         "pcRamAiGb": "RAM — cộng thêm khi chạy AI (PC-RAM)",
         "pcRamTrainGb": "RAM — cộng thêm khi huấn luyện tại máy (PC-RAM)",
+        "pcRamColorFactor": "RAM — đệm ảnh camera màu gấp mấy lần đơn sắc (PC-RAM)",
         "pcTrainMinVramGb": "VRAM tối thiểu để huấn luyện tại máy (PC-RANK)",
         "pcLargeImageMp": "Ảnh từ cỡ này chạy AI thì nên cấp D (PC-RANK)",
         "pcDiskUsableShare": "Phần ổ dùng được để chứa ảnh (PC-STORE)",
@@ -1644,6 +1645,7 @@
         "pcClBasePerGrabber": "Số camera Camera Link Base mỗi frame grabber (PC-SLOT)",
         "pcCxpLanesPerCard": "Số làn CXP mỗi frame grabber (PC-SLOT)",
         "pcPoePerCameraW": "PoE mỗi camera GigE cấp từ card (PC-PSU)",
+        "pcLanReservedPorts": "Số cổng LAN có sẵn để cho mạng nhà máy, không cắm camera (PC-SLOT)",
         "pcFpsLow": "Bảng fps — dưới mức này tô đỏ (PC-FPS)",
         "pcFpsHigh": "Bảng fps — trên mức này tô xanh (PC-FPS)"
       },
@@ -4094,7 +4096,7 @@
       "frameNameVi": "Tên khung",
       "frameNameEn": "Tên khung (tiếng Anh)",
       "slots": "Khe trống cho card camera",
-      "lan": "Cổng LAN onboard cho camera",
+      "lan": "Tổng cổng LAN có sẵn trên máy",
       "peak": "Tải đỉnh ước tính (W, chưa tính PoE)",
       "useForVi": "Dùng cho",
       "useForEn": "Dùng cho (tiếng Anh)",
@@ -4146,6 +4148,7 @@
       "col": {
         "name": "Tên",
         "resolution": "Độ phân giải",
+        "color": "Màu",
         "bit": "Bit",
         "fps": "fps",
         "iface": "Giao tiếp",
@@ -4154,6 +4157,10 @@
         "port": "% cổng"
       },
       "maxFps": "tối đa {fps} fps",
+      "colorOption": {
+        "mono": "Đơn sắc",
+        "color": "Màu"
+      },
       "ai": "Chạy AI?",
       "aiOption": {
         "none": "Không",
@@ -4192,7 +4199,7 @@
         "storage": "Ảnh lưu: NG {ng} + OK {ok} TB",
         "raw": "Nếu lưu hết ảnh thô: {raw} TB",
         "slots": "{n} khe",
-        "slotsLabel": "Card camera cần (+ {lan} cổng LAN onboard)"
+        "slotsLabel": "Card camera cần khi mọi camera GigE qua card PoE (cổng LAN có sẵn để cho mạng nhà máy)"
       },
       "fitPanel": "Cấu hình phù hợp",
       "fitMeta": "mỗi khung lấy cấu hình nhỏ nhất đủ dùng · xếp: đạt → có lưu ý → không hợp",
@@ -4214,8 +4221,8 @@
       "notes": {
         "aux": "Máy phụ trợ: không thu ảnh trực tiếp",
         "noGpu": "Chạy AI cần GPU rời, khung này không có",
-        "slots": "Cần {need} khe card camera + {lan} cổng LAN, máy có {have} khe",
-        "ports": "Cổng, khe đủ: cần {need} khe card ({have} trống) + {lan} cổng LAN onboard",
+        "slots": "Cần {need} khe card camera{lan, plural, =0 {} other { (# camera GigE cắm cổng LAN dư)}}, máy có {have} khe",
+        "ports": "Cổng, khe đủ: cần {need} khe card ({have} trống){lan, plural, =0 {} other { + # camera GigE cắm cổng LAN dư}}",
         "ram": "RAM cần ~{need}GB → {ram}GB",
         "ramShort": "RAM cần ~{need}GB, cấu hình lớn nhất của khung có {max}GB",
         "noConfig": "Khung chưa có cấu hình đang dùng",

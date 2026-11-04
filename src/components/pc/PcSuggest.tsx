@@ -21,15 +21,15 @@ import type { PcNote, PcSuggestInput, PcSuggestResult } from '@/lib/pc/suggest';
 
 const DEBOUNCE_MS = 250;
 
-type Camera = { id: number; name: string; resolution: PcResolution; bit: number; fps: number; iface: PcInterface; inspectPerSec: number };
+type Camera = { id: number; name: string; resolution: PcResolution; color: boolean; bit: number; fps: number; iface: PcInterface; inspectPerSec: number };
 type Storage = NonNullable<PcSuggestInput['storage']>;
 
 export type PcSuggestPrefill = { count: number; iface: PcInterface; rate: number | null; gpu: boolean };
 
 /** Mặc định như mẫu đã duyệt: hai camera GigE, AI suy luận, 24/7, không tính lưu ảnh. */
 const DEFAULT_CAMERAS: Omit<Camera, 'id' | 'name'>[] = [
-  { resolution: '2448x2048', bit: 8, fps: 10, iface: 'GigE', inspectPerSec: 2 },
-  { resolution: '4096x3000', bit: 8, fps: 5, iface: 'GigE', inspectPerSec: 1 },
+  { resolution: '2448x2048', color: false, bit: 8, fps: 10, iface: 'GigE', inspectPerSec: 2 },
+  { resolution: '4096x3000', color: false, bit: 8, fps: 5, iface: 'GigE', inspectPerSec: 1 },
 ];
 const DEFAULT_STORAGE: Storage = { hoursPerDay: 20, ngPercent: 1, ngDays: 30, ngFormat: 'png', okDays: 7, okEveryN: 10, okFormat: 'jpeg' };
 
@@ -74,7 +74,7 @@ export function PcSuggest({
   useEffect(() => {
     const id = ++request.current;
     const input: PcSuggestInput = {
-      cameras: cameras.map(({ resolution, bit, fps, iface, inspectPerSec }) => ({ resolution, bit, fps: clamp(fps, 0, 100_000), iface, inspectPerSec: clamp(inspectPerSec, 0, 100_000) })),
+      cameras: cameras.map(({ resolution, color, bit, fps, iface, inspectPerSec }) => ({ resolution, color, bit, fps: clamp(fps, 0, 100_000), iface, inspectPerSec: clamp(inspectPerSec, 0, 100_000) })),
       ai,
       line247,
       // Ô trống / số ngoài khoảng → kẹp lại, để máy chủ không trả "ô nhập chưa hợp lệ" khi đang gõ.
@@ -135,11 +135,12 @@ export function PcSuggest({
           }
         />
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[820px] text-[13px]">
+          <table className="w-full min-w-[900px] text-[13px]">
             <thead>
               <tr className="bg-slate-50 text-left text-xs font-medium text-slate-500 dark:bg-slate-900/60 dark:text-slate-400">
                 <th className="px-3 py-2">{t('col.name')}</th>
                 <th className="px-3 py-2">{t('col.resolution')}</th>
+                <th className="px-3 py-2">{t('col.color')}</th>
                 <th className="px-3 py-2">{t('col.bit')}</th>
                 <th className="px-3 py-2">{t('col.fps')}</th>
                 <th className="px-3 py-2">{t('col.iface')}</th>
@@ -164,6 +165,12 @@ export function PcSuggest({
                             {resolutionLabel(k)}
                           </option>
                         ))}
+                      </select>
+                    </td>
+                    <td className="px-3 py-1.5">
+                      <select value={cam.color ? 'color' : 'mono'} onChange={(e) => setCam(cam.id, { color: e.target.value === 'color' })} className={INPUT}>
+                        <option value="mono">{t('colorOption.mono')}</option>
+                        <option value="color">{t('colorOption.color')}</option>
                       </select>
                     </td>
                     <td className="px-3 py-1.5">
@@ -287,7 +294,7 @@ export function PcSuggest({
                 }
               />
             ) : null}
-            <Tile value={t('tile.slots', { n: result.slots })} label={t('tile.slotsLabel', { lan: result.lanOnboard })} />
+            <Tile value={t('tile.slots', { n: result.slots })} label={t('tile.slotsLabel')} />
           </div>
         ) : null}
       </section>

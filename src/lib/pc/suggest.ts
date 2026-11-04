@@ -7,7 +7,9 @@
  *
  * Chạy ở MÁY CHỦ (server action suggestPcAction) — file 'use client' không import file này.
  * Mọi hằng số là ngưỡng engine (nhóm `pc` + băng thông `interfaces`), sửa ở trang admin (Q5).
- * Thay đổi so với mẫu đã được chốt: băng thông lấy bảng engine (Q2), câu 24/7 dòng C (Q7).
+ * Thay đổi so với mẫu đã được chốt: băng thông lấy bảng engine (Q2), câu 24/7 dòng C (Q7);
+ * 2026-11-04: camera màu nhân đệm RAM (pcRamColorFactor), cổng LAN có sẵn để cho mạng nhà máy —
+ * camera GigE chỉ dùng số cổng LAN còn lại sau khi trừ pcLanReservedPorts, còn lại qua card PoE.
  */
 
 import type { EngineParams } from '@/lib/vision/engineParams';
@@ -39,6 +41,8 @@ export type PcImageFormat = 'raw' | 'png' | 'jpeg';
 export type PcCameraInput = {
   resolution: PcResolution;
   bit: number;
+  /** Camera màu: ảnh đệm sau giải Bayer nặng gấp pcRamColorFactor lần (chỉ ảnh hưởng RAM). */
+  color: boolean;
   fps: number;
   iface: PcInterface;
   /** Ảnh kiểm mỗi giây — chỉ dùng khi bật tính lưu ảnh. */
@@ -93,9 +97,8 @@ export type PcSuggestResult = {
   totalMbps: number;
   ramGb: number;
   storage: { ngTb: number; okTb: number; totalTb: number; rawTb: number } | null;
-  /** Khe card cần khi máy có 1 cổng LAN onboard cho camera. */
+  /** Khe card cần khi mọi camera GigE đi card PoE (không dùng cổng LAN có sẵn). Từng khung tính lại theo số cổng LAN dư. */
   slots: number;
-  lanOnboard: number;
   gige: number;
   poeW: number;
   frames: PcFrameVerdict[];
@@ -124,7 +127,7 @@ export function imageCapacityTb(params: EngineParams, config: Pick<PcConfig, 'ss
 
 type Counts = Record<SlotGroup, number>;
 
-/** PC-SLOT: khe card camera cần, khi `onboard` camera GigE đi cổng LAN onboard. */
+/** PC-SLOT: khe card camera cần, khi `onboard` camera GigE cắm thẳng cổng LAN có sẵn của máy. */
 export function cardSlots(params: EngineParams, counts: Counts, onboard: number): number {
   return (
     Math.ceil(Math.max(0, counts.gige - onboard) / params.pcGigePortsPerCard) +
@@ -150,7 +153,7 @@ export function suggestPc(input: PcSuggestInput, frames: readonly PcFrame[], con
   const totalMbps = rows.reduce((a, r) => a + r.result.mbps, 0);
 
   // ── PC-RAM ──
-  const bufferGb = rows.reduce((a, r) => a + r.mbk * params.pcRamBufferFrames, 0) / 1024;
+  const bufferGb = rows.reduce((a, r) => a + r.mbk * params.pcRamBufferFrames * (r.cam.color ? params.pcRamColorFactor : 1), 0) / 1024;
   const ramGb = bufferGb + params.pcRamBaseGb + (input.ai !== 'none' ? params.pcRamAiGb : 0) + (input.ai === 'training' ? params.pcRamTrainGb : 0);
 
   // ── PC-STORE ──
@@ -167,7 +170,6 @@ export function suggestPc(input: PcSuggestInput, frames: readonly PcFrame[], con
   // ── PC-SLOT, PoE ──
   const counts: Counts = { gige: 0, tenGige: 0, usb: 0, clBase: 0, clOne: 0, cxp1: 0, cxp4: 0 };
   for (const r of rows) counts[PC_INTERFACES[r.cam.iface].group]++;
-  const lanOnboard = counts.gige > 0 ? 1 : 0;
   const poeW = counts.gige * params.pcPoePerCameraW;
   const largestMp = Math.max(0, ...rows.map((r) => PC_RESOLUTIONS[r.cam.resolution][2]));
 
@@ -182,8 +184,8 @@ export function suggestPc(input: PcSuggestInput, frames: readonly PcFrame[], con
     if (input.ai === 'training' && frame.gpu !== '0' && frame.vramGb < params.pcTrainMinVramGb)
       warn.push({ key: 'trainVram', values: { vram: frame.vramGb, min: params.pcTrainMinVramGb } });
 
-    // Một camera GigE đi cổng LAN onboard (nếu khung có), còn lại qua card.
-    const onboard = Math.min(lanOnboard, frame.lanPorts);
+    // Cổng LAN có sẵn: trừ số cổng để cho mạng nhà máy, phần dư mới cắm camera GigE; còn lại qua card.
+    const onboard = Math.min(counts.gige, Math.max(0, frame.lanPorts - params.pcLanReservedPorts));
     const need = cardSlots(params, counts, onboard);
     if (need > frame.cardSlots) no.push({ key: 'slots', values: { need, have: frame.cardSlots, lan: onboard } });
     else ok.push({ key: 'ports', values: { need, have: frame.cardSlots, lan: onboard } });
@@ -234,8 +236,7 @@ export function suggestPc(input: PcSuggestInput, frames: readonly PcFrame[], con
     totalMbps,
     ramGb,
     storage,
-    slots: cardSlots(params, counts, lanOnboard),
-    lanOnboard,
+    slots: cardSlots(params, counts, 0),
     gige: counts.gige,
     poeW,
     frames: verdicts.map((v) => v.verdict),

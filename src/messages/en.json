@@ -1632,6 +1632,7 @@
         "pcRamBaseGb": "RAM — Windows + vision software base (PC-RAM)",
         "pcRamAiGb": "RAM — extra when running AI (PC-RAM)",
         "pcRamTrainGb": "RAM — extra for on-machine training (PC-RAM)",
+        "pcRamColorFactor": "RAM — colour camera buffer vs. mono, times (PC-RAM)",
         "pcTrainMinVramGb": "Minimum VRAM for on-machine training (PC-RANK)",
         "pcLargeImageMp": "Images from this size running AI should use tier D (PC-RANK)",
         "pcDiskUsableShare": "Usable share of a drive for images (PC-STORE)",
@@ -1644,6 +1645,7 @@
         "pcClBasePerGrabber": "Camera Link Base cameras per frame grabber (PC-SLOT)",
         "pcCxpLanesPerCard": "CXP lanes per frame grabber (PC-SLOT)",
         "pcPoePerCameraW": "PoE per GigE camera powered from the card (PC-PSU)",
+        "pcLanReservedPorts": "Built-in LAN ports kept for the plant network, no cameras (PC-SLOT)",
         "pcFpsLow": "fps table — red below this (PC-FPS)",
         "pcFpsHigh": "fps table — green above this (PC-FPS)"
       },
@@ -4094,7 +4096,7 @@
       "frameNameVi": "Frame name (Vietnamese)",
       "frameNameEn": "Frame name (English)",
       "slots": "Free slots for camera cards",
-      "lan": "Onboard LAN ports for cameras",
+      "lan": "Total built-in LAN ports",
       "peak": "Estimated peak load (W, excluding PoE)",
       "useForVi": "Use for (Vietnamese)",
       "useForEn": "Use for (English)",
@@ -4146,6 +4148,7 @@
       "col": {
         "name": "Name",
         "resolution": "Resolution",
+        "color": "Colour",
         "bit": "Bit",
         "fps": "fps",
         "iface": "Interface",
@@ -4154,6 +4157,10 @@
         "port": "% of port"
       },
       "maxFps": "max {fps} fps",
+      "colorOption": {
+        "mono": "Mono",
+        "color": "Colour"
+      },
       "ai": "Run AI?",
       "aiOption": {
         "none": "No",
@@ -4192,7 +4199,7 @@
         "storage": "Stored images: NG {ng} + OK {ok} TB",
         "raw": "If all raw images were kept: {raw} TB",
         "slots": "{n} slots",
-        "slotsLabel": "Camera cards needed (+ {lan} onboard LAN port)"
+        "slotsLabel": "Camera cards needed with every GigE camera on a PoE card (built-in LAN kept for the plant network)"
       },
       "fitPanel": "Matching configurations",
       "fitMeta": "smallest sufficient configuration per frame · order: fits → fits with notes → unsuitable",
@@ -4214,8 +4221,8 @@
       "notes": {
         "aux": "Auxiliary machine: no direct image acquisition",
         "noGpu": "AI needs a discrete GPU, this frame has none",
-        "slots": "Needs {need} camera card slots + {lan} LAN port, machine has {have} slots",
-        "ports": "Ports and slots OK: needs {need} card slots ({have} free) + {lan} onboard LAN port",
+        "slots": "Needs {need} camera card slots{lan, plural, =0 {} other { (# GigE cameras on spare LAN ports)}}, machine has {have} slots",
+        "ports": "Ports and slots OK: needs {need} card slots ({have} free){lan, plural, =0 {} other { + # GigE cameras on spare LAN ports}}",
         "ram": "RAM needed ~{need}GB → {ram}GB",
         "ramShort": "RAM needed ~{need}GB, the frame's largest configuration has {max}GB",
         "noConfig": "Frame has no configuration in use",

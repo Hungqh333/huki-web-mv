@@ -3,7 +3,9 @@
  * đã duyệt (docs/pc-vision/1_mau_trang_pc_vision.html: tinh(), danhGia()).
  *
  * Script của mẫu chạy trong vm với `document` giả; bảng băng thông GT của mẫu được thay bằng
- * số ngưỡng engine (chốt Q2), còn lại giữ nguyên. Hai bên phải ra cùng: RAM cần, ảnh lưu,
+ * số ngưỡng engine (chốt Q2); 2026-11-04 bỏ "1 camera GigE đi LAN onboard" của mẫu (cổng LAN có sẵn để
+ * cho mạng nhà máy; phép so dùng khung 1 LAN như mẫu nên không còn cổng dư); còn lại giữ nguyên.
+ * Camera trong phép so đều đơn sắc (mẫu không có ô màu). Hai bên phải ra cùng: RAM cần, ảnh lưu,
  * số khe, tổng MB/s, và với từng khung — mức đánh giá, cấu hình được chọn, số lưu ý, thứ tự.
  */
 import assert from 'node:assert/strict';
@@ -47,7 +49,11 @@ const MOCK_FMT: Record<PcImageFormat, number> = { raw: 1, png: 0.5, jpeg: 0.1 };
 
 function loadMock() {
   const html = readFileSync('docs/pc-vision/1_mau_trang_pc_vision.html', 'utf8');
-  const script = html.slice(html.indexOf('<script>') + 8, html.lastIndexOf('</script>'));
+  const raw = html.slice(html.indexOf('<script>') + 8, html.lastIndexOf('</script>'));
+  // Quy định 2026-11-04: không cắm camera vào cổng LAN có sẵn → mẫu tính khe với 0 camera đi LAN.
+  const ONBOARD = 'Math.max(0, gige - 1)';
+  assert.equal(raw.split(ONBOARD).length, 2, 'mẫu phải có đúng một chỗ trừ camera đi LAN onboard');
+  const script = raw.replace(ONBOARD, 'Math.max(0, gige - 0)');
   const element = () => ({ innerHTML: '', textContent: '', dataset: {}, onclick: null, classList: { add() {}, remove() {}, toggle() {} } });
   const document = { getElementById: element, querySelectorAll: () => [], documentElement: { dataset: {} } };
   const context = vm.createContext({ document });
@@ -106,6 +112,7 @@ function randomInput(r: () => number): PcSuggestInput {
   const iface = (): PcInterface => (r() < 0.55 ? 'GigE' : pick(PC_INTERFACE_KEYS));
   const cameras = Array.from({ length: 1 + Math.floor(r() * 12) }, () => ({
     resolution: pick(PC_RESOLUTION_KEYS),
+    color: false,
     bit: pick([8, 8, 10, 12, 16]),
     fps: pick([1, 2, 5, 10, 15, 30, 60]),
     iface: iface(),
@@ -127,14 +134,16 @@ function randomInput(r: () => number): PcSuggestInput {
 }
 
 const seed = readPcSeed();
+/** Khung như mẫu (1 LAN) — để so 1:1 với mẫu đã bỏ "camera đi LAN onboard". Danh mục thật có 2 LAN. */
+const mockFrames = seed.frames.map((f) => (f.lanPorts > 0 ? { ...f, lanPorts: 1 } : f));
 const slugOf = new Map(seed.frames.map((f) => [f.id, f.slug]));
 const nameOf = new Map(seed.configs.map((c) => [c.id, c.shortName]));
 
 test('khớp mẫu đã duyệt trên ví dụ mặc định của mẫu (2 cam GigE, AI suy luận, 24/7)', () => {
   const input: PcSuggestInput = {
     cameras: [
-      { resolution: '2448x2048', bit: 8, fps: 10, iface: 'GigE', inspectPerSec: 2 },
-      { resolution: '4096x3000', bit: 8, fps: 5, iface: 'GigE', inspectPerSec: 1 },
+      { resolution: '2448x2048', color: false, bit: 8, fps: 10, iface: 'GigE', inspectPerSec: 2 },
+      { resolution: '4096x3000', color: false, bit: 8, fps: 5, iface: 'GigE', inspectPerSec: 1 },
     ],
     ai: 'inference',
     line247: true,
@@ -157,7 +166,7 @@ test('khớp logic mẫu trên 300 bộ camera ngẫu nhiên', () => {
   const seen = new Map<string, number>();
   for (let n = 0; n < 300; n++) {
     const input = randomInput(r);
-    const mine = suggestPc(input, seed.frames, seed.configs, P);
+    const mine = suggestPc(input, mockFrames, seed.configs, P);
     const mock = runMock(api, input);
     const label = `ca ${n}: ${JSON.stringify(input)}`;
 
@@ -192,7 +201,7 @@ test('công thức từng phần', () => {
 
 test('Q7: 24/7 trên khung dòng thường là LƯU Ý, không phải loại', () => {
   const out = suggestPc(
-    { cameras: [{ resolution: '1280x1024', bit: 8, fps: 5, iface: 'GigE', inspectPerSec: 1 }], ai: 'none', line247: true, storage: null },
+    { cameras: [{ resolution: '1280x1024', color: false, bit: 8, fps: 5, iface: 'GigE', inspectPerSec: 1 }], ai: 'none', line247: true, storage: null },
     seed.frames.map((f) => (f.slug === 'B' ? { ...f, ramLine: 'C' as const } : f)),
     seed.configs,
     P
@@ -204,7 +213,7 @@ test('Q7: 24/7 trên khung dòng thường là LƯU Ý, không phải loại', (
 
 test('khung / cấu hình ngừng dùng không được gợi ý', () => {
   const out = suggestPc(
-    { cameras: [{ resolution: '2448x2048', bit: 8, fps: 10, iface: 'GigE', inspectPerSec: 1 }], ai: 'inference', line247: true, storage: null },
+    { cameras: [{ resolution: '2448x2048', color: false, bit: 8, fps: 10, iface: 'GigE', inspectPerSec: 1 }], ai: 'inference', line247: true, storage: null },
     seed.frames.map((f) => (f.slug === 'Ct' ? { ...f, status: 'retired' as const } : f)),
     seed.configs.map((c) => (c.shortName === 'C1' ? { ...c, status: 'retired' as const } : c)),
     P
@@ -231,11 +240,45 @@ test('bảng fps khớp veFps() của mẫu: số, dấu * và màu, ở nhiều
 
 test('khung chưa rõ dòng RAM/SSD (?) trên dây chuyền 24/7 → lưu ý kiểm tra trước', () => {
   const out = suggestPc(
-    { cameras: [{ resolution: '1280x1024', bit: 8, fps: 5, iface: 'GigE', inspectPerSec: 1 }], ai: 'none', line247: true, storage: null },
+    { cameras: [{ resolution: '1280x1024', color: false, bit: 8, fps: 5, iface: 'GigE', inspectPerSec: 1 }], ai: 'none', line247: true, storage: null },
     seed.frames.map((f) => (f.slug === 'A' ? { ...f, ramLine: '?' as const, ssdLine: '?' as const } : f)),
     seed.configs,
     P
   );
   const a = out.frames.find((f) => slugOf.get(f.frameId) === 'A')!;
   assert.deepEqual(a.warn.map((w) => w.key), ['line247Unknown']);
+});
+
+test('cổng LAN có sẵn để cho mạng nhà máy: chỉ cổng LAN dư mới cắm camera, còn lại qua card PoE', () => {
+  const gige = (n: number) =>
+    Array.from({ length: n }, () => ({ resolution: '2448x2048' as const, color: false, bit: 8, fps: 5, iface: 'GigE' as const, inspectPerSec: 1 }));
+  const run = (n: number, frames = seed.frames, params = P) => suggestPc({ cameras: gige(n), ai: 'none', line247: false, storage: null }, frames, seed.configs, params);
+  const frame = (out: ReturnType<typeof run>, slug: string) => out.frames.find((f) => slugOf.get(f.frameId) === slug)!;
+  const ports = (out: ReturnType<typeof run>, slug: string) => frame(out, slug).ok.find((n) => n.key === 'ports')?.values;
+
+  // Danh mục: khung A–D có 2 cổng LAN (Hùng xác nhận 2026-11-04), P giữ 0.
+  assert.deepEqual(seed.frames.map((f) => `${f.slug}:${f.lanPorts}`), ['A:2', 'B:2', 'Ct:2', 'C:2', 'D:2', 'P:0']);
+  // Ô tổng: mọi camera GigE qua card 4 cổng.
+  assert.deepEqual([1, 4, 5, 8, 9].map((n) => run(n).slots), [1, 1, 2, 2, 3]);
+  // Khung 2 LAN: 1 cổng để cho mạng, 1 cổng dư cắm camera → 5 camera cần 1 khe.
+  assert.deepEqual(ports(run(5), 'B'), { need: 1, have: 3, lan: 1 });
+  // Khung A (0 khe, 2 LAN): nhận đúng 1 camera GigE, 2 camera thì thiếu khe.
+  assert.deepEqual(ports(run(1), 'A'), { need: 0, have: 0, lan: 1 });
+  assert.deepEqual(frame(run(2), 'A').no.map((n) => n.key), ['slots']);
+  // Khung chỉ 1 LAN: không còn cổng dư → 5 camera cần 2 khe.
+  assert.deepEqual(ports(run(5, mockFrames), 'B'), { need: 2, have: 3, lan: 0 });
+  // Admin đặt 0 cổng để dành → cả 2 cổng cắm camera.
+  assert.deepEqual(ports(run(5, seed.frames, { ...P, pcLanReservedPorts: 0 }), 'B'), { need: 1, have: 3, lan: 2 });
+  // Khung P (0 khe, 0 LAN) vẫn là máy phụ trợ.
+  assert.ok(frame(run(1), 'P').no.some((n) => n.key === 'aux'));
+});
+
+test('camera màu: đệm ảnh RAM nhân hệ số màu, băng thông không đổi', () => {
+  const cam = (color: boolean) => ({ resolution: '5120x5120' as const, color, bit: 8, fps: 5, iface: 'GigE' as const, inspectPerSec: 1 });
+  const run = (color: boolean) => suggestPc({ cameras: [cam(color), cam(color)], ai: 'none', line247: false, storage: null }, seed.frames, seed.configs, P);
+  const mono = run(false), color = run(true);
+  const extra = (2 * mbPerFrame('5120x5120', 8) * P.pcRamBufferFrames * (P.pcRamColorFactor - 1)) / 1024;
+  assert.ok(Math.abs(color.ramGb - mono.ramGb - extra) < 1e-9);
+  assert.equal(color.totalMbps, mono.totalMbps);
+  assert.equal(P.pcRamColorFactor, 3);
 });

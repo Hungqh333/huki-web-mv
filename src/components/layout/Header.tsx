@@ -34,8 +34,7 @@ const equipmentSections = [
     items: [
       { href: '/chon-camera', key: 'camera' },
       { href: '/chon-line-scan', key: 'lineScan' },
-      { href: '/chon-doc-ma', key: 'codeReader' },
-      { href: '/chon-ocr', key: 'ocr' },
+      // Đọc mã / OCR gộp vào ô "Bài toán" của Area scan (2026-11-04) — hai trang chuyên sâu vẫn còn, mở từ đó.
     ],
   },
   {

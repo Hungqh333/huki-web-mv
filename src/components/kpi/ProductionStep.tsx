@@ -63,16 +63,17 @@ export function ProductionStep({
         bodyClassName="px-4 pb-4 sm:px-5"
       >
 
-      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+      {/* Lưới con chung hàng (subgrid): nhãn dài xuống dòng không đẩy ô bên cạnh lệch — xem FIELD_GRID. */}
+      <div className="mt-4 -mb-4 grid gap-x-4 sm:grid-cols-2">
         {FIELDS.map((field) => {
           const raw = values[field.key];
           const grouped = field.grouped && raw !== '';
 
           return (
-            <div key={field.key} className="space-y-1.5">
+            <div key={field.key} className="row-span-3 grid grid-rows-subgrid pb-4">
               <label
                 htmlFor={field.key}
-                className="block text-sm font-medium text-slate-700 dark:text-slate-200"
+                className="block self-end text-sm font-medium text-slate-700 dark:text-slate-200"
               >
                 {t(`fields.${field.key}`)}
                 {field.unit ? (
@@ -90,7 +91,7 @@ export function ProductionStep({
                   onChange={(event) =>
                     onChange({ ...values, [field.key]: digitsOnly(event.target.value) })
                   }
-                  className={inputClass}
+                  className={`mt-1.5 ${inputClass}`}
                 />
               ) : (
                 <input
@@ -101,20 +102,22 @@ export function ProductionStep({
                   step={field.step ?? '1'}
                   value={raw}
                   onChange={(event) => onChange({ ...values, [field.key]: event.target.value })}
-                  className={inputClass}
+                  className={`mt-1.5 ${inputClass}`}
                 />
               )}
 
-              {grouped ? (
-                <p className="text-xs font-medium text-slate-700 tabular-nums dark:text-slate-300">
-                  = {Number(raw).toLocaleString(locale === 'en' ? 'en-US' : 'vi-VN')}
-                  {field.unit ? ` ${field.unit}` : ''}
-                </p>
-              ) : null}
+              <div className="mt-1.5 space-y-1.5">
+                {grouped ? (
+                  <p className="text-xs font-medium text-slate-700 tabular-nums dark:text-slate-300">
+                    = {Number(raw).toLocaleString(locale === 'en' ? 'en-US' : 'vi-VN')}
+                    {field.unit ? ` ${field.unit}` : ''}
+                  </p>
+                ) : null}
 
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                {t(`hints.${field.key}`)}
-              </p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {t(`hints.${field.key}`)}
+                </p>
+              </div>
             </div>
           );
         })}

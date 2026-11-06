@@ -4,7 +4,7 @@ import { ActionLink } from '@/components/ui/ActionLink';
 import { Icon } from '@/components/ui/Icon';
 import { Fragment, useMemo, useState, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
-import { NOTE_CLASS, Panel } from '@/components/ui/PanelHeader';
+import { FIELD_CELL, FIELD_GRID, FIELD_LABEL, NOTE_CLASS, Panel } from '@/components/ui/PanelHeader';
 import { useShowFormulas } from '@/components/ui/FormulaVisibility';
 import { specString, type Component } from '@/lib/components/specs';
 import type { AreaCandidate, CameraParams } from '@/lib/vision/cameraSelector';
@@ -143,7 +143,7 @@ export function OcrSelector({ components, params = DEFAULT_ENGINE_PARAMS }: { co
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Panel id="ocr-text" title={t('task.title')}>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className={`${FIELD_GRID} sm:grid-cols-2`}>
             <SelectInput id="ocr-mode" label={t('task.mode')} value={form.mode} options={MODES} labelOf={(v) => t(`mode.${v}`)} onChange={set('mode')} />
             <SelectInput id="ocr-print" label={t('task.printType')} value={form.printType} options={PRINT_TYPES} labelOf={(v) => t(`printType.${v}`)} onChange={set('printType')} />
             <NumberInput id="ocr-char-h" label={t('task.charHeight')} value={form.charH} onChange={set('charH')} step="0.1" />
@@ -159,7 +159,7 @@ export function OcrSelector({ components, params = DEFAULT_ENGINE_PARAMS }: { co
         </Panel>
 
         <Panel id="ocr-speed" title={t('speed.title')} note={t('speed.note')}>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className={`${FIELD_GRID} sm:grid-cols-2`}>
             <NumberInput id="ocr-speed-v" label={t('speed.speed')} value={form.speed} onChange={set('speed')} />
             <NumberInput id="ocr-ppm" label={t('speed.ppm')} value={form.ppm} onChange={set('ppm')} />
             <SelectInput id="ocr-trigger" label={t('speed.trigger')} value={form.trigger} options={TRIGGERS} labelOf={(v) => t(`trigger.${v}`)} onChange={set('trigger')} />
@@ -269,8 +269,8 @@ export function OcrSelector({ components, params = DEFAULT_ENGINE_PARAMS }: { co
 
 function NumberInput({ id, label, hint, value, onChange, step = 'any' }: { id: string; label: string; hint?: string; value: string; onChange: (value: string) => void; step?: string }) {
   return (
-    <div>
-      <label htmlFor={id} className={labelClass}>{label}</label>
+    <div className={FIELD_CELL}>
+      <label htmlFor={id} className={`${FIELD_LABEL} ${labelClass}`}>{label}</label>
       <input id={id} type="number" inputMode="decimal" min="0" step={step} value={value} onChange={(e) => onChange(e.target.value)} className={`mt-1.5 ${inputClass}`} />
       {hint ? <p className={`mt-1 ${NOTE_CLASS}`}>{hint}</p> : null}
     </div>
@@ -279,8 +279,8 @@ function NumberInput({ id, label, hint, value, onChange, step = 'any' }: { id: s
 
 function SelectInput<V extends string>({ id, label, value, options, labelOf, onChange }: { id: string; label: string; value: V; options: readonly V[]; labelOf: (value: V) => string; onChange: (value: string) => void }) {
   return (
-    <div>
-      <label htmlFor={id} className={labelClass}>{label}</label>
+    <div className={FIELD_CELL}>
+      <label htmlFor={id} className={`${FIELD_LABEL} ${labelClass}`}>{label}</label>
       <select id={id} value={value} onChange={(e) => onChange(e.target.value)} className={`mt-1.5 ${inputClass}`}>
         {options.map((o) => (
           <option key={o} value={o}>{labelOf(o)}</option>

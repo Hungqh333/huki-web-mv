@@ -3,7 +3,7 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
-import { NOTE_CLASS, Panel } from '@/components/ui/PanelHeader';
+import { FIELD_CELL, FIELD_GRID, FIELD_LABEL, NOTE_CLASS, Panel } from '@/components/ui/PanelHeader';
 import type { LightSelectResponse } from '@/app/actions/lights';
 import { renderFormula } from '@/lib/vision/formulaTerms';
 import {
@@ -256,7 +256,7 @@ export function LightSelector({ run }: { run: (input: LightSelectorInput) => Pro
       <div className="grid gap-6 lg:grid-cols-2">
         {/* ── 1–2. Bài toán, cần thấy gì ── */}
         <Panel id="light-task" title={t('task.title')}>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className={`${FIELD_GRID} sm:grid-cols-2`}>
             <SelectInput id="light-task-type" label={t('task.task')} value={form.task} onChange={setTask} empty={t('task.choose')}>
               {LIGHT_TASKS.map((task) => (
                 <option key={task} value={task}>
@@ -284,7 +284,7 @@ export function LightSelector({ run }: { run: (input: LightSelectorInput) => Pro
               <option value="mono">{t('task.cameraMono')}</option>
               <option value="color">{t('task.cameraColor')}</option>
             </SelectInput>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="row-span-3 grid grid-cols-2 grid-rows-subgrid gap-x-3">
               <NumberInput id="light-fov-w" label={t('task.fovW')} value={form.fovW} onChange={set('fovW')} />
               <NumberInput id="light-fov-h" label={t('task.fovH')} value={form.fovH} onChange={set('fovH')} />
             </div>
@@ -298,7 +298,7 @@ export function LightSelector({ run }: { run: (input: LightSelectorInput) => Pro
 
         {/* ── 3–5. Vật liệu, bề mặt, màu ── */}
         <Panel id="light-object" title={t('object.title')} note={t('object.note')}>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className={`${FIELD_GRID} sm:grid-cols-2`}>
             <SelectInput id="light-material" label={t('object.material')} value={form.material} onChange={setMaterial} empty={t('task.choose')}>
               {LIGHT_MATERIALS.map((m) => (
                 <option key={m} value={m}>
@@ -805,8 +805,8 @@ function SelectInput({
   children: React.ReactNode;
 }) {
   return (
-    <div>
-      <label htmlFor={id} className={labelClass}>
+    <div className={FIELD_CELL}>
+      <label htmlFor={id} className={`${FIELD_LABEL} ${labelClass}`}>
         {label}
       </label>
       <select id={id} value={value} onChange={(e) => onChange(e.target.value)} className={`mt-1.5 ${inputClass}`}>
@@ -819,8 +819,8 @@ function SelectInput({
 
 function NumberInput({ id, label, value, onChange }: { id: string; label: string; value: string; onChange: (value: string) => void }) {
   return (
-    <div>
-      <label htmlFor={id} className={labelClass}>
+    <div className={FIELD_CELL}>
+      <label htmlFor={id} className={`${FIELD_LABEL} ${labelClass}`}>
         {label}
       </label>
       <input id={id} type="number" inputMode="decimal" min="0" step="any" value={value} onChange={(e) => onChange(e.target.value)} className={`mt-1.5 ${inputClass}`} />

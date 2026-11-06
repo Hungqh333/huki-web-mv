@@ -4,7 +4,7 @@ import { ActionLink } from '@/components/ui/ActionLink';
 import { Icon } from '@/components/ui/Icon';
 import { Fragment, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { NOTE_CLASS, Panel } from '@/components/ui/PanelHeader';
+import { FIELD_CELL, FIELD_GRID, FIELD_LABEL, NOTE_CLASS, Panel } from '@/components/ui/PanelHeader';
 import { MOUNTS, SENSOR_FORMAT_KEYS, sensorDiagonalMm, specNumber, specString, type Component } from '@/lib/components/specs';
 import { cameraFromComponent, lensFromComponent, type ConfigCamera } from '@/lib/vision/configurationRules';
 import {
@@ -396,16 +396,16 @@ export function LensSelector({
               </div>
             </div>
           ) : (
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div>
-                <label htmlFor="lens-cam-type" className={labelClass}>{t('camera.type')}</label>
+            <div className={`${FIELD_GRID} sm:grid-cols-2`}>
+              <div className={FIELD_CELL}>
+                <label htmlFor="lens-cam-type" className={`${FIELD_LABEL} ${labelClass}`}>{t('camera.type')}</label>
                 <select id="lens-cam-type" value={manual.type} onChange={(e) => setManual({ ...manual, type: e.target.value as 'area' | 'line' })} className={`mt-1.5 ${inputClass}`}>
                   <option value="area">{t('camera.area')}</option>
                   <option value="line">{t('camera.line')}</option>
                 </select>
               </div>
-              <div>
-                <label htmlFor="lens-cam-mount" className={labelClass}>{t('camera.mount')}</label>
+              <div className={FIELD_CELL}>
+                <label htmlFor="lens-cam-mount" className={`${FIELD_LABEL} ${labelClass}`}>{t('camera.mount')}</label>
                 <select id="lens-cam-mount" value={manual.mount} onChange={(e) => setManual({ ...manual, mount: e.target.value })} className={`mt-1.5 ${inputClass}`}>
                   <option value="">{t('camera.mountUnknown')}</option>
                   {MOUNTS.map((m) => (
@@ -418,8 +418,8 @@ export function LensSelector({
                 <NumberInput id="lens-cam-h" label={t('camera.heightPx')} value={manual.heightPx} onChange={(v) => setManual({ ...manual, heightPx: v })} step="1" />
               ) : null}
               <NumberInput id="lens-cam-pitch" label={t('camera.pixelSize')} value={manual.pitch} onChange={(v) => setManual({ ...manual, pitch: v })} step="0.01" />
-              <div>
-                <label htmlFor="lens-cam-format" className={labelClass}>{t('camera.sensorFormat')}</label>
+              <div className={FIELD_CELL}>
+                <label htmlFor="lens-cam-format" className={`${FIELD_LABEL} ${labelClass}`}>{t('camera.sensorFormat')}</label>
                 <select id="lens-cam-format" value={manual.format} onChange={(e) => setManual({ ...manual, format: e.target.value })} className={`mt-1.5 ${inputClass}`}>
                   <option value="">{t('camera.sensorFormatAuto')}</option>
                   {SENSOR_FORMAT_KEYS.map((fmt) => (
@@ -459,7 +459,7 @@ export function LensSelector({
               ))}
             </div>
           ) : null}
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className={`${FIELD_GRID} sm:grid-cols-2`}>
             {!tele ? (
               <NumberInput
                 id="lens-f"
@@ -525,7 +525,7 @@ export function LensSelector({
                   <p className={NOTE_CLASS}>{t('accessory.intro')}</p>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div>
-                      <NumberInput id="lens-acc-tube" label={t('accessory.tube')} hint={t('accessory.tubeHint')} value={acc.tube} onChange={(v) => setAcc((prev) => ({ ...prev, tube: v }))} step="0.5" />
+                      <NumberInput cell={false} id="lens-acc-tube" label={t('accessory.tube')} hint={t('accessory.tubeHint')} value={acc.tube} onChange={(v) => setAcc((prev) => ({ ...prev, tube: v }))} step="0.5" />
                       <QuickPick
                         values={tubeStock.length ? tubeStock : [...STANDARD_TUBE_LENGTHS_MM]}
                         fromStock={tubeStock.length > 0}
@@ -535,7 +535,7 @@ export function LensSelector({
                       />
                     </div>
                     <div>
-                      <NumberInput id="lens-acc-conv" label={t('accessory.converter')} hint={t('accessory.converterHint')} value={acc.converter} onChange={(v) => setAcc((prev) => ({ ...prev, converter: v }))} step="0.1" />
+                      <NumberInput cell={false} id="lens-acc-conv" label={t('accessory.converter')} hint={t('accessory.converterHint')} value={acc.converter} onChange={(v) => setAcc((prev) => ({ ...prev, converter: v }))} step="0.1" />
                       <QuickPick
                         values={converterStock.length ? converterStock : [...STANDARD_CONVERTER_FACTORS]}
                         fromStock={converterStock.length > 0}
@@ -743,6 +743,7 @@ function NumberInput({
   onBlur,
   computed = false,
   step = 'any',
+  cell = true,
 }: {
   id: string;
   label: string;
@@ -754,11 +755,13 @@ function NumberInput({
   /** Ô là kết quả tính ra: khoá lại, nền xanh. */
   computed?: boolean;
   step?: string;
+  /** false khi ô không đứng thẳng trong FIELD_GRID (ô phụ kiện có nút chọn nhanh bên dưới). */
+  cell?: boolean;
 }) {
   const t = useTranslations('lensSelector.task');
   return (
-    <div>
-      <label htmlFor={id} className={labelClass}>
+    <div className={cell ? FIELD_CELL : undefined}>
+      <label htmlFor={id} className={cell ? `${FIELD_LABEL} ${labelClass}` : labelClass}>
         {label}
         {computed ? <span className="ml-2 text-xs font-normal text-sky-700 dark:text-sky-400">{t('computed')}</span> : null}
       </label>

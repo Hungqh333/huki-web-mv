@@ -68,3 +68,13 @@ export function Panel({
 
 /** Chữ ghi chú: nhỏ, xám nhạt, không đậm, không màu — dùng cho mọi ghi chú phụ. */
 export const NOTE_CLASS = 'text-xs font-normal text-slate-500 dark:text-slate-400';
+
+/**
+ * Lưới ô nhập nhiều cột mà nhãn dài xuống dòng không đẩy ô bên cạnh lệch (2026-11-05).
+ * Mỗi ô (FIELD_CELL) chiếm 3 hàng con dùng chung với ô cùng hàng: nhãn · ô nhập · ghi chú.
+ * Nhãn ngắn dồn xuống đáy hàng nhãn (FIELD_LABEL) nên ô nhập hai bên luôn thẳng nhau.
+ * Lưới chỉ được chứa ô dạng này — phần tử khác chỉ chiếm 1 hàng con, sẽ lệch.
+ */
+export const FIELD_GRID = 'grid gap-x-3 -mb-3';
+export const FIELD_CELL = 'row-span-3 grid grid-rows-subgrid pb-3';
+export const FIELD_LABEL = 'self-end';

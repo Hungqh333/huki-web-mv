@@ -4,7 +4,7 @@ import { ActionLink } from '@/components/ui/ActionLink';
 import { Icon } from '@/components/ui/Icon';
 import { Fragment, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { NOTE_CLASS, Panel } from '@/components/ui/PanelHeader';
+import { FIELD_CELL, FIELD_GRID, FIELD_LABEL, NOTE_CLASS, Panel } from '@/components/ui/PanelHeader';
 import { useShowFormulas } from '@/components/ui/FormulaVisibility';
 import { specList, specString, type Component } from '@/lib/components/specs';
 import type { AreaCandidate, CameraParams } from '@/lib/vision/cameraSelector';
@@ -130,7 +130,7 @@ export function CodeReaderSelector({ components, params = DEFAULT_ENGINE_PARAMS 
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Panel id="code-task" title={t('task.title')}>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className={`${FIELD_GRID} sm:grid-cols-2`}>
             <SelectInput id="code-type" label={t('task.codeType')} value={form.codeType} options={CODE_TYPES} labelOf={(v) => t(`codeType.${v}`)} onChange={set('codeType')} />
             <NumberInput id="code-module" label={t('task.module')} hint={t('task.moduleHint')} value={form.module} onChange={set('module')} step="0.01" />
             <NumberInput id="code-w" label={t('task.codeWidth')} value={form.codeW} onChange={set('codeW')} />
@@ -141,7 +141,7 @@ export function CodeReaderSelector({ components, params = DEFAULT_ENGINE_PARAMS 
         </Panel>
 
         <Panel id="code-speed" title={t('speed.title')} note={t('speed.note')}>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className={`${FIELD_GRID} sm:grid-cols-2`}>
             <NumberInput id="code-speed-v" label={t('speed.speed')} value={form.speed} onChange={set('speed')} />
             <SelectInput id="code-axis" label={t('speed.axis')} value={form.axis} options={['x', 'y'] as const} labelOf={(v) => t(`axis.${v}`)} onChange={set('axis')} />
             <NumberInput id="code-fov-along" label={t('speed.fovAlong')} hint={t('speed.fovAlongHint')} value={form.fovAlong} onChange={set('fovAlong')} />
@@ -296,8 +296,8 @@ export function CodeReaderSelector({ components, params = DEFAULT_ENGINE_PARAMS 
 
 function NumberInput({ id, label, hint, value, onChange, step = 'any' }: { id: string; label: string; hint?: string; value: string; onChange: (value: string) => void; step?: string }) {
   return (
-    <div>
-      <label htmlFor={id} className={labelClass}>{label}</label>
+    <div className={FIELD_CELL}>
+      <label htmlFor={id} className={`${FIELD_LABEL} ${labelClass}`}>{label}</label>
       <input id={id} type="number" inputMode="decimal" min="0" step={step} value={value} onChange={(e) => onChange(e.target.value)} className={`mt-1.5 ${inputClass}`} />
       {hint ? <p className={`mt-1 ${NOTE_CLASS}`}>{hint}</p> : null}
     </div>
@@ -306,8 +306,8 @@ function NumberInput({ id, label, hint, value, onChange, step = 'any' }: { id: s
 
 function SelectInput<V extends string>({ id, label, value, options, labelOf, onChange }: { id: string; label: string; value: V; options: readonly V[]; labelOf: (value: V) => string; onChange: (value: string) => void }) {
   return (
-    <div>
-      <label htmlFor={id} className={labelClass}>{label}</label>
+    <div className={FIELD_CELL}>
+      <label htmlFor={id} className={`${FIELD_LABEL} ${labelClass}`}>{label}</label>
       <select id={id} value={value} onChange={(e) => onChange(e.target.value)} className={`mt-1.5 ${inputClass}`}>
         {options.map((o) => (
           <option key={o} value={o}>{labelOf(o)}</option>

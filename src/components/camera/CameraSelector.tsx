@@ -4,7 +4,7 @@ import { ActionLink } from '@/components/ui/ActionLink';
 import { Icon } from '@/components/ui/Icon';
 import { Fragment, useMemo, useState, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
-import { NOTE_CLASS, Panel } from '@/components/ui/PanelHeader';
+import { FIELD_CELL, FIELD_GRID, FIELD_LABEL, NOTE_CLASS, Panel } from '@/components/ui/PanelHeader';
 import { useShowFormulas } from '@/components/ui/FormulaVisibility';
 import { specString, type Component } from '@/lib/components/specs';
 import {
@@ -254,7 +254,7 @@ export function CameraSelector({ components, params, kind, initialTask = 'inspec
             <AreaTaskFields form={form} set={set} setTask={setTask} result={areaTask} />
           ) : (
             <>
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className={`${FIELD_GRID} sm:grid-cols-2`}>
                 <NumberInput id="cam-width" label={t('task.lineWidth')} hint={t('task.lineWidthHint')} value={form.width} onChange={set('width')} />
                 <NumberInput id="cam-mmpx" label={t('task.mmPerPx')} hint={t('task.mmPerPxHint')} value={form.mmpx} onChange={set('mmpx')} step="0.001" />
                 <NumberInput id="cam-defect" label={t('task.defect')} hint={t('task.defectHint')} value={form.defect} onChange={set('defect')} step="0.01" />
@@ -274,7 +274,7 @@ export function CameraSelector({ components, params, kind, initialTask = 'inspec
 
         {/* ── Tốc độ ── */}
         <Panel id="camera-speed" title={t(tab === 'area' ? 'speed.titleArea' : 'speed.titleLine')} note={tab === 'area' ? t('speed.areaNote') : undefined}>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className={`${FIELD_GRID} sm:grid-cols-2`}>
             <NumberInput id="cam-speed" label={t(tab === 'area' ? 'speed.speedOptional' : 'speed.speed')} hint={tab === 'area' ? t('speed.speedHint') : undefined} value={form.speed} onChange={set('speed')} />
             {tab === 'area' ? (
               <>
@@ -492,9 +492,10 @@ function AreaTaskFields({
 
   return (
     <>
-      <SelectInput id="cam-task" label={t('task.task')} value={task} options={CAMERA_TASKS} labelOf={(v) => t(`taskType.${v}`)} onChange={setTask} />
-      <p className={`mt-1 ${NOTE_CLASS}`}>{t(`taskHint.${task}`)}</p>
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+      <div className={FIELD_GRID}>
+        <SelectInput id="cam-task" label={t('task.task')} hint={t(`taskHint.${task}`)} value={task} options={CAMERA_TASKS} labelOf={(v) => t(`taskType.${v}`)} onChange={setTask} />
+      </div>
+      <div className={`mt-4 ${FIELD_GRID} sm:grid-cols-2`}>
         {task === 'inspection' ? (
           <>
             {fov}
@@ -558,8 +559,8 @@ function AreaTaskFields({
 
 function NumberInput({ id, label, hint, value, onChange, step = 'any' }: { id: string; label: string; hint?: string; value: string; onChange: (value: string) => void; step?: string }) {
   return (
-    <div>
-      <label htmlFor={id} className={labelClass}>{label}</label>
+    <div className={FIELD_CELL}>
+      <label htmlFor={id} className={`${FIELD_LABEL} ${labelClass}`}>{label}</label>
       <input id={id} type="number" inputMode="decimal" min="0" step={step} value={value} onChange={(e) => onChange(e.target.value)} className={`mt-1.5 ${inputClass}`} />
       {hint ? <p className={`mt-1 ${NOTE_CLASS}`}>{hint}</p> : null}
     </div>
@@ -584,8 +585,8 @@ function SelectInput<V extends string>({
   onChange: (value: string) => void;
 }) {
   return (
-    <div>
-      <label htmlFor={id} className={labelClass}>{label}</label>
+    <div className={FIELD_CELL}>
+      <label htmlFor={id} className={`${FIELD_LABEL} ${labelClass}`}>{label}</label>
       <select id={id} value={value} onChange={(e) => onChange(e.target.value)} className={`mt-1.5 ${inputClass}`}>
         {options.map((o) => (
           <option key={o} value={o}>{labelOf(o)}</option>

@@ -4,7 +4,8 @@ import { LanguageSwitcher } from './LanguageSwitcher';
 import { MainNav, SectionNav, type NavGroup } from './MainNav';
 import { RoleBadge } from '@/components/auth/RoleBadge';
 import { SignOutButton } from '@/components/auth/SignOutButton';
-import { canUseSelector, getSessionContext, isAdmin } from '@/lib/auth';
+import { getSessionContext, isAdmin } from '@/lib/auth';
+import { canUseFeature } from '@/lib/featureAccess';
 
 /*
  * Menu — chốt 2026-10-28 (phương án C, thay menu phẳng 2026-10-27 đã dài 12–14 mục):
@@ -63,7 +64,7 @@ export async function Header() {
     })),
   };
   const after = [
-    ...(canUseSelector(role) ? [{ href: '/du-an', label: t('projects') }] : []),
+    ...((await canUseFeature(role, 'projects')) ? [{ href: '/du-an', label: t('projects') }] : []),
     ...(isAdmin(role) ? [{ href: '/admin', label: t('admin') }] : []),
   ];
 

@@ -2,11 +2,12 @@ import { ActionLink } from '@/components/ui/ActionLink';
 import { notFound, redirect } from 'next/navigation';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { SelectorForm } from '@/components/selector/SelectorForm';
-import { canUseSelector, getSessionContext, hasAdvancedFeatures, isAdmin } from '@/lib/auth';
+import { getSessionContext, isAdmin } from '@/lib/auth';
 import { FormulaVisibilityProvider } from '@/components/ui/FormulaVisibility';
 import { getFieldDefs, getUnknownFieldKeys } from '@/lib/selector/fields';
 import { hasSupabaseEnv } from '@/lib/supabase/env';
 import { createClient } from '@/lib/supabase/server';
+import { canUseFeature } from '@/lib/featureAccess';
 
 type TaskTypeRow = {
   slug: string;
@@ -31,7 +32,7 @@ export default async function SelectorTaskPage({
 
   // Chưa đủ quyền thì đẩy về trang giới thiệu, không cho vào form.
   // RLS vẫn là chốt chặn thật: không có luật nào đọc được thì engine không chạy.
-  if (!canUseSelector(role)) redirect('/cong-cu-chon-thiet-bi');
+  if (!(await canUseFeature(role, 'oldSelector'))) redirect('/cong-cu-chon-thiet-bi');
 
   const supabase = await createClient();
   const { data: task } = await supabase
@@ -76,7 +77,7 @@ export default async function SelectorTaskPage({
             <SelectorForm
               taskSlug={task.slug}
               fields={fields}
-              canExport={hasAdvancedFeatures(role)}
+              canExport={(await canUseFeature(role, 'pdf'))}
             />
           </FormulaVisibilityProvider>
         )}

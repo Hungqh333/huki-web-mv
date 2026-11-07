@@ -2,7 +2,7 @@
 
 import { getLocale, getTranslations } from 'next-intl/server';
 import { explainFacts, explainerConfigured } from '@/lib/ai/explainer';
-import { canUseSelector, getSessionContext } from '@/lib/auth';
+import { getSessionContext } from '@/lib/auth';
 import type { Component } from '@/lib/components/specs';
 import { DRAFT_VERSION, parseDraft } from '@/lib/requirement/draft';
 import { safeParseCode } from '@/lib/requirement/parseResult';
@@ -13,6 +13,7 @@ import { SOLUTION_LEVELS, buildSolutionLevels, type SolutionLevelKey } from '@/l
 import { buildWhyFacts, whyFactsToText } from '@/lib/vision/whyFacts';
 import { loadEngineParams } from '@/lib/engineParamsLoad';
 import { fetchAllRows } from '@/lib/components/fetchAll';
+import { canUseFeature } from '@/lib/featureAccess';
 
 export type ExplainResult =
   | { status: 'ok'; paragraphs: string[] }
@@ -29,7 +30,7 @@ export type ExplainResult =
  */
 export async function explainSolutionAction(requirementJson: string, level: SolutionLevelKey): Promise<ExplainResult> {
   const session = await getSessionContext();
-  if (!session || !canUseSelector(session.profile?.role)) return { status: 'denied' };
+  if (!session || !(await canUseFeature(session.profile?.role, 'visionEngineer'))) return { status: 'denied' };
   if (!explainerConfigured()) return { status: 'unavailable' };
 
   const draft = typeof requirementJson === 'string' ? parseDraft(asDraft(requirementJson)) : null;

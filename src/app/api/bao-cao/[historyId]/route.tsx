@@ -1,13 +1,14 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { getFormatter, getLocale, getTranslations } from 'next-intl/server';
 import { renderToBuffer } from '@react-pdf/renderer';
-import { getSessionContext, hasAdvancedFeatures, isAdmin } from '@/lib/auth';
+import { getSessionContext, isAdmin } from '@/lib/auth';
 import { registerPdfFonts } from '@/lib/pdf/fonts';
 import { SelectorReport, type ReportData } from '@/lib/pdf/selector/SelectorReport';
 import { formulaResult, renderFormula } from '@/lib/vision/formulaTerms';
 import { FIELD_CATALOG } from '@/lib/selector/fields';
 import type { SelectorInput, SelectorResult } from '@/lib/selector/types';
 import { createClient } from '@/lib/supabase/server';
+import { canUseFeature } from '@/lib/featureAccess';
 
 type HistoryRow = {
   id: string;
@@ -36,7 +37,7 @@ export async function GET(
     return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
   }
 
-  if (!hasAdvancedFeatures(session.profile?.role)) {
+  if (!(await canUseFeature(session.profile?.role, 'pdf'))) {
     return NextResponse.json({ error: 'vip_required' }, { status: 403 });
   }
 

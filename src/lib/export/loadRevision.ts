@@ -1,12 +1,13 @@
 import 'server-only';
 
 import { getFormatter, getLocale, getTranslations } from 'next-intl/server';
-import { canUseSelector, getSessionContext, hasAdvancedFeatures, isAdmin } from '@/lib/auth';
+import { getSessionContext, isAdmin } from '@/lib/auth';
 import { revisionToDraft } from '@/lib/projects/model';
 import { createClient } from '@/lib/supabase/server';
 import type { BomSnapshot } from '@/lib/vision/bom';
 import { buildConceptDocument, type ConceptDocument, type Translate } from './conceptDocument';
 import { loadEngineParams } from '@/lib/engineParamsLoad';
+import { canUseFeature } from '@/lib/featureAccess';
 
 /**
  * Đọc MỘT revision đã lưu để xuất (V1c C6) — dùng chung cho route Excel và PDF.
@@ -41,7 +42,7 @@ export async function loadRevisionForExport(projectId: string, revisionId: strin
   const session = await getSessionContext();
   if (!session) return { ok: false, status: 401, error: 'unauthenticated' };
   const role = session.profile?.role;
-  if (format === 'pdf' ? !hasAdvancedFeatures(role) : !canUseSelector(role)) {
+  if (format === 'pdf' ? !(await canUseFeature(role, 'pdf')) : !(await canUseFeature(role, 'projects'))) {
     return { ok: false, status: 403, error: format === 'pdf' ? 'vip_required' : 'member_required' };
   }
 

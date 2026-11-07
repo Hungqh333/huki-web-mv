@@ -6,7 +6,7 @@ import { PcFpsTable } from '@/components/pc/PcFpsTable';
 import { PcHistory } from '@/components/pc/PcHistory';
 import { PcSuggest, type PcSuggestPrefill } from '@/components/pc/PcSuggest';
 import { suggestPcAction } from '@/app/actions/pcSuggest';
-import { canUseSelector, getSessionContext, isAdmin } from '@/lib/auth';
+import { getSessionContext, isAdmin } from '@/lib/auth';
 import { contactMailto } from '@/lib/contact';
 import { loadEngineParams } from '@/lib/engineParamsLoad';
 import { loadIssuedCodes, loadPcCatalog, loadPcHistory } from '@/lib/pc/catalog';
@@ -15,6 +15,7 @@ import { fpsTable } from '@/lib/pc/fps';
 import { pcPowerModel } from '@/lib/pc/power';
 import { hasSupabaseEnv } from '@/lib/supabase/env';
 import { createClient } from '@/lib/supabase/server';
+import { canUseFeature, lockedTextValues } from '@/lib/featureAccess';
 
 /**
  * PC Vision — mục riêng trên menu (chốt 2026-11-03, Q1: thay nội dung trang Máy tính cũ,
@@ -60,7 +61,9 @@ export default async function PcVisionPage({ searchParams }: PageProps<'/cong-cu
   const tPc = await getTranslations('pcPlanner');
   const session = await getSessionContext();
   const role = session?.profile?.role ?? null;
-  const allowed = hasSupabaseEnv() && canUseSelector(role);
+  const allowed = hasSupabaseEnv() && (await canUseFeature(role, 'pcVision'));
+  // Chữ khoá theo mức đang đặt ở bảng quyền (Admin → Người dùng), không ghi cứng "Member".
+  const lockText = await lockedTextValues('pcVision', role);
 
   if (!allowed) {
     return (
@@ -69,9 +72,9 @@ export default async function PcVisionPage({ searchParams }: PageProps<'/cong-cu
         <p className="mt-3 text-slate-600 dark:text-slate-400">{t('subtitle')}</p>
 
         <div className="mt-8 rounded-lg border border-sky-200 bg-sky-50 p-6 dark:border-sky-900 dark:bg-sky-950/30">
-          <h2 className="text-lg font-semibold text-sky-900 dark:text-sky-200">{tPc('locked.title')}</h2>
+          <h2 className="text-lg font-semibold text-sky-900 dark:text-sky-200">{tPc('locked.title', lockText)}</h2>
           <p className="mt-2 text-sm text-sky-900/80 dark:text-sky-300/90">
-            {session ? tPc('locked.bodyRegistered') : tPc('locked.bodyGuest')}
+            {session ? tPc('locked.bodyRegistered', lockText) : tPc('locked.bodyGuest', lockText)}
           </p>
           <div className="mt-5 flex flex-wrap gap-3">
             {session ? null : (

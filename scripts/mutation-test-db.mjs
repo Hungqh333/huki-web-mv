@@ -29,6 +29,49 @@ const MIGRATIONS = readdirSync(join(SUPABASE_DIR, 'migrations'))
   .map((f) => read('migrations', f).replace(/create extension if not exists pgcrypto;/g, ''));
 
 const MUTATIONS = [
+  // ── Bảng quyền theo vai trò (2026-11-07, đợt 2) ──
+  {
+    name: 'Bang quyen: ai dang nhap cung sua duoc muc',
+    sql: `drop policy "role_permissions_update_admin" on public.role_permissions;
+          create policy "role_permissions_update_admin" on public.role_permissions for update to authenticated
+            using (true) with check (true);`,
+  },
+  {
+    name: 'Bang quyen: has_feature bo qua bang, co dinh Member tro len',
+    sql: `create or replace function public.has_feature(p_feature text) returns boolean language sql stable
+            security definer set search_path = public as $f$ select public.is_member_plus() $f$;`,
+  },
+  {
+    name: 'Bang quyen: nhom khong co trong bang thi mo cho moi nguoi',
+    sql: `create or replace function public.has_feature(p_feature text) returns boolean language sql stable
+            security definer set search_path = public as $f$
+            select coalesce((select public.role_rank(p.role::text) >= public.role_rank(coalesce(
+              (select rp.min_role from public.role_permissions rp where rp.feature = p_feature), 'registered'))
+              from public.profiles p where p.id = auth.uid()), false) $f$;`,
+  },
+  {
+    name: 'Bang quyen: khong ghi lich su doi muc',
+    sql: `drop trigger role_permissions_log_change on public.role_permissions;`,
+  },
+  {
+    name: 'Bang quyen: Member doc duoc lich su doi quyen',
+    sql: `drop policy "role_permission_log_select_admin" on public.role_permission_log;
+          create policy "role_permission_log_select_admin" on public.role_permission_log for select to authenticated using (true);`,
+  },
+  {
+    name: 'Bang quyen: cho dat muc "guest" (mo cong cu cho khach)',
+    sql: `alter table public.role_permissions drop constraint role_permissions_min_role_check;`,
+  },
+  {
+    name: 'Bang quyen: Admin xoa duoc dong',
+    sql: `grant delete on public.role_permissions to authenticated;
+          create policy "role_permissions_delete" on public.role_permissions for delete to authenticated using (true);`,
+  },
+  {
+    name: 'PC Vision: chinh sach doc khung van co dinh Member (khong theo bang quyen)',
+    sql: `drop policy "pc_frames_select_member" on public.pc_frames;
+          create policy "pc_frames_select_member" on public.pc_frames for select to authenticated using (public.is_member_plus());`,
+  },
   {
     name: 'Bỏ gating tier trên articles (ai cũng đọc được tất cả)',
     sql: `drop policy "articles_select_by_tier" on public.articles;

@@ -2,11 +2,12 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getFormatter, getTranslations } from 'next-intl/server';
 import { SupabaseNotConfigured } from '@/components/auth/SupabaseNotConfigured';
-import { canUseSelector, getSessionContext } from '@/lib/auth';
+import { getSessionContext } from '@/lib/auth';
 import { PROJECTS_ROUTE, type ProjectStatus } from '@/lib/projects/model';
 import { isApplicationType } from '@/lib/requirement/draft';
 import { hasSupabaseEnv } from '@/lib/supabase/env';
 import { createClient } from '@/lib/supabase/server';
+import { canUseFeature } from '@/lib/featureAccess';
 
 type ProjectListRow = {
   id: string;
@@ -28,7 +29,7 @@ export default async function ProjectsPage() {
 
   const session = await getSessionContext();
   if (!session) redirect('/dang-nhap');
-  if (!canUseSelector(session.profile?.role ?? null)) redirect('/cong-cu-chon-thiet-bi');
+  if (!(await canUseFeature(session.profile?.role ?? null, 'projects'))) redirect('/cong-cu-chon-thiet-bi');
 
   const t = await getTranslations('projects');
   const tApps = await getTranslations('home.entry.apps');

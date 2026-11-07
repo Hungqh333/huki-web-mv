@@ -5,11 +5,12 @@ import { Panel } from '@/components/ui/PanelHeader';
 import { ExportLinks } from '@/components/projects/ExportLinks';
 import { OpenRevisionButton } from '@/components/projects/OpenRevisionButton';
 import { SupabaseNotConfigured } from '@/components/auth/SupabaseNotConfigured';
-import { canUseSelector, getSessionContext, hasAdvancedFeatures } from '@/lib/auth';
+import { getSessionContext } from '@/lib/auth';
 import { PROJECTS_ROUTE, revisionToDraft, type ProjectStatus, type RevisionRow } from '@/lib/projects/model';
 import { isApplicationType } from '@/lib/requirement/draft';
 import { hasSupabaseEnv } from '@/lib/supabase/env';
 import { createClient } from '@/lib/supabase/server';
+import { canUseFeature } from '@/lib/featureAccess';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -36,7 +37,8 @@ export default async function ProjectPage({ params }: PageProps<'/du-an/[id]'>) 
 
   const session = await getSessionContext();
   if (!session) redirect('/dang-nhap');
-  if (!canUseSelector(session.profile?.role ?? null)) redirect('/cong-cu-chon-thiet-bi');
+  if (!(await canUseFeature(session.profile?.role ?? null, 'projects'))) redirect('/cong-cu-chon-thiet-bi');
+  const canPdf = await canUseFeature(session.profile?.role ?? null, 'pdf');
 
   const { id } = await params;
   if (!UUID.test(id)) notFound();
@@ -120,7 +122,7 @@ export default async function ProjectPage({ params }: PageProps<'/du-an/[id]'>) 
                   <ExportLinks
                     projectId={project.id}
                     revisionId={revision.id}
-                    canPdf={hasAdvancedFeatures(session.profile?.role ?? null)}
+                    canPdf={canPdf}
                     unsaved={false}
                     hasBom={revision.bom != null}
                   />

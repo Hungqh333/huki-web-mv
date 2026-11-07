@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { getTranslations } from 'next-intl/server';
-import { canUseSelector, getSessionContext } from '@/lib/auth';
+import { getSessionContext } from '@/lib/auth';
 import { parseDraft, type RequirementDraft } from '@/lib/requirement/draft';
 import {
   PROJECTS_ROUTE,
@@ -17,6 +17,7 @@ import { RULESET_VERSION, bomForRequirement, type BomSnapshot } from '@/lib/visi
 import { loadEngineParams } from '@/lib/engineParamsLoad';
 import { rulesetVersionFor } from '@/lib/vision/engineParams';
 import { fetchAllRows } from '@/lib/components/fetchAll';
+import { canUseFeature } from '@/lib/featureAccess';
 
 /**
  * Lưu bảng tóm tắt yêu cầu thành dự án (V1a hạng mục 7).
@@ -49,7 +50,7 @@ async function prepare(input: ProjectActionInput): Promise<Prepared> {
 
   const session = await getSessionContext();
   if (!session) return { ok: false, error: t('notSignedIn') };
-  if (!canUseSelector(session.profile?.role)) return { ok: false, error: t('notAllowed') };
+  if (!(await canUseFeature(session.profile?.role, 'projects'))) return { ok: false, error: t('notAllowed') };
 
   const draft = typeof input?.draftJson === 'string' ? parseDraft(input.draftJson) : null;
   if (!draft) return { ok: false, error: t('invalidDraft') };

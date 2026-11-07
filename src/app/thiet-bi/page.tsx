@@ -2,13 +2,14 @@ import Link from 'next/link';
 import { NextIntlClientProvider } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
 import { CatalogBrowser } from '@/components/catalog/CatalogBrowser';
-import { canUseSelector, getSessionContext, isAdmin } from '@/lib/auth';
+import { getSessionContext, isAdmin } from '@/lib/auth';
 import { CATALOG_COLUMNS, parseCodes, type CatalogItem } from '@/lib/catalog/catalog';
 import { catalogClientMessages } from '@/lib/catalog/clientMessages';
 import { contactMailto } from '@/lib/contact';
 import { fetchAllRows } from '@/lib/components/fetchAll';
 import { hasSupabaseEnv } from '@/lib/supabase/env';
 import { createClient } from '@/lib/supabase/server';
+import { canUseFeature, lockedTextValues } from '@/lib/featureAccess';
 
 /**
  * Danh mục thiết bị (chốt 2026-10-27, Q1–Q8): thiết bị ★ thường dùng, lọc theo thông số,
@@ -22,7 +23,9 @@ export default async function CatalogPage({ searchParams }: PageProps<'/thiet-bi
   const tPc = await getTranslations('pcPlanner');
   const session = await getSessionContext();
   const role = session?.profile?.role ?? null;
-  const allowed = hasSupabaseEnv() && canUseSelector(role);
+  const allowed = hasSupabaseEnv() && (await canUseFeature(role, 'catalog'));
+  // Chữ khoá theo mức đang đặt ở bảng quyền (Admin → Người dùng), không ghi cứng "Member".
+  const lockText = await lockedTextValues('catalog', role);
 
   if (!allowed) {
     return (
@@ -30,8 +33,8 @@ export default async function CatalogPage({ searchParams }: PageProps<'/thiet-bi
         <h1 className="text-3xl font-bold tracking-tight">{t('title')}</h1>
         <p className="mt-3 text-slate-600 dark:text-slate-400">{t('subtitle')}</p>
         <div className="mt-8 rounded-lg border border-sky-200 bg-sky-50 p-6 dark:border-sky-900 dark:bg-sky-950/30">
-          <h2 className="text-lg font-semibold text-sky-900 dark:text-sky-200">{tPc('locked.title')}</h2>
-          <p className="mt-2 text-sm text-sky-900/80 dark:text-sky-300/90">{session ? tPc('locked.bodyRegistered') : tPc('locked.bodyGuest')}</p>
+          <h2 className="text-lg font-semibold text-sky-900 dark:text-sky-200">{tPc('locked.title', lockText)}</h2>
+          <p className="mt-2 text-sm text-sky-900/80 dark:text-sky-300/90">{session ? tPc('locked.bodyRegistered', lockText) : tPc('locked.bodyGuest', lockText)}</p>
           <div className="mt-5 flex flex-wrap gap-3">
             {session ? null : (
               <Link href="/dang-nhap" className="rounded-md bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700">

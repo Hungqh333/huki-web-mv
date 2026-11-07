@@ -923,6 +923,138 @@ end $$;
 reset role;
 select set_config('request.jwt.claims', '', true);
 
+-- =============================================================================
+-- BẢNG QUYỀN THEO VAI TRÒ (chốt 2026-11-07, đợt 2): Admin đổi mức → quyền dữ liệu đổi theo
+-- =============================================================================
+
+reset role;
+select set_config('request.jwt.claims', '', true);
+update public.profiles set role = 'registered' where id = 'aaaaaaaa-0000-4000-8000-000000000001';
+update public.profiles set role = 'member'     where id = 'aaaaaaaa-0000-4000-8000-000000000002';
+update public.profiles set role = 'vip'        where id = 'aaaaaaaa-0000-4000-8000-000000000003';
+update public.profiles set role = 'admin'      where id = 'aaaaaaaa-0000-4000-8000-000000000004';
+
+-- --- Mặc định: đúng quyền trước đây ---
+select set_config('request.jwt.claims', '{"sub":"aaaaaaaa-0000-4000-8000-000000000001","role":"authenticated"}', true);
+set local role authenticated;
+
+do $$
+begin
+  perform pg_temp.assert_eq((select count(*) from public.role_permissions), 8, 'Người đăng nhập đọc được 8 dòng bảng quyền');
+  perform pg_temp.assert_eq((select count(*) from public.role_permission_log), 0, 'Registered không đọc được lịch sử đổi quyền');
+  perform pg_temp.assert_eq((select count(*) from public.pc_frames), 0, 'Registered chưa thấy PC Vision khi mức là Member');
+  if public.has_feature('pcVision') or public.has_feature('pdf') then
+    raise exception 'FAIL: Registered có quyền công cụ khi mức mặc định là Member / VIP';
+  end if;
+
+  update public.role_permissions set min_role = 'registered' where feature = 'pcVision';
+  perform pg_temp.assert_eq((select count(*) from public.role_permissions where feature = 'pcVision' and min_role = 'member'), 1,
+    'Registered không tự hạ được mức của bảng quyền');
+  begin
+    insert into public.role_permissions (feature, min_role) values ('kpi', 'registered');
+    raise exception 'FAIL: Registered thêm được dòng bảng quyền';
+  exception when insufficient_privilege then
+    raise notice 'PASS: không thêm được dòng bảng quyền';
+  end;
+  raise notice 'PASS: mặc định bảng quyền giữ đúng quyền cũ';
+end $$;
+
+reset role;
+select set_config('request.jwt.claims', '{"sub":"aaaaaaaa-0000-4000-8000-000000000002","role":"authenticated"}', true);
+set local role authenticated;
+
+do $$
+begin
+  if not public.has_feature('pcVision') or public.has_feature('pdf') then
+    raise exception 'FAIL: Member mặc định phải có PC Vision, không có PDF';
+  end if;
+  if public.has_feature('khongCo') then
+    raise exception 'FAIL: nhóm không có trong bảng quyền vẫn mở';
+  end if;
+  update public.role_permissions set min_role = 'registered' where feature = 'pdf';
+  perform pg_temp.assert_eq((select count(*) from public.role_permissions where feature = 'pdf' and min_role = 'vip'), 1,
+    'Member không sửa được bảng quyền');
+end $$;
+
+-- --- Admin đổi mức ---
+reset role;
+select set_config('request.jwt.claims', '{"sub":"aaaaaaaa-0000-4000-8000-000000000004","role":"authenticated"}', true);
+set local role authenticated;
+
+do $$
+begin
+  update public.role_permissions set min_role = 'registered' where feature = 'pcVision';
+  update public.role_permissions set min_role = 'member' where feature = 'pdf';
+  update public.role_permissions set min_role = 'member' where feature = 'pdf';   -- không đổi gì → không ghi lịch sử
+  perform pg_temp.assert_eq((select count(*) from public.role_permission_log
+    where actor_id = 'aaaaaaaa-0000-4000-8000-000000000004'), 2, 'Lịch sử ghi đúng 2 lần đổi mức của Admin');
+  perform pg_temp.assert_eq((select count(*) from public.role_permission_log
+    where feature = 'pcVision' and old_min_role = 'member' and new_min_role = 'registered'), 1, 'Lịch sử giữ mức cũ → mới');
+  perform pg_temp.assert_eq((select count(*) from public.role_permissions
+    where feature = 'pcVision' and updated_by = 'aaaaaaaa-0000-4000-8000-000000000004'), 1, 'Bảng quyền ghi người sửa');
+
+  begin
+    update public.role_permissions set min_role = 'guest' where feature = 'kpi';
+    raise exception 'FAIL: đặt được mức "guest" (chốt Q3: thấp nhất là Đã đăng ký)';
+  exception when check_violation then
+    raise notice 'PASS: không mở công cụ cho khách chưa đăng nhập';
+  end;
+  begin
+    delete from public.role_permissions where feature = 'kpi';
+    raise exception 'FAIL: Admin xoá được dòng bảng quyền';
+  exception when insufficient_privilege then
+    raise notice 'PASS: không xoá được dòng bảng quyền';
+  end;
+end $$;
+
+-- Registered giờ thấy PC Vision (dữ liệu thật, không chỉ giao diện); vẫn chưa có PDF.
+reset role;
+select set_config('request.jwt.claims', '{"sub":"aaaaaaaa-0000-4000-8000-000000000001","role":"authenticated"}', true);
+set local role authenticated;
+
+do $$
+begin
+  if (select count(*) from public.pc_frames) = 0 then
+    raise exception 'FAIL: hạ mức PC Vision xuống Đã đăng ký mà Registered vẫn không đọc được khung PC';
+  end if;
+  if not public.has_feature('pcVision') or public.has_feature('pdf') then
+    raise exception 'FAIL: has_feature không theo bảng quyền mới (Registered)';
+  end if;
+  raise notice 'PASS: hạ mức → Registered đọc được dữ liệu PC Vision';
+end $$;
+
+reset role;
+select set_config('request.jwt.claims', '{"sub":"aaaaaaaa-0000-4000-8000-000000000002","role":"authenticated"}', true);
+set local role authenticated;
+do $$
+begin
+  if not public.has_feature('pdf') then
+    raise exception 'FAIL: hạ PDF xuống Member mà Member chưa có quyền';
+  end if;
+  -- Lịch sử đã có 2 dòng (Admin vừa đổi) — Member vẫn không đọc được.
+  perform pg_temp.assert_eq((select count(*) from public.role_permission_log), 0, 'Member không đọc được lịch sử đổi quyền');
+end $$;
+
+-- Nâng mức lên Admin → Member mất quyền đọc ngay.
+reset role;
+select set_config('request.jwt.claims', '{"sub":"aaaaaaaa-0000-4000-8000-000000000004","role":"authenticated"}', true);
+set local role authenticated;
+update public.role_permissions set min_role = 'admin' where feature = 'pcVision';
+
+reset role;
+select set_config('request.jwt.claims', '{"sub":"aaaaaaaa-0000-4000-8000-000000000002","role":"authenticated"}', true);
+set local role authenticated;
+do $$
+begin
+  perform pg_temp.assert_eq((select count(*) from public.pc_frames), 0, 'Nâng mức PC Vision lên Admin → Member không đọc được khung PC');
+  raise notice 'PASS: nâng mức → mất quyền ở database';
+end $$;
+
+reset role;
+select set_config('request.jwt.claims', '', true);
+update public.role_permissions set min_role = 'member' where feature = 'pcVision';
+update public.role_permissions set min_role = 'vip' where feature = 'pdf';
+
 do $$ begin raise notice '=== TẤT CẢ KIỂM TRA RLS ĐÃ QUA ==='; end $$;
 
 -- Không ghi gì vào database.

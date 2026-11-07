@@ -186,10 +186,20 @@ function AddForm({
           <input value={v.cpu} onChange={(e) => set('cpu', e.target.value)} className={INPUT} />
         </Labeled>
         <Labeled label={t('gpu')}>
-          <Select value={v.gpu} onChange={(x) => set('gpu', x)} options={PC_GPUS.map((g) => [g, g === '0' ? t('gpuNone') : gpuLabel(g)])} />
+          {/* Không GPU → VRAM về 0 và khoá (chốt 2026-11-07), như ô dòng ổ dữ liệu khi không có ổ. */}
+          <Select
+            value={v.gpu}
+            onChange={(x) => setV((prev) => ({ ...prev, gpu: x, vramGb: x === '0' ? 0 : prev.vramGb }))}
+            options={PC_GPUS.map((g) => [g, g === '0' ? t('gpuNone') : gpuLabel(g)])}
+          />
         </Labeled>
         <Labeled label={t('vram')}>
-          <Select value={String(v.vramGb)} onChange={(x) => set('vramGb', Number(x))} options={PC_VRAM_GB.map((n) => [String(n), String(n)])} />
+          <Select
+            value={String(v.vramGb)}
+            onChange={(x) => set('vramGb', Number(x))}
+            options={PC_VRAM_GB.map((n) => [String(n), n === 0 && v.gpu !== '0' ? t('vramPick') : String(n)])}
+            disabled={v.gpu === '0'}
+          />
         </Labeled>
         <Labeled label={t('psu')}>
           <Select value={String(v.psuW)} onChange={(x) => set('psuW', Number(x))} options={PC_PSU_W.map((n) => [String(n), String(n)])} />

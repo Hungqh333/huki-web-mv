@@ -3,13 +3,14 @@ import { notFound, redirect } from 'next/navigation';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { VerdictBadge } from '@/components/light/VerdictBadge';
 import { NOTE_CLASS, Panel } from '@/components/ui/PanelHeader';
-import { canUseSelector, getSessionContext } from '@/lib/auth';
+import { getSessionContext } from '@/lib/auth';
 import { labelOf, lightOptionLabels } from '@/lib/lightLabels';
 import { loadExperimentTree, signExperimentPaths, signReport, type TrialRow } from '@/lib/lightExperiments';
 import { hasSupabaseEnv } from '@/lib/supabase/env';
 import { createClient } from '@/lib/supabase/server';
 import { chosenTrial, isWorking } from '@/lib/vision/experimentMatch';
 import { LEAKAGE_LIMIT, OVERKILL_LIMIT, trialRates } from '@/lib/vision/experimentMetrics';
+import { canUseFeature } from '@/lib/featureAccess';
 
 /**
  * Chi tiết một lần thực nghiệm chiếu sáng (chốt 2026-10-24) — theo bố cục báo cáo test của phòng:
@@ -17,7 +18,7 @@ import { LEAKAGE_LIMIT, OVERKILL_LIMIT, trialRates } from '@/lib/vision/experime
  */
 export default async function LightExperimentPage({ params }: PageProps<'/chon-den/thuc-nghiem/[id]'>) {
   const session = await getSessionContext();
-  if (!hasSupabaseEnv() || !canUseSelector(session?.profile?.role ?? null)) redirect('/chon-den');
+  if (!hasSupabaseEnv() || !(await canUseFeature(session?.profile?.role ?? null, 'equipment'))) redirect('/chon-den');
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
 

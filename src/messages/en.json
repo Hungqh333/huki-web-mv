@@ -256,7 +256,7 @@
       "submit": "Create account",
       "submitting": "Creating account...",
       "checkEmail": "A confirmation email has been sent. Open your inbox and click the link to activate your account.",
-      "roleNotice": "Self-registered accounts start at the \"Registered\" level. Member/VIP access (equipment selector, real project tips) is granted manually by an administrator — please contact the Vision department.",
+      "roleNotice": "Self-registered accounts start at the \"Registered\" level. Access to the tools and real project tips is granted manually by an administrator — please contact the Vision department.",
       "haveAccount": "Already have an account?",
       "goToSignIn": "Sign in"
     },
@@ -540,7 +540,7 @@
       "assumptions": "Assumptions used in the calculation",
       "noRuleMatched": "No rule matched these parameters, so the result is empty. Add rules for this task in the admin area.",
       "exportPdf": "Export PDF report",
-      "exportVipOnly": "PDF export is available to VIP accounts and above.",
+      "exportVipOnly": "PDF export is not enabled for your account.",
       "historySaved": "Saved to your tool usage history.",
       "historyNotSaved": "Could not save to history. The result above is still valid.",
       "metrics": {
@@ -1030,6 +1030,60 @@
       "formulas": "Formula handbook",
       "samples": "Lighting samples",
       "experiments": "Test projects"
+    },
+    "permissions": {
+      "title": "Permissions by role",
+      "meta": "a higher role has every permission of the lower ones",
+      "intro": "Each row is a feature group; ✓ means full use / full view. Changing the level in the last column takes effect immediately and is enforced on the server and in the database, not just hidden in the UI.",
+      "guest": "Guest",
+      "colFeature": "Feature",
+      "colEdit": "Minimum level",
+      "yes": "allowed",
+      "no": "not allowed",
+      "teaser": "title + teaser",
+      "fromLevel": "From {role}",
+      "levelFor": "Minimum level for {feature}",
+      "confirm": "Change \"{feature}\" from {from} to {to}? Takes effect immediately for every user.",
+      "saved": "Saved",
+      "previewOnly": "Preview: changed on screen only, not saved",
+      "errors": {
+        "notAdmin": "Only an Admin can change levels",
+        "invalid": "Invalid level",
+        "notPasted": "The permission table is not in the database yet: paste CHAY-BUOC-NAY-PHAN-QUYEN.sql",
+        "failed": "Could not save, try again"
+      },
+      "historyTitle": "Permission changes (latest 10)",
+      "historyEmpty": "No changes yet.",
+      "historyLine": "{feature}: {from} → {to} · {who}",
+      "unknownActor": "deleted user",
+      "sqlActor": "SQL paste",
+      "groups": { "handbook": "Handbook, account", "tools": "Tools", "admin": "Administration" },
+      "rows": {
+        "articlePublic": "Home page, Public handbook articles",
+        "articleRegistered": "Handbook articles for Registered",
+        "articleMember": "Handbook articles for Member (project tips)",
+        "articleVip": "Handbook articles for VIP",
+        "account": "Account page",
+        "visionEngineer": "Vision Engineer: problem analysis, system design (uses AI)",
+        "equipment": "Equipment selection: area / line scan camera, lens, lighting, lighting experiments",
+        "catalog": "Equipment catalog + Excel download",
+        "kpi": "KPI calculator",
+        "oldSelector": "Configuration suggestion (old selector)",
+        "projects": "Projects: save, reopen, Excel export",
+        "pcVision": "PC Vision: catalog, suggestion, fps table, checklist, copy specs",
+        "pdf": "PDF report export",
+        "formulas": "Formulas on tool pages, Formula book",
+        "editData": "Edit equipment stock, PC catalog",
+        "adminPages": "Administration pages (users, articles, rules, thresholds, lighting tables…)"
+      },
+      "locks": {
+        "perArticle": "Per article, edit in Articles",
+        "account": "Fixed",
+        "formulas": "Locked: formula protection",
+        "editData": "Locked: Admin only",
+        "admin": "Locked: avoids locking out administration"
+      },
+      "footnote": "Self sign-up is always Registered; Member, VIP and Admin are granted by an Admin in the user table below."
     },
     "users": {
       "title": "User management",
@@ -2254,9 +2308,9 @@
   },
   "pcPlanner": {
     "locked": {
-      "title": "Member access required",
-      "bodyRegistered": "Your account is Registered. Contact an administrator to be granted Member access.",
-      "bodyGuest": "Sign in with a Member account or above to use this tool.",
+      "title": "{level} access or higher required",
+      "bodyRegistered": "Your account is {current}. Contact an administrator to be granted {level} access.",
+      "bodyGuest": "Sign in with a {level} account or above to use this tool.",
       "signIn": "Sign in",
       "contact": "Contact us"
     }
@@ -2901,7 +2955,7 @@
       "title": "Export",
       "excel": "Download BOM (Excel)",
       "pdf": "Download Concept Report (PDF)",
-      "pdfVip": "PDF is for VIP accounts",
+      "pdfVip": "PDF not enabled for this account",
       "saveFirst": "Save the project before exporting — files come from the saved revision.",
       "noBomHint": "No solution chosen: the file will have no bill of materials."
     },
@@ -4128,6 +4182,7 @@
       "gpu": "GPU chip",
       "gpuNone": "None",
       "vram": "VRAM GB",
+      "vramPick": "— choose VRAM —",
       "psu": "PSU W",
       "os": "Operating system",
       "osOption": {
@@ -4317,7 +4372,7 @@
       "rejected": "Unsuitable ({n}) · click for reasons",
       "noCameras": "Add at least one camera to compute.",
       "errors": {
-        "denied": "Member access or higher is needed for suggestions.",
+        "denied": "Your account cannot use PC Vision.",
         "invalid": "Invalid input, check the numbers.",
         "failed": "Could not read the PC catalog to compare."
       },

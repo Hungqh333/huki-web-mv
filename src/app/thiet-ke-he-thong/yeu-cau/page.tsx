@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { ProjectSaveBar } from '@/components/requirement/ProjectSaveBar';
 import { RequirementSummary } from '@/components/requirement/RequirementSummary';
-import { canUseSelector, getSessionContext, hasAdvancedFeatures, isAdmin } from '@/lib/auth';
+import { getSessionContext, isAdmin } from '@/lib/auth';
 import { loadKnowledgeIndex } from '@/lib/knowledgeLoad';
 import { explainerConfigured } from '@/lib/ai/explainer';
 import { isApplicationType } from '@/lib/requirement/draft';
@@ -12,6 +12,7 @@ import { createClient } from '@/lib/supabase/server';
 import { loadEngineParams } from '@/lib/engineParamsLoad';
 import { fetchAllRows } from '@/lib/components/fetchAll';
 import { FormulaVisibilityProvider } from '@/components/ui/FormulaVisibility';
+import { canUseFeature } from '@/lib/featureAccess';
 
 /**
  * Bước 1 của Vision Engineer — bảng tóm tắt yêu cầu (spec V1.1 §10.2).
@@ -34,7 +35,7 @@ export default async function RequirementPage({ searchParams }: PageProps<'/thie
   if (!hasSupabaseEnv()) redirect('/cong-cu-chon-thiet-bi');
 
   const session = await getSessionContext();
-  if (!canUseSelector(session?.profile?.role ?? null)) redirect('/cong-cu-chon-thiet-bi');
+  if (!(await canUseFeature(session?.profile?.role ?? null, 'visionEngineer'))) redirect('/cong-cu-chon-thiet-bi');
 
   const t = await getTranslations('designer.requirement');
   const { app } = await searchParams;
@@ -65,7 +66,7 @@ export default async function RequirementPage({ searchParams }: PageProps<'/thie
 
       <FormulaVisibilityProvider show={isAdmin(session?.profile?.role ?? null)}>
       <div className="mt-8 space-y-6">
-        <ProjectSaveBar canExportPdf={hasAdvancedFeatures(session?.profile?.role ?? null)} />
+        <ProjectSaveBar canExportPdf={(await canUseFeature(session?.profile?.role ?? null, 'pdf'))} />
         <RequirementSummary initialApp={isApplicationType(appParam) ? appParam : null} catalog={(catalog ?? []) as Component[]}
           explainAvailable={explainerConfigured()}
           knowledge={knowledge}

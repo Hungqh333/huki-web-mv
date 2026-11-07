@@ -256,7 +256,7 @@
       "submit": "Tạo tài khoản",
       "submitting": "Đang tạo tài khoản...",
       "checkEmail": "Đã gửi email xác nhận. Vui lòng mở hộp thư và bấm vào liên kết để kích hoạt tài khoản.",
-      "roleNotice": "Tài khoản tự đăng ký mặc định ở mức \"Đã đăng ký\". Quyền Member/VIP (dùng bộ chọn thiết bị, xem tips dự án) do quản trị viên cấp thủ công — vui lòng liên hệ bộ phận Vision.",
+      "roleNotice": "Tài khoản tự đăng ký mặc định ở mức \"Đã đăng ký\". Quyền dùng công cụ và xem tips dự án do quản trị viên cấp thủ công — vui lòng liên hệ bộ phận Vision.",
       "haveAccount": "Đã có tài khoản?",
       "goToSignIn": "Đăng nhập"
     },
@@ -540,7 +540,7 @@
       "assumptions": "Giả định đã dùng khi tính",
       "noRuleMatched": "Không có luật nào khớp với tham số này. Kết quả đang trống — cần bổ sung luật cho bài toán trong trang quản trị.",
       "exportPdf": "Xuất báo cáo PDF",
-      "exportVipOnly": "Xuất báo cáo PDF dành cho tài khoản VIP trở lên.",
+      "exportVipOnly": "Tài khoản của bạn chưa được xuất báo cáo PDF.",
       "historySaved": "Đã lưu vào lịch sử dùng công cụ.",
       "historyNotSaved": "Không lưu được vào lịch sử. Kết quả trên vẫn dùng được bình thường.",
       "metrics": {
@@ -1030,6 +1030,60 @@
       "formulas": "Sổ tay công thức",
       "samples": "Ảnh mẫu chiếu sáng",
       "experiments": "Dự án thực nghiệm"
+    },
+    "permissions": {
+      "title": "Quyền theo vai trò",
+      "meta": "mức cao hơn có đủ quyền của mức thấp hơn",
+      "intro": "Mỗi dòng là một nhóm chức năng, ✓ là được dùng / xem đầy đủ. Đổi mức ở cột cuối có hiệu lực ngay, kiểm tra ở cả máy chủ và cơ sở dữ liệu, không chỉ ẩn trên giao diện.",
+      "guest": "Khách",
+      "colFeature": "Chức năng",
+      "colEdit": "Mức tối thiểu",
+      "yes": "được",
+      "no": "không",
+      "teaser": "tiêu đề + mở đầu",
+      "fromLevel": "Từ {role}",
+      "levelFor": "Mức tối thiểu cho {feature}",
+      "confirm": "Đổi mức \"{feature}\" từ {from} sang {to}? Có hiệu lực ngay cho mọi người dùng.",
+      "saved": "Đã lưu",
+      "previewOnly": "Xem trước: chỉ đổi trên màn hình, không lưu",
+      "errors": {
+        "notAdmin": "Chỉ Admin đổi được mức",
+        "invalid": "Mức không hợp lệ",
+        "notPasted": "Chưa có bảng quyền trên cơ sở dữ liệu: dán file SQL CHAY-BUOC-NAY-PHAN-QUYEN.sql",
+        "failed": "Không lưu được, thử lại"
+      },
+      "historyTitle": "Lịch sử đổi quyền (10 lần gần nhất)",
+      "historyEmpty": "Chưa đổi lần nào.",
+      "historyLine": "{feature}: {from} → {to} · {who}",
+      "unknownActor": "người dùng đã xoá",
+      "sqlActor": "dán SQL",
+      "groups": { "handbook": "Cẩm nang, tài khoản", "tools": "Công cụ", "admin": "Quản trị" },
+      "rows": {
+        "articlePublic": "Trang chủ, bài cẩm nang mức Công khai",
+        "articleRegistered": "Bài cẩm nang mức Đã đăng ký",
+        "articleMember": "Bài cẩm nang mức Member (tips dự án)",
+        "articleVip": "Bài cẩm nang mức VIP",
+        "account": "Trang Tài khoản",
+        "visionEngineer": "Vision Engineer: phân tích bài toán, thiết kế hệ thống (có gọi AI)",
+        "equipment": "Chọn thiết bị: camera area / line scan, ống kính, đèn, thực nghiệm đèn",
+        "catalog": "Danh mục thiết bị + tải Excel",
+        "kpi": "Chỉ tiêu",
+        "oldSelector": "Gợi ý cấu hình (bộ chọn cũ)",
+        "projects": "Dự án: lưu, mở lại, xuất Excel",
+        "pcVision": "PC Vision: danh mục, gợi ý, bảng fps, checklist, copy thông số",
+        "pdf": "Xuất báo cáo PDF",
+        "formulas": "Xem công thức trên trang công cụ, Sổ tay công thức",
+        "editData": "Sửa kho thiết bị, danh mục PC",
+        "adminPages": "Trang Quản trị (người dùng, bài viết, luật, ngưỡng, bảng chiếu sáng…)"
+      },
+      "locks": {
+        "perArticle": "Theo từng bài, sửa ở Bài viết",
+        "account": "Cố định",
+        "formulas": "Khoá: bảo vệ công thức",
+        "editData": "Khoá: chỉ Admin",
+        "admin": "Khoá: tránh tự khoá quyền quản trị"
+      },
+      "footnote": "Tự đăng ký luôn ở mức Đã đăng ký; Member, VIP, Admin do Admin cấp ở bảng người dùng bên dưới."
     },
     "users": {
       "title": "Quản lý người dùng",
@@ -2254,9 +2308,9 @@
   },
   "pcPlanner": {
     "locked": {
-      "title": "Cần quyền Member trở lên",
-      "bodyRegistered": "Tài khoản của bạn đang ở mức Registered. Liên hệ quản trị để được cấp quyền Member.",
-      "bodyGuest": "Đăng nhập bằng tài khoản Member trở lên để dùng công cụ này.",
+      "title": "Cần quyền {level} trở lên",
+      "bodyRegistered": "Tài khoản của bạn đang ở mức {current}. Liên hệ quản trị để được cấp quyền {level}.",
+      "bodyGuest": "Đăng nhập bằng tài khoản {level} trở lên để dùng công cụ này.",
       "signIn": "Đăng nhập",
       "contact": "Liên hệ tư vấn"
     }
@@ -2901,7 +2955,7 @@
       "title": "Xuất tài liệu",
       "excel": "Tải BOM (Excel)",
       "pdf": "Tải Concept Report (PDF)",
-      "pdfVip": "PDF dành cho tài khoản VIP",
+      "pdfVip": "Tài khoản chưa được xuất PDF",
       "saveFirst": "Lưu dự án trước khi xuất — file lấy từ revision đã lưu.",
       "noBomHint": "Chưa chọn phương án: file sẽ không có danh mục vật tư."
     },
@@ -4128,6 +4182,7 @@
       "gpu": "Chip GPU",
       "gpuNone": "Không có",
       "vram": "VRAM GB",
+      "vramPick": "— chọn VRAM —",
       "psu": "Nguồn W",
       "os": "Hệ điều hành",
       "osOption": {
@@ -4317,7 +4372,7 @@
       "rejected": "Không hợp ({n}) · bấm xem lý do",
       "noCameras": "Thêm ít nhất một camera để tính.",
       "errors": {
-        "denied": "Cần quyền Member trở lên để tính gợi ý.",
+        "denied": "Tài khoản của bạn chưa được dùng PC Vision.",
         "invalid": "Ô nhập chưa hợp lệ, kiểm tra lại các số.",
         "failed": "Chưa đọc được danh mục PC để so."
       },

@@ -2,10 +2,11 @@ import Link from 'next/link';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages, getTranslations } from 'next-intl/server';
 import { KpiCalculator } from '@/components/kpi/KpiCalculator';
-import { canUseSelector, getSessionContext } from '@/lib/auth';
+import { getSessionContext } from '@/lib/auth';
 import { getKpiData } from '@/lib/kpi/queries';
 import { hasSupabaseEnv } from '@/lib/supabase/env';
 import { contactMailto } from '@/lib/contact';
+import { canUseFeature } from '@/lib/featureAccess';
 
 export default async function KpiToolPage() {
   const t = await getTranslations('kpi');
@@ -13,7 +14,7 @@ export default async function KpiToolPage() {
 
   const session = await getSessionContext();
   const role = session?.profile?.role ?? null;
-  const allowed = hasSupabaseEnv() && canUseSelector(role);
+  const allowed = hasSupabaseEnv() && (await canUseFeature(role, 'kpi'));
 
   if (!allowed) {
     return (

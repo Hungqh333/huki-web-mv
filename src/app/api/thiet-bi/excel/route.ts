@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { getTranslations } from 'next-intl/server';
-import { canUseSelector, getSessionContext } from '@/lib/auth';
+import { getSessionContext } from '@/lib/auth';
 import { CATALOG_COLUMNS, parseCodes, type CatalogItem } from '@/lib/catalog/catalog';
 import { devCatalog } from '@/lib/catalog/devCatalog';
 import { fetchAllRows } from '@/lib/components/fetchAll';
@@ -8,6 +8,7 @@ import type { ComponentKind } from '@/lib/components/specs';
 import { buildCatalogWorkbook } from '@/lib/export/catalogWorkbook';
 import { hasSupabaseEnv } from '@/lib/supabase/env';
 import { createClient } from '@/lib/supabase/server';
+import { canUseFeature } from '@/lib/featureAccess';
 
 /** exceljs cần Node (Buffer, stream) — không chạy được ở Edge. */
 export const runtime = 'nodejs';
@@ -25,7 +26,7 @@ export async function GET(request: NextRequest) {
     items = devCatalog().filter((i) => codes.includes(i.code));
   } else {
     const session = await getSessionContext();
-    if (!hasSupabaseEnv() || !canUseSelector(session?.profile?.role ?? null)) {
+    if (!hasSupabaseEnv() || !(await canUseFeature(session?.profile?.role ?? null, 'catalog'))) {
       return NextResponse.json({ error: 'forbidden' }, { status: 403 });
     }
     const supabase = await createClient();

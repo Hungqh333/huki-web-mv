@@ -1,7 +1,7 @@
 'use server';
 
 import { z } from 'zod';
-import { canUseSelector, getSessionContext } from '@/lib/auth';
+import { getSessionContext } from '@/lib/auth';
 import { loadEngineParams } from '@/lib/engineParamsLoad';
 import { loadPcCatalog } from '@/lib/pc/catalog';
 import { readPcSeed } from '@/lib/pc/devSeed';
@@ -9,6 +9,7 @@ import { PC_INTERFACE_KEYS, PC_RESOLUTION_KEYS } from '@/lib/pc/options';
 import { suggestPc, type PcSuggestInput, type PcSuggestResult } from '@/lib/pc/suggest';
 import { createClient } from '@/lib/supabase/server';
 import { DEFAULT_ENGINE_PARAMS } from '@/lib/vision/engineParams';
+import { canUseFeature } from '@/lib/featureAccess';
 
 /**
  * Tab Gợi ý cấu hình của PC Vision tính trên MÁY CHỦ, cùng cách trang Chọn đèn: trình duyệt chỉ
@@ -52,7 +53,7 @@ const parse = (raw: unknown) => INPUT.safeParse(raw) as { success: true; data: P
 
 export async function suggestPcAction(raw: unknown): Promise<PcSuggestResponse> {
   const session = await getSessionContext();
-  if (!session || !canUseSelector(session.profile?.role)) return { status: 'denied' };
+  if (!session || !(await canUseFeature(session.profile?.role, 'pcVision'))) return { status: 'denied' };
   const parsed = parse(raw);
   if (!parsed.success) return { status: 'invalid' };
 

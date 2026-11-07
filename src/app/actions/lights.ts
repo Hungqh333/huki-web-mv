@@ -1,7 +1,7 @@
 'use server';
 
 import { z } from 'zod';
-import { canUseSelector, getSessionContext, isAdmin } from '@/lib/auth';
+import { getSessionContext, isAdmin } from '@/lib/auth';
 import type { Component } from '@/lib/components/specs';
 import { fetchAllRows } from '@/lib/components/fetchAll';
 import { seedCatalog } from '@/lib/devSeedCatalog';
@@ -14,6 +14,7 @@ import { createClient } from '@/lib/supabase/server';
 import { DEFAULT_ENGINE_TABLES } from '@/lib/vision/engineTables';
 import { ALL_FEATURES, COLORS, DENT_DEPTHS, LIGHT_FINISHES, LIGHT_MATERIALS, LIGHT_PURPOSES, LIGHT_SHAPES, LIGHT_TASKS, TASK_FEATURES } from '@/lib/vision/lightOptions';
 import { selectLights, withoutFormulas, type LightSelection, type LightSelectorInput } from '@/lib/vision/lightSelector';
+import { canUseFeature } from '@/lib/featureAccess';
 
 /**
  * Trang Chọn đèn tính trên MÁY CHỦ (chốt 2026-10-22 Q1): trình duyệt chỉ gửi ô nhập, nhận
@@ -50,7 +51,7 @@ const parse = (raw: LightSelectorInput) => INPUT.safeParse(raw) as { success: tr
 export async function selectLightsAction(raw: LightSelectorInput): Promise<LightSelectResponse> {
   const session = await getSessionContext();
   const role = session?.profile?.role ?? null;
-  if (!session || !canUseSelector(role)) return { status: 'denied' };
+  if (!session || !(await canUseFeature(role, 'equipment'))) return { status: 'denied' };
   const parsed = parse(raw);
   if (!parsed.success) return { status: 'invalid' };
 

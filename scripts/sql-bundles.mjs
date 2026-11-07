@@ -121,6 +121,12 @@ export const BUNDLES = {
       ['PHAN 3/3: SEED — dien san thong so tu form PC goc cho khung con trong', 'supabase/seed_pc_spec.sql'],
     ],
   },
+  'phan-quyen': {
+    out: 'CHAY-BUOC-NAY-PHAN-QUYEN.sql',
+    parts: [
+      ['PHAN 1/1: MIGRATION — bang quyen theo vai tro (Admin chinh muc tren Admin -> Nguoi dung), lich su doi quyen, RLS cong cu doc theo bang quyen', 'supabase/migrations/20261107000002_role_permissions.sql'],
+    ],
+  },
   projects: {
     out: 'CHAY-BUOC-NAY-DUAN.sql',
     parts: [

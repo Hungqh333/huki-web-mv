@@ -2,11 +2,12 @@ import { ActionCue } from '@/components/ui/ActionLink';
 import Link from 'next/link';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { Panel } from '@/components/ui/PanelHeader';
-import { canUseSelector, getSessionContext } from '@/lib/auth';
+import { getSessionContext } from '@/lib/auth';
 import { hasSupabaseEnv } from '@/lib/supabase/env';
 import { createClient } from '@/lib/supabase/server';
 import { contactMailto } from '@/lib/contact';
 import { Icon, IconBadge, type BadgeTone } from '@/components/ui/Icon';
+import { canUseFeature } from '@/lib/featureAccess';
 
 // Xoay vòng tông màu cho huy hiệu icon để danh sách bài toán không đơn điệu.
 const TASK_TONES: BadgeTone[] = ['violet', 'sky', 'emerald', 'amber'];
@@ -71,7 +72,7 @@ export default async function SelectorHomePage() {
 
   const session = await getSessionContext();
   const role = session?.profile?.role ?? null;
-  const allowed = canUseSelector(role);
+  const allowed = (await canUseFeature(role, 'oldSelector'));
 
   // task_types đọc công khai nên trang giới thiệu vẫn liệt kê được tên bài toán
   // cho khách và Registered — phục vụ mục tiêu marketing. Bảng luật thì không.

@@ -1,5 +1,6 @@
 import { getFormatter, getTranslations } from 'next-intl/server';
 import { PanelHeader } from '@/components/ui/PanelHeader';
+import { PermissionMatrix } from '@/components/admin/PermissionMatrix';
 import { RoleSelect } from '@/components/admin/RoleSelect';
 import { getSessionContext, type Profile } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
@@ -32,6 +33,9 @@ export default async function AdminUsersPage() {
           {error.message}
         </p>
       ) : null}
+
+      {/* Bảng quyền theo vai trò (chốt 2026-11-07) — đặt trên danh sách để đổi vai trò là thấy ngay mỗi mức làm được gì. */}
+      <PermissionMatrix />
 
       <div className="mt-6 overflow-x-auto rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-5">
         <table className="w-full min-w-[640px] text-left text-sm">

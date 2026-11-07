@@ -2,8 +2,9 @@
 
 import { extractionToFields } from '@/lib/ai/extraction';
 import { parseDescription, parserConfigured } from '@/lib/ai/parser';
-import { canUseSelector, getSessionContext } from '@/lib/auth';
+import { getSessionContext } from '@/lib/auth';
 import { PARSE_TEXT_MAX, type ParseResult } from '@/lib/requirement/parseResult';
+import { canUseFeature } from '@/lib/featureAccess';
 
 /**
  * Đọc mô tả bài toán bằng LLM → các ô điền trước cho bảng yêu cầu (V1a hạng mục 3).
@@ -13,7 +14,7 @@ import { PARSE_TEXT_MAX, type ParseResult } from '@/lib/requirement/parseResult'
  */
 export async function parseRequirementAction(rawText: string): Promise<ParseResult> {
   const session = await getSessionContext();
-  if (!session || !canUseSelector(session.profile?.role)) return { status: 'denied' };
+  if (!session || !(await canUseFeature(session.profile?.role, 'visionEngineer'))) return { status: 'denied' };
 
   const text = typeof rawText === 'string' ? rawText.trim() : '';
   if (!text) return { status: 'empty' };

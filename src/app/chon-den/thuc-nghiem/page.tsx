@@ -5,12 +5,13 @@ import { getLocale, getTranslations } from 'next-intl/server';
 import { SelectField } from '@/components/admin/ExperimentFields';
 import { VerdictBadge } from '@/components/light/VerdictBadge';
 import { Panel } from '@/components/ui/PanelHeader';
-import { canUseSelector, getSessionContext } from '@/lib/auth';
+import { getSessionContext } from '@/lib/auth';
 import { labelOf, lightOptionLabels } from '@/lib/lightLabels';
 import { loadExperimentTree } from '@/lib/lightExperiments';
 import { hasSupabaseEnv } from '@/lib/supabase/env';
 import { createClient } from '@/lib/supabase/server';
 import { chosenTrial, isWorking } from '@/lib/vision/experimentMatch';
+import { canUseFeature } from '@/lib/featureAccess';
 
 /**
  * Dự án thực nghiệm của phòng Vision (chốt 2026-10-24) — mở từ nút trên cùng trang Chọn đèn,
@@ -18,7 +19,7 @@ import { chosenTrial, isWorking } from '@/lib/vision/experimentMatch';
  */
 export default async function LightExperimentsPage({ searchParams }: PageProps<'/chon-den/thuc-nghiem'>) {
   const session = await getSessionContext();
-  if (!hasSupabaseEnv() || !canUseSelector(session?.profile?.role ?? null)) redirect('/chon-den');
+  if (!hasSupabaseEnv() || !(await canUseFeature(session?.profile?.role ?? null, 'equipment'))) redirect('/chon-den');
   const t = await getTranslations('lightSelector.experiments');
   const locale = await getLocale();
   const o = await lightOptionLabels();

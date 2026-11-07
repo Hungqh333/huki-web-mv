@@ -7,9 +7,10 @@ import { SignOutButton } from '@/components/auth/SignOutButton';
 import { SupabaseNotConfigured } from '@/components/auth/SupabaseNotConfigured';
 import { ThemeToggle } from '@/components/settings/ThemeToggle';
 import { IconBadge, type BadgeTone, type IconName } from '@/components/ui/Icon';
-import { canUseSelector, getSessionContext } from '@/lib/auth';
+import { getSessionContext } from '@/lib/auth';
 import { hasSupabaseEnv } from '@/lib/supabase/env';
 import { createClient } from '@/lib/supabase/server';
+import { canUseFeature } from '@/lib/featureAccess';
 
 type HistoryRow = {
   id: string;
@@ -57,7 +58,7 @@ export default async function AccountPage() {
       <div className="mt-8 space-y-4">
         <SettingCard iconTone="violet" icon="shield" title={t('roleTitle')} action={<RoleBadge role={role} />}>
           <p className="text-sm text-slate-600 dark:text-slate-400">
-            {canUseSelector(role) ? t('roleSelectorAllowed') : t('roleSelectorBlocked')}
+            {(await canUseFeature(role, 'equipment')) ? t('roleSelectorAllowed') : t('roleSelectorBlocked')}
           </p>
         </SettingCard>
 

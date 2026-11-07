@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { CameraSelector } from '@/components/camera/CameraSelector';
-import { canUseSelector, getSessionContext, isAdmin } from '@/lib/auth';
+import { getSessionContext, isAdmin } from '@/lib/auth';
 import { FormulaVisibilityProvider } from '@/components/ui/FormulaVisibility';
 import { contactMailto } from '@/lib/contact';
 import type { Component } from '@/lib/components/specs';
@@ -10,6 +10,7 @@ import { loadEngineParams } from '@/lib/engineParamsLoad';
 import { taskFromSlug } from '@/lib/vision/cameraTask';
 import { hasSupabaseEnv } from '@/lib/supabase/env';
 import { createClient } from '@/lib/supabase/server';
+import { canUseFeature, lockedTextValues } from '@/lib/featureAccess';
 
 /**
  * Bộ chọn camera area scan (cả tốc độ cao) — chốt 2026-10-27, Q1–Q8. Line scan tách sang
@@ -40,7 +41,9 @@ export default async function CameraSelectorPage({ searchParams }: PageProps<'/c
   const tPc = await getTranslations('pcPlanner');
   const session = await getSessionContext();
   const role = session?.profile?.role ?? null;
-  const allowed = hasSupabaseEnv() && canUseSelector(role);
+  const allowed = hasSupabaseEnv() && (await canUseFeature(role, 'equipment'));
+  // Chữ khoá theo mức đang đặt ở bảng quyền (Admin → Người dùng), không ghi cứng "Member".
+  const lockText = await lockedTextValues('equipment', role);
 
   if (!allowed) {
     return (
@@ -48,8 +51,8 @@ export default async function CameraSelectorPage({ searchParams }: PageProps<'/c
         <h1 className="text-3xl font-bold tracking-tight">{t('title')}</h1>
         <p className="mt-3 text-slate-600 dark:text-slate-400">{t('subtitle')}</p>
         <div className="mt-8 rounded-lg border border-sky-200 bg-sky-50 p-6 dark:border-sky-900 dark:bg-sky-950/30">
-          <h2 className="text-lg font-semibold text-sky-900 dark:text-sky-200">{tPc('locked.title')}</h2>
-          <p className="mt-2 text-sm text-sky-900/80 dark:text-sky-300/90">{session ? tPc('locked.bodyRegistered') : tPc('locked.bodyGuest')}</p>
+          <h2 className="text-lg font-semibold text-sky-900 dark:text-sky-200">{tPc('locked.title', lockText)}</h2>
+          <p className="mt-2 text-sm text-sky-900/80 dark:text-sky-300/90">{session ? tPc('locked.bodyRegistered', lockText) : tPc('locked.bodyGuest', lockText)}</p>
           <div className="mt-5 flex flex-wrap gap-3">
             {session ? null : (
               <Link href="/dang-nhap" className="rounded-md bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700">

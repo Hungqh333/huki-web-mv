@@ -2,12 +2,13 @@
 
 import { getTranslations } from 'next-intl/server';
 import { createClient } from '@/lib/supabase/server';
-import { getSessionContext, canUseSelector } from '@/lib/auth';
+import { getSessionContext } from '@/lib/auth';
 import { getFieldDefs, parseInput, visibleFieldDefs } from '@/lib/selector/fields';
 import { runSelector } from '@/lib/selector/engine';
 import type { SelectorInput, SelectorResult, SelectorRule } from '@/lib/selector/types';
 import type { Component } from '@/lib/components/specs';
 import { fetchAllRows } from '@/lib/components/fetchAll';
+import { canUseFeature } from '@/lib/featureAccess';
 
 export type SelectorState = {
   error?: string;
@@ -42,7 +43,7 @@ export async function runSelectorAction(
   // thì truy vấn selector_rules bên dưới trả về rỗng.
   const session = await getSessionContext();
   if (!session) return { error: t('notSignedIn') };
-  if (!canUseSelector(session.profile?.role)) return { error: t('notAllowed') };
+  if (!(await canUseFeature(session.profile?.role, 'oldSelector'))) return { error: t('notAllowed') };
 
   const supabase = await createClient();
 

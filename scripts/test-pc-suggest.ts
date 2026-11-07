@@ -145,7 +145,8 @@ function randomInput(r: () => number): PcSuggestInput {
 
 const seed = readPcSeed();
 /** Khung như mẫu (1 LAN) — để so 1:1 với mẫu đã bỏ "camera đi LAN onboard". Danh mục thật có 2 LAN. */
-const mockFrames = seed.frames.map((f) => (f.lanPorts > 0 ? { ...f, lanPorts: 1 } : f));
+/** Khung B500 thêm 2026-11-07, mẫu không có — bỏ ra khi so với mẫu. */
+const mockFrames = seed.frames.filter((f) => f.slug !== 'B500').map((f) => (f.lanPorts > 0 ? { ...f, lanPorts: 1 } : f));
 /** Mẫu không tính công suất bản thân card và USB3 qua cáp (PC-POWER, chốt 2026-11-04) — đặt 0 khi so với mẫu. */
 const PM = { ...P, pcCardGigePoeW: 0, pcCardTenGigeW: 0, pcCardUsbW: 0, pcCardClW: 0, pcCardCxpW: 0, pcUsbBusPowerW: 0 };
 const slugOf = new Map(seed.frames.map((f) => [f.id, f.slug]));
@@ -168,7 +169,7 @@ test('khớp mẫu đã duyệt trên ví dụ mặc định của mẫu (2 cam 
   assert.equal(Math.round(out.totalMbps), 112);
   assert.deepEqual(
     out.frames.map((f) => `${slugOf.get(f.frameId)}:${f.level}:${f.configId ? nameOf.get(f.configId) : '-'}`),
-    ['Ct:ok:Ct1', 'C:ok:C1', 'D:ok:D1', 'A:no:A1', 'B:no:B2', 'P:no:P1']
+    ['Ct:ok:Ct1', 'C:ok:C1', 'D:ok:D1', 'A:no:A1', 'B:no:B2', 'B500:no:B2-500', 'P:no:P1']
   );
 });
 
@@ -270,7 +271,7 @@ test('cổng LAN có sẵn để cho mạng nhà máy; cổng dư chỉ nhận c
   const ports = (out: ReturnType<typeof run>, slug: string) => frame(out, slug).ok.find((n) => n.key === 'ports')?.values;
 
   // Danh mục: khung A–D có 2 cổng LAN (Hùng xác nhận 2026-11-04), P giữ 0.
-  assert.deepEqual(seed.frames.map((f) => `${f.slug}:${f.lanPorts}`), ['A:2', 'B:2', 'Ct:2', 'C:2', 'D:2', 'P:0']);
+  assert.deepEqual(seed.frames.map((f) => `${f.slug}:${f.lanPorts}`), ['A:2', 'B:2', 'B500:2', 'Ct:2', 'C:2', 'D:2', 'P:0']);
   // Ô tổng: mọi camera GigE qua card 4 cổng.
   assert.deepEqual([1, 4, 5, 8, 9].map((n) => run(n, true).slots), [1, 1, 2, 2, 3]);
   // Camera PoE: không cắm cổng LAN dư → 5 camera cần 2 khe trên khung B.
@@ -354,4 +355,18 @@ test('công suất tổng = tải đỉnh + card + PoE + USB3; camera nguồn ng
   // Khung không có khe card: chỉ tải đỉnh.
   const none = framePower(P, { peakLoadW: 120, psuW: 250, cardSlots: 0 }, { gige: 1, tenGige: 0, usb: 0, cl: 0, cxp: 0 }, 1, 0);
   assert.equal(none.loadW, 120);
+});
+
+test('khung Tiêu chuẩn nguồn 500W: tải đỉnh 66%; 5 camera GigE PoE vượt 70% → lưu ý, khung B 650W vẫn đạt', () => {
+  const cam = { resolution: '2448x2048' as const, color: false, poe: true, bit: 8, fps: 5, iface: 'GigE' as const, inspectPerSec: 1 };
+  const run = (n: number) => suggestPc({ cameras: Array.from({ length: n }, () => cam), ai: 'none', line247: false, storage: null }, seed.frames, seed.configs, P);
+  const frame = (out: ReturnType<typeof run>, slug: string) => out.frames.find((f) => slugOf.get(f.frameId) === slug)!;
+  // 1 camera PoE: 330 + card 6 + 13 = 349 W = 70 % của 500 W → đạt.
+  assert.equal(frame(run(1), 'B500').power.loadW, 349);
+  assert.equal(frame(run(1), 'B500').level, 'ok');
+  // 5 camera PoE: 330 + 12 + 65 = 407 W = 81 % → lưu ý; khung B 650 W = 63 % → đạt.
+  const five = run(5);
+  assert.deepEqual(frame(five, 'B500').warn.map((w) => w.key), ['power']);
+  assert.equal(frame(five, 'B').level, 'ok');
+  assert.equal(nameOf.get(frame(five, 'B500').configId!), 'B1-500');
 });

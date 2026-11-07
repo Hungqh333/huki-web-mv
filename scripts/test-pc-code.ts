@@ -35,6 +35,10 @@ const EXPECTED: Record<string, string> = {
   B1: `${PN}-I7-14700-G0-P650-R16I-S512I-D0-W11P`,
   B2: `${PN}-I7-14700-G0-P650-R32I-S512I-D1TC-W11P`,
   B3: `${PN}-I7-14700-G0-P650-R64I-S512I-D2TC-W11P`,
+  // 2026-11-07: khung Tiêu chuẩn nguồn 500W (Hùng) — P350 không dùng.
+  'B1-500': `${PN}-I7-14700-G0-P500-R16I-S512I-D0-W11P`,
+  'B2-500': `${PN}-I7-14700-G0-P500-R32I-S512I-D1TC-W11P`,
+  'B3-500': `${PN}-I7-14700-G0-P500-R64I-S512I-D2TC-W11P`,
   Ct1: `${PN}-I7-14700-G5070V12-P1000-R32I-S1TI-D0-W11P`,
   Ct2: `${PN}-I7-14700-G5070V12-P1000-R32I-S512I-D2TC-W11P`,
   C1: `${PN}-I9-14900-G5070V12-P1000-R32I-S1TI-D0-W11P`,
@@ -57,10 +61,10 @@ function readSeed() {
   return { frames, configs };
 }
 
-test('seed: 6 khung, 13 cấu hình, mã ghép khớp gói bàn giao', () => {
+test('seed: 7 khung, 16 cấu hình (gói bàn giao + B500), mã ghép khớp', () => {
   const { frames, configs } = readSeed();
-  assert.equal(frames.size, 6);
-  assert.equal(configs.size, 13);
+  assert.equal(frames.size, 7);
+  assert.equal(configs.size, 16);
   for (const [name, { slug, parts }] of configs) {
     const frame = frames.get(slug);
     assert.ok(frame, `${name}: thiếu khung ${slug}`);

@@ -16,6 +16,7 @@ import {
   type PcCodeError,
   type PcFrameKey,
 } from '@/lib/pc/code';
+import { PC_SPEC_KEYS, parsePcFrameSpec } from '@/lib/pc/specSheet';
 import { createClient } from '@/lib/supabase/server';
 
 /**
@@ -168,6 +169,8 @@ const updateFrameSchema = frameInfoSchema.extend({
   /** Chỉ đổi được khi khung đang là '?' (CSDL chặn mọi trường hợp khác). */
   ramLine: z.enum(['I', 'C', '?']),
   ssdLine: z.enum(['I', 'C', '?']),
+  /** Chữ cố định cho list thiết bị (form PC gốc) — khoá trong PC_SPEC_KEYS, ô trống thì bỏ. */
+  spec: z.record(z.enum(PC_SPEC_KEYS), z.string().max(600)).optional(),
 });
 
 export async function updatePcFrameAction(input: unknown): Promise<PcActionResult> {
@@ -184,6 +187,7 @@ export async function updatePcFrameAction(input: unknown): Promise<PcActionResul
       peak_load_w: f.peakLoadW, use_for_vi: f.useForVi, use_for_en: f.useForEn, not_for_vi: f.notForVi,
       not_for_en: f.notForEn, note_vi: f.noteVi, note_en: f.noteEn, status: f.status,
       ram_line: f.ramLine, ssd_line: f.ssdLine,
+      ...(f.spec ? { spec: parsePcFrameSpec(f.spec) } : {}),
     })
     .eq('id', f.id);
   if (error) return fromDb(error, 'updatePcFrame');

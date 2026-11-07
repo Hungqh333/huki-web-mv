@@ -4068,6 +4068,12 @@
       "fps": "fps table",
       "checklist": "Stability checklist"
     },
+    "copy": {
+      "button": "Copy specs",
+      "done": "Copied",
+      "failed": "Copy failed",
+      "title": "Copy 4 cells in the PC master form layout for the equipment list: Item · Model (code) · Maker · Technical specs"
+    },
     "catalog": {
       "intro": "Configurations are grouped by frame (chassis, CPU, GPU, PSU). Within a frame, configurations differ in the bold part of the code: RAM – system SSD – data drive.",
       "introAdmin": "Only Admins add or edit; the server and database re-check, not just hide buttons.",
@@ -4172,6 +4178,22 @@
       "lockedNote": "RAM, SSD and data drive are locked by the code. To change them, add a new configuration and retire this one.",
       "copyAsNew": "Add a new configuration from this one",
       "frameTitle": "Edit frame {name}",
+      "spec": {
+        "title": "Equipment list specs (Copy specs button)",
+        "maker": "Maker",
+        "chassis": "Chassis (case, size)",
+        "mainboard": "Motherboard (blank = omit)",
+        "psu": "PSU type (W comes from the code)",
+        "cpuSuffix": "Text after the CPU name",
+        "memory": "RAM type",
+        "memoryBrand": "RAM brand",
+        "ssd": "System SSD type",
+        "ssdBrand": "System SSD brand",
+        "dataBrand": "Data drive brand",
+        "gpu": "GPU card model (blank = from the code)",
+        "io": "I/O Interface (line breaks allowed)",
+        "note": "English, as in the PC master form. RAM / SSD / data drive sizes, PSU watts, CPU and OS come from each configuration's code. Preview with 16GB RAM, 512GB SSD:"
+      },
       "frameLockedNote": "The fixed part of the code (PN, CPU, GPU, PSU, OS) is locked. RAM/SSD grade can only change while it is ?; after the change the frame's configuration codes are recomposed and the old codes are never reissued.",
       "cancel": "Cancel",
       "save": "Save",

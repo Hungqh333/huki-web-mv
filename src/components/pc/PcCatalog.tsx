@@ -12,6 +12,8 @@ import {
 } from '@/lib/pc/code';
 import { PcCodeParts } from './PcCode';
 import { PcConfigDialog, type PcConfigDraft } from './PcConfigDialog';
+import { PcCopyButton } from './PcCopyButton';
+import { ICON_BUTTON, PencilIcon } from './icons';
 import { PcFrameDialog } from './PcFrameDialog';
 import { PC_INFO_CLASS } from './styles';
 
@@ -120,13 +122,14 @@ export function PcCatalog({
                 <th className="w-16 px-3 py-2 text-right">{t('col.ram')}</th>
                 <th className="w-24 px-3 py-2 text-right">{t('col.ssd')}</th>
                 <th className="w-24 px-3 py-2 text-right">{t('col.data')}</th>
-                {admin ? <th className="w-14 px-3 py-2" /> : null}
+                {/* Nút Copy thông số (mọi người xem) + Sửa (Admin). */}
+                <th className="w-20 px-3 py-2" />
               </tr>
             </thead>
             {groups.map(({ frame, rows }) => (
               <tbody key={frame.id}>
                 <tr className="border-t border-slate-200 bg-slate-100/70 dark:border-slate-800 dark:bg-slate-800/50">
-                  <td colSpan={admin ? 6 : 5} className="px-3 py-2">
+                  <td colSpan={6} className="px-3 py-2">
                     {/* Chốt 2026-11-04: thông số khung là một dòng chữ xám, không viên màu; chỉ RAM/SSD
                         dòng thường hoặc chưa rõ mới tô vàng. Một điểm nhấn duy nhất: ô chữ cấp. */}
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -157,9 +160,11 @@ export function PcCatalog({
                         <button
                           type="button"
                           onClick={() => setDialog({ kind: 'frame', frame })}
-                          className="ml-auto rounded border border-slate-300 px-2 py-0.5 text-xs text-slate-600 hover:bg-white dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-900"
+                          title={t('editFrame')}
+                          aria-label={t('editFrame')}
+                          className={`ml-auto ${ICON_BUTTON} bg-white/60 dark:bg-slate-900/40`}
                         >
-                          {t('editFrame')}
+                          <PencilIcon />
                         </button>
                       ) : null}
                     </div>
@@ -196,17 +201,22 @@ export function PcCatalog({
                         </>
                       )}
                     </td>
-                    {admin ? (
-                      <td className="px-3 py-1.5">
-                        <button
-                          type="button"
-                          onClick={() => setDialog({ kind: 'config', config: c })}
-                          className="rounded border border-slate-300 px-2 py-0.5 text-xs hover:bg-slate-50 dark:border-slate-600 dark:hover:bg-slate-800"
-                        >
-                          {t('edit')}
-                        </button>
-                      </td>
-                    ) : null}
+                    <td className="px-3 py-1.5">
+                      <div className="flex justify-end gap-1.5">
+                        <PcCopyButton frame={frame} config={c} />
+                        {admin ? (
+                          <button
+                            type="button"
+                            onClick={() => setDialog({ kind: 'config', config: c })}
+                            title={t('edit')}
+                            aria-label={t('edit')}
+                            className={ICON_BUTTON}
+                          >
+                            <PencilIcon />
+                          </button>
+                        ) : null}
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>

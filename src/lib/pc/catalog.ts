@@ -2,6 +2,7 @@ import 'server-only';
 
 import type { createClient } from '@/lib/supabase/server';
 import { compareConfigs, type PcConfig, type PcFrame, type PcLine, type PcStatus } from './code';
+import { parsePcFrameSpec } from './specSheet';
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
 
@@ -11,7 +12,7 @@ type FrameRow = {
   chassis_pn: string; cpu: string; gpu: string; vram_gb: number; psu_w: number; os: string;
   ram_line: PcLine; ssd_line: PcLine; card_slots: number; lan_ports: number; peak_load_w: number;
   use_for_vi: string | null; use_for_en: string | null; not_for_vi: string | null; not_for_en: string | null;
-  note_vi: string | null; note_en: string | null; status: PcStatus; sort_order: number;
+  note_vi: string | null; note_en: string | null; status: PcStatus; sort_order: number; spec: unknown;
 };
 type ConfigRow = {
   id: string; frame_id: string; short_name: string; ram_gb: number; ssd_gb: number;
@@ -19,7 +20,7 @@ type ConfigRow = {
 };
 
 const FRAME_COLUMNS =
-  'id, slug, tier, name_vi, name_en, chassis_pn, cpu, gpu, vram_gb, psu_w, os, ram_line, ssd_line, card_slots, lan_ports, peak_load_w, use_for_vi, use_for_en, not_for_vi, not_for_en, note_vi, note_en, status, sort_order';
+  'id, slug, tier, name_vi, name_en, chassis_pn, cpu, gpu, vram_gb, psu_w, os, ram_line, ssd_line, card_slots, lan_ports, peak_load_w, use_for_vi, use_for_en, not_for_vi, not_for_en, note_vi, note_en, status, sort_order, spec';
 const CONFIG_COLUMNS = 'id, frame_id, short_name, ram_gb, ssd_gb, data_kind, data_gb, data_line, code, status';
 
 const toFrame = (r: FrameRow): PcFrame => ({
@@ -27,7 +28,7 @@ const toFrame = (r: FrameRow): PcFrame => ({
   chassisPn: r.chassis_pn, cpu: r.cpu, gpu: r.gpu, vramGb: r.vram_gb, psuW: r.psu_w, os: r.os,
   ramLine: r.ram_line, ssdLine: r.ssd_line, cardSlots: r.card_slots, lanPorts: r.lan_ports, peakLoadW: r.peak_load_w,
   useForVi: r.use_for_vi, useForEn: r.use_for_en, notForVi: r.not_for_vi, notForEn: r.not_for_en,
-  noteVi: r.note_vi, noteEn: r.note_en, status: r.status, sortOrder: r.sort_order,
+  noteVi: r.note_vi, noteEn: r.note_en, status: r.status, sortOrder: r.sort_order, spec: parsePcFrameSpec(r.spec),
 });
 const toConfig = (r: ConfigRow): PcConfig => ({
   id: r.id, frameId: r.frame_id, shortName: r.short_name, ramGb: r.ram_gb, ssdGb: r.ssd_gb,

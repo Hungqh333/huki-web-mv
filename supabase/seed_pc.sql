@@ -5,6 +5,7 @@
 -- 2026-11-04: lan_ports = TỔNG cổng LAN có sẵn trên máy; Gợi ý để 1 cổng cho mạng nhà máy (ngưỡng
 --   pcLanReservedPorts), không cắm camera. Hùng xác nhận mỗi khung A–D có 2 cổng LAN (gói bàn giao ghi 1);
 --   khung P (phụ trợ, không thu ảnh) giữ 0 để không bị gợi ý cho camera.
+-- 2026-11-07: thêm khung B500 (Tiêu chuẩn, nguồn 500W) theo Hùng — P350 không dùng (tải đỉnh 330W = 94%).
 -- Dán lại nhiều lần không sao: khung khớp theo slug, cấu hình khớp theo khung + tên ngắn.
 -- =============================================================================
 
@@ -19,6 +20,11 @@ values
   ('B', 'B', 'Tiêu chuẩn', 'Standard', 'RT-661R-Q670-A10-0001', 'I7-14700', '0', 0, 650, 'W11P', 'I', 'I', 3, 2, 330,
    'Cổ điển nhiều camera, ảnh lớn', 'Classic, many cameras, large images',
    'AI tốc độ cao', 'High-speed AI', null, null, 20),
+  ('B500', 'B', 'Tiêu chuẩn · nguồn 500W', 'Standard · 500W PSU', 'RT-661R-Q670-A10-0001', 'I7-14700', '0', 0, 500, 'W11P', 'I', 'I', 3, 2, 330,
+   'Cổ điển ít camera PoE hoặc camera nguồn ngoài', 'Classic with few PoE cameras or externally powered cameras',
+   'AI tốc độ cao', 'High-speed AI',
+   'Nguồn 500W: tải đỉnh 330W = 66% nguồn; nhiều camera PoE trong máy sẽ vượt 70% — cấp PoE bằng switch ngoài',
+   '500W PSU: 330W peak = 66% of PSU; many in-PC PoE cameras exceed 70% — power them from an external PoE switch', 25),
   ('Ct', 'C', 'AI tiết kiệm', 'AI economy', 'RT-661R-Q670-A10-0001', 'I7-14700', '5070', 12, 1000, 'W11P', 'I', 'I', 2, 2, 570,
    'AI suy luận: phân loại, phân đoạn lỗi, OCR khó', 'AI inference: classification, defect segmentation, hard OCR',
    'Nhiều camera cổ điển chạy song song', 'Many classic cameras in parallel', null, null, 30),
@@ -41,6 +47,9 @@ select f.id, v.short_name, v.ram_gb, v.ssd_gb, v.data_kind, v.data_gb, v.data_li
     ('B',  'B1',  16,  512,  null, null, null),
     ('B',  'B2',  32,  512,  'D',  1024, 'C'),
     ('B',  'B3',  64,  512,  'D',  2048, 'C'),
+    ('B500', 'B1-500', 16, 512,  null, null, null),
+    ('B500', 'B2-500', 32, 512,  'D',  1024, 'C'),
+    ('B500', 'B3-500', 64, 512,  'D',  2048, 'C'),
     ('Ct', 'Ct1', 32,  1024, null, null, null),
     ('Ct', 'Ct2', 32,  512,  'D',  2048, 'C'),
     ('C',  'C1',  32,  1024, null, null, null),

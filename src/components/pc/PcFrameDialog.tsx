@@ -6,6 +6,7 @@ import { useState, useTransition } from 'react';
 import { updatePcFrameAction } from '@/app/actions/pcVision';
 import { NOTE_CLASS } from '@/components/ui/PanelHeader';
 import { PC_TIERS, frameCodeHead, type PcFrame, type PcLine } from '@/lib/pc/code';
+import { PC_SPEC_KEYS, pcSpecRow, type PcFrameSpec } from '@/lib/pc/specSheet';
 import { PcCode } from './PcCode';
 import { Buttons, INPUT, Labeled, Modal, Section, Select } from './PcConfigDialog';
 
@@ -34,6 +35,10 @@ export function PcFrameDialog({ frame, onClose }: { frame: PcFrame; onClose: () 
     ramLine: frame.ramLine,
     ssdLine: frame.ssdLine,
   });
+  const [spec, setSpec] = useState<Record<keyof PcFrameSpec, string>>(
+    () => Object.fromEntries(PC_SPEC_KEYS.map((k) => [k, frame.spec[k] ?? ''])) as Record<keyof PcFrameSpec, string>
+  );
+  const tSpec = useTranslations('pcVision.form.spec');
   const text = (key: 'nameVi' | 'nameEn' | 'useForVi' | 'useForEn' | 'notForVi' | 'notForEn' | 'noteVi' | 'noteEn') => (
     <Labeled label={t(key === 'nameVi' ? 'frameNameVi' : key === 'nameEn' ? 'frameNameEn' : key)}>
       <input value={v[key]} onChange={(e) => setV({ ...v, [key]: e.target.value })} className={INPUT} />
@@ -44,7 +49,7 @@ export function PcFrameDialog({ frame, onClose }: { frame: PcFrame; onClose: () 
 
   const save = () =>
     startTransition(async () => {
-      const result = await updatePcFrameAction({ id: frame.id, ...v });
+      const result = await updatePcFrameAction({ id: frame.id, ...v, spec });
       if (result.ok) {
         onClose();
         router.refresh();
@@ -95,6 +100,26 @@ export function PcFrameDialog({ frame, onClose }: { frame: PcFrame; onClose: () 
           />
         </Labeled>
       </Section>
+      {/* Chữ cố định cho nút "Copy thông số" (form PC gốc, chốt 2026-11-07); số W / GB / CPU / GPU / HĐH lấy từ mã. */}
+      <Section title={tSpec('title')}>
+        {PC_SPEC_KEYS.filter((k) => k !== 'io').map((k) => (
+          <Labeled key={k} label={tSpec(k)}>
+            <input value={spec[k]} maxLength={600} onChange={(e) => setSpec({ ...spec, [k]: e.target.value })} className={INPUT} />
+          </Labeled>
+        ))}
+      </Section>
+      <div className="mt-2.5">
+        <Labeled label={tSpec('io')}>
+          <textarea rows={3} value={spec.io} maxLength={600} onChange={(e) => setSpec({ ...spec, io: e.target.value })} className={INPUT} />
+        </Labeled>
+      </div>
+      <p className={`mt-2 ${NOTE_CLASS}`}>{tSpec('note')}</p>
+      <pre className="mt-1.5 max-h-48 overflow-auto whitespace-pre-wrap rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-700 dark:bg-slate-800/60 dark:text-slate-200">
+        {pcSpecRow(
+          { ...frame, spec: Object.fromEntries(Object.entries(spec).filter(([, x]) => x.trim())) as PcFrameSpec },
+          { code: `${frameCodeHead(frame)}-…`, ramGb: 16, ssdGb: 512, dataKind: null, dataGb: null }
+        ).spec}
+      </pre>
       {error ? <p className="mt-3 text-sm text-red-600 dark:text-red-400">✕ {error}</p> : null}
       <Buttons pending={pending} canSave={v.nameVi.trim() !== ''} onCancel={onClose} onSave={save} />
     </Modal>

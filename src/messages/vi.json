@@ -4068,6 +4068,12 @@
       "fps": "Bảng fps",
       "checklist": "Checklist ổn định"
     },
+    "copy": {
+      "button": "Copy thông số",
+      "done": "Đã copy",
+      "failed": "Không copy được",
+      "title": "Copy 4 ô theo form PC gốc để dán vào list thiết bị: Tên vật tư · Loại vật tư (mã) · Maker · Thông số kỹ thuật"
+    },
     "catalog": {
       "intro": "Cấu hình chia theo khung (chassis, CPU, GPU, nguồn). Trong mỗi khung có vài cấu hình, khác nhau ở phần in đậm của mã: RAM – SSD hệ thống – ổ dữ liệu.",
       "introAdmin": "Chỉ Admin thêm, sửa; máy chủ và CSDL kiểm lại, không chỉ ẩn nút.",
@@ -4172,6 +4178,22 @@
       "lockedNote": "RAM, SSD và ổ dữ liệu đã khoá theo mã. Muốn đổi thì thêm cấu hình mới rồi chuyển cấu hình này sang Ngừng dùng.",
       "copyAsNew": "Thêm cấu hình mới từ cấu hình này",
       "frameTitle": "Sửa khung {name}",
+      "spec": {
+        "title": "Thông số cho list thiết bị (nút Copy thông số)",
+        "maker": "Maker",
+        "chassis": "Chassis (vỏ, kích thước)",
+        "mainboard": "Motherboard (để trống nếu không ghi)",
+        "psu": "Kiểu nguồn (W lấy từ mã)",
+        "cpuSuffix": "Ghi thêm sau tên CPU",
+        "memory": "Kiểu RAM",
+        "memoryBrand": "Hãng RAM",
+        "ssd": "Kiểu SSD hệ thống",
+        "ssdBrand": "Hãng SSD hệ thống",
+        "dataBrand": "Hãng ổ dữ liệu",
+        "gpu": "Model card GPU (trống = theo mã)",
+        "io": "I/O Interface (xuống dòng được)",
+        "note": "Tiếng Anh như form PC gốc. Dung lượng RAM / SSD / ổ dữ liệu, công suất nguồn, CPU, HĐH lấy từ mã của từng cấu hình. Xem trước với RAM 16GB, SSD 512GB:"
+      },
       "frameLockedNote": "Phần cố định của mã (PN, CPU, GPU, nguồn, hệ điều hành) đã khoá. Dòng RAM/SSD chỉ đổi được khi đang là ?; đổi xong, mã các cấu hình của khung được ghép lại, mã cũ không cấp lại.",
       "cancel": "Huỷ",
       "save": "Lưu",

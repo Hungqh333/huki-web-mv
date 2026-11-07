@@ -14,6 +14,8 @@
  * đó cho Admin (pc/power.ts).
  */
 
+import type { PcFrameSpec } from './specSheet';
+
 export type PcLine = 'I' | 'C' | '?';
 export type PcStatus = 'active' | 'retired';
 
@@ -58,6 +60,8 @@ export type PcFrame = PcFrameKey & {
   noteEn: string | null;
   status: PcStatus;
   sortOrder: number;
+  /** Chữ cố định cho list thiết bị (vỏ, kiểu nguồn / RAM / SSD, model GPU, I/O, maker) — specSheet.ts. */
+  spec: PcFrameSpec;
 };
 
 /** Phần thay theo dự án: RAM – SSD hệ thống – ổ dữ liệu. */

@@ -113,6 +113,14 @@ export const BUNDLES = {
       ['PHAN 2/2: SEED — 6 khung, 13 cau hinh PC de xuat ban dau', 'supabase/seed_pc.sql'],
     ],
   },
+  'pc-spec': {
+    out: 'CHAY-BUOC-NAY-PC-SPEC.sql',
+    parts: [
+      ['PHAN 1/3: MIGRATION — cot thong so cho list thiet bi (form PC goc) tren bang khung PC', 'supabase/migrations/20261107000001_pc_frame_spec.sql'],
+      ['PHAN 2/3: SEED — danh muc PC (them khung Tieu chuan nguon 500W + 3 cau hinh; khung / cau hinh da co giu nguyen)', 'supabase/seed_pc.sql'],
+      ['PHAN 3/3: SEED — dien san thong so tu form PC goc cho khung con trong', 'supabase/seed_pc_spec.sql'],
+    ],
+  },
   projects: {
     out: 'CHAY-BUOC-NAY-DUAN.sql',
     parts: [

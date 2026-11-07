@@ -1,11 +1,11 @@
 {
-  "reviewedAt": "2026-11-04",
+  "reviewedAt": "2026-11-07",
   "files": {
     "components/match.ts": "3a373886dcd88a13",
     "components/pc.ts": "dfd7523cd0f5ba06",
     "components/specs.ts": "f1e25dde206eabc8",
     "kpi/calc.ts": "a16ec5d2a6870d15",
-    "pc/code.ts": "36008838abf278eb",
+    "pc/code.ts": "3770e6450e0f9ece",
     "pc/fps.ts": "cc95562b7c50b994",
     "pc/power.ts": "4f8f74a4d23723b9",
     "pc/suggest.ts": "fdca234ca3870969",

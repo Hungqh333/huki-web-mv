@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { PcSuggestResponse } from '@/app/actions/pcSuggest';
 import { NOTE_CLASS, PanelHeader } from '@/components/ui/PanelHeader';
 import { PcCodeParts } from './PcCode';
+import { PcCopyButton } from './PcCopyButton';
 import { PC_INFO_CLASS } from './styles';
 import type { PcConfig, PcFrame } from '@/lib/pc/code';
 import {
@@ -380,6 +381,11 @@ export function PcSuggest({
                     </span>
                     {/* "Gợi ý": chữ thường, không thêm viên màu — mức Đạt / Lưu ý đã có viên riêng. */}
                     {j === 0 ? <span className="text-xs font-medium text-slate-700 dark:text-slate-200">{t('recommended')}</span> : null}
+                    {config ? (
+                      <span className="ml-auto">
+                        <PcCopyButton frame={frame} config={config} />
+                      </span>
+                    ) : null}
                   </div>
                   {config ? (
                     <p className="mt-1">

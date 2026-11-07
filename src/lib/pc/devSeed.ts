@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { compareConfigs, composePcCode, type PcConfig, type PcFrame, type PcLine } from './code';
+import { parsePcFrameSpec, type PcFrameSpec } from './specSheet';
 
 /**
  * Đọc supabase/seed_pc.sql thành danh mục PC — cho trang xem trước /dev/pc-vision (máy local,
@@ -52,14 +53,27 @@ function tuplesAfter(sql: string, from: number): Value[][] {
   return rows;
 }
 
+/** supabase/seed_pc_spec.sql: mỗi lệnh `update … set spec = '<json>'::jsonb where slug in (…)` → spec theo slug. */
+function readSpecs(root: string): Map<string, PcFrameSpec> {
+  const sql = readFileSync(join(root, 'supabase', 'seed_pc_spec.sql'), 'utf8');
+  const out = new Map<string, PcFrameSpec>();
+  for (const m of sql.matchAll(/set spec = '((?:[^']|'')*)'::jsonb\s+where slug in \(([^)]*)\)/g)) {
+    const spec = parsePcFrameSpec(JSON.parse(m[1].replace(/''/g, "'")));
+    for (const slug of m[2].matchAll(/'([^']+)'/g)) out.set(slug[1], spec);
+  }
+  return out;
+}
+
 export function readPcSeed(root = process.cwd()): { frames: PcFrame[]; configs: PcConfig[] } {
   const sql = readFileSync(join(root, 'supabase', 'seed_pc.sql'), 'utf8');
+  const specs = readSpecs(root);
   const frames: PcFrame[] = tuplesAfter(sql, sql.indexOf('insert into public.pc_frames')).map((r) => ({
     id: `seed-${r[0]}`, slug: String(r[0]), tier: String(r[1]), nameVi: String(r[2]), nameEn: r[3] as string | null,
     chassisPn: String(r[4]), cpu: String(r[5]), gpu: String(r[6]), vramGb: Number(r[7]), psuW: Number(r[8]), os: String(r[9]),
     ramLine: r[10] as PcLine, ssdLine: r[11] as PcLine, cardSlots: Number(r[12]), lanPorts: Number(r[13]), peakLoadW: Number(r[14]),
     useForVi: r[15] as string | null, useForEn: r[16] as string | null, notForVi: r[17] as string | null, notForEn: r[18] as string | null,
     noteVi: r[19] as string | null, noteEn: r[20] as string | null, status: 'active', sortOrder: Number(r[21]),
+    spec: specs.get(String(r[0])) ?? {},
   }));
   const bySlug = new Map(frames.map((f) => [f.slug, f]));
   const configs: PcConfig[] = tuplesAfter(sql, sql.indexOf('insert into public.pc_configs'))

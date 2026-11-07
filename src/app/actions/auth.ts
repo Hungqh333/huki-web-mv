@@ -21,6 +21,29 @@ function siteUrl(): string {
   return process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') ?? 'http://localhost:3000';
 }
 
+// Mã lỗi Supabase Auth → khoá thông báo trong auth.errors.
+function signUpErrorKey(code: string | undefined) {
+  switch (code) {
+    case 'over_email_send_rate_limit':
+      return 'emailRateLimit';
+    case 'over_request_rate_limit':
+      return 'tooManyRequests';
+    case 'user_already_exists':
+    case 'email_exists':
+      return 'emailTaken';
+    case 'email_address_invalid':
+    case 'validation_failed':
+      return 'invalidEmail';
+    case 'weak_password':
+      return 'weakPassword';
+    case 'signup_disabled':
+    case 'email_provider_disabled':
+      return 'signUpDisabled';
+    default:
+      return 'signUpFailed';
+  }
+}
+
 export async function signUpAction(
   _prevState: AuthFormState,
   formData: FormData
@@ -50,7 +73,11 @@ export async function signUpAction(
     },
   });
 
-  if (error) return { error: error.message };
+  if (error) {
+    // Không đưa lỗi gốc tiếng Anh của Supabase lên giao diện — đổi sang câu song ngữ.
+    console.error('[signUp]', error.code ?? error.status, error.message);
+    return { error: t(signUpErrorKey(error.code)) };
+  }
 
   // Nếu project bật xác nhận email thì chưa có session ngay.
   if (!data.session) {

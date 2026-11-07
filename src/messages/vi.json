@@ -278,7 +278,14 @@
       "passwordMismatch": "Hai lần nhập mật khẩu không khớp.",
       "invalidCredentials": "Email hoặc mật khẩu không đúng.",
       "notSignedIn": "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
-      "callbackFailed": "Liên kết xác nhận không hợp lệ hoặc đã hết hạn. Vui lòng thử lại."
+      "callbackFailed": "Liên kết xác nhận không hợp lệ hoặc đã hết hạn. Vui lòng thử lại.",
+      "emailRateLimit": "Hệ thống đang tạm hết lượt gửi email xác nhận. Vui lòng thử lại sau khoảng 1 giờ hoặc liên hệ bộ phận Vision để được tạo tài khoản.",
+      "tooManyRequests": "Bạn thao tác quá nhanh. Vui lòng chờ ít phút rồi thử lại.",
+      "emailTaken": "Email này đã được đăng ký. Hãy đăng nhập, hoặc liên hệ bộ phận Vision nếu quên mật khẩu.",
+      "invalidEmail": "Địa chỉ email không hợp lệ.",
+      "weakPassword": "Mật khẩu quá yếu. Hãy dùng mật khẩu dài hơn, có cả chữ và số.",
+      "signUpDisabled": "Hiện đang tạm dừng đăng ký tài khoản mới. Vui lòng liên hệ bộ phận Vision.",
+      "signUpFailed": "Không tạo được tài khoản. Vui lòng thử lại sau hoặc liên hệ bộ phận Vision."
     },
     "notConfigured": {
       "title": "Chưa cấu hình Supabase",

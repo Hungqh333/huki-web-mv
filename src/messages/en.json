@@ -278,7 +278,14 @@
       "passwordMismatch": "The two passwords do not match.",
       "invalidCredentials": "Incorrect email or password.",
       "notSignedIn": "Your session has expired. Please sign in again.",
-      "callbackFailed": "The confirmation link is invalid or has expired. Please try again."
+      "callbackFailed": "The confirmation link is invalid or has expired. Please try again.",
+      "emailRateLimit": "The system has temporarily run out of confirmation emails. Please try again in about an hour, or contact the Vision team to have an account created.",
+      "tooManyRequests": "Too many attempts. Please wait a few minutes and try again.",
+      "emailTaken": "This email is already registered. Sign in, or contact the Vision team if you forgot your password.",
+      "invalidEmail": "Invalid email address.",
+      "weakPassword": "Password is too weak. Use a longer password with both letters and digits.",
+      "signUpDisabled": "New sign-ups are temporarily closed. Please contact the Vision team.",
+      "signUpFailed": "Could not create the account. Please try again later or contact the Vision team."
     },
     "notConfigured": {
       "title": "Supabase is not configured",

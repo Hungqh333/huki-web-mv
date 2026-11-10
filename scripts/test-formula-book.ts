@@ -11,6 +11,7 @@ import { execSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 
 import { FORMULA_BOOK, documentedParams, documentedRules } from '../src/lib/formulaBook/book';
+import { FORMULA_SYMBOLS } from '../src/lib/formulaBook/symbols';
 import { ENGINE_PARAMS } from '../src/lib/vision/engineParams';
 import { RULES } from '../src/lib/vision/rules';
 import { SNAPSHOT_PATH, currentFingerprints, sourceFiles, type FormulaSnapshot } from './lib/formula-fingerprint';
@@ -38,6 +39,16 @@ test('mã mục không trùng; mục nào cũng có công thức và nguồn', (
       assert.ok(entry.source.includes(':'), `${entry.id}: thieu nguon file : ham`);
       assert.ok(entry.usedIn.length > 0, `${entry.id}: thieu trang dung`);
     }
+  }
+});
+
+test('bảng ký hiệu: ký hiệu không trùng, mã mục trỏ tới có thật (chốt 2026-11-10)', () => {
+  const ids = new Set(FORMULA_BOOK.flatMap((s) => s.entries.map((e) => e.id)));
+  const symbols = FORMULA_SYMBOLS.flatMap((g) => g.rows.map((r) => r.symbol));
+  assert.equal(new Set(symbols).size, symbols.length, 'trung ky hieu');
+  for (const row of FORMULA_SYMBOLS.flatMap((g) => g.rows)) {
+    assert.ok(row.see.length > 0, `${row.symbol}: chua tro toi muc nao`);
+    for (const id of row.see) assert.ok(ids.has(id), `${row.symbol}: ma muc ${id} khong co trong so tay`);
   }
 });
 

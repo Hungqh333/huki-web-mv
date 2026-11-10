@@ -5,6 +5,7 @@ import { FormulaFigure } from './FormulaFigures';
 import snapshot from '@/lib/formulaBook/snapshot.json';
 import { EVIDENCE_LABEL, FORMULA_BOOK, PAGE_LABEL, type FormulaEntry } from '@/lib/formulaBook/book';
 import { formulaLines, relatedEntries, verdictRows, type VerdictKind } from '@/lib/formulaBook/present';
+import { FORMULA_SYMBOLS } from '@/lib/formulaBook/symbols';
 import type { LoadedEngineParams } from '@/lib/engineParamsLoad';
 import { DEFAULT_ROW_DEFS, DEFAULT_ENGINE_TABLES } from '@/lib/vision/engineTables';
 import { DEFAULT_ENGINE_PARAMS, ENGINE_PARAMS } from '@/lib/vision/engineParams';
@@ -46,6 +47,7 @@ export async function FormulaBookView({ loaded }: { loaded: LoadedEngineParams }
       {/* Mỗi phần là một <details> (HTML gốc, không cần JavaScript): mặc định thu gọn để nhìn
           tổng quát 13 phần; dòng tóm tắt hiện số mục (chốt 2026-10-20: bỏ mục lục và dòng mã luật). */}
       <div className="mt-4 space-y-3">
+        <SymbolSection />
         {FORMULA_BOOK.map((section) => (
           <details
             key={section.key}
@@ -86,6 +88,68 @@ export async function FormulaBookView({ loaded }: { loaded: LoadedEngineParams }
         ))}
       </div>
     </section>
+  );
+}
+
+const SYMBOL_COUNT = FORMULA_SYMBOLS.reduce((n, g) => n + g.rows.length, 0);
+
+/** Mục 0 — Bảng ký hiệu (chốt 2026-11-10 Q1 A, Q2 A): chữ thuần, trỏ tới hình của từng mục. */
+function SymbolSection() {
+  return (
+    <details
+      id="ky-hieu"
+      data-formula-section
+      className="group scroll-mt-20 rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
+    >
+      <summary className="flex cursor-pointer list-none flex-wrap items-baseline gap-x-3 gap-y-1 rounded-2xl px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/60 [&::-webkit-details-marker]:hidden">
+        <span aria-hidden className="inline-block w-3 text-slate-400 transition-transform group-open:rotate-90">
+          ▸
+        </span>
+        <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">0. Bảng ký hiệu</h2>
+        <span className={NOTE_CLASS}>{SYMBOL_COUNT} ký hiệu</span>
+      </summary>
+      <div className="border-t border-slate-200 px-4 pb-4 pt-3 dark:border-slate-800">
+        <p className={`max-w-3xl ${NOTE_CLASS}`}>
+          Ký hiệu dùng trong các công thức bên dưới. Bấm mã mục ở cột cuối để xem công thức và hình minh hoạ.
+        </p>
+        <div className="mt-3 space-y-4">
+          {FORMULA_SYMBOLS.map((group) => (
+            <div key={group.title} className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800">
+              <div className="border-b border-slate-200 bg-[#E4E5F6] px-4 py-2 text-[15px] font-semibold text-indigo-950 dark:border-slate-800 dark:bg-[#22274A] dark:text-indigo-100">
+                {group.title}
+              </div>
+              <ul className="divide-y divide-slate-100 dark:divide-slate-800">
+                {group.rows.map((row) => (
+                  <li key={row.symbol} className="grid gap-x-4 gap-y-1 px-4 py-2 text-sm sm:grid-cols-[8.5rem_minmax(0,1fr)_6.5rem_7.5rem]">
+                    <code className="font-mono font-semibold text-slate-900 dark:text-slate-100">{row.symbol}</code>
+                    <div>
+                      <div className="font-medium text-slate-800 dark:text-slate-200">{row.name}</div>
+                      <div className="leading-relaxed text-slate-600 dark:text-slate-400">{row.meaning}</div>
+                    </div>
+                    <div className="text-[13px] text-slate-500 dark:text-slate-400">
+                      <span className="sm:hidden">Đơn vị: </span>
+                      {row.unit}
+                    </div>
+                    <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-[13px]">
+                      {row.see.map((id) => (
+                        <a
+                          key={id}
+                          href={`#${encodeURIComponent(id)}`}
+                          title={TITLE_OF.get(id)}
+                          className="font-mono text-sky-700 underline underline-offset-[3px] hover:text-sky-900 dark:text-sky-400 dark:hover:text-sky-300"
+                        >
+                          {id}
+                        </a>
+                      ))}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </div>
+    </details>
   );
 }
 

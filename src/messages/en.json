@@ -838,7 +838,8 @@
         "lensLpTooLow": "The lens resolves {lens} lp/mm, below the {need} lp/mm the sensor needs: the image will not be sharp to the pixel and the high-resolution camera is wasted.",
         "lensLpUnknownSmallPixel": "A {pitch} µm pixel needs a {need} lp/mm lens, but the lens resolution is not specified — get the MTF datasheet before committing.",
         "lensLpUnknown": "Lens resolution not specified; the sensor needs {need} lp/mm.",
-        "diffractionLensTooSlow": "The widest lens aperture is F/{fMin}, already beyond the diffraction limit F/{fMax} — the lens can never be sharp to the pixel.",
+        "diffractionLensTooSlow": "The widest lens aperture is F/{fMin}, more than {limit}× the diffraction limit F/{fMax} — the Airy disk is well over 2 pixels, pixel-size detail blurs.",
+        "diffractionFixedWarn": "The widest lens aperture is F/{fMin}, beyond the diffraction limit F/{fMax} ({ratio}×, within the {limit}× limit): wide open, 1–2 pixel details lose contrast — test before committing.",
         "diffractionTeleWarn": "Working F/{fMin} exceeds F#max F/{fMax} ({ratio}×, within the {limit}× limit): 1–2 pixel details lose contrast — test before committing.",
         "diffractionUnknown": "Lens aperture range not specified. With this pixel, do not stop down beyond F/{fMax}.",
         "dofSetAperture": "Setting about F/{f} gives the required {dof} mm depth.",
@@ -1589,7 +1590,7 @@
         },
         "optics": {
           "title": "Optics",
-          "hint": "Telecentric ceiling by one-camera field side (OPT-007) and how far past the diffraction limit stopping down is still acceptable (OPT-005)."
+          "hint": "Telecentric ceiling by one-camera field side (OPT-007), the diffraction warning band (OPT-004) and how far past the diffraction limit stopping down is still acceptable (OPT-005)."
         },
         "throughput": {
           "title": "Cycle time",
@@ -1670,6 +1671,7 @@
         "lensFovMaxRatio": "Lens selector — maximum field of view relative to the required one",
         "telecentricWdTolerance": "Telecentric — WD tolerance around the nominal WD (ratio, 0.02 = ±2 %)",
         "telecentricDiffractionTolerance": "Telecentric — working F# at most this × the diffraction F#max (rejected above)",
+        "fixedDiffractionTolerance": "Standard lens — fastest F at most this × the diffraction F#max (rejected above)",
         "blurPxAllowed": "Allowed motion blur — measurement (THR-005)",
         "strobeExposureLimitUs": "Exposure below this requires strobe (LGT-008)",
         "cycleTriggerMs": "Assumed trigger time (THR-003/008)",
@@ -3138,7 +3140,8 @@
       "lensLpTooLow": "Lens cannot resolve down to the pixel: image softer than the sensor allows.",
       "lpUnknownSmallPixel": "Pixels under 3 µm and no lp/mm declared: ask the vendor, many standard lenses fall short.",
       "lpUnknown": "Lens lp/mm not declared.",
-      "diffractionLensTooSlow": "Fastest aperture F/{fMin} already exceeds the F/{fMax} limit — never sharp to the pixel at this magnification.",
+      "diffractionLensTooSlow": "Fastest aperture F/{fMin} is more than {limit}× the F/{fMax} limit — at this magnification the Airy disk is well over 2 pixels, pixel-size detail blurs.",
+      "diffractionFixedWarn": "Fastest aperture F/{fMin} exceeds the F/{fMax} limit ({ratio}×, within the {limit}× limit): wide open, 1–2 pixel details lose contrast — test before committing.",
       "diffractionTeleWarn": "Working F/{fMin} exceeds the F/{fMax} limit ({ratio}×, within the {limit}× limit): 1–2 pixel details lose contrast — test before committing.",
       "apertureUnknown": "Aperture range not declared. At this magnification do not stop down past F/{fMax}.",
       "dofConflict": "Needs F/{f} for depth, {ratio}× the diffraction limit F/{fMax}: trade sharpness for depth, test first.",

@@ -838,7 +838,8 @@
         "lensLpTooLow": "Ống kính {lens} lp/mm thấp hơn mức cảm biến cần ({need} lp/mm): ảnh không nét tới từng pixel, tiền mua camera độ phân giải cao bị phí.",
         "lensLpUnknownSmallPixel": "Pixel {pitch} µm cần ống kính {need} lp/mm nhưng ống chưa khai độ phân giải — hỏi datasheet MTF trước khi chốt.",
         "lensLpUnknown": "Ống kính chưa khai độ phân giải; cảm biến cần {need} lp/mm.",
-        "diffractionLensTooSlow": "Khẩu mở lớn nhất của ống là F/{fMin}, đã vượt F#max F/{fMax} theo nhiễu xạ — ống không bao giờ nét tới cỡ pixel.",
+        "diffractionLensTooSlow": "Khẩu mở lớn nhất của ống là F/{fMin}, vượt F#max F/{fMax} theo nhiễu xạ quá {limit}× — vệt nhiễu xạ lớn hơn hẳn 2 pixel, chi tiết cỡ pixel bị nhoè.",
+        "diffractionFixedWarn": "Khẩu mở lớn nhất của ống là F/{fMin}, vượt F#max F/{fMax} ({ratio}×, trong ngưỡng {limit}×): mở hết khẩu thì chi tiết cỡ 1–2 pixel giảm tương phản — chụp thử trước khi chốt.",
         "diffractionTeleWarn": "F# làm việc F/{fMin} vượt F#max F/{fMax} ({ratio}×, trong ngưỡng {limit}×): chi tiết cỡ 1–2 pixel giảm tương phản — chụp thử trước khi chốt.",
         "diffractionUnknown": "Ống kính chưa khai dải khẩu. Với pixel này không nên khép quá F/{fMax}.",
         "dofSetAperture": "Đặt khẩu khoảng F/{f} là đủ độ sâu {dof} mm.",
@@ -1589,7 +1590,7 @@
         },
         "optics": {
           "title": "Quang học",
-          "hint": "Trần telecentric theo cạnh vùng nhìn một camera (OPT-007) và độ khép khẩu còn chấp nhận được so với giới hạn nhiễu xạ (OPT-005)."
+          "hint": "Trần telecentric theo cạnh vùng nhìn một camera (OPT-007), ngưỡng cảnh báo nhiễu xạ (OPT-004) và độ khép khẩu còn chấp nhận được so với giới hạn nhiễu xạ (OPT-005)."
         },
         "throughput": {
           "title": "Thời gian chu kỳ",
@@ -1670,6 +1671,7 @@
         "lensFovMaxRatio": "Chọn ống kính — vùng nhìn rộng tối đa so với vùng cần",
         "telecentricWdTolerance": "Telecentric — dung sai WD quanh WD danh định (tỉ lệ, 0,02 = ±2 %)",
         "telecentricDiffractionTolerance": "Telecentric — F# làm việc tối đa bằng mấy lần F#max nhiễu xạ (trên mức này thì loại)",
+        "fixedDiffractionTolerance": "Ống thường — F mở lớn nhất tối đa bằng mấy lần F#max nhiễu xạ (trên mức này thì loại)",
         "blurPxAllowed": "Nhoè chuyển động cho phép — bài đo (THR-005)",
         "strobeExposureLimitUs": "Phơi sáng dưới mức này bắt buộc strobe (LGT-008)",
         "cycleTriggerMs": "Thời gian trigger giả định (THR-003/008)",
@@ -3138,7 +3140,8 @@
       "lensLpTooLow": "Ống không phân giải nổi tới cỡ pixel: ảnh mềm hơn cảm biến cho phép.",
       "lpUnknownSmallPixel": "Pixel dưới 3 µm mà ống chưa khai lp/mm: phải hỏi hãng, nhiều ống thường không đủ.",
       "lpUnknown": "Ống chưa khai lp/mm.",
-      "diffractionLensTooSlow": "Khẩu mở lớn nhất F/{fMin} đã vượt giới hạn F/{fMax} — ống không bao giờ nét tới cỡ pixel ở độ phóng đại này.",
+      "diffractionLensTooSlow": "Khẩu mở lớn nhất F/{fMin} vượt giới hạn F/{fMax} quá {limit}× — ở độ phóng đại này vệt nhiễu xạ lớn hơn hẳn 2 pixel, chi tiết cỡ pixel bị nhoè.",
+      "diffractionFixedWarn": "Khẩu mở lớn nhất F/{fMin} vượt giới hạn F/{fMax} ({ratio}×, trong ngưỡng {limit}×): mở hết khẩu thì chi tiết cỡ 1–2 pixel giảm tương phản — chụp thử trước khi chốt.",
       "diffractionTeleWarn": "F# làm việc F/{fMin} vượt giới hạn F/{fMax} ({ratio}×, trong ngưỡng {limit}×): chi tiết cỡ 1–2 pixel giảm tương phản — chụp thử trước khi chốt.",
       "apertureUnknown": "Ống chưa khai dải khẩu. Ở độ phóng đại này không nên khép quá F/{fMax}.",
       "dofConflict": "Cần F/{f} cho độ sâu, gấp {ratio} lần giới hạn nhiễu xạ F/{fMax}: phải đánh đổi nét ↔ sâu, chụp thử trước.",

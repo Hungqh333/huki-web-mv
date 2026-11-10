@@ -183,10 +183,14 @@ const analysisAt = (wd: number) =>
   );
 
 test('[WFN] OPT-004 chụp cận: ống nhanh nhất F/4 ở β 0,5 không còn đạt', () => {
-  // WD 50, f 25 → β 0,5 → F#max trên vòng 3,43 < F/4 → FAIL (trước khi sửa: 4 ≤ 5,14 → PASS)
+  // WD 50, f 25 → β 0,5 → F#max trên vòng 3,43 < F/4 (trước khi sửa: 4 ≤ 5,14 → PASS)
+  // 4 ÷ 3,43 = 1,17× ≤ 1,2 → CẢNH BÁO (ống thường có nấc cảnh báo từ 2026-11-10 Q1)
   const near = evaluateConfiguration({ analysis: analysisAt(50), camera: CAMERA, lens: LENS }).find((r) => r.ruleId === 'OPT-004')!;
-  assert.equal(near.status, 'fail', near.formula);
+  assert.equal(near.status, 'warn', near.formula);
   assert.match(near.formula, /÷ \(1 \+ 0\.5\) = 3\.43/, near.formula);
+  // WD 40 → β 0,625 → F#max 3,16; 4 ÷ 3,16 = 1,27× > 1,2 → LOẠI
+  const nearer = evaluateConfiguration({ analysis: analysisAt(40), camera: CAMERA, lens: LENS }).find((r) => r.ruleId === 'OPT-004')!;
+  assert.equal(nearer.status, 'fail', nearer.formula);
   // WD 300, f 25 → β 0,0833 → F#max trên vòng 4,75 ≥ F/4 → vẫn đạt
   const far = evaluateConfiguration({ analysis: analysisAt(300), camera: CAMERA, lens: LENS }).find((r) => r.ruleId === 'OPT-004')!;
   assert.equal(far.status, 'pass', far.formula);

@@ -737,15 +737,18 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
           'F#max (vòng khẩu) = 2 × pitch ÷ (2,44 × λ) ÷ (1 + β)   (telecentric: không chia, datasheet ghi sẵn F# làm việc)',
         ],
         verdict: [
-          'ống thường: F nhỏ nhất của ống > F#max → LOẠI',
-          'telecentric (F# làm việc cố định): F# > F#max nhưng ≤ ngưỡng × F#max → CẢNH BÁO (giảm tương phản chi tiết cỡ pixel, chụp thử) · xa hơn → LOẠI',
+          'ống thường: F nhỏ nhất của ống > F#max nhưng ≤ ngưỡng ống thường × F#max → CẢNH BÁO (mở hết khẩu thì chi tiết cỡ pixel giảm tương phản, chụp thử) · xa hơn → LOẠI',
+          'telecentric (F# làm việc cố định): F# > F#max nhưng ≤ ngưỡng telecentric × F#max → CẢNH BÁO (giảm tương phản chi tiết cỡ pixel, chụp thử) · xa hơn → LOẠI',
         ],
-        params: ['telecentricDiffractionTolerance'],
+        params: ['fixedDiffractionTolerance', 'telecentricDiffractionTolerance'],
         constants: [{ name: 'λ (µm, không mở qua admin)', value: WAVELENGTH_UM }],
-        notes: ['Chốt 2026-10-29 (Q3, kiểm tra tự động Chọn ống kính): luật Airy ≤ 2 px loại TOÀN BỘ 1.053 ống telecentric của kho với camera 2,4 µm (F#max F/3,6, telecentric F/4,6–F/13). Bộ chọn cũ (oldSelector) chưa đổi.'],
+        notes: [
+          'Chốt 2026-10-29 (Q3, kiểm tra tự động Chọn ống kính): luật Airy ≤ 2 px loại TOÀN BỘ 1.053 ống telecentric của kho với camera 2,4 µm (F#max F/3,6, telecentric F/4,6–F/13). Bộ chọn cũ (oldSelector) chưa đổi.',
+          'Chốt 2026-11-10 (Q1): ống thường cũng có nấc cảnh báo, mặc định 1,2× (Airy ≤ 2,4 px). Ca gốc: Coolens MFA121-U50 F/4, pixel 3,45 µm, β 0,357 → F#max vòng khẩu F/3,79, vượt 1,06× mà bị loại thẳng, nên không được gợi ý ống nối.',
+        ],
         evidence: 'calculated',
         usedIn: ['design', 'lens', 'oldSelector'],
-        source: 'vision/configurationRules.ts : maxFNumber, effectiveFNumberFactor, OPT-004, diffractionVerdict',
+        source: 'vision/configurationRules.ts : maxFNumber, effectiveFNumberFactor, OPT-004, diffractionVerdict, diffractionTolerance',
       },
       {
         id: 'OPT-005',

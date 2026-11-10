@@ -199,13 +199,28 @@ export function telecentricWdVerdict(wdMm: number, minMm: number | null, maxMm: 
 }
 
 /**
- * OPT-004 — chốt 2026-10-29 (Q3): ống thường giữ LOẠI khi F nhỏ nhất > F#max. Telecentric (F# làm
- * việc cố định): vượt nhưng ≤ tolerance × F#max → CẢNH BÁO (giảm tương phản ở chi tiết cỡ pixel,
- * chụp thử), xa hơn → LOẠI.
+ * OPT-004 — F nhỏ nhất (ống thường) / F# làm việc (telecentric) vượt F#max nhưng ≤ tolerance × F#max
+ * → CẢNH BÁO (chi tiết cỡ 1–2 pixel giảm tương phản, chụp thử), xa hơn → LOẠI.
+ * Telecentric: chốt 2026-10-29 (Q3). Ống thường: chốt 2026-11-10 (Q1) — trước đó vượt là loại thẳng.
  */
-export function diffractionVerdict(fNumberMin: number, fMax: number, lensType: string | null, tolerance: number): 'pass' | 'warn' | 'fail' {
+export function diffractionVerdict(fNumberMin: number, fMax: number, tolerance: number): 'pass' | 'warn' | 'fail' {
   if (fNumberMin <= fMax) return 'pass';
-  return lensType === 'telecentric' && fNumberMin <= fMax * tolerance + 1e-9 ? 'warn' : 'fail';
+  return fNumberMin <= fMax * tolerance + 1e-9 ? 'warn' : 'fail';
+}
+
+/** Ngưỡng cảnh báo nhiễu xạ theo loại ống (OPT-004). */
+export function diffractionTolerance(
+  lensType: string | null,
+  params: { telecentricDiffractionTolerance: number; fixedDiffractionTolerance: number }
+): number {
+  return lensType === 'telecentric' ? params.telecentricDiffractionTolerance : params.fixedDiffractionTolerance;
+}
+
+/** Mã thông báo nhiễu xạ theo kết quả và loại ống. */
+export function diffractionNoteKey(verdict: 'pass' | 'warn' | 'fail', lensType: string | null) {
+  if (verdict === 'pass') return undefined;
+  if (verdict === 'fail') return 'diffractionLensTooSlow' as const;
+  return lensType === 'telecentric' ? ('diffractionTeleWarn' as const) : ('diffractionFixedWarn' as const);
 }
 
 /**
@@ -528,8 +543,8 @@ export function evaluateConfiguration(input: ConfigurationInput): RuleResult[] {
         ? `F#max = 2 × ${fmt(pitch!, 2)} ÷ (2,44 × ${WAVELENGTH_UM}) = ${fmt(fMax, 2)}`
         : `F#max = 2 × ${fmt(pitch!, 2)} ÷ (2,44 × ${WAVELENGTH_UM}) ÷ (1 + ${fmt(beta!, 4)}) = ${fmt(fMax, 2)}`;
     if (lens.fNumberMin !== null) {
-      const tolerance = analysis.params.telecentricDiffractionTolerance;
-      const verdict = diffractionVerdict(lens.fNumberMin, fMax, lens.lensType, tolerance);
+      const tolerance = diffractionTolerance(lens.lensType, analysis.params);
+      const verdict = diffractionVerdict(lens.fNumberMin, fMax, tolerance);
       push(
         'OPT-004',
         {
@@ -537,8 +552,8 @@ export function evaluateConfiguration(input: ConfigurationInput): RuleResult[] {
           status: verdict,
           formula:
             `${base} · F/${fmt(lens.fNumberMin, 1)} ${verdict === 'pass' ? '≤' : '>'} F/${fmt(fMax, 2)}` +
-            (verdict === 'warn' ? ` · ≤ ${fmt(tolerance, 1)} × F/${fmt(fMax, 2)}` : ''),
-          noteKey: verdict === 'pass' ? undefined : verdict === 'warn' ? 'diffractionTeleWarn' : 'diffractionLensTooSlow',
+            (verdict === 'pass' ? '' : ` · ${verdict === 'warn' ? '≤' : '>'} ${fmt(tolerance, 2)} × F/${fmt(fMax, 2)}`),
+          noteKey: diffractionNoteKey(verdict, lens.lensType),
           noteValues: { fMin: lens.fNumberMin, fMax: round(fMax, 1), ratio: round(lens.fNumberMin / fMax, 2), limit: tolerance },
         },
         'calculated',

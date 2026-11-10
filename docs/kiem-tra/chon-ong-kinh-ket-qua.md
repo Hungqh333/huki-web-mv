@@ -1,6 +1,6 @@
 # Kết quả chu trình kiểm tra — Chọn ống kính
 
-> File này do `npm run verify:lens` sinh tự động — đừng sửa tay. Chạy lúc 2026-11-10T02:34:09.404Z, hạt giống 20261029, 3000 ca giả lập, 6.4 s.
+> File này do `npm run verify:lens` sinh tự động — đừng sửa tay. Chạy lúc 2026-11-10T05:58:12.689Z, hạt giống 20261029, 3000 ca giả lập, 4.6 s.
 
 **Tổng: ĐẠT — không có lỗi.**
 
@@ -104,32 +104,32 @@ Kho thật: `docs/NHAP_THIET_BI_2026-10-16_v5.xlsx` — 1115 ống kính, 376 ca
 
 | Bài toán | Camera | Đạt | Cảnh báo | Chưa kiểm được | Loại | Lý do loại nhiều nhất | ms |
 |---|---|---:|---:|---:|---:|---|---:|
-| Linh kiện nhỏ 20×15, WD 150, ống thường | CAM-IRAYPLE-A3138CU000E (1280×1024, 4 µm, 1/2.7) | 1 | 3 | 0 | 58 | mountMismatch 29, fovTooWide 27 | 2 |
-| Linh kiện nhỏ 20×15, WD 150, ống thường | CAM-IRAYPLE-AE5508CG000E (2448×2048, 3.45 µm, 2/3) | 0 | 3 | 0 | 59 | fovTooWide 41, mountMismatch 29 | 2 |
-| Linh kiện nhỏ 20×15, WD 150, ống thường | CAM-IRAYPLE-A3B00MU000E (5472×3648, 2.4 µm, 1) | 0 | 0 | 0 | 62 | fovTooWide 49, diffractionLensTooSlow 35 | 1 |
-| Bo mạch 100×80, WD 300, ống thường | CAM-IRAYPLE-A3138CU000E (1280×1024, 4 µm, 1/2.7) | 4 | 0 | 0 | 58 | fovTooSmall 51, mountMismatch 29 | 1 |
-| Bo mạch 100×80, WD 300, ống thường | CAM-IRAYPLE-AE5508CG000E (2448×2048, 3.45 µm, 2/3) | 6 | 0 | 0 | 56 | fovTooSmall 35, mountMismatch 29 | 1 |
-| Bo mạch 100×80, WD 300, ống thường | CAM-IRAYPLE-A3B00MU000E (5472×3648, 2.4 µm, 1) | 0 | 2 | 0 | 60 | fovTooSmall 34, diffractionLensTooSlow 32 | 1 |
-| Hộp 300×200, WD 800, ống thường | CAM-IRAYPLE-A3138CU000E (1280×1024, 4 µm, 1/2.7) | 4 | 0 | 0 | 58 | fovTooSmall 51, mountMismatch 29 | 1 |
-| Hộp 300×200, WD 800, ống thường | CAM-IRAYPLE-AE5508CG000E (2448×2048, 3.45 µm, 2/3) | 7 | 0 | 0 | 55 | fovTooSmall 43, mountMismatch 29 | 1 |
-| Hộp 300×200, WD 800, ống thường | CAM-IRAYPLE-A3B00MU000E (5472×3648, 2.4 µm, 1) | 0 | 4 | 0 | 58 | diffractionLensTooSlow 31, mountMismatch 29 | 1 |
-| Đo 2D 30×25, telecentric, WD để trống | CAM-IRAYPLE-A3138CU000E (1280×1024, 4 µm, 1/2.7) | 20 | 14 | 0 | 1019 | fovTooSmall 888, diffractionLensTooSlow 518 | 11 |
-| Đo 2D 30×25, telecentric, WD để trống | CAM-IRAYPLE-AE5508CG000E (2448×2048, 3.45 µm, 2/3) | 2 | 16 | 0 | 1035 | fovTooSmall 777, diffractionLensTooSlow 686 | 10 |
-| Đo 2D 30×25, telecentric, WD để trống | CAM-IRAYPLE-A3B00MU000E (5472×3648, 2.4 µm, 1) | 0 | 0 | 0 | 1053 | diffractionLensTooSlow 935, fovTooSmall 693 | 7 |
+| Linh kiện nhỏ 20×15, WD 150, ống thường | CAM-IRAYPLE-A3138CU000E (1280×1024, 4 µm, 1/2.7) | 1 | 3 | 0 | 58 | mountMismatch 29, fovTooWide 27 | 1 |
+| Linh kiện nhỏ 20×15, WD 150, ống thường | CAM-IRAYPLE-AE5508CG000E (2448×2048, 3.45 µm, 2/3) | 0 | 4 | 0 | 58 | fovTooWide 41, mountMismatch 29 | 1 |
+| Linh kiện nhỏ 20×15, WD 150, ống thường | CAM-IRAYPLE-A3B00MU000E (5472×3648, 2.4 µm, 1) | 0 | 0 | 0 | 62 | fovTooWide 49, mountMismatch 29 | 0 |
+| Bo mạch 100×80, WD 300, ống thường | CAM-IRAYPLE-A3138CU000E (1280×1024, 4 µm, 1/2.7) | 4 | 0 | 0 | 58 | fovTooSmall 51, mountMismatch 29 | 0 |
+| Bo mạch 100×80, WD 300, ống thường | CAM-IRAYPLE-AE5508CG000E (2448×2048, 3.45 µm, 2/3) | 6 | 0 | 0 | 56 | fovTooSmall 35, mountMismatch 29 | 0 |
+| Bo mạch 100×80, WD 300, ống thường | CAM-IRAYPLE-A3B00MU000E (5472×3648, 2.4 µm, 1) | 0 | 2 | 0 | 60 | fovTooSmall 34, mountMismatch 29 | 0 |
+| Hộp 300×200, WD 800, ống thường | CAM-IRAYPLE-A3138CU000E (1280×1024, 4 µm, 1/2.7) | 4 | 0 | 0 | 58 | fovTooSmall 51, mountMismatch 29 | 0 |
+| Hộp 300×200, WD 800, ống thường | CAM-IRAYPLE-AE5508CG000E (2448×2048, 3.45 µm, 2/3) | 7 | 0 | 0 | 55 | fovTooSmall 43, mountMismatch 29 | 0 |
+| Hộp 300×200, WD 800, ống thường | CAM-IRAYPLE-A3B00MU000E (5472×3648, 2.4 µm, 1) | 0 | 6 | 0 | 56 | mountMismatch 29, fovTooSmall 26 | 0 |
+| Đo 2D 30×25, telecentric, WD để trống | CAM-IRAYPLE-A3138CU000E (1280×1024, 4 µm, 1/2.7) | 20 | 14 | 0 | 1019 | fovTooSmall 888, diffractionLensTooSlow 518 | 4 |
+| Đo 2D 30×25, telecentric, WD để trống | CAM-IRAYPLE-AE5508CG000E (2448×2048, 3.45 µm, 2/3) | 2 | 16 | 0 | 1035 | fovTooSmall 777, diffractionLensTooSlow 686 | 5 |
+| Đo 2D 30×25, telecentric, WD để trống | CAM-IRAYPLE-A3B00MU000E (5472×3648, 2.4 µm, 1) | 0 | 0 | 0 | 1053 | diffractionLensTooSlow 935, fovTooSmall 693 | 3 |
 | Bo mạch 100×80, WD 300, Δh 10 mm | CAM-IRAYPLE-A3138CU000E (1280×1024, 4 µm, 1/2.7) | 4 | 0 | 0 | 58 | fovTooSmall 51, mountMismatch 29 | 1 |
-| Bo mạch 100×80, WD 300, Δh 10 mm | CAM-IRAYPLE-AE5508CG000E (2448×2048, 3.45 µm, 2/3) | 6 | 0 | 0 | 56 | fovTooSmall 35, mountMismatch 29 | 2 |
-| Bo mạch 100×80, WD 300, Δh 10 mm | CAM-IRAYPLE-A3B00MU000E (5472×3648, 2.4 µm, 1) | 0 | 2 | 0 | 60 | fovTooSmall 34, diffractionLensTooSlow 32 | 1 |
-| Đo 2D 30×25, telecentric, WD 228 (WD danh định phổ biến nhất) | CAM-IRAYPLE-A3138CU000E (1280×1024, 4 µm, 1/2.7) | 3 | 0 | 0 | 1050 | wdOutOfRange 1024, fovTooSmall 888 | 8 |
-| Đo 2D 30×25, telecentric, WD 228 (WD danh định phổ biến nhất) | CAM-IRAYPLE-AE5508CG000E (2448×2048, 3.45 µm, 2/3) | 0 | 5 | 0 | 1048 | wdOutOfRange 1024, fovTooSmall 777 | 7 |
-| Đo 2D 30×25, telecentric, WD 228 (WD danh định phổ biến nhất) | CAM-IRAYPLE-A3B00MU000E (5472×3648, 2.4 µm, 1) | 0 | 0 | 0 | 1053 | wdOutOfRange 1024, diffractionLensTooSlow 935 | 10 |
-| Đo 2D 30×25, telecentric, WD 231.4 (lệch +1,5 %) | CAM-IRAYPLE-A3138CU000E (1280×1024, 4 µm, 1/2.7) | 0 | 3 | 0 | 1050 | wdOutOfRange 1026, fovTooSmall 888 | 11 |
-| Đo 2D 30×25, telecentric, WD 231.4 (lệch +1,5 %) | CAM-IRAYPLE-AE5508CG000E (2448×2048, 3.45 µm, 2/3) | 0 | 5 | 0 | 1048 | wdOutOfRange 1026, fovTooSmall 777 | 11 |
-| Đo 2D 30×25, telecentric, WD 231.4 (lệch +1,5 %) | CAM-IRAYPLE-A3B00MU000E (5472×3648, 2.4 µm, 1) | 0 | 0 | 0 | 1053 | wdOutOfRange 1026, diffractionLensTooSlow 935 | 11 |
-| Đo 2D 30×25, telecentric, WD 239.4 (lệch +5 %) | CAM-IRAYPLE-A3138CU000E (1280×1024, 4 µm, 1/2.7) | 0 | 2 | 0 | 1051 | wdOutOfRange 1021, fovTooSmall 888 | 10 |
-| Đo 2D 30×25, telecentric, WD 239.4 (lệch +5 %) | CAM-IRAYPLE-AE5508CG000E (2448×2048, 3.45 µm, 2/3) | 0 | 2 | 0 | 1051 | wdOutOfRange 1021, fovTooSmall 777 | 11 |
-| Đo 2D 30×25, telecentric, WD 239.4 (lệch +5 %) | CAM-IRAYPLE-A3B00MU000E (5472×3648, 2.4 µm, 1) | 0 | 0 | 0 | 1053 | wdOutOfRange 1021, diffractionLensTooSlow 935 | 11 |
+| Bo mạch 100×80, WD 300, Δh 10 mm | CAM-IRAYPLE-AE5508CG000E (2448×2048, 3.45 µm, 2/3) | 6 | 0 | 0 | 56 | fovTooSmall 35, mountMismatch 29 | 1 |
+| Bo mạch 100×80, WD 300, Δh 10 mm | CAM-IRAYPLE-A3B00MU000E (5472×3648, 2.4 µm, 1) | 0 | 2 | 0 | 60 | fovTooSmall 34, mountMismatch 29 | 1 |
+| Đo 2D 30×25, telecentric, WD 228 (WD danh định phổ biến nhất) | CAM-IRAYPLE-A3138CU000E (1280×1024, 4 µm, 1/2.7) | 3 | 0 | 0 | 1050 | wdOutOfRange 1024, fovTooSmall 888 | 4 |
+| Đo 2D 30×25, telecentric, WD 228 (WD danh định phổ biến nhất) | CAM-IRAYPLE-AE5508CG000E (2448×2048, 3.45 µm, 2/3) | 0 | 5 | 0 | 1048 | wdOutOfRange 1024, fovTooSmall 777 | 4 |
+| Đo 2D 30×25, telecentric, WD 228 (WD danh định phổ biến nhất) | CAM-IRAYPLE-A3B00MU000E (5472×3648, 2.4 µm, 1) | 0 | 0 | 0 | 1053 | wdOutOfRange 1024, diffractionLensTooSlow 935 | 4 |
+| Đo 2D 30×25, telecentric, WD 231.4 (lệch +1,5 %) | CAM-IRAYPLE-A3138CU000E (1280×1024, 4 µm, 1/2.7) | 0 | 3 | 0 | 1050 | wdOutOfRange 1026, fovTooSmall 888 | 5 |
+| Đo 2D 30×25, telecentric, WD 231.4 (lệch +1,5 %) | CAM-IRAYPLE-AE5508CG000E (2448×2048, 3.45 µm, 2/3) | 0 | 5 | 0 | 1048 | wdOutOfRange 1026, fovTooSmall 777 | 5 |
+| Đo 2D 30×25, telecentric, WD 231.4 (lệch +1,5 %) | CAM-IRAYPLE-A3B00MU000E (5472×3648, 2.4 µm, 1) | 0 | 0 | 0 | 1053 | wdOutOfRange 1026, diffractionLensTooSlow 935 | 4 |
+| Đo 2D 30×25, telecentric, WD 239.4 (lệch +5 %) | CAM-IRAYPLE-A3138CU000E (1280×1024, 4 µm, 1/2.7) | 0 | 2 | 0 | 1051 | wdOutOfRange 1021, fovTooSmall 888 | 5 |
+| Đo 2D 30×25, telecentric, WD 239.4 (lệch +5 %) | CAM-IRAYPLE-AE5508CG000E (2448×2048, 3.45 µm, 2/3) | 0 | 2 | 0 | 1051 | wdOutOfRange 1021, fovTooSmall 777 | 4 |
+| Đo 2D 30×25, telecentric, WD 239.4 (lệch +5 %) | CAM-IRAYPLE-A3B00MU000E (5472×3648, 2.4 µm, 1) | 0 | 0 | 0 | 1053 | wdOutOfRange 1021, diffractionLensTooSlow 935 | 4 |
 
-Thời gian lọc cả kho: trung bình 6 ms, lâu nhất 11 ms (24 lượt, chạy trong Node trên máy này).
+Thời gian lọc cả kho: trung bình 2 ms, lâu nhất 5 ms (24 lượt, chạy trong Node trên máy này).
 
 ## Chi tiết đối chiếu Hik
 

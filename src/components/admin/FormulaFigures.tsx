@@ -772,19 +772,40 @@ function FovTooWide() {
 
 /** OPT-010: ống nối đẩy ống kính ra xa cảm biến → lấy nét gần hơn MOD. */
 function ExtensionTube() {
-  const row = (y: number, tube: number, label: string) => (
-    <g>
-      <rect x={20} y={y - 16} width={40} height={32} rx={2} className={SOLID} />
-      {tube > 0 ? <rect x={60} y={y - 12} width={tube} height={24} className="fill-amber-500/70 dark:fill-amber-400/70" /> : null}
-      <rect x={60 + tube} y={y - 14} width={60} height={28} rx={3} className="fill-slate-500/40 dark:fill-slate-400/40" />
-      <Txt x={130 + tube} y={y + 4} a="start" sub>{label}</Txt>
-    </g>
-  );
+  // Một hàng: thân camera · (ống nối e) · ống kính · mặt trước · tiêu điểm trước F · tia tới vật (2026-11-10).
+  const row = (y: number, tube: number, objectX: number, half: number) => {
+    const front = 110 + tube;
+    const f = front + 16;
+    return (
+      <g>
+        <rect x={14} y={y - 15} width={30} height={30} rx={2} className={SOLID} />
+        {tube > 0 ? <rect x={44} y={y - 11} width={tube} height={22} strokeWidth={0.8} className={`${WARN} ${WARN_FILL}`} /> : null}
+        <rect x={44 + tube} y={y - 14} width={66} height={28} rx={3} className="fill-slate-500/40 dark:fill-slate-400/40" />
+        <line x1={front} y1={y - 18} x2={front} y2={y + 18} stroke="currentColor" strokeWidth={1.2} />
+        <line x1={f} y1={y} x2={objectX} y2={y - half} strokeWidth={1} className={ACCENT} />
+        <line x1={f} y1={y} x2={objectX} y2={y + half} strokeWidth={1} className={ACCENT} />
+        <line x1={objectX} y1={y - half} x2={objectX} y2={y + half} strokeWidth={3} stroke="currentColor" />
+        <circle cx={f} cy={y} r={3} className="fill-amber-600 dark:fill-amber-400" />
+      </g>
+    );
+  };
   return (
-    <Svg h={140} label="Ống nối giúp lấy nét gần hơn">
-      {row(38, 0, 'không ống nối: gần nhất = MOD')}
-      {row(100, 40, 'có ống nối: lấy nét gần hơn, phóng đại lớn hơn')}
-      <Txt x={80} y={132} sub cls={WARN_TEXT}>ống nối</Txt>
+    <Svg h={232} label="Ống nối: dài e, lắp giữa camera và ống kính, cho lấy nét vật gần hơn MOD; sF từ mặt trước ống tới tiêu điểm trước F">
+      <Txt x={14} y={14} a="start" sub>không ống nối: gần nhất là MOD</Txt>
+      {row(48, 0, 400, 20)}
+      <Dim x1={110} y1={84} x2={400} y2={84} />
+      <Txt x={255} y={98}>MOD</Txt>
+
+      <Txt x={14} y={122} a="start" sub>có ống nối e: lấy nét gần hơn, WD &lt; MOD</Txt>
+      <line x1={400} y1={136} x2={400} y2={184} strokeDasharray="4 3" strokeWidth={0.8} className={MUTED} />
+      <Txt x={400} y={198} sub>MOD</Txt>
+      {row(160, 40, 330, 28)}
+      <Txt x={64} y={142} cls={WARN_TEXT}>e</Txt>
+      <Txt x={166} y={146} cls={WARN_TEXT}>F</Txt>
+      <Dim x1={150} y1={194} x2={166} y2={194} />
+      <Txt x={158} y={208}>sF</Txt>
+      <Dim x1={150} y1={214} x2={330} y2={214} />
+      <Txt x={240} y={228}>WD</Txt>
     </Svg>
   );
 }
@@ -841,7 +862,7 @@ const FIGURES: Record<FormulaFigureKey, { render: (uid: string) => ReactNode; ca
   limitingAxis: { render: () => <LimitingAxis />, caption: 'Vùng cần dài hơn tỉ lệ cảm biến → cạnh dài quyết định β; cạnh ngắn còn dư.' },
   angleOfView: { render: () => <AngleOfView />, caption: 'Góc nhìn = 2 · atan(vùng nhìn ÷ 2 ÷ WD) — đối chiếu với góc ghi trên datasheet ống.' },
   fovTooWide: { render: () => <FovTooWide />, caption: 'Ví dụ: cần 100 × 75, ống cho 365 × 267 → dư 3,6× > 1,5× → loại (LNS-005).' },
-  extensionTube: { render: () => <ExtensionTube />, caption: 'Ống nối giúp ống lấy nét gần hơn MOD; tăng phóng đại nhưng mất sáng và giảm chất lượng ở rìa.' },
+  extensionTube: { render: () => <ExtensionTube />, caption: 'Ví dụ: f 25, MOD 200, sF 0, cần WD 100 → β = 25 ÷ 100 = 0,25; β_MOD = 25 ÷ 200 = 0,125 → e từ 25 × (0,25 − 0,125) = 3,1 đến 25 × 0,25 = 6,25 mm → chọn 5 mm; sau khi lắp lấy nét được 25 ÷ (0,2 + 0,125) = 77 đến 25² ÷ 5 = 125 mm. Ở cùng WD, β không đổi; ống nối chỉ cho tới được WD đó, đổi lại mất sáng 2 × log₂(1 + β) stop. Ống chưa khai sF thì coi = 0 và có cảnh báo.' },
   converter: { render: () => <Converter />, caption: 'Ví dụ: f 25 mm × 2 = 50 mm → vùng nhìn còn một nửa, mất khoảng 2 stop sáng.' },
 };
 

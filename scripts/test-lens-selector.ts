@@ -179,7 +179,7 @@ test('telecentric (chốt 2026-10-29 Q2, Q3): WD lệch trong ±2 % → cảnh b
   const diff = at(110).checks.find((k) => k.key === 'diffraction')!;
   assert.deepEqual([diff.status, diff.noteKey], ['warn', 'diffractionTeleWarn']);
   assert.equal(at(110).status, 'warn');
-  // Ống thường không có nấc cảnh báo: F/2,8 ở pitch 1,1 µm (F#max ≈ 1,6) vẫn loại
+  // Ống thường vượt quá 1,2× vẫn loại: F/2,8 ở pitch 1,1 µm (F#max ≈ 1,6) = 1,75×
   const small: ConfigCamera = { ...CAMERA, widthPx: 4000, heightPx: 3000, pixelSizeUm: 1.1, sensorFormat: null };
   const f = selectLenses({ ...INPUT, camera: small }, [lens({ focal_length_mm: 16, f_number_min: 2.8 })]).candidates[0];
   assert.equal(f.checks.find((k) => k.key === 'diffraction')!.status, 'fail');
@@ -188,6 +188,27 @@ test('telecentric (chốt 2026-10-29 Q2, Q3): WD lệch trong ±2 % → cảnh b
   const s = selectLenses({ ...INPUT, workingDistanceMm: 112, fovWidthMm: 60, fovHeightMm: 50, lensKind: 'telecentric' }, [tc], strict).candidates[0];
   assert.equal(s.checks.find((k) => k.key === 'workingDistance')!.status, 'fail');
   assert.equal(s.checks.find((k) => k.key === 'diffraction')!.status, 'fail');
+});
+
+test('[OPT-004] ống thường vượt F#max ≤ 1,2× → cảnh báo, gợi ý được ống nối (chốt 2026-11-10 Q1, ca MFA121-U50)', () => {
+  // Camera 2448 × 2048, 3,45 µm; f 50, F/4, MOD 300; WD 140 → β = 50 ÷ 140 = 0,357
+  // F#max vòng khẩu = 2 × 3,45 ÷ (2,44 × 0,55) ÷ 1,357 = 3,79 → F/4 = 1,06× → cảnh báo
+  const input = { ...INPUT, fovWidthMm: 23.5, fovHeightMm: 19.7, workingDistanceMm: 140 };
+  const at = (fMin: number, params = DEFAULT_ENGINE_PARAMS) =>
+    selectLenses(input, [lens({ focal_length_mm: 50, f_number_min: fMin, wd_min_mm: 300, front_focal_mm: 0 }, 'MFA121-U50')], params).candidates[0];
+  const c = at(4);
+  const diff = c.checks.find((k) => k.key === 'diffraction')!;
+  assert.deepEqual([diff.status, diff.noteKey], ['warn', 'diffractionFixedWarn']);
+  // Chỉ còn MOD là lỗi → thử ống nối: e ∈ [50 × (0,357 − 0,167); 50 × 0,357] = [9,5; 17,9]
+  assert.ok(c.accessory?.kind === 'tube', JSON.stringify(c.checks.map((k) => [k.key, k.status, k.noteKey])));
+  assert.ok(c.accessory!.kind === 'tube' && c.accessory!.totalMm >= 9.5 && c.accessory!.totalMm <= 17.9);
+  assert.equal(c.status, 'warn');
+  // F/4,4 = 1,16× vẫn cảnh báo; F/4,8 = 1,27× loại
+  assert.equal(at(4.4).checks.find((k) => k.key === 'diffraction')!.status, 'warn');
+  const slow = at(4.8).checks.find((k) => k.key === 'diffraction')!;
+  assert.deepEqual([slow.status, slow.noteKey], ['fail', 'diffractionLensTooSlow']);
+  // Ngưỡng sửa qua admin: 1 → về luật cũ, vượt là loại
+  assert.equal(at(4, { ...DEFAULT_ENGINE_PARAMS, fixedDiffractionTolerance: 1 }).checks.find((k) => k.key === 'diffraction')!.status, 'fail');
 });
 
 test('ống chưa khai tiêu cự: không được xếp đạt', () => {

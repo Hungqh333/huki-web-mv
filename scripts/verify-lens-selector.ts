@@ -243,9 +243,10 @@ function oracleLens(input: LensSelectorInput, o: Oracle, c: Component) {
     const factor = tele || beta === null || !(beta > 0) ? 1 : 1 + beta;
     fMaxRing = (2 * pitch) / (2.44 * LAMBDA_UM) / factor;
     if (fMin !== null) {
-      // Q3 2026-10-29: telecentric vượt ≤ ngưỡng lần → cảnh báo
-      out.diffraction = fMin <= fMaxRing ? 'pass' : tele && fMin <= fMaxRing * P.telecentricDiffractionTolerance ? 'warn' : 'fail';
-      margins.push(rel(fMin, fMaxRing), rel(fMin, fMaxRing * P.telecentricDiffractionTolerance));
+      // Vượt ≤ ngưỡng lần → cảnh báo: telecentric Q3 2026-10-29, ống thường Q1 2026-11-10
+      const tol = tele ? P.telecentricDiffractionTolerance : P.fixedDiffractionTolerance;
+      out.diffraction = fMin <= fMaxRing ? 'pass' : fMin <= fMaxRing * tol ? 'warn' : 'fail';
+      margins.push(rel(fMin, fMaxRing), rel(fMin, fMaxRing * tol));
     } else out.diffraction = 'info';
   }
 

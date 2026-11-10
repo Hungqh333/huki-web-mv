@@ -195,6 +195,11 @@ test('telecentric (chốt 2026-10-29 Q2, Q3) — cùng luật với trang Chọn
   assert.deepEqual([warn.status, warn.noteKey], ['warn', 'diffractionTeleWarn']);
   assert.equal(find(at(300, { fNumberMin: 8 }), 'OPT-004').status, 'fail');
   assert.equal(find(run({ lens: { fNumberMin: 6.5 } }), 'OPT-004').status, 'fail');
+  // Ống thường (chốt 2026-11-10 Q1): ≤ 1,2× → cảnh báo
+  const fMax = Number(find(run({ lens: { fNumberMin: 8 } }), 'OPT-004').noteValues!.fMax);
+  const fixedWarn = find(run({ lens: { fNumberMin: fMax * 1.1 } }), 'OPT-004');
+  assert.deepEqual([fixedWarn.status, fixedWarn.noteKey], ['warn', 'diffractionFixedWarn']);
+  assert.equal(find(run({ lens: { fNumberMin: fMax * 1.3 } }), 'OPT-004').status, 'fail');
 });
 
 test('OPT-005: độ sâu ↔ nhiễu xạ — ≤ F#max đạt, ≤ 1,5× cảnh báo, hơn nữa là xung đột', () => {

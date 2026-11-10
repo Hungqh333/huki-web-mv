@@ -10,6 +10,8 @@ import {
   ringFNumberForDepth,
   sensorSizeMm,
   telecentricWdVerdict,
+  diffractionNoteKey,
+  diffractionTolerance,
   diffractionVerdict,
   DOF_FASTEST_PRACTICAL_F,
   type ConfigCamera,
@@ -89,6 +91,7 @@ export type LensParams = Pick<
   | 'lensFovMaxRatio'
   | 'telecentricWdTolerance'
   | 'telecentricDiffractionTolerance'
+  | 'fixedDiffractionTolerance'
 >;
 type Params = LensParams;
 
@@ -642,14 +645,14 @@ export function evaluateLens(
     const factor = effectiveFNumberFactor(beta, lens.lensType);
     const base = factor === 1 ? `F#max ${fmt(fMaxRing, 2)}` : `F#max ${fmt(fMaxRing * factor, 2)} ÷ (1 + ${fmt(beta!, 4)}) = ${fmt(fMaxRing, 2)}`;
     if (lens.fNumberMin !== null) {
-      // Telecentric vượt ≤ ngưỡng lần F#max → cảnh báo; ống thường vẫn loại (Q3 2026-10-29).
-      const tol = params.telecentricDiffractionTolerance;
-      const verdict = diffractionVerdict(lens.fNumberMin, fMaxRing, lens.lensType, tol);
+      // Vượt ≤ ngưỡng lần F#max → cảnh báo: telecentric Q3 2026-10-29, ống thường Q1 2026-11-10.
+      const tol = diffractionTolerance(lens.lensType, params);
+      const verdict = diffractionVerdict(lens.fNumberMin, fMaxRing, tol);
       checks.push({
         key: 'diffraction',
         status: verdict,
-        formula: `${base} · F/${fmt(lens.fNumberMin, 1)} ${verdict === 'pass' ? '≤' : '>'} F/${fmt(fMaxRing, 2)}${verdict === 'warn' ? ` · ≤ ${fmt(tol, 1)} × F/${fmt(fMaxRing, 2)}` : ''}`,
-        noteKey: verdict === 'pass' ? undefined : verdict === 'warn' ? 'diffractionTeleWarn' : 'diffractionLensTooSlow',
+        formula: `${base} · F/${fmt(lens.fNumberMin, 1)} ${verdict === 'pass' ? '≤' : '>'} F/${fmt(fMaxRing, 2)}${verdict === 'pass' ? '' : ` · ${verdict === 'warn' ? '≤' : '>'} ${fmt(tol, 2)} × F/${fmt(fMaxRing, 2)}`}`,
+        noteKey: diffractionNoteKey(verdict, lens.lensType),
         noteValues: { fMin: lens.fNumberMin, fMax: round(fMaxRing, 1), ratio: round(lens.fNumberMin / fMaxRing, 2), limit: tol },
       });
     } else unknown('diffraction', base, 'apertureUnknown', { fMax: round(fMaxRing, 1) });

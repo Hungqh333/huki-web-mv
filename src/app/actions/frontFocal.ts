@@ -12,13 +12,14 @@ import { frontFocalFromDatasheet } from '@/lib/vision/configurationRules';
 /**
  * Nhập sF hàng loạt cho ống kính (chốt 2026-10-26 Q2): đọc file, tìm ống trong kho theo MÃ trước,
  * không có thì theo MODEL (chỉ khi model đó là duy nhất), tính sF rồi ghi vào spec.front_focal_mm.
+ * Cột approx (2026-11-10 Q5) ghi spec.front_focal_approx = 'yes'; dòng không đánh dấu thì xoá cờ.
  * Chỉ Admin; ghi bằng client của chính admin (RLS là chốt chặn thứ hai).
  */
 
 export type FrontFocalImportResult =
   | { error: 'notAdmin' | 'empty' | 'db' }
   | {
-      updated: { line: number; key: string; code: string; sF: number }[];
+      updated: { line: number; key: string; code: string; sF: number; approx: boolean }[];
       skipped: { line: number; key: string | null; reason: 'noKey' | 'noValue' | 'badNumber' | 'notFound' | 'ambiguous' | 'noFocal' | 'outOfRange' | 'db' }[];
     };
 
@@ -71,13 +72,16 @@ export async function importFrontFocalAction(text: string): Promise<FrontFocalIm
       continue;
     }
     const value = Math.round(sF * 100) / 100;
-    const { error: updateError } = await supabase.from('components').update({ spec: { ...lens.spec, front_focal_mm: value } }).eq('id', lens.id);
+    const spec: Record<string, unknown> = { ...lens.spec, front_focal_mm: value };
+    if (row.approx) spec.front_focal_approx = 'yes';
+    else delete spec.front_focal_approx;
+    const { error: updateError } = await supabase.from('components').update({ spec }).eq('id', lens.id);
     if (updateError) {
       await dbError(updateError, 'importFrontFocal:update');
       skipped.push({ line: row.line, key: row.key, reason: 'db' });
       continue;
     }
-    updated.push({ line: row.line, key: row.key, code: lens.code, sF: value });
+    updated.push({ line: row.line, key: row.key, code: lens.code, sF: value, approx: row.approx === true });
   }
 
   if (updated.length > 0) {

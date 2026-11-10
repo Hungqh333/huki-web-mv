@@ -7,12 +7,13 @@
  *   wd_mm + fov_mm + sensor_mm    vùng nhìn ở WD đó và cạnh cảm biến cùng chiều → β = cảm biến ÷ vùng nhìn
  *
  * Cột nhận tên tiếng Anh hoặc tiếng Việt (ma/code/model, sf_mm/sf, wd_mm/wd, beta, fov_mm/fov,
- * sensor_mm/sensor). Ngăn cách bằng dấu phẩy, hoặc chấm phẩy (khi đó số dùng dấu phẩy thập phân).
+ * sensor_mm/sensor). Cột tuỳ chọn `approx` (1 / x / yes / có / ≈) đánh dấu sF chỉ gần đúng — vd
+ * wd_mm = MOD, beta = độ phóng đại tại MOD, làm tròn nhạy ở ống dài (chốt 2026-11-10 Q5). Ngăn cách bằng dấu phẩy, hoặc chấm phẩy (khi đó số dùng dấu phẩy thập phân).
  * Tính sF cần tiêu cự của ống — việc đó làm ở server action, sau khi tìm ra ống trong kho.
  */
 
 export type FrontFocalSource = { kind: 'sf'; sF: number } | { kind: 'datasheet'; wdMm: number; beta: number };
-export type FrontFocalRow = { line: number; key: string; source: FrontFocalSource };
+export type FrontFocalRow = { line: number; key: string; source: FrontFocalSource; approx?: true };
 export type FrontFocalError = { line: number; key: string | null; reason: 'noKey' | 'noValue' | 'badNumber' };
 
 const ALIASES: Record<string, string[]> = {
@@ -22,7 +23,9 @@ const ALIASES: Record<string, string[]> = {
   beta: ['beta', 'β', 'magnification'],
   fov: ['fov_mm', 'fov', 'vung_nhin_mm'],
   sensor: ['sensor_mm', 'sensor', 'cam_bien_mm'],
+  approx: ['approx', 'gan_dung', 'gần đúng', 'gần_đúng', '≈'],
 };
+const APPROX_YES = ['1', 'x', 'yes', 'y', 'true', 'có', 'co', '≈'];
 
 export function parseFrontFocalCsv(text: string): { rows: FrontFocalRow[]; errors: FrontFocalError[] } {
   const lines = text.replace(/^﻿/, '').split(/\r?\n/);
@@ -32,7 +35,7 @@ export function parseFrontFocalCsv(text: string): { rows: FrontFocalRow[]; error
   const split = (l: string) => l.split(semicolon ? ';' : ',').map((c) => c.trim().replace(/^"|"$/g, ''));
   const header = split(lines[headerIndex]).map((h) => h.toLowerCase());
   const col = (name: string) => header.findIndex((h) => ALIASES[name].includes(h));
-  const at = { key: col('key'), sf: col('sf'), wd: col('wd'), beta: col('beta'), fov: col('fov'), sensor: col('sensor') };
+  const at = { key: col('key'), sf: col('sf'), wd: col('wd'), beta: col('beta'), fov: col('fov'), sensor: col('sensor'), approx: col('approx') };
 
   const rows: FrontFocalRow[] = [];
   const errors: FrontFocalError[] = [];
@@ -63,10 +66,11 @@ export function parseFrontFocalCsv(text: string): { rows: FrontFocalRow[]; error
       errors.push({ line, key, reason: 'badNumber' });
       continue;
     }
-    if (sF !== null) rows.push({ line, key, source: { kind: 'sf', sF } });
-    else if (wd !== null && wd > 0 && beta !== null && beta > 0) rows.push({ line, key, source: { kind: 'datasheet', wdMm: wd, beta } });
+    const flag = APPROX_YES.includes(raw(at.approx).toLowerCase()) ? ({ approx: true } as const) : {};
+    if (sF !== null) rows.push({ line, key, source: { kind: 'sf', sF }, ...flag });
+    else if (wd !== null && wd > 0 && beta !== null && beta > 0) rows.push({ line, key, source: { kind: 'datasheet', wdMm: wd, beta }, ...flag });
     else if (wd !== null && wd > 0 && fov !== null && fov > 0 && sensor !== null && sensor > 0)
-      rows.push({ line, key, source: { kind: 'datasheet', wdMm: wd, beta: sensor / fov } });
+      rows.push({ line, key, source: { kind: 'datasheet', wdMm: wd, beta: sensor / fov }, ...flag });
     else errors.push({ line, key, reason: 'noValue' });
   }
   return { rows, errors };

@@ -118,6 +118,7 @@
       "light_type": { "ring": "Đèn vòng", "dome": "Đèn vòm (dome)", "backlight": "Đèn nền", "bar": "Đèn thanh", "coaxial": "Đèn đồng trục", "darkfield": "Đèn trường tối", "photometric_stereo": "Photometric stereo", "multi_angle_ring": "Vòng nhiều tầng góc", "structured_stripe": "Đèn sọc", "line": "Đèn line" },
       "strobe": { "yes": "Có", "no": "Không" },
       "trigger_io": { "yes": "Có", "no": "Không" },
+      "front_focal_approx": { "yes": "Có (≈)", "no": "Không" },
       "focus": { "fixed": "Cố định", "liquid": "Liquid lens", "auto": "Tự động" },
       "cable_for": { "camera_data": "Dữ liệu camera", "camera_power": "Nguồn camera", "light": "Đèn" },
       "software_type": { "library": "Thư viện", "platform": "Nền tảng", "free": "Miễn phí" }
@@ -1500,6 +1501,7 @@
         "accessory_for": "Lắp cho",
         "qty_basis": "Số lượng tính theo",
         "front_focal_mm": "Tiêu điểm trước sF (từ mặt trước ống)",
+        "front_focal_approx": "sF gần đúng (≈) — vd suy từ MOD + độ phóng đại tại MOD",
         "qe_percent": "Hiệu suất lượng tử QE (EMVA 1288)",
         "saturation_e": "Dung lượng bão hoà (EMVA 1288)",
         "dark_noise_e": "Nhiễu tối (EMVA 1288)",
@@ -1532,7 +1534,7 @@
       },
       "frontFocalImport": {
         "title": "Nhập sF hàng loạt cho ống kính",
-        "hint": "Mỗi dòng một ống: cột ma (mã hoặc model trong kho) và MỘT trong ba cách: sf_mm có sẵn; hoặc wd_mm + beta từ datasheet; hoặc wd_mm + fov_mm + sensor_mm (cạnh cảm biến cùng chiều với vùng nhìn). sF = WD − f ÷ β. WD đo từ mặt trước ống. Ngăn cách bằng dấu phẩy, hoặc chấm phẩy nếu dùng dấu phẩy thập phân.",
+        "hint": "Mỗi dòng một ống: cột ma (mã hoặc model trong kho) và MỘT trong ba cách: sf_mm có sẵn; hoặc wd_mm + beta từ datasheet; hoặc wd_mm + fov_mm + sensor_mm (cạnh cảm biến cùng chiều với vùng nhìn). sF = WD − f ÷ β. WD đo từ mặt trước ống. Cột tuỳ chọn approx = 1 khi sF chỉ gần đúng (vd wd_mm = MOD, beta = độ phóng đại tại MOD) — kết quả sẽ ghi ≈; dòng không có approx thì bỏ dấu ≈. Ngăn cách bằng dấu phẩy, hoặc chấm phẩy nếu dùng dấu phẩy thập phân.",
         "example": "ma,sf_mm,wd_mm,beta,fov_mm,sensor_mm\nMVL-MF2518M-5MPE,3.7,,,,\nC125-2522-5M-P,,500,0.048,,\nMA-ONG-TRONG-KHO,,300,,152,8.45",
         "start": "Nhập",
         "running": "Đang nhập…",
@@ -1633,7 +1635,7 @@
         "dofDiffractionTolerance": "Độ sâu trường ảnh — F cần tối đa bằng mấy lần F#max",
         "accessoryMacroBetaWarn": "Phụ kiện — β vượt mức này với ống thường thì cảnh báo chất lượng (khuyên ống macro)",
         "accessoryLightLossStopsWarn": "Phụ kiện — mất sáng vượt số stop này thì cảnh báo",
-        "tubeLengthToFocalWarn": "Ống nối — dài hơn bao nhiêu lần tiêu cự thì cảnh báo cơ khí",
+        "tubeLengthToFocalWarn": "Ống nối — dài hơn bao nhiêu lần tiêu cự thì cảnh báo (chất lượng ảnh + cơ khí)",
         "tubeMaxSegments": "Ống nối — ghép quá số khúc này thì cảnh báo",
         "converterMaxFactor": "Bộ nhân — hệ số tối đa được gợi ý",
         "cycleMinMargin": "Dư tối thiểu so với nhịp (tỉ lệ)",
@@ -3096,8 +3098,8 @@
       "colCircle": "Vòng ảnh",
       "colMount": "Ngàm",
       "fSetNeedDh": "nhập dải chiều cao vật để tính",
-      "footNote": "Kết quả lý thuyết, nên thử thực tế. Ống nối có thể giảm chất lượng ảnh. ≈ : ống chưa khai sF — vùng nhìn có thể lệch tới ±10 %.",
-      "approxNote": "≈ ống chưa khai sF (tiêu điểm trước) — vùng nhìn tính với sF = 0, có thể lệch tới ±10 % so với số của hãng."
+      "footNote": "Kết quả lý thuyết, nên thử thực tế. Ống nối có thể giảm chất lượng ảnh. ≈ : ống chưa khai sF hoặc sF gần đúng — vùng nhìn có thể lệch tới ±10 %.",
+      "approxNote": "≈ ống chưa khai sF (tiêu điểm trước, tính với sF = 0) hoặc sF chỉ là số gần đúng — vùng nhìn có thể lệch tới ±10 % so với số của hãng."
     },
     "status": {
       "pass": "Đạt",
@@ -3150,8 +3152,10 @@
       "accessoryNotInStock": "Kho chưa có phụ kiện ngàm {mount} phù hợp — đây là mức chuẩn gợi ý, cần đặt mua.",
       "tubeMacro": "β {beta} ≥ {limit}: ống thường thiết kế cho vật ở xa, chụp cận thì mềm góc và méo tăng — cân nhắc ống macro.",
       "accessoryLight": "Tối đi khoảng {stops} stop (ngưỡng {limit}) — tăng đèn hoặc phơi sáng lâu hơn, coi chừng nhoè chuyển động.",
-      "tubeLong": "Ống nối {total} mm dài hơn {ratio}× tiêu cự — đòn bẩy lên ngàm, dễ rung: cần giá đỡ ống.",
+      "tubeLong": "Ống nối {total} mm dài hơn {ratio}× tiêu cự — ảnh mềm, méo và tối góc tăng (Edmund khuyên không quá 0,5× tiêu cự); đòn bẩy lên ngàm, dễ rung: cần giá đỡ ống.",
       "tubeSegments": "Ghép {n} khúc (ngưỡng {max}) — sai số đồng trục tăng, dễ lỏng: dùng khúc dài hơn.",
+      "tubeNoSf": "Ống chưa khai sF (tính với sF = 0): chiều dài ống nối và WD tính ra có thể lệch nhiều — nên thử trước khi đặt hàng.",
+      "tubeApproxSf": "sF của ống là số gần đúng (≈): chiều dài ống nối và WD có thể lệch — nên thử trước khi đặt hàng.",
       "converterForPixel": "Thêm bộ nhân {k}× để đạt mm/px cần: vùng nhìn hẹp lại {k} lần. MOD không đổi ({mod} mm). Nhiễu xạ, độ phân giải ống và độ sâu trường ảnh đã tính lại với F# và lp/mm sau khi nhân.",
       "converterForCircle": "Thêm bộ nhân {k}× để vòng ảnh phủ cảm biến: vùng nhìn hẹp lại {k} lần. MOD không đổi ({mod} mm). Nhiễu xạ, độ phân giải ống và độ sâu trường ảnh đã tính lại với F# và lp/mm sau khi nhân.",
       "converterFit": "Thêm kính nên giảm tương phản; một số ống có thấu kính sau nhô ra không lắp được bộ nhân — kiểm datasheet cả hai.",

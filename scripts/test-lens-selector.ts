@@ -336,6 +336,34 @@ test('[OPT-010] ống bị loại vì MOD → đạt nhờ ống nối 5 mm tron
   assert.ok(std.checks.some((k) => k.noteKey === 'accessoryNotInStock'));
 });
 
+test('[OPT-010] ống chưa khai sF / sF gần đúng → cảnh báo ống nối có thể lệch (chốt 2026-11-10 Q1, Q5)', () => {
+  // Cùng ca f 25, MOD 200, WD 80 như trên — chỉ khác cách khai sF
+  const input = { ...INPUT, fovWidthMm: 20, fovHeightMm: 18, workingDistanceMm: 80 };
+  const notesOf = (spec: Record<string, unknown>) =>
+    selectLenses(input, [lens({ focal_length_mm: 25, wd_min_mm: 200, ...spec }, 'f25')]).candidates[0].checks.filter((k) => k.key === 'tube').map((k) => k.noteKey);
+  assert.ok(notesOf({}).includes('tubeNoSf'), 'chưa khai sF');
+  assert.ok(!notesOf({ front_focal_mm: 0 }).some((k) => k === 'tubeNoSf' || k === 'tubeApproxSf'), 'sF = 0 đã khai là số chuẩn');
+  const approx = notesOf({ front_focal_mm: 0, front_focal_approx: 'yes' });
+  assert.ok(approx.includes('tubeApproxSf') && !approx.includes('tubeNoSf'), 'sF gần đúng');
+  // Khai tay ống nối cũng nhắc
+  const manual = selectLenses({ ...input, fixedAccessory: { tubeMm: 5, converterFactor: null } }, [lens({ focal_length_mm: 25, wd_min_mm: 200 }, 'f25m')]).candidates[0];
+  assert.ok(manual.checks.some((k) => k.noteKey === 'tubeNoSf'));
+});
+
+test('[OPT-010] ngưỡng ống dài mặc định 0,5 × f (chốt 2026-11-10 Q2); bộ chuẩn có 15 mm (Q3)', async () => {
+  const { chooseTubeStack, STANDARD_TUBE_LENGTHS_MM } = await import('../src/lib/vision/lensSelector');
+  assert.equal(DEFAULT_ENGINE_PARAMS.tubeLengthToFocalWarn, 0.5);
+  // Khai tay ống nối trên ống f 16: 8 mm = 0,5 × 16 → không cảnh báo; 10 mm > 8 → cảnh báo ống dài
+  const longNotes = (tubeMm: number) =>
+    selectLenses({ ...INPUT, workingDistanceMm: 60, fixedAccessory: { tubeMm, converterFactor: null } }, [lens({ focal_length_mm: 16, wd_min_mm: 200, front_focal_mm: 0 }, 'f16')], NO_FOV_LIMIT)
+      .candidates[0].checks.map((k) => k.noteKey);
+  assert.ok(!longNotes(8).includes('tubeLong'), '8 mm = 0,5 × f');
+  assert.ok(longNotes(10).includes('tubeLong'), '10 mm > 0,5 × f');
+  // Bộ chuẩn: khoảng [14; 17] → một khúc 15 mm (trước 2026-11-10 phải ghép 5 + 10)
+  assert.ok(STANDARD_TUBE_LENGTHS_MM.includes(15 as never));
+  assert.deepEqual(chooseTubeStack(STANDARD_TUBE_LENGTHS_MM.map((lengthMm) => ({ lengthMm })), 14, 17)!.map((t) => t.lengthMm), [15]);
+});
+
 test('[OPT-011] mm/px thô → bộ nhân: k cần 1,62 → 2× chuẩn; kho có 1,7× thì lấy 1,7×', () => {
   // f 16 ở WD 300: β = 16 ÷ 300 = 0,05333 → 0,06469 mm/px > 0,04 → k ≥ 0,06469 ÷ 0,04 = 1,617
   const lens16 = lens({ focal_length_mm: 16 }, 'f16');

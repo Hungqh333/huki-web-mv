@@ -268,6 +268,8 @@ export type LensSpec = {
   wd_max_mm?: number;
   /** sF: mặt trước ống → tiêu điểm trước (mm, âm được) — β = f ÷ (WD − sF); trống = 0 (2026-10-26). */
   front_focal_mm?: number;
+  /** 'yes' = sF gần đúng (≈), vd suy từ MOD + β tại MOD (2026-11-10 Q5). Trống = sF chuẩn. */
+  front_focal_approx?: 'yes' | 'no';
 };
 
 // ----------------------------------------------------------------- LIGHT --
@@ -561,6 +563,8 @@ export const SPEC_FIELDS: Record<ComponentKind, SpecFieldDef[]> = {
     /* sF — mặt trước ống → tiêu điểm trước (chốt 2026-10-26). Basler ghi sẵn "front focal length";
        hãng khác: suy từ một cặp WD + β trên datasheet (sF = WD − f ÷ β). Trống = 0. */
     { key: 'front_focal_mm', type: 'number', unit: 'mm', step: 0.01 },
+    /* sF gần đúng (2026-11-10 Q5): kết quả vẫn ghi "≈" và ống nối có cảnh báo. */
+    { key: 'front_focal_approx', type: 'select', options: YES_NO },
     /* Vòng ảnh bằng mm như datasheet ghi. `image_circle` ở trên là cỡ cảm
        biến LỚN NHẤT mà vòng này phủ được — khi nhập Excel, cái sau suy ra từ
        cái trước, nên giữ cả số gốc để đối chiếu lại. */

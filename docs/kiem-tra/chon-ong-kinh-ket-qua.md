@@ -1,6 +1,6 @@
 # Kết quả chu trình kiểm tra — Chọn ống kính
 
-> File này do `npm run verify:lens` sinh tự động — đừng sửa tay. Chạy lúc 2026-10-29T06:42:53.347Z, hạt giống 20261029, 3000 ca giả lập, 4.5 s.
+> File này do `npm run verify:lens` sinh tự động — đừng sửa tay. Chạy lúc 2026-11-10T02:34:09.404Z, hạt giống 20261029, 3000 ca giả lập, 6.4 s.
 
 **Tổng: ĐẠT — không có lỗi.**
 
@@ -65,6 +65,22 @@ Kho thật: `docs/NHAP_THIET_BI_2026-10-16_v5.xlsx` — 1115 ống kính, 376 ca
 | E3 WD thật hiện trên bảng = số tính, làm tròn lên ≤ 1 mm | 134 | 0 | 0 |
 | E2 WD từng ống để vừa vùng nhìn = WD thật (±1 %, tối thiểu 1 mm) | 134 | 0 | 0 |
 
+## Đối chiếu ống nối (lớp F)
+
+| Phép kiểm | Đạt | Lỗi | Sát ngưỡng / do làm tròn |
+|---|---:|---:|---:|
+| F1 Fujinon: ring hãng nằm trong dải e = [f(β_WD − β_MOD); f·β_WD] | 21 | 0 | 0 |
+| F2 Fujinon: β = f ÷ (WD − sF) lệch ≤ 0,5 % | 21 | 0 | 0 |
+| F3 datasheet Hik: β gần = e/f + β_MOD lệch ≤ 5 % | 26 | 0 | 0 |
+| F4 datasheet Hik: WD gần = f ÷ (e/f + β_MOD) + sF lệch ≤ 12 % | 26 | 0 | 0 |
+| F4b datasheet Hik: giới hạn xa β = e/f, WD = f² ÷ e + sF (lệch ≤ 5 % / 12 %) | 5 | 0 | 0 |
+| F6 công cụ Hik: ống hãng chọn ≤ f·β (cho 0,6 mm làm tròn; Hik làm tròn lên số nguyên = sát ngưỡng) | 97 | 0 | 1 |
+| F5 công cụ Hik: ống hãng chọn nằm trong dải e (MOD datasheet, cho 0,6 mm làm tròn) | 31 | 0 | 0 |
+| F7 Computar: giới hạn gần trong ±1 cm / ±10 % (bảng làm tròn 1 cm; ±1,5 cm / ±15 % = sát ngưỡng) | 47 | 0 | 3 |
+| F7b Computar: giới hạn xa (dùng để suy sF — không độc lập) | 50 | 0 | 0 |
+| F8 Moritex: WD xa lệch ≤ 5 %, β ≈ e/f lệch ≤ 3 % | 2 | 0 | 0 |
+| F9 Edmund 35 mm + 11 mm: WD gần và β lệch ≤ 2 % | 1 | 0 | 0 |
+
 ## Chất lượng dữ liệu ống kính (kho thật)
 
 | Mục | Số ống | Ví dụ |
@@ -88,32 +104,32 @@ Kho thật: `docs/NHAP_THIET_BI_2026-10-16_v5.xlsx` — 1115 ống kính, 376 ca
 
 | Bài toán | Camera | Đạt | Cảnh báo | Chưa kiểm được | Loại | Lý do loại nhiều nhất | ms |
 |---|---|---:|---:|---:|---:|---|---:|
-| Linh kiện nhỏ 20×15, WD 150, ống thường | CAM-IRAYPLE-A3138CU000E (1280×1024, 4 µm, 1/2.7) | 1 | 3 | 0 | 58 | mountMismatch 29, fovTooWide 27 | 1 |
-| Linh kiện nhỏ 20×15, WD 150, ống thường | CAM-IRAYPLE-AE5508CG000E (2448×2048, 3.45 µm, 2/3) | 0 | 3 | 0 | 59 | fovTooWide 41, mountMismatch 29 | 1 |
-| Linh kiện nhỏ 20×15, WD 150, ống thường | CAM-IRAYPLE-A3B00MU000E (5472×3648, 2.4 µm, 1) | 0 | 0 | 0 | 62 | fovTooWide 49, diffractionLensTooSlow 35 | 0 |
-| Bo mạch 100×80, WD 300, ống thường | CAM-IRAYPLE-A3138CU000E (1280×1024, 4 µm, 1/2.7) | 4 | 0 | 0 | 58 | fovTooSmall 51, mountMismatch 29 | 0 |
-| Bo mạch 100×80, WD 300, ống thường | CAM-IRAYPLE-AE5508CG000E (2448×2048, 3.45 µm, 2/3) | 6 | 0 | 0 | 56 | fovTooSmall 35, mountMismatch 29 | 0 |
-| Bo mạch 100×80, WD 300, ống thường | CAM-IRAYPLE-A3B00MU000E (5472×3648, 2.4 µm, 1) | 0 | 2 | 0 | 60 | fovTooSmall 34, diffractionLensTooSlow 32 | 0 |
-| Hộp 300×200, WD 800, ống thường | CAM-IRAYPLE-A3138CU000E (1280×1024, 4 µm, 1/2.7) | 4 | 0 | 0 | 58 | fovTooSmall 51, mountMismatch 29 | 0 |
+| Linh kiện nhỏ 20×15, WD 150, ống thường | CAM-IRAYPLE-A3138CU000E (1280×1024, 4 µm, 1/2.7) | 1 | 3 | 0 | 58 | mountMismatch 29, fovTooWide 27 | 2 |
+| Linh kiện nhỏ 20×15, WD 150, ống thường | CAM-IRAYPLE-AE5508CG000E (2448×2048, 3.45 µm, 2/3) | 0 | 3 | 0 | 59 | fovTooWide 41, mountMismatch 29 | 2 |
+| Linh kiện nhỏ 20×15, WD 150, ống thường | CAM-IRAYPLE-A3B00MU000E (5472×3648, 2.4 µm, 1) | 0 | 0 | 0 | 62 | fovTooWide 49, diffractionLensTooSlow 35 | 1 |
+| Bo mạch 100×80, WD 300, ống thường | CAM-IRAYPLE-A3138CU000E (1280×1024, 4 µm, 1/2.7) | 4 | 0 | 0 | 58 | fovTooSmall 51, mountMismatch 29 | 1 |
+| Bo mạch 100×80, WD 300, ống thường | CAM-IRAYPLE-AE5508CG000E (2448×2048, 3.45 µm, 2/3) | 6 | 0 | 0 | 56 | fovTooSmall 35, mountMismatch 29 | 1 |
+| Bo mạch 100×80, WD 300, ống thường | CAM-IRAYPLE-A3B00MU000E (5472×3648, 2.4 µm, 1) | 0 | 2 | 0 | 60 | fovTooSmall 34, diffractionLensTooSlow 32 | 1 |
+| Hộp 300×200, WD 800, ống thường | CAM-IRAYPLE-A3138CU000E (1280×1024, 4 µm, 1/2.7) | 4 | 0 | 0 | 58 | fovTooSmall 51, mountMismatch 29 | 1 |
 | Hộp 300×200, WD 800, ống thường | CAM-IRAYPLE-AE5508CG000E (2448×2048, 3.45 µm, 2/3) | 7 | 0 | 0 | 55 | fovTooSmall 43, mountMismatch 29 | 1 |
 | Hộp 300×200, WD 800, ống thường | CAM-IRAYPLE-A3B00MU000E (5472×3648, 2.4 µm, 1) | 0 | 4 | 0 | 58 | diffractionLensTooSlow 31, mountMismatch 29 | 1 |
-| Đo 2D 30×25, telecentric, WD để trống | CAM-IRAYPLE-A3138CU000E (1280×1024, 4 µm, 1/2.7) | 20 | 14 | 0 | 1019 | fovTooSmall 888, diffractionLensTooSlow 518 | 4 |
-| Đo 2D 30×25, telecentric, WD để trống | CAM-IRAYPLE-AE5508CG000E (2448×2048, 3.45 µm, 2/3) | 2 | 16 | 0 | 1035 | fovTooSmall 777, diffractionLensTooSlow 686 | 3 |
-| Đo 2D 30×25, telecentric, WD để trống | CAM-IRAYPLE-A3B00MU000E (5472×3648, 2.4 µm, 1) | 0 | 0 | 0 | 1053 | diffractionLensTooSlow 935, fovTooSmall 693 | 4 |
+| Đo 2D 30×25, telecentric, WD để trống | CAM-IRAYPLE-A3138CU000E (1280×1024, 4 µm, 1/2.7) | 20 | 14 | 0 | 1019 | fovTooSmall 888, diffractionLensTooSlow 518 | 11 |
+| Đo 2D 30×25, telecentric, WD để trống | CAM-IRAYPLE-AE5508CG000E (2448×2048, 3.45 µm, 2/3) | 2 | 16 | 0 | 1035 | fovTooSmall 777, diffractionLensTooSlow 686 | 10 |
+| Đo 2D 30×25, telecentric, WD để trống | CAM-IRAYPLE-A3B00MU000E (5472×3648, 2.4 µm, 1) | 0 | 0 | 0 | 1053 | diffractionLensTooSlow 935, fovTooSmall 693 | 7 |
 | Bo mạch 100×80, WD 300, Δh 10 mm | CAM-IRAYPLE-A3138CU000E (1280×1024, 4 µm, 1/2.7) | 4 | 0 | 0 | 58 | fovTooSmall 51, mountMismatch 29 | 1 |
-| Bo mạch 100×80, WD 300, Δh 10 mm | CAM-IRAYPLE-AE5508CG000E (2448×2048, 3.45 µm, 2/3) | 6 | 0 | 0 | 56 | fovTooSmall 35, mountMismatch 29 | 1 |
+| Bo mạch 100×80, WD 300, Δh 10 mm | CAM-IRAYPLE-AE5508CG000E (2448×2048, 3.45 µm, 2/3) | 6 | 0 | 0 | 56 | fovTooSmall 35, mountMismatch 29 | 2 |
 | Bo mạch 100×80, WD 300, Δh 10 mm | CAM-IRAYPLE-A3B00MU000E (5472×3648, 2.4 µm, 1) | 0 | 2 | 0 | 60 | fovTooSmall 34, diffractionLensTooSlow 32 | 1 |
-| Đo 2D 30×25, telecentric, WD 228 (WD danh định phổ biến nhất) | CAM-IRAYPLE-A3138CU000E (1280×1024, 4 µm, 1/2.7) | 3 | 0 | 0 | 1050 | wdOutOfRange 1024, fovTooSmall 888 | 4 |
-| Đo 2D 30×25, telecentric, WD 228 (WD danh định phổ biến nhất) | CAM-IRAYPLE-AE5508CG000E (2448×2048, 3.45 µm, 2/3) | 0 | 5 | 0 | 1048 | wdOutOfRange 1024, fovTooSmall 777 | 4 |
-| Đo 2D 30×25, telecentric, WD 228 (WD danh định phổ biến nhất) | CAM-IRAYPLE-A3B00MU000E (5472×3648, 2.4 µm, 1) | 0 | 0 | 0 | 1053 | wdOutOfRange 1024, diffractionLensTooSlow 935 | 4 |
-| Đo 2D 30×25, telecentric, WD 231.4 (lệch +1,5 %) | CAM-IRAYPLE-A3138CU000E (1280×1024, 4 µm, 1/2.7) | 0 | 3 | 0 | 1050 | wdOutOfRange 1026, fovTooSmall 888 | 4 |
-| Đo 2D 30×25, telecentric, WD 231.4 (lệch +1,5 %) | CAM-IRAYPLE-AE5508CG000E (2448×2048, 3.45 µm, 2/3) | 0 | 5 | 0 | 1048 | wdOutOfRange 1026, fovTooSmall 777 | 4 |
-| Đo 2D 30×25, telecentric, WD 231.4 (lệch +1,5 %) | CAM-IRAYPLE-A3B00MU000E (5472×3648, 2.4 µm, 1) | 0 | 0 | 0 | 1053 | wdOutOfRange 1026, diffractionLensTooSlow 935 | 4 |
-| Đo 2D 30×25, telecentric, WD 239.4 (lệch +5 %) | CAM-IRAYPLE-A3138CU000E (1280×1024, 4 µm, 1/2.7) | 0 | 2 | 0 | 1051 | wdOutOfRange 1021, fovTooSmall 888 | 4 |
-| Đo 2D 30×25, telecentric, WD 239.4 (lệch +5 %) | CAM-IRAYPLE-AE5508CG000E (2448×2048, 3.45 µm, 2/3) | 0 | 2 | 0 | 1051 | wdOutOfRange 1021, fovTooSmall 777 | 4 |
-| Đo 2D 30×25, telecentric, WD 239.4 (lệch +5 %) | CAM-IRAYPLE-A3B00MU000E (5472×3648, 2.4 µm, 1) | 0 | 0 | 0 | 1053 | wdOutOfRange 1021, diffractionLensTooSlow 935 | 3 |
+| Đo 2D 30×25, telecentric, WD 228 (WD danh định phổ biến nhất) | CAM-IRAYPLE-A3138CU000E (1280×1024, 4 µm, 1/2.7) | 3 | 0 | 0 | 1050 | wdOutOfRange 1024, fovTooSmall 888 | 8 |
+| Đo 2D 30×25, telecentric, WD 228 (WD danh định phổ biến nhất) | CAM-IRAYPLE-AE5508CG000E (2448×2048, 3.45 µm, 2/3) | 0 | 5 | 0 | 1048 | wdOutOfRange 1024, fovTooSmall 777 | 7 |
+| Đo 2D 30×25, telecentric, WD 228 (WD danh định phổ biến nhất) | CAM-IRAYPLE-A3B00MU000E (5472×3648, 2.4 µm, 1) | 0 | 0 | 0 | 1053 | wdOutOfRange 1024, diffractionLensTooSlow 935 | 10 |
+| Đo 2D 30×25, telecentric, WD 231.4 (lệch +1,5 %) | CAM-IRAYPLE-A3138CU000E (1280×1024, 4 µm, 1/2.7) | 0 | 3 | 0 | 1050 | wdOutOfRange 1026, fovTooSmall 888 | 11 |
+| Đo 2D 30×25, telecentric, WD 231.4 (lệch +1,5 %) | CAM-IRAYPLE-AE5508CG000E (2448×2048, 3.45 µm, 2/3) | 0 | 5 | 0 | 1048 | wdOutOfRange 1026, fovTooSmall 777 | 11 |
+| Đo 2D 30×25, telecentric, WD 231.4 (lệch +1,5 %) | CAM-IRAYPLE-A3B00MU000E (5472×3648, 2.4 µm, 1) | 0 | 0 | 0 | 1053 | wdOutOfRange 1026, diffractionLensTooSlow 935 | 11 |
+| Đo 2D 30×25, telecentric, WD 239.4 (lệch +5 %) | CAM-IRAYPLE-A3138CU000E (1280×1024, 4 µm, 1/2.7) | 0 | 2 | 0 | 1051 | wdOutOfRange 1021, fovTooSmall 888 | 10 |
+| Đo 2D 30×25, telecentric, WD 239.4 (lệch +5 %) | CAM-IRAYPLE-AE5508CG000E (2448×2048, 3.45 µm, 2/3) | 0 | 2 | 0 | 1051 | wdOutOfRange 1021, fovTooSmall 777 | 11 |
+| Đo 2D 30×25, telecentric, WD 239.4 (lệch +5 %) | CAM-IRAYPLE-A3B00MU000E (5472×3648, 2.4 µm, 1) | 0 | 0 | 0 | 1053 | wdOutOfRange 1021, diffractionLensTooSlow 935 | 11 |
 
-Thời gian lọc cả kho: trung bình 2 ms, lâu nhất 4 ms (24 lượt, chạy trong Node trên máy này).
+Thời gian lọc cả kho: trung bình 6 ms, lâu nhất 11 ms (24 lượt, chạy trong Node trên máy này).
 
 ## Chi tiết đối chiếu Hik
 
@@ -188,4 +204,14 @@ sF suy từ số của hãng (mặt trước ống → tiêu điểm trước; "
 | MVL-MF5028M-5MPE | 50 | 20.29 | 0.27 | 5 |
 | MVL-MF5028M-8MP | 50 | 36.19 | 0.27 | 5 |
 | MVL-KF7528M-12MP | 75 | 82.47 | 0.37 | 6 |
+
+## Chi tiết đối chiếu ống nối (lớp F)
+
+Nguồn số liệu: `scripts/reference/tube-vendor-tables-2026-11-10.json` (chỉ số đọc từ bảng hãng, có link nguồn trong file).
+
+- Fujinon HF50SA-1: sF suy từ bảng -2.4 mm. Bộ ống chuẩn chọn trùng đúng ring hãng 6/6. Nếu như kho (f danh định, sF = 0): ring trong dải 6/6, β lệch tới 2.6 %.
+- Fujinon HF75SA-1: sF suy từ bảng 33.2 mm. Bộ ống chuẩn chọn trùng đúng ring hãng 12/15. Nếu như kho (f danh định, sF = 0): ring trong dải 13/15, β lệch tới 22.2 %.
+- Datasheet Hik (5 ống, 26 dòng có ống nối): nếu sF = 0 thì WD gần lệch trung vị 3.5 %, tới 26.0 %.
+- Công cụ Hik: 98 lượt có ống nối; với 5 ống có MOD công bố, ống Hik chọn dài hơn cận dưới của engine tối đa 1.3 mm (Hik làm tròn số nguyên, sát cận dưới).
+- Computar VM100: 8 ống, 50 dòng; sF mỗi ống suy từ cột xa nên chỉ cột gần là phép thử độc lập.
 

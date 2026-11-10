@@ -10,7 +10,7 @@ const inputClass =
 
 /**
  * Nhập sF hàng loạt cho ống kính (chốt 2026-10-26 Q2) — dán CSV hoặc chọn file; mỗi dòng một ống.
- * Cột: ma (mã hoặc model) + sf_mm, hoặc wd_mm + beta, hoặc wd_mm + fov_mm + sensor_mm.
+ * Cột: ma (mã hoặc model) + sf_mm, hoặc wd_mm + beta, hoặc wd_mm + fov_mm + sensor_mm; approx tuỳ chọn (≈).
  */
 export function FrontFocalImport() {
   const t = useTranslations('admin.components.frontFocalImport');
@@ -56,7 +56,7 @@ export function FrontFocalImport() {
               <ul className="mt-1 max-h-40 overflow-y-auto text-xs text-emerald-800 dark:text-emerald-300">
                 {result.updated.map((u) => (
                   <li key={`${u.line}-${u.code}`}>
-                    {u.code}: sF = {u.sF} mm
+                    {u.code}: sF {u.approx ? '≈' : '='} {u.sF} mm
                   </li>
                 ))}
               </ul>

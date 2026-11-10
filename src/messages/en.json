@@ -118,6 +118,7 @@
       "light_type": { "ring": "Ring light", "dome": "Dome light", "backlight": "Backlight", "bar": "Bar light", "coaxial": "Coaxial light", "darkfield": "Dark-field light", "photometric_stereo": "Photometric stereo", "multi_angle_ring": "Multi-angle ring", "structured_stripe": "Stripe light", "line": "Line light" },
       "strobe": { "yes": "Yes", "no": "No" },
       "trigger_io": { "yes": "Yes", "no": "No" },
+      "front_focal_approx": { "yes": "Yes (≈)", "no": "No" },
       "focus": { "fixed": "Fixed", "liquid": "Liquid lens", "auto": "Auto" },
       "cable_for": { "camera_data": "Camera data", "camera_power": "Camera power", "light": "Light" },
       "software_type": { "library": "Library", "platform": "Platform", "free": "Free" }
@@ -1500,6 +1501,7 @@
         "accessory_for": "Fits",
         "qty_basis": "Quantity per",
         "front_focal_mm": "Front focal distance sF (from lens front)",
+        "front_focal_approx": "Approximate sF (≈) — e.g. derived from MOD + magnification at MOD",
         "qe_percent": "Quantum efficiency QE (EMVA 1288)",
         "saturation_e": "Saturation capacity (EMVA 1288)",
         "dark_noise_e": "Temporal dark noise (EMVA 1288)",
@@ -1532,7 +1534,7 @@
       },
       "frontFocalImport": {
         "title": "Bulk import sF for lenses",
-        "hint": "One lens per line: column ma (code or model in stock) and ONE of three ways: sf_mm given; or wd_mm + beta from the datasheet; or wd_mm + fov_mm + sensor_mm (sensor side matching the field of view). sF = WD − f ÷ β. WD is measured from the lens front. Comma-separated, or semicolon-separated with decimal commas.",
+        "hint": "One lens per line: column ma (code or model in stock) and ONE of three ways: sf_mm given; or wd_mm + beta from the datasheet; or wd_mm + fov_mm + sensor_mm (sensor side matching the field of view). sF = WD − f ÷ β. WD is measured from the lens front. Optional column approx = 1 when sF is only approximate (e.g. wd_mm = MOD, beta = magnification at MOD) — results will show ≈; rows without approx clear the ≈ flag. Comma-separated, or semicolon-separated with decimal commas.",
         "example": "ma,sf_mm,wd_mm,beta,fov_mm,sensor_mm\nMVL-MF2518M-5MPE,3.7,,,,\nC125-2522-5M-P,,500,0.048,,\nMA-ONG-TRONG-KHO,,300,,152,8.45",
         "start": "Import",
         "running": "Importing…",
@@ -1633,7 +1635,7 @@
         "dofDiffractionTolerance": "Depth of field — F needed at most this × F#max",
         "accessoryMacroBetaWarn": "Accessories — warn on image quality when β exceeds this on a standard lens (suggest a macro lens)",
         "accessoryLightLossStopsWarn": "Accessories — warn when light loss exceeds this many stops",
-        "tubeLengthToFocalWarn": "Extension tube — mechanical warning when longer than this × focal length",
+        "tubeLengthToFocalWarn": "Extension tube — warn (image quality + mechanics) when longer than this × focal length",
         "tubeMaxSegments": "Extension tube — warn when stacking more segments than this",
         "converterMaxFactor": "Rear converter — maximum factor suggested",
         "cycleMinMargin": "Minimum headroom versus takt (ratio)",
@@ -3096,8 +3098,8 @@
       "colCircle": "Image circle",
       "colMount": "Mount",
       "fSetNeedDh": "enter the object height range to calculate",
-      "footNote": "Theoretical results — test before committing. Extension tubes can reduce image quality. ≈ : lens without sF — field of view may differ by up to ±10 %.",
-      "approxNote": "≈ lens has no front focal distance sF — field of view uses sF = 0 and may differ by up to ±10 % from vendor data."
+      "footNote": "Theoretical results — test before committing. Extension tubes can reduce image quality. ≈ : lens without sF or with an approximate sF — field of view may differ by up to ±10 %.",
+      "approxNote": "≈ lens has no front focal distance sF (computed with sF = 0) or only an approximate one — field of view may differ by up to ±10 % from vendor data."
     },
     "status": {
       "pass": "Pass",
@@ -3150,8 +3152,10 @@
       "accessoryNotInStock": "No suitable {mount}-mount accessory in stock — this is a suggested standard size to order.",
       "tubeMacro": "β {beta} ≥ {limit}: standard lenses are designed for distant objects; close up, corners soften and distortion grows — consider a macro lens.",
       "accessoryLight": "About {stops} stops darker (limit {limit}) — add light or expose longer, watch for motion blur.",
-      "tubeLong": "A {total} mm tube is longer than {ratio}× the focal length — leverage on the mount, prone to vibration: support the lens.",
+      "tubeLong": "A {total} mm tube is longer than {ratio}× the focal length — softness, distortion and corner shading grow (Edmund advises at most 0.5× the focal length); leverage on the mount, prone to vibration: support the lens.",
       "tubeSegments": "Stacking {n} segments (limit {max}) — alignment error grows and joints loosen: use longer segments.",
+      "tubeNoSf": "Lens has no front focal distance sF (computed with sF = 0): the tube length and WD may be well off — test before ordering.",
+      "tubeApproxSf": "The lens sF is only approximate (≈): the tube length and WD may be off — test before ordering.",
       "converterForPixel": "Add a {k}× rear converter to reach the required mm/px: the FOV shrinks {k}×. MOD is unchanged ({mod} mm). Diffraction, lens resolution and depth of field are rechecked with the multiplied F# and lp/mm.",
       "converterForCircle": "Add a {k}× rear converter so the image circle covers the sensor: the FOV shrinks {k}×. MOD is unchanged ({mod} mm). Diffraction, lens resolution and depth of field are rechecked with the multiplied F# and lp/mm.",
       "converterFit": "Extra glass lowers contrast; some lenses have a protruding rear element and cannot take a converter — check both datasheets.",

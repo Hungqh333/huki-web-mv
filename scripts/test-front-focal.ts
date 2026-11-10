@@ -31,6 +31,16 @@ test('CSV chấm phẩy + dấu phẩy thập phân; cột tiếng Việt / ti�
   assert.deepEqual(rows, [{ line: 2, key: 'X', source: { kind: 'sf', sF: -14.1 } }]);
 });
 
+test('cột approx đánh dấu sF gần đúng (chốt 2026-11-10 Q5): MOD + β tại MOD', () => {
+  const { rows } = parseFrontFocalCsv(['ma,wd_mm,beta,approx', 'SV-5014H,300,0.168,1', 'SV-0614H,100,0.053,', 'X,100,0.05,có'].join('\n'));
+  assert.deepEqual(rows[0], { line: 2, key: 'SV-5014H', source: { kind: 'datasheet', wdMm: 300, beta: 0.168 }, approx: true });
+  assert.equal(rows[1].approx, undefined);
+  assert.equal(rows[2].approx, true);
+  // sF = MOD − f ÷ β_MOD — đúng cách của file Excel tính ống nối
+  const sF = frontFocalFromDatasheet(50, 300, 0.168)!;
+  assert.ok(Math.abs(sF - (300 - 50 / 0.168)) < 1e-9 && Math.abs(sF - 2.38) < 0.01, String(sF));
+});
+
 test('sF từ datasheet: sF = WD − f ÷ β (Hik MF2518 ở WD 300: β 0,08437 → sF ≈ 3,7)', () => {
   const sF = frontFocalFromDatasheet(25, 300, 8.4456 / 100.1)!;
   assert.ok(Math.abs(sF - 3.69) < 0.01, String(sF));

@@ -96,6 +96,8 @@ export type ConfigLens = {
   wdMaxMm: number | null;
   /** sF: mặt trước ống → tiêu điểm trước (mm, có thể âm); chưa khai → 0 (chốt 2026-10-26). */
   frontFocalMm?: number | null;
+  /** sF gần đúng (≈) — vd suy từ MOD + β tại MOD, làm tròn nhạy ở ống dài (chốt 2026-11-10 Q5). */
+  frontFocalApprox?: boolean;
 };
 
 export type ConfigPc = {
@@ -142,6 +144,7 @@ export function lensFromComponent(component: Component): ConfigLens {
     wdMinMm: specNumber(spec, 'wd_min_mm'),
     wdMaxMm: specNumber(spec, 'wd_max_mm'),
     frontFocalMm: specNumber(spec, 'front_focal_mm'),
+    frontFocalApprox: specString(spec, 'front_focal_approx') === 'yes',
   };
 }
 

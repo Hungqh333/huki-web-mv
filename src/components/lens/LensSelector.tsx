@@ -862,7 +862,9 @@ function LensRow({
   const circleMm = lens.imageCircleMm ?? sensorDiagonalMm(lens.imageCircleFormat);
   const circle = circleMm !== null ? `Φ${show(circleMm, 1)} mm${lens.imageCircleFormat ? ` (${lens.imageCircleFormat}")` : ''}` : '—';
   // Ống chưa khai sF: vùng nhìn tính với sF = 0 → ghi "≈" (chốt 2026-10-26 Q3, lệch tới ±10 % so với dữ liệu hãng).
-  const approx = !fixedBeta && lens.focalLengthMm !== null && (lens.frontFocalMm ?? null) === null && c.fovLongMm !== null ? '≈ ' : '';
+  // sF gần đúng (vd suy từ MOD + β tại MOD) cũng ghi "≈" (chốt 2026-11-10 Q5).
+  const sFUncertain = (lens.frontFocalMm ?? null) === null || lens.frontFocalApprox === true;
+  const approx = !fixedBeta && lens.focalLengthMm !== null && sFUncertain && c.fovLongMm !== null ? '≈ ' : '';
   const cell = 'py-2 pr-4 whitespace-nowrap tabular-nums';
   return (
     <Fragment>

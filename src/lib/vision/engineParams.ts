@@ -49,7 +49,8 @@ export const ENGINE_PARAMS = [
   // OPT-010 / OPT-011 — phụ kiện ống nối / bộ nhân trên trang Chọn ống kính (chốt 2026-10-20).
   { key: 'accessoryMacroBetaWarn', group: 'optics', default: 0.3, min: 0.05, max: 2, step: 0.05, unit: '×' },
   { key: 'accessoryLightLossStopsWarn', group: 'optics', default: 1, min: 0.25, max: 4, step: 0.25, unit: 'stop' },
-  { key: 'tubeLengthToFocalWarn', group: 'optics', default: 1, min: 0.1, max: 5, step: 0.1, unit: '× f' },
+  /* 0,5 × f theo Edmund (chốt 2026-11-10 Q2) — chỉ cảnh báo, không loại. */
+  { key: 'tubeLengthToFocalWarn', group: 'optics', default: 0.5, min: 0.1, max: 5, step: 0.1, unit: '× f' },
   { key: 'tubeMaxSegments', group: 'optics', default: 3, min: 1, max: 10, step: 1 },
   { key: 'converterMaxFactor', group: 'optics', default: 2, min: 1.1, max: 4, step: 0.1, unit: '×' },
   // LNS-005 (2026-10-26) — trang Chọn ống kính: vùng nhìn của ống rộng hơn vùng cần quá bấy nhiêu lần (trục sát nhất) thì loại.

@@ -15,22 +15,28 @@
  *      ống đang đạt thành loại, đổi thứ tự kho không đổi kết quả, biết 2 trong 3 quay vòng.
  *   C. Phụ kiện — ống nối / bộ nhân engine gợi ý phải thật sự cứu được ống.
  *   D. Kho thật — chất lượng dữ liệu ống kính, quét bài toán điển hình, thời gian chạy.
+ *   E. Đối chiếu công cụ chọn ống của hãng (scripts/reference/*-lens-selector-*.json).
+ *   F. Ống nối — hàm ống nối so với bảng ống nối của Fujinon, Hik, Computar, Moritex, Edmund (2026-11-10).
  *
  * Ghi kết quả ra docs/kiem-tra/chon-ong-kinh-ket-qua.md. Còn lỗi → mã thoát 1.
  * Ca nằm sát ngưỡng (chênh < 0,1 %) do engine làm tròn kích thước cảm biến 3 chữ số được tách
  * riêng thành "sát ngưỡng", không tính lỗi.
  */
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { performance } from 'node:perf_hooks';
 
 import { SENSOR_FORMATS, type Component } from '../src/lib/components/specs';
 import { cameraFromComponent, type ConfigCamera } from '../src/lib/vision/configurationRules';
 import { DEFAULT_ENGINE_PARAMS } from '../src/lib/vision/engineParams';
 import {
+  chooseTubeStack,
   evaluateLens,
   lensNeed,
   selectLenses,
   solveGeometry,
+  STANDARD_TUBE_LENGTHS_MM,
+  tubeFocusRange,
+  tubeLengthRange,
   type LensCandidate,
   type LensCheckKey,
   type LensKindFilter,
@@ -726,6 +732,149 @@ function compareVendor(vendor: string, file: string, data: { source: string; cas
 const round2 = (x: number) => Math.round(x * 100) / 100;
 
 // ───────────────────────────────────────────── chạy ──
+// ───────────────────────────────────────────── lớp F: ống nối ──
+/**
+ * Lớp F (chốt 2026-11-10 Q4): hàm ống nối thật (tubeLengthRange, tubeFocusRange, chooseTubeStack) so
+ * với bảng ống nối của hãng — Fujinon, datasheet Hik, công cụ Hik, Computar, Moritex, Edmund. sF của
+ * mỗi ống suy từ dòng KHÔNG ống nối của chính bảng đó (hoặc cột xa với Computar) — dòng có ống nối là
+ * phép thử độc lập. Ngưỡng nới cho phần sai do tiêu cự danh định (vd MF5028M-5MPE f thực ≈ 48 mm).
+ */
+const TUBE_SECTION = 'Đối chiếu ống nối (lớp F)';
+const TUBE_FILE = 'scripts/reference/tube-vendor-tables-2026-11-10.json';
+const HIK_TOOL_FILE = 'scripts/reference/hik-lens-selector-2026-10-29.json';
+const median = (list: number[]) => [...list].sort((a, b) => a - b)[list.length >> 1];
+const pctOff = (a: number, b: number) => Math.abs(a / b - 1) * 100;
+const inside = (e: number, lo: number, hi: number, slack = 0) => e >= lo - slack - 1e-6 && e <= hi + slack + 1e-6;
+
+type TubeTables = {
+  fujinon: { sensorMm: number; lenses: { model: string; fNominal: number; fDesign: number; mod: number; rows: [number, number, number, number][] }[] };
+  hikDatasheet: { lenses: { model: string; f: number; mod: number; betaAtMod: number; noTube: [number, number][]; rings: [number, number, number, number | null, number | null][] }[] };
+  computar: { lenses: { f: number; mod: number; rows: [number, number, number][] }[] };
+  moritex: { f: number; mod: number; rows: [number, number, number][] };
+  edmund: { f: number; imageDistanceAtMod: number; wdAtMod: number; spacerMm: number; wdWithSpacer: number; betaWithSpacer: number };
+};
+
+function checkTubeVendors(): string[] {
+  if (!existsSync(TUBE_FILE)) return [];
+  const d = JSON.parse(readFileSync(TUBE_FILE, 'utf8')) as TubeTables;
+  const S = TUBE_SECTION;
+  const lines: string[] = [`Nguồn số liệu: \`${TUBE_FILE}\` (chỉ số đọc từ bảng hãng, có link nguồn trong file).`, ''];
+  const std = STANDARD_TUBE_LENGTHS_MM.map((lengthMm) => ({ lengthMm }));
+
+  // F1–F2 Fujinon: ring hãng ∈ dải e; β tại WD
+  for (const L of d.fujinon.lenses) {
+    const sF = median(L.rows.map(([wd, , , fov]) => wd - (L.fDesign * fov) / d.fujinon.sensorMm));
+    let n = 0, zeroIn = 0, same = 0;
+    const zeroErr: number[] = [];
+    for (const [wd, , ring, fov] of L.rows) {
+      if (ring === 0) continue;
+      n++;
+      const truth = d.fujinon.sensorMm / fov;
+      const a = tubeLengthRange(L.fDesign, L.mod, wd, sF)!;
+      record(S, 'F1 Fujinon: ring hãng nằm trong dải e = [f(β_WD − β_MOD); f·β_WD]', inside(ring, a.minMm, a.maxMm), () => `${L.model} WD ${wd} ring ${ring} → [${a.minMm.toFixed(2)}; ${a.maxMm.toFixed(2)}]`);
+      record(S, 'F2 Fujinon: β = f ÷ (WD − sF) lệch ≤ 0,5 %', pctOff(a.betaWd, truth) <= 0.5, () => `${L.model} WD ${wd}: ${a.betaWd.toFixed(4)} vs ${truth.toFixed(4)}`);
+      const z = tubeLengthRange(L.fNominal, L.mod, wd, 0)!;
+      if (inside(ring, z.minMm, z.maxMm)) zeroIn++;
+      zeroErr.push(pctOff(z.betaWd, truth));
+      const pick = chooseTubeStack(std, a.minMm, a.maxMm);
+      if (pick && pick.length === 1 && pick[0].lengthMm === ring) same++;
+    }
+    lines.push(`- Fujinon ${L.model}: sF suy từ bảng ${sF.toFixed(1)} mm. Bộ ống chuẩn chọn trùng đúng ring hãng ${same}/${n}. Nếu như kho (f danh định, sF = 0): ring trong dải ${zeroIn}/${n}, β lệch tới ${Math.max(...zeroErr).toFixed(1)} %.`);
+  }
+
+  // F3–F4 datasheet Hik: giới hạn gần (và xa khi bảng có) sau khi lắp ống
+  const zeroWd: number[] = [];
+  for (const L of d.hikDatasheet.lenses) {
+    const sF = median(L.noTube.map(([wd, b]) => wd - L.f / b));
+    for (const [e, nearWd, nearBeta, farWd, farBeta] of L.rings) {
+      const focus = tubeFocusRange(L.f, L.mod, e, sF);
+      const betaNear = e / L.f + L.f / (L.mod - sF);
+      record(S, 'F3 datasheet Hik: β gần = e/f + β_MOD lệch ≤ 5 %', pctOff(betaNear, nearBeta) <= 5, () => `${L.model} e ${e}: ${betaNear.toFixed(3)} vs ${nearBeta}`);
+      record(S, 'F4 datasheet Hik: WD gần = f ÷ (e/f + β_MOD) + sF lệch ≤ 12 %', pctOff(focus.wdMinMm, nearWd) <= 12, () => `${L.model} e ${e}: ${focus.wdMinMm.toFixed(1)} vs ${nearWd}`);
+      if (farWd !== null && farBeta !== null) {
+        record(S, 'F4b datasheet Hik: giới hạn xa β = e/f, WD = f² ÷ e + sF (lệch ≤ 5 % / 12 %)', pctOff(e / L.f, farBeta) <= 5 && pctOff(focus.wdMaxMm, farWd) <= 12, () => `${L.model} e ${e}: β ${(e / L.f).toFixed(3)} vs ${farBeta}, WD ${focus.wdMaxMm.toFixed(1)} vs ${farWd}`);
+      }
+      zeroWd.push(pctOff(tubeFocusRange(L.f, L.mod, e, 0).wdMinMm, nearWd));
+    }
+  }
+  lines.push(`- Datasheet Hik (${d.hikDatasheet.lenses.length} ống, ${zeroWd.length} dòng có ống nối): nếu sF = 0 thì WD gần lệch trung vị ${median(zeroWd).toFixed(1)} %, tới ${Math.max(...zeroWd).toFixed(1)} %.`);
+
+  // F5–F6 công cụ Hik: ống hãng chọn nằm trong dải (MOD công bố, sF suy từ công cụ); e ≤ f·β với mọi lượt
+  if (existsSync(HIK_TOOL_FILE)) {
+    const hik = JSON.parse(readFileSync(HIK_TOOL_FILE, 'utf8')) as { cases: { sensor: number[]; lenses?: unknown[][]; fitOnly?: unknown[][] }[] };
+    type Obs = { model: string; f: number; beta: number; e: number; wd: number };
+    const obs: Obs[] = [];
+    for (const c of hik.cases) {
+      const sw = c.sensor[0];
+      for (const l of c.lenses ?? []) {
+        const [model, f, beta, e, wd, , , , , wd2, fov2, , e2] = l as [string, number, number, number, number, ...unknown[]];
+        if (typeof e === 'number') obs.push({ model, f, beta, e, wd });
+        if (typeof e2 === 'number' && typeof wd2 === 'number' && typeof fov2 === 'number') obs.push({ model, f, beta: sw / fov2, e: e2, wd: wd2 });
+      }
+      for (const l of c.fitOnly ?? []) {
+        const [model, f, wd, fov, , e] = l as [string, number, number, number, number, number];
+        if (typeof e === 'number') obs.push({ model, f, beta: sw / fov, e, wd });
+      }
+    }
+    let gapMax = -Infinity;
+    for (const o of obs.filter((x) => x.e > 0)) {
+      // Hik làm tròn ống lên số nguyên: e = ⌈f·β⌉ vượt cận trên là lỗi làm tròn của hãng (ống đó không lấy nét được) → sát ngưỡng.
+      const upper = o.f * o.beta;
+      const verdict = o.e <= upper + 0.6 + 1e-6 ? true : o.e <= Math.ceil(upper - 1e-9) ? ('boundary' as const) : false;
+      record(S, 'F6 công cụ Hik: ống hãng chọn ≤ f·β (cho 0,6 mm làm tròn; Hik làm tròn lên số nguyên = sát ngưỡng)', verdict, () => `${o.model} β ${o.beta.toFixed(3)} e ${o.e} > ${upper.toFixed(2)}`);
+    }
+    for (const L of d.hikDatasheet.lenses) {
+      const own = obs.filter((o) => o.model === L.model);
+      if (!own.length) continue;
+      const sF = median(own.map((o) => o.wd - o.f / o.beta));
+      for (const o of own.filter((x) => x.e > 0)) {
+        const a = tubeLengthRange(L.f, L.mod, o.wd, sF)!;
+        gapMax = Math.max(gapMax, o.e - a.minMm);
+        record(S, 'F5 công cụ Hik: ống hãng chọn nằm trong dải e (MOD datasheet, cho 0,6 mm làm tròn)', inside(o.e, a.minMm, a.maxMm, 0.6), () => `${L.model} WD ${o.wd.toFixed(1)} e ${o.e} → [${a.minMm.toFixed(2)}; ${a.maxMm.toFixed(2)}]`);
+      }
+    }
+    lines.push(`- Công cụ Hik: ${obs.filter((o) => o.e > 0).length} lượt có ống nối; với 5 ống có MOD công bố, ống Hik chọn dài hơn cận dưới của engine tối đa ${gapMax.toFixed(1)} mm (Hik làm tròn số nguyên, sát cận dưới).`);
+  }
+
+  // F7 Computar: sF mỗi ống suy từ cột xa (bảng không ghi mốc đo); kiểm cột gần — độc lập
+  let compN = 0;
+  for (const L of d.computar.lenses) {
+    const sF = median(L.rows.map(([e, , far]) => far * 10 - (L.f * L.f) / e));
+    for (const [e, near, far] of L.rows) {
+      compN++;
+      const focus = tubeFocusRange(L.f, L.mod, e, sF);
+      const grade = (ours: number, table: number) => {
+        const off = Math.abs(ours - table * 10);
+        return off <= Math.max(10, table * 10 * 0.1) ? true : off <= Math.max(15, table * 10 * 0.15) ? ('boundary' as const) : false;
+      };
+      record(S, 'F7 Computar: giới hạn gần trong ±1 cm / ±10 % (bảng làm tròn 1 cm; ±1,5 cm / ±15 % = sát ngưỡng)', grade(focus.wdMinMm, near), () => `f ${L.f} e ${e}: ${(focus.wdMinMm / 10).toFixed(1)} cm vs ${near} cm`);
+      record(S, 'F7b Computar: giới hạn xa (dùng để suy sF — không độc lập)', grade(focus.wdMaxMm, far), () => `f ${L.f} e ${e}: ${(focus.wdMaxMm / 10).toFixed(1)} cm vs ${far} cm`);
+    }
+  }
+  lines.push(`- Computar VM100: ${d.computar.lenses.length} ống, ${compN} dòng; sF mỗi ống suy từ cột xa nên chỉ cột gần là phép thử độc lập.`);
+
+  // F8 Moritex: WD xa = f² ÷ e + sF; β ở giới hạn xa = e ÷ f
+  {
+    const M = d.moritex;
+    const sF = M.rows.reduce((s, [, wd, b]) => s + (wd - M.f / b), 0) / M.rows.length;
+    for (const [e, wdFar, beta] of M.rows) {
+      const focus = tubeFocusRange(M.f, M.mod, e, sF);
+      record(S, 'F8 Moritex: WD xa lệch ≤ 5 %, β ≈ e/f lệch ≤ 3 %', pctOff(focus.wdMaxMm, wdFar) <= 5 && pctOff(e / M.f, beta) <= 3, () => `e ${e}: WD ${focus.wdMaxMm.toFixed(1)} vs ${wdFar}, β ${(e / M.f).toFixed(3)} vs ${beta}`);
+    }
+  }
+
+  // F9 Edmund: 35 mm + 11 mm
+  {
+    const E = d.edmund;
+    const betaMod = (E.imageDistanceAtMod - E.f) / E.f;
+    const sF = E.wdAtMod - E.f / betaMod;
+    const focus = tubeFocusRange(E.f, E.wdAtMod, E.spacerMm, sF);
+    const beta = E.spacerMm / E.f + betaMod;
+    record(S, 'F9 Edmund 35 mm + 11 mm: WD gần và β lệch ≤ 2 %', pctOff(focus.wdMinMm, E.wdWithSpacer) <= 2 && pctOff(beta, E.betaWithSpacer) <= 2, () => `WD ${focus.wdMinMm.toFixed(1)} vs ${E.wdWithSpacer}, β ${beta.toFixed(3)} vs ${E.betaWithSpacer}`);
+  }
+  return lines;
+}
+
 async function main() {
   const started = performance.now();
   // 1. Kho giả lập: 400 ống ngẫu nhiên, mỗi ca so toàn bộ
@@ -820,6 +969,9 @@ async function main() {
     }
   }
 
+  // 4. Ống nối — bảng hãng (lớp F)
+  const tubeLines = checkTubeVendors();
+
   // ───────────────────────────────────────────── ghi báo cáo ──
   const elapsed = (performance.now() - started) / 1000;
   const failed = [...results.values()].reduce((s, r) => s + r.fail, 0);
@@ -828,7 +980,7 @@ async function main() {
   lines.push(`> File này do \`npm run verify:lens\` sinh tự động — đừng sửa tay. Chạy lúc ${new Date().toISOString()}, hạt giống ${SEED}, ${N} ca giả lập, ${elapsed.toFixed(1)} s.`, '');
   lines.push(`**Tổng: ${failed === 0 ? 'ĐẠT — không có lỗi' : `${failed} lượt kiểm báo LỖI`}.**`, '');
   lines.push(`Kho thật: ${real ? `\`${CATALOG_FILE}\` — ${realLensCount} ống kính, ${realCameraCount} camera` : 'không tìm thấy file Excel, bỏ qua phần kho thật'}.`, '');
-  for (const section of ['Giả lập', 'Kho thật', ...vendors.map((v) => `Đối chiếu ${v.vendor}`)]) {
+  for (const section of ['Giả lập', 'Kho thật', ...vendors.map((v) => `Đối chiếu ${v.vendor}`), TUBE_SECTION]) {
     const rows = [...results.entries()].filter(([k]) => SECTION[k] === section);
     if (!rows.length) continue;
     lines.push(`## ${section}`, '', '| Phép kiểm | Đạt | Lỗi | Sát ngưỡng / do làm tròn |', '|---|---:|---:|---:|');
@@ -867,6 +1019,7 @@ async function main() {
     lines.push('');
 
   }
+  if (tubeLines.length) lines.push('## Chi tiết đối chiếu ống nối (lớp F)', '', ...tubeLines, '');
   mkdirSync(OUT_FILE.replace(/[\\/][^\\/]+$/, ''), { recursive: true });
   writeFileSync(OUT_FILE, lines.join('\n') + '\n', 'utf8');
   console.log(`Đã ghi ${OUT_FILE} — ${failed === 0 ? 'ĐẠT' : `${failed} lỗi`} (${elapsed.toFixed(1)} s)`);

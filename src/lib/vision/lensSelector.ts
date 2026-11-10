@@ -213,7 +213,7 @@ export function realWorkingDistanceMm(focalMm: number, beta: number, converterFa
  */
 
 /** Bộ ống nối C-mount phổ biến — gợi ý khi kho chưa có (đánh dấu "chưa có trong kho"). */
-export const STANDARD_TUBE_LENGTHS_MM = [0.5, 1, 2, 5, 10, 20, 40] as const;
+export const STANDARD_TUBE_LENGTHS_MM = [0.5, 1, 2, 5, 10, 15, 20, 40] as const;
 /** Hệ số bộ nhân phổ biến cho ngàm C — gợi ý khi kho chưa có. */
 export const STANDARD_CONVERTER_FACTORS = [1.4, 1.5, 2] as const;
 /** Mức chuẩn chỉ gợi ý cho ngàm có bán sẵn ống nối / bộ nhân phổ thông. */
@@ -295,7 +295,17 @@ export function chooseTubeStack<T extends { lengthMm: number }>(stock: readonly 
 /** Số stop mất khi F# hiệu dụng nhân `factor`: 2 × log₂(factor). */
 export const stopsLost = (factor: number) => 2 * Math.log2(factor);
 
-function tubeChecks(acc: TubeAccessory, focalMm: number, betaWd: number, params: Params): LensCheck[] {
+/**
+ * Ống chưa khai sF (dùng sF = 0) hoặc sF gần đúng: chiều dài ống nối và WD tính ra có thể lệch nhiều —
+ * đối chiếu datasheet hãng: tới 22 % β, 26 % WD (chốt 2026-11-10 Q1). Chỉ cảnh báo, không loại.
+ */
+function tubeFrontFocalCheck(lens: ConfigLens): LensCheck | null {
+  if (lens.frontFocalMm === null || lens.frontFocalMm === undefined) return { key: 'tube', status: 'warn', formula: 'sF = 0', noteKey: 'tubeNoSf' };
+  if (lens.frontFocalApprox) return { key: 'tube', status: 'warn', formula: `sF ≈ ${fmt(lens.frontFocalMm, 1)} mm`, noteKey: 'tubeApproxSf' };
+  return null;
+}
+
+function tubeChecks(acc: TubeAccessory, lens: ConfigLens, focalMm: number, betaWd: number, params: Params): LensCheck[] {
   const pieces = acc.pieces.length > 1 ? `${acc.pieces.map((p) => fmt(p.lengthMm, 1)).join(' + ')} = ` : '';
   const wdMax = Number.isFinite(acc.wdMaxMm) ? fmt(acc.wdMaxMm, 0) : '∞';
   const checks: LensCheck[] = [
@@ -308,6 +318,8 @@ function tubeChecks(acc: TubeAccessory, focalMm: number, betaWd: number, params:
     },
   ];
   if (!acc.inStock) checks.push({ key: 'tube', status: 'info', formula: acc.mount, noteKey: 'accessoryNotInStock', noteValues: { mount: acc.mount } });
+  const sF = tubeFrontFocalCheck(lens);
+  if (sF) checks.push(sF);
   if (betaWd >= params.accessoryMacroBetaWarn) {
     checks.push({ key: 'tube', status: 'warn', formula: `β ${fmt(betaWd, 3)} ≥ ${params.accessoryMacroBetaWarn}`, noteKey: 'tubeMacro', noteValues: { beta: round(betaWd, 3), limit: params.accessoryMacroBetaWarn } });
   }
@@ -768,7 +780,7 @@ function tryAccessory(input: LensSelectorInput, need: LensNeed, component: Compo
       tube: { totalMm, wdMinMm: focus.wdMinMm, wdMaxMm: focus.wdMaxMm },
       converterFactor: null,
       accessory,
-      checks: tubeChecks(accessory, f, range.betaWd, params),
+      checks: tubeChecks(accessory, lens, f, range.betaWd, params),
     });
     return result.status === 'fail' ? null : result;
   }
@@ -832,6 +844,8 @@ function manualVariant(lens: ConfigLens, wd: number | null, fixed: { tubeMm: num
       noteKey: 'tubeManual',
       noteValues: { total: round(e, 1), wdMin: range.wdMinMm !== null ? Math.round(range.wdMinMm) : '—', wdMax: Math.round(range.wdMaxMm) },
     });
+    const sFCheck = tubeFrontFocalCheck(lens);
+    if (sFCheck) checks.push(sFCheck);
     if (betaPrime !== null && betaPrime >= params.accessoryMacroBetaWarn) {
       checks.push({ key: 'tube', status: 'warn', formula: `β ${fmt(betaPrime, 3)} ≥ ${params.accessoryMacroBetaWarn}`, noteKey: 'tubeMacro', noteValues: { beta: round(betaPrime, 3), limit: params.accessoryMacroBetaWarn } });
     }

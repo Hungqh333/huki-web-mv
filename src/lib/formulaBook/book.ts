@@ -33,11 +33,12 @@ import { LEAKAGE_LIMIT, OVERKILL_LIMIT } from '@/lib/vision/experimentMetrics';
 import { LINE_EXPOSURE_BRIGHT_US, LINE_MAX_CAMERAS, RANK_MARGIN_TARGET } from '@/lib/vision/cameraSelector';
 
 /** Trang dùng công thức. */
-export type FormulaPage = 'design' | 'lens' | 'camera' | 'lineScan' | 'code' | 'ocr' | 'light' | 'oldSelector' | 'pc' | 'kpi';
+export type FormulaPage = 'design' | 'lens' | 'mountCheck' | 'camera' | 'lineScan' | 'code' | 'ocr' | 'light' | 'oldSelector' | 'pc' | 'kpi';
 
 export const PAGE_LABEL: Record<FormulaPage, { label: string; href: string }> = {
   design: { label: 'Thiết kế hệ thống', href: '/thiet-ke-he-thong/yeu-cau' },
   lens: { label: 'Chọn ống kính', href: '/chon-ong-kinh' },
+  mountCheck: { label: 'Kiểm tra lắp đặt ống kính', href: '/kiem-tra-lap-dat' },
   camera: { label: 'Chọn camera area scan', href: '/chon-camera' },
   lineScan: { label: 'Chọn camera line scan', href: '/chon-line-scan' },
   code: { label: 'Chọn đầu đọc mã', href: '/chon-doc-ma' },
@@ -942,11 +943,11 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
           'Sau khi lắp thật: khoá vít vòng nét và vòng khẩu; mỗi lần chỉnh nét lại phải hiệu chuẩn lại mm/px vì β đổi theo.',
           'Ống chưa có sF: giữ sF = 0 kèm cảnh báo, không quét sF từ 0 đến f (chốt 2026-11-11 Q2). 44 ống Hikrobot đã đối chiếu có 27 ống sF âm và 2 ống sF > f; Moritex ML-U-SR 8–25 mm có sF −15…−28 mm. Quét 0 → f thì gần như không còn ống đạt.',
           'Đo sF bằng HAI ống nối, không dùng f in trên ống (chốt 2026-11-11 Q3). Vòng nét ở ∞, ống e₁ nét ở WD₁, ống e₂ nét ở WD₂: f² = (WD₁ − WD₂) ÷ (1/e₁ − 1/e₂), sF = WD − f²/e. Camera phải đúng khoảng cách ngàm. Moritex 50 mm có f thật 47,85 (Computar M5018-MP2 47,94): dùng f = 50 thì sF tính ra từ −196 đến +7,5 mm, dùng f thật thì 7,8…14,3 mm.',
-          'Hình kiểm tra lắp đặt trong Chi tiết từng ống thường (chốt 2026-11-11 Q5 vòng 2, hàm tubeFigure — cùng công thức trên, không có số mới): H1 sơ đồ tia Newton và H2 thanh x′ = ống + ren chỉ admin thấy; H3 dải WD lấy nét, H5 vùng nhìn cần / thực và dòng "Ren cần vặn ren / tối đa f × β_MOD" cho Member+. Thanh trượt WD, e (Member+), sF (admin) chỉ đổi hình, không đổi bảng. Ống chưa khai sF ghi "ước tính" trên tiêu đề hình (thay bảng quét sF H4 của đặc tả). Tính trong trình duyệt kể cả khi Chọn ống kính chuyển về máy chủ (Q4: Newton chuẩn đã có trong tài liệu hãng).',
+          'Hình kiểm tra lắp đặt (chốt 2026-11-11 Q5 vòng 2, hàm tubeFigure — cùng công thức trên, không có số mới). Vòng 3 Q1-B: hình nằm ở trang riêng Kiểm tra lắp đặt /kiem-tra-lap-dat (menu nhóm Ống kính), Chi tiết của Chọn ống kính chỉ còn link mở trang với số của dòng đó; trang còn cho chọn ống / camera trong kho hoặc nhập tay f, MOD (sF nhập tay chỉ admin), cỡ cảm biến, WD, e, k, vùng nhìn cần (không nhập thì không vẽ H5). H1 sơ đồ tia Newton và H2 thanh x′ = ống + ren chỉ admin thấy; H3 dải WD lấy nét, H5 vùng nhìn cần / thực, dòng "Ren cần vặn ren / tối đa f × β_MOD", β cả hệ và vùng nhìn thực cho Member+. Thanh trượt WD, e (Member+), sF (admin) chỉ đổi hình, không đổi ô nhập. Ống chưa khai sF ghi "ước tính" trên tiêu đề hình (thay bảng quét sF H4 của đặc tả). Tính trong trình duyệt kể cả khi Chọn ống kính chuyển về máy chủ (Q4: Newton chuẩn đã có trong tài liệu hãng).',
         ],
         evidence: 'calculated',
-        usedIn: ['lens', 'oldSelector'],
-        source: 'vision/lensSelector.ts : tubeLengthRange, tubeFocusRange, tubeFocusMargin, tubeFigure, chooseTubeStack, tryAccessory, activeFixedAccessory, manualVariant, evaluateLens · components/match.ts : pickTube',
+        usedIn: ['lens', 'mountCheck', 'oldSelector'],
+        source: 'vision/lensSelector.ts : tubeLengthRange, tubeFocusRange, tubeFocusMargin, tubeFigure, sensorOf, chooseTubeStack, tryAccessory, activeFixedAccessory, manualVariant, evaluateLens · components/match.ts : pickTube',
       },
       {
         id: 'OPT-011',

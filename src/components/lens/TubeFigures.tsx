@@ -10,10 +10,11 @@ import {
 } from "@/lib/vision/lensSelector";
 
 /**
- * Hình kiểm tra lắp đặt trong Chi tiết một ống thường (chốt 2026-11-11 Q5 vòng 2, Q1–Q6 như đề xuất):
+ * Hình kiểm tra lắp đặt (chốt 2026-11-11 Q5 vòng 2, Q1–Q6 như đề xuất; vòng 3 Q1-B: chuyển khỏi Chi tiết
+ * của Chọn ống kính sang trang riêng /kiem-tra-lap-dat):
  *   H1 sơ đồ tia Newton, H2 thanh độ đẩy ra = ống nối + ren — chỉ admin (lộ mô hình Newton, Q2);
- *   H3 dải WD lấy nét, H5 vùng nhìn cần / thực — Member+.
- *   Thanh trượt WD, e cho mọi người xem trang; sF chỉ admin (Q3). Chỉ đổi hình trong khung này, không đổi bảng.
+ *   H3 dải WD lấy nét, H5 vùng nhìn cần / thực, dòng "Ren cần vặn" — Member+.
+ *   Thanh trượt WD, e cho mọi người xem trang; sF chỉ admin (Q3). Chỉ đổi hình trong khung này, không đổi ô nhập.
  *   H4 (bảng quét sF) bỏ, thay bằng dòng "ước tính" trên tiêu đề (Q5).
  * Không tính gì ở đây: số đến từ `tubeFigure` (lensSelector.ts, cùng công thức OPT-001/OPT-010).
  */
@@ -29,7 +30,8 @@ export type TubeFiguresProps = {
   converterFactor: number;
   sensorLongMm: number;
   sensorShortMm: number | null;
-  needLongMm: number;
+  /** Vùng nhìn cần; null = chưa nhập → không vẽ H5. */
+  needLongMm: number | null;
   needShortMm: number | null;
   /** Ngưỡng độ dư lấy nét đang chạy (tubeFocusMarginWarn). */
   marginWarn: number;
@@ -783,8 +785,9 @@ export function TubeFigures(props: TubeFiguresProps) {
     converterFactor: props.converterFactor,
     sensorLongMm: props.sensorLongMm,
     sensorShortMm: props.sensorShortMm,
-    needLongMm: props.needLongMm,
-    needShortMm: props.needShortMm,
+    // Chưa nhập vùng nhìn cần: 0 → không bao giờ "nhỏ hơn cần", H5 ẩn.
+    needLongMm: props.needLongMm ?? 0,
+    needShortMm: props.needLongMm === null ? null : props.needShortMm,
   });
   // "Ước tính" khi sF đang dùng không phải số khai thật (Q5).
   const badge =
@@ -876,6 +879,48 @@ export function TubeFigures(props: TubeFiguresProps) {
         <p className="text-sm text-red-700 dark:text-red-300">{t("e01")}</p>
       ) : (
         <>
+          <dl className="grid gap-x-6 gap-y-2 rounded-md border border-slate-200 bg-white px-3 py-2 sm:grid-cols-3 dark:border-slate-700 dark:bg-slate-900">
+            <div>
+              <dt className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                {t("ring")}
+              </dt>
+              <dd
+                className={`text-sm tabular-nums ${fig.ringStatus === "low" || fig.ringStatus === "high" ? "text-red-700 dark:text-red-300" : "text-slate-900 dark:text-slate-100"}`}
+              >
+                {fig.ringStatus === "unknown"
+                  ? t("ringNoMod", { ring: show(fig.ringMm) })
+                  : t("ringValue", {
+                      ring: show(Math.max(fig.ringMm, 0)),
+                      max: show(fig.ringMaxMm!),
+                    })}
+                {fig.ringStatus === "low"
+                  ? ` · ${t("ringLow")}`
+                  : fig.ringStatus === "high"
+                    ? ` · ${t("ringHigh")}`
+                    : ""}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                {t("betaSystem")}
+              </dt>
+              <dd className="text-sm tabular-nums text-slate-900 dark:text-slate-100">
+                {show(fig.betaSystem, 4)}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                {t("fovReal")}
+              </dt>
+              <dd
+                className={`text-sm tabular-nums ${fig.fovTooSmall ? "text-red-700 dark:text-red-300" : "text-slate-900 dark:text-slate-100"}`}
+              >
+                {fig.fovShortMm === null
+                  ? `${show(fig.fovLongMm)} mm`
+                  : `${show(fig.fovLongMm)} × ${show(fig.fovShortMm)} mm`}
+              </dd>
+            </div>
+          </dl>
           {props.admin ? (
             <>
               <Frame
@@ -911,7 +956,9 @@ export function TubeFigures(props: TubeFiguresProps) {
               </Frame>
             </>
           ) : null}
-          <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
+          <div
+            className={`grid gap-3 ${props.needLongMm !== null ? "lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]" : ""}`}
+          >
             <Frame
               title={t("h3Title")}
               badge={badge}
@@ -935,23 +982,25 @@ export function TubeFigures(props: TubeFiguresProps) {
                 <FocusFigure fig={fig} e={e} wd={wd} mod={props.modMm} />
               )}
             </Frame>
-            <Frame
-              title={t("h5Title")}
-              badge={badge}
-              note={
-                fig.fovTooSmall ? (
-                  <p className="mt-1 text-sm text-red-700 dark:text-red-300">
-                    {t("fovTooSmall")}
-                  </p>
-                ) : null
-              }
-            >
-              <FovFigure
-                fig={fig}
-                needLong={props.needLongMm}
-                needShort={props.needShortMm}
-              />
-            </Frame>
+            {props.needLongMm !== null ? (
+              <Frame
+                title={t("h5Title")}
+                badge={badge}
+                note={
+                  fig.fovTooSmall ? (
+                    <p className="mt-1 text-sm text-red-700 dark:text-red-300">
+                      {t("fovTooSmall")}
+                    </p>
+                  ) : null
+                }
+              >
+                <FovFigure
+                  fig={fig}
+                  needLong={props.needLongMm}
+                  needShort={props.needShortMm}
+                />
+              </Frame>
+            ) : null}
           </div>
         </>
       )}

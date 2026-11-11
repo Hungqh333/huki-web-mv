@@ -14,6 +14,7 @@
     "signOut": "Đăng xuất",
     "kpi": "Chỉ tiêu",
     "pc": "PC Vision",
+    "mountCheck": "Kiểm tra lắp đặt",
     "selectorVision": "Gợi ý cấu hình",
     "lens": "Ống kính",
     "visionEngineer": "Vision Engineer",
@@ -40,6 +41,7 @@
       "codeReader": "Đầu đọc liền khối hoặc camera + phần mềm",
       "ocr": "Đọc, kiểm tra ký tự in",
       "lens": "Tiêu cự, khoảng làm việc, lọc ống trong kho",
+      "mountCheck": "Ống nối, ren cần vặn, dải nét theo WD",
       "light": "Kiểu đèn, màu đèn theo bài toán",
       "pc": "Danh mục PC thường dùng, gợi ý theo camera"
     }
@@ -2981,6 +2983,54 @@
       "sources": "Nguồn"
     }
   },
+  "mountCheck": {
+    "title": "Kiểm tra lắp đặt ống kính",
+    "subtitle": "Có ống kính, camera và ống nối: xem ống có lấy nét được ở khoảng cách làm việc không, ren phải vặn bao nhiêu, vùng nhìn thực so với vùng nhìn cần.",
+    "why": "Cùng công thức với Chọn ống kính (OPT-001, OPT-010). WD và MOD tính từ mặt trước ống. Ống chưa khai tiêu điểm trước sF thì hình ghi “ước tính” — kiểm lại khi lắp.",
+    "fromSelector": "Số điền sẵn từ một dòng kết quả Chọn ống kính. Đổi ô nào thì hình vẽ lại theo ô đó.",
+    "fromCatalog": "Từ kho",
+    "manual": "Nhập tay",
+    "lens": {
+      "title": "Ống kính",
+      "search": "Tìm theo hãng, model, tiêu cự…",
+      "pick": "Chọn ống kính",
+      "none": "— chọn ống kính —",
+      "noMatch": "Không có ống khớp",
+      "count": "{shown}/{total} ống thường",
+      "summary": "f {f} mm · MOD {mod} mm",
+      "summaryNoMod": "f {f} mm · chưa khai MOD",
+      "summarySf": "sF {sF} mm",
+      "summaryNoSf": "chưa khai sF",
+      "focal": "Tiêu cự f (mm)",
+      "mod": "MOD (mm, tuỳ chọn)",
+      "modHint": "Khoảng lấy nét gần nhất, tính từ mặt trước ống. Để trống thì chưa vẽ được dải nét.",
+      "sF": "Tiêu điểm trước sF (mm, tuỳ chọn) · chỉ admin",
+      "sFHint": "Từ mặt trước ống tới tiêu điểm trước, có thể âm. Để trống = 0, hình ghi “ước tính”."
+    },
+    "camera": {
+      "title": "Camera",
+      "manual": "Cỡ cảm biến",
+      "search": "Tìm theo hãng, model, độ phân giải…",
+      "pick": "Chọn camera",
+      "none": "— chọn camera —",
+      "noMatch": "Không có camera khớp",
+      "count": "{shown}/{total} camera",
+      "long": "Cảm biến cạnh dài (mm)",
+      "short": "Cảm biến cạnh ngắn (mm)",
+      "shortHint": "Để trống = line scan."
+    },
+    "setup": {
+      "title": "Lắp đặt",
+      "wd": "Khoảng cách làm việc WD (mm)",
+      "tube": "Ống nối e (mm)",
+      "converter": "Bộ nhân k (×)",
+      "fovW": "Vùng nhìn cần rộng (mm, tuỳ chọn)",
+      "fovH": "Vùng nhìn cần cao (mm, tuỳ chọn)",
+      "hint": "Ống nối: tổng các khúc, để trống = không ống. Bộ nhân để trống = không dùng. Có vùng nhìn cần thì vẽ thêm H5."
+    },
+    "missing": "Chọn ống kính, camera và nhập khoảng cách làm việc để vẽ hình.",
+    "resultLabel": "Hình kiểm tra lắp đặt"
+  },
   "lensSelector": {
     "title": "Chọn ống kính",
     "subtitle": "Nhập camera, vùng nhìn và khoảng cách làm việc → tiêu cự cần, F# giới hạn, và các ống kính trong kho lắp được.",
@@ -3066,11 +3116,11 @@
     },
     "figures": {
       "title": "Hình kiểm tra lắp đặt",
-      "reset": "Về số đã tính",
+      "reset": "Về số đã nhập",
       "sliderWd": "WD (mm)",
       "sliderTube": "Ống nối e (mm)",
       "sliderSf": "sF (mm) · chỉ admin",
-      "trialNote": "Đang thử: số trong hình đã khác bảng kết quả, bảng không đổi.",
+      "trialNote": "Đang thử: số trong hình đã khác số đã nhập ở trên, ô nhập không đổi.",
       "estimate": "ước tính · sF = 0 (ống chưa khai sF)",
       "estimateApprox": "ước tính · sF ≈ {v} mm",
       "trialSf": "đang thử sF = {v} mm",
@@ -3101,7 +3151,14 @@
       "fovActual": "thực (nét liền) {w} × {h} mm",
       "fovNeedLine": "cần (nét đứt) {w} mm",
       "fovActualLine": "thực (nét liền) {w} mm",
-      "fovTooSmall": "Vùng nhìn thực nhỏ hơn vùng nhìn cần: vật bị cắt khỏi khung hình."
+      "fovTooSmall": "Vùng nhìn thực nhỏ hơn vùng nhìn cần: vật bị cắt khỏi khung hình.",
+      "ring": "Ren cần vặn",
+      "ringValue": "{ring} / tối đa {max} mm",
+      "ringNoMod": "{ring} mm (chưa khai MOD)",
+      "ringLow": "ống dài quá",
+      "ringHigh": "vượt hành trình ren",
+      "betaSystem": "Độ phóng đại β cả hệ",
+      "fovReal": "Vùng nhìn thực"
     },
     "list": {
       "title": "Ống kính trong kho",
@@ -3124,11 +3181,7 @@
       "manualHint": "Đang kiểm mọi ống với {desc} đã khai — tắt gợi ý phụ kiện tự động.",
       "colRealWd": "WD thật",
       "realWdNote": "WD thật: khoảng cách từ mặt trước ống để vừa khít vùng nhìn (OPT-012), WD = f ÷ β + sF — đo lại khi lắp. Không đổi kết luận.",
-      "ring": "Ren cần vặn",
-      "ringValue": "{ring} / tối đa {max} mm",
-      "ringNoMod": "{ring} mm (chưa khai MOD)",
-      "ringLow": "ống dài quá",
-      "ringHigh": "vượt hành trình ren",
+      "mountCheck": "Kiểm tra lắp đặt (ren cần vặn, dải nét)",
       "realWdDelta": "lệch {delta} mm",
       "realWdSame": "khớp WD nhập",
       "realWdFixed": "theo hãng",

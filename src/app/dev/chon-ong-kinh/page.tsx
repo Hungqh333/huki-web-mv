@@ -24,7 +24,10 @@ export default async function DevLensSelectorPage({ searchParams }: PageProps<'/
         </a>
       </p>
       <FormulaVisibilityProvider show={!hide}>
-        <LensSelector components={seedCatalog().filter((c) => ['camera', 'lens', 'tube', 'converter'].includes(c.kind))} />
+        <LensSelector
+          components={seedCatalog().filter((c) => ['camera', 'lens', 'tube', 'converter'].includes(c.kind))}
+          checkHref="/dev/kiem-tra-lap-dat"
+        />
       </FormulaVisibilityProvider>
     </section>
   );

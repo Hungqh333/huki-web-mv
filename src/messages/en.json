@@ -14,6 +14,7 @@
     "signOut": "Sign out",
     "kpi": "KPI",
     "pc": "PC Vision",
+    "mountCheck": "Mounting check",
     "selectorVision": "Setup advisor",
     "lens": "Lens",
     "visionEngineer": "Vision Engineer",
@@ -40,6 +41,7 @@
       "codeReader": "Smart reader or camera plus software",
       "ocr": "Read and verify printed characters",
       "lens": "Focal length, working distance, stock filter",
+      "mountCheck": "Extension tubes, focus ring travel, focus range vs WD",
       "light": "Light type and color per task",
       "pc": "Common PC configurations, suggestions per camera"
     }
@@ -2981,6 +2983,54 @@
       "sources": "Sources"
     }
   },
+  "mountCheck": {
+    "title": "Lens mounting check",
+    "subtitle": "Have a lens, camera and extension tubes: check whether the lens focuses at the working distance, how far the focus ring must turn, and the actual vs required field of view.",
+    "why": "Same formulas as the Lens selector (OPT-001, OPT-010). WD and MOD are measured from the lens front. Lenses without a front focal distance sF are marked “estimate” — verify when mounting.",
+    "fromSelector": "Values pre-filled from a Lens selector result row. Change any field and the figures redraw.",
+    "fromCatalog": "From stock",
+    "manual": "Manual",
+    "lens": {
+      "title": "Lens",
+      "search": "Search brand, model, focal length…",
+      "pick": "Pick a lens",
+      "none": "— pick a lens —",
+      "noMatch": "No matching lens",
+      "count": "{shown}/{total} fixed lenses",
+      "summary": "f {f} mm · MOD {mod} mm",
+      "summaryNoMod": "f {f} mm · no MOD",
+      "summarySf": "sF {sF} mm",
+      "summaryNoSf": "no sF",
+      "focal": "Focal length f (mm)",
+      "mod": "MOD (mm, optional)",
+      "modHint": "Minimum object distance from the lens front. Leave empty and the focus range cannot be drawn.",
+      "sF": "Front focal distance sF (mm, optional) · admin only",
+      "sFHint": "From the lens front to the front focal point, may be negative. Empty = 0, figures marked “estimate”."
+    },
+    "camera": {
+      "title": "Camera",
+      "manual": "Sensor size",
+      "search": "Search brand, model, resolution…",
+      "pick": "Pick a camera",
+      "none": "— pick a camera —",
+      "noMatch": "No matching camera",
+      "count": "{shown}/{total} cameras",
+      "long": "Sensor long side (mm)",
+      "short": "Sensor short side (mm)",
+      "shortHint": "Empty = line scan."
+    },
+    "setup": {
+      "title": "Mounting",
+      "wd": "Working distance WD (mm)",
+      "tube": "Extension tube e (mm)",
+      "converter": "Converter k (×)",
+      "fovW": "Required FOV width (mm, optional)",
+      "fovH": "Required FOV height (mm, optional)",
+      "hint": "Tube: total of all pieces, empty = none. Converter empty = none. With a required FOV, H5 is drawn too."
+    },
+    "missing": "Pick a lens and a camera and enter the working distance to draw the figures.",
+    "resultLabel": "Mounting check figures"
+  },
   "lensSelector": {
     "title": "Lens selector",
     "subtitle": "Enter camera, field of view and working distance → required focal length, diffraction-limited F#, and the lenses in stock that fit.",
@@ -3066,11 +3116,11 @@
     },
     "figures": {
       "title": "Mounting check figures",
-      "reset": "Back to computed values",
+      "reset": "Back to entered values",
       "sliderWd": "WD (mm)",
       "sliderTube": "Extension tube e (mm)",
       "sliderSf": "sF (mm) · admin only",
-      "trialNote": "Trying values: the figures no longer match the results table; the table is unchanged.",
+      "trialNote": "Trying values: the figures no longer match the inputs above; the inputs are unchanged.",
       "estimate": "estimate · sF = 0 (lens has no sF)",
       "estimateApprox": "estimate · sF ≈ {v} mm",
       "trialSf": "trying sF = {v} mm",
@@ -3101,7 +3151,14 @@
       "fovActual": "actual (solid) {w} × {h} mm",
       "fovNeedLine": "required (dashed) {w} mm",
       "fovActualLine": "actual (solid) {w} mm",
-      "fovTooSmall": "Actual field of view is smaller than required: the part is cut off."
+      "fovTooSmall": "Actual field of view is smaller than required: the part is cut off.",
+      "ring": "Focus ring travel",
+      "ringValue": "{ring} / max {max} mm",
+      "ringNoMod": "{ring} mm (no MOD)",
+      "ringLow": "tube too long",
+      "ringHigh": "beyond ring travel",
+      "betaSystem": "System magnification β",
+      "fovReal": "Actual field of view"
     },
     "list": {
       "title": "Lenses in stock",
@@ -3124,11 +3181,7 @@
       "manualHint": "Checking every lens with the declared {desc} — automatic accessory suggestions are off.",
       "colRealWd": "Real WD",
       "realWdNote": "Real WD: distance from the lens front at which the field of view fits exactly (OPT-012), WD = f ÷ β + sF — measure when mounting. Does not change the verdict.",
-      "ring": "Focus ring travel",
-      "ringValue": "{ring} / max {max} mm",
-      "ringNoMod": "{ring} mm (no MOD)",
-      "ringLow": "tube too long",
-      "ringHigh": "beyond ring travel",
+      "mountCheck": "Mounting check (ring travel, focus range)",
       "realWdDelta": "off by {delta} mm",
       "realWdSame": "matches entered WD",
       "realWdFixed": "per vendor",

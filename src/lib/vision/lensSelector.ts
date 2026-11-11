@@ -494,7 +494,8 @@ export function cameraSensorMm(camera: ConfigCamera): { longMm: number; shortMm:
   return sensorOf(camera);
 }
 
-function sensorOf(camera: ConfigCamera) {
+/** Cỡ cảm biến (mm): số pixel × pitch, thiếu pitch thì theo cỡ danh định. Dùng chung với trang Kiểm tra lắp đặt. */
+export function sensorOf(camera: ConfigCamera) {
   const measured = sensorSizeMm(camera);
   if (measured) return measured;
   const nominal = camera.sensorFormat ? SENSOR_FORMATS[camera.sensorFormat] : undefined;

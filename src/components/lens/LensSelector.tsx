@@ -14,7 +14,6 @@ import {
   lensNeed,
   selectLenses,
   solveGeometry,
-  tubeFigure,
   type GeometryMode,
   type LensCandidate,
   type LensKindFilter,
@@ -25,8 +24,7 @@ import { renderFormula } from '@/lib/vision/formulaTerms';
 import type { CheckStatus } from '@/lib/vision/types';
 import { useShowFormulas } from '@/components/ui/FormulaVisibility';
 import { LensDiagram, type AccessoryKind, type DiagramAccessory, type DiagramField } from './LensDiagram';
-import { TubeFigures } from './TubeFigures';
-import { DEFAULT_ENGINE_PARAMS } from '@/lib/vision/engineParams';
+import { mountCheckHref } from '@/lib/vision/mountCheckOptions';
 
 /**
  * Giao diện Bộ chọn ống kính. Không tính gì ở đây — mọi con số đến từ
@@ -124,9 +122,12 @@ function StatusBadge({ status, declared = false }: { status: CheckStatus; declar
 export function LensSelector({
   components,
   params,
+  checkHref = '/kiem-tra-lap-dat',
 }: {
   components: Component[];
   params?: LensParams;
+  /** Trang Kiểm tra lắp đặt (trang xem trước local truyền /dev/…). */
+  checkHref?: string;
 }) {
   const t = useTranslations('lensSelector');
   const showFormulas = useShowFormulas();
@@ -242,17 +243,17 @@ export function LensSelector({
      → bảng mờ đi, nhắc bấm lại; không tự xoá. */
   const need = useMemo(() => (input ? lensNeed(input) : null), [input]);
   const inputKey = useMemo(() => JSON.stringify(input), [input]);
-  const [shown, setShown] = useState<{ key: string; input: LensSelectorInput } | null>(null);
+  const [shown, setShown] = useState<{ key: string; input: LensSelectorInput; cameraId: string | null } | null>(null);
   const stale = shown !== null && shown.key !== inputKey;
   const result = useMemo(() => (shown ? selectLenses(shown.input, lenses, params) : null), [shown, lenses, params]);
   const showResults = () => {
     if (!input) return;
-    setShown({ key: inputKey, input });
+    setShown({ key: inputKey, input, cameraId: source === 'catalog' && cameraId ? cameraId : null });
     setLimit(PAGE);
     setOpen(null);
   };
 
-  // Số chung cho hình kiểm tra lắp đặt trong Chi tiết (chốt 2026-11-11 Q5 vòng 2).
+  // Số chung cho link Kiểm tra lắp đặt trong Chi tiết (hình chuyển sang trang riêng — chốt 2026-11-11 vòng 3 Q1-B).
   const figureBase = useMemo<FigureBase | null>(() => {
     if (!shown) return null;
     const n = lensNeed(shown.input);
@@ -261,15 +262,16 @@ export function LensSelector({
     const line = shown.input.camera.cameraType === 'line';
     const fa = activeFixedAccessory(shown.input);
     return {
+      checkHref,
+      cameraId: shown.cameraId,
       sensorLongMm: n.sensorLongMm,
       sensorShortMm: line ? null : n.sensorShortMm,
       needLongMm: line ? w : Math.max(w, h),
       needShortMm: line ? null : Math.min(w, h),
       manualTubeMm: fa?.tubeMm ?? null,
       manualConverter: fa?.converterFactor ?? null,
-      marginWarn: (params ?? DEFAULT_ENGINE_PARAMS).tubeFocusMarginWarn,
     };
-  }, [shown, params]);
+  }, [shown, checkHref]);
 
   const all = result?.candidates ?? [];
   const counts = { pass: 0, warn: 0, info: 0, fail: 0 } as Record<CheckStatus, number>;
@@ -853,13 +855,14 @@ function NeedItem({ label, value, formula, note, status }: { label: string; valu
 }
 
 type FigureBase = {
+  checkHref: string;
+  cameraId: string | null;
   sensorLongMm: number;
   sensorShortMm: number | null;
   needLongMm: number;
   needShortMm: number | null;
   manualTubeMm: number | null;
   manualConverter: number | null;
-  marginWarn: number;
 };
 
 function LensRow({
@@ -901,26 +904,21 @@ function LensRow({
   const sFUncertain = (lens.frontFocalMm ?? null) === null || lens.frontFocalApprox === true;
   const approx = !fixedBeta && lens.focalLengthMm !== null && sFUncertain && c.fovLongMm !== null ? '≈ ' : '';
   const cell = 'py-2 pr-4 whitespace-nowrap tabular-nums';
-  // Hình kiểm tra lắp đặt + ren cần vặn: chỉ ống thường có tiêu cự, đã có WD (Q1, Q6).
-  const figProps =
+  // Link Kiểm tra lắp đặt (ren cần vặn, dải nét, vùng nhìn thực): chỉ ống thường có tiêu cự, đã có WD.
+  const checkLink =
     figureBase && wdMm !== null && lens.lensType === 'fixed' && lens.focalLengthMm !== null && lens.focalLengthMm > 0
-      ? {
-          focalMm: lens.focalLengthMm,
-          frontFocalMm: lens.frontFocalMm ?? null,
-          frontFocalApprox: lens.frontFocalApprox === true,
-          modMm: lens.wdMinMm,
-          wdMm,
-          tubeMm: acc?.kind === 'tube' ? acc.totalMm : (figureBase.manualTubeMm ?? 0),
-          converterFactor: acc?.kind === 'converter' ? acc.factor : (figureBase.manualConverter ?? 1),
-          sensorLongMm: figureBase.sensorLongMm,
-          sensorShortMm: figureBase.sensorShortMm,
-          needLongMm: figureBase.needLongMm,
-          needShortMm: figureBase.needShortMm,
-          marginWarn: figureBase.marginWarn,
-          admin: showFormulas,
-        }
+      ? mountCheckHref(figureBase.checkHref, {
+          lens: c.component.id,
+          cam: figureBase.cameraId,
+          sl: figureBase.sensorLongMm,
+          ss: figureBase.sensorShortMm,
+          wd: wdMm,
+          e: acc?.kind === 'tube' ? acc.totalMm : figureBase.manualTubeMm,
+          k: acc?.kind === 'converter' ? acc.factor : figureBase.manualConverter,
+          fw: figureBase.needLongMm,
+          fh: figureBase.needShortMm,
+        })
       : null;
-  const ring = figProps ? tubeFigure({ ...figProps, frontFocalMm: figProps.frontFocalMm ?? 0 }) : null;
   return (
     <Fragment>
       <tr className={c.status === 'fail' ? 'opacity-60' : undefined}>
@@ -973,9 +971,15 @@ function LensRow({
           <td colSpan={showFSet ? 12 : 11} className="px-4 py-3">
             {/* Bảng cuộn ngang: khung Chi tiết đứng yên bên trái, rộng không quá phần nhìn thấy. */}
             <div className="sticky left-4 max-w-[min(60rem,calc(100vw-6rem))]">
-            {figProps ? <TubeFigures key={c.component.id} {...figProps} /> : null}
+            {checkLink ? (
+              <div className="mb-3">
+                <ActionLink href={checkLink} variant="text" external>
+                  {t('list.mountCheck')}
+                </ActionLink>
+              </div>
+            ) : null}
             {/* Số chuyển từ bảng vào Chi tiết (Q1, Q4): WD thật, pixel dùng, F nên đặt. */}
-            <dl className="mb-3 grid gap-x-6 gap-y-2 sm:grid-cols-2 lg:grid-cols-4">
+            <dl className="mb-3 grid gap-x-6 gap-y-2 sm:grid-cols-3">
               <div>
                 <dt className="text-xs font-medium text-slate-500 dark:text-slate-400">{t('list.colRealWd')}</dt>
                 <dd className="text-sm text-slate-900 dark:text-slate-100">
@@ -990,17 +994,6 @@ function LensRow({
                 <dt className="text-xs font-medium text-slate-500 dark:text-slate-400">{t('list.colFSet')}</dt>
                 <dd className="text-sm text-slate-900 dark:text-slate-100">{c.fSet === null ? t('list.fSetNeedDh') : `F/${show(c.fSet, 1)}`}</dd>
               </div>
-              {ring ? (
-                <div>
-                  <dt className="text-xs font-medium text-slate-500 dark:text-slate-400">{t('list.ring')}</dt>
-                  <dd className={`text-sm ${ring.ringStatus === 'low' || ring.ringStatus === 'high' ? 'text-red-700 dark:text-red-300' : 'text-slate-900 dark:text-slate-100'}`}>
-                    {ring.ringStatus === 'unknown'
-                      ? t('list.ringNoMod', { ring: show(ring.ringMm, 1) })
-                      : t('list.ringValue', { ring: show(Math.max(ring.ringMm, 0), 1), max: show(ring.ringMaxMm, 1) })}
-                    {ring.ringStatus === 'low' ? ` · ${t('list.ringLow')}` : ring.ringStatus === 'high' ? ` · ${t('list.ringHigh')}` : ''}
-                  </dd>
-                </div>
-              ) : null}
             </dl>
             <p className={`mb-3 ${NOTE_CLASS}`}>{t('list.realWdNote')}</p>
             <ul className="space-y-2">

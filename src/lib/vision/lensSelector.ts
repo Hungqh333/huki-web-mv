@@ -286,6 +286,76 @@ export function tubeFocusMargin(wdMm: number, focus: { wdMinMm: number; wdMaxMm:
   return Math.min(wdMm - focus.wdMinMm, focus.wdMaxMm - wdMm) / wdMm;
 }
 
+export type TubeFigureInput = {
+  focalMm: number;
+  /** sF; ống chưa khai → 0 như OPT-001. */
+  frontFocalMm: number;
+  /** MOD từ mặt trước; null = ống chưa khai, không biết hành trình ren. */
+  modMm: number | null;
+  wdMm: number;
+  /** Tổng ống nối e (mm), 0 = không ống. */
+  tubeMm: number;
+  /** Hệ số bộ nhân k (1 = không có). */
+  converterFactor: number;
+  sensorLongMm: number;
+  /** null = line scan. */
+  sensorShortMm: number | null;
+  needLongMm: number;
+  needShortMm: number | null;
+};
+
+export type TubeFigure = {
+  /** x = WD − sF (vật → tiêu điểm trước). */
+  xMm: number;
+  /** β của ống gốc = f ÷ x; cả hệ = β × k. */
+  beta: number;
+  betaSystem: number;
+  /** x′ = f × β = f² ÷ x: độ đẩy ra sau F′ cần có. */
+  xPrimeMm: number;
+  betaMod: number | null;
+  /** Hành trình ren tối đa f × β_MOD. */
+  ringMaxMm: number | null;
+  /** Ren cần vặn = x′ − e. */
+  ringMm: number;
+  /** low: ren < 0 (ống dài quá) · high: ren > tối đa (ống ngắn quá) · unknown: chưa khai MOD. */
+  ringStatus: 'ok' | 'low' | 'high' | 'unknown';
+  /** Dải WD lấy nét với ống e (e = 0 → MOD → ∞); null khi chưa khai MOD. */
+  focus: { wdMinMm: number; wdMaxMm: number } | null;
+  /** Độ dư lấy nét (chỉ khi có ống và WD trong dải). */
+  margin: number | null;
+  fovLongMm: number;
+  fovShortMm: number | null;
+  /** Vùng nhìn thực nhỏ hơn vùng nhìn cần trên một trục (W07). */
+  fovTooSmall: boolean;
+};
+
+/**
+ * Số liệu cho hình H1–H3, H5 và "ren cần vặn" ở Chi tiết (chốt 2026-11-11 Q5 vòng 2). Không có
+ * công thức mới: cùng Newton của OPT-001/OPT-010 (tubeFocusRange, tubeFocusMargin). Thanh trượt
+ * WD / e / sF gọi lại hàm này. null khi WD ≤ sF (vật ở tại hoặc sau tiêu điểm trước, E01).
+ */
+export function tubeFigure(input: TubeFigureInput): TubeFigure | null {
+  const { focalMm: f, frontFocalMm: sF, modMm, wdMm, tubeMm: e } = input;
+  if (!(f > 0) || !(wdMm > 0) || !(e >= 0) || !(input.converterFactor > 0)) return null;
+  const xMm = wdMm - sF;
+  if (!(xMm > EPS)) return null;
+  const beta = f / xMm;
+  const xPrimeMm = f * beta;
+  const modOk = modMm !== null && modMm - sF > EPS;
+  const betaMod = modOk ? f / (modMm - sF) : null;
+  const ringMaxMm = betaMod !== null ? f * betaMod : null;
+  const ringMm = xPrimeMm - e;
+  const ringStatus = ringMm < -EPS ? 'low' : ringMaxMm === null ? 'unknown' : ringMm > ringMaxMm + EPS ? 'high' : 'ok';
+  const focus = modOk ? tubeFocusRange(f, modMm, e, sF) : null;
+  const margin = focus !== null && e > 0 && ringStatus === 'ok' ? tubeFocusMargin(wdMm, focus) : null;
+  const betaSystem = beta * input.converterFactor;
+  const fovLongMm = input.sensorLongMm / betaSystem;
+  const fovShortMm = input.sensorShortMm !== null ? input.sensorShortMm / betaSystem : null;
+  const fovTooSmall =
+    fovLongMm < input.needLongMm - EPS || (fovShortMm !== null && input.needShortMm !== null && fovShortMm < input.needShortMm - EPS);
+  return { xMm, beta, betaSystem, xPrimeMm, betaMod, ringMaxMm, ringMm, ringStatus, focus, margin, fovLongMm, fovShortMm, fovTooSmall };
+}
+
 /**
  * Tổ hợp ống nối có tổng ∈ [min; max]. Một chiều dài dùng lặp được.
  * Không truyền `focus`: ít khúc nhất, rồi ngắn nhất.

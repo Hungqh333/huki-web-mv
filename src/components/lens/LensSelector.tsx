@@ -14,6 +14,7 @@ import {
   lensNeed,
   selectLenses,
   solveGeometry,
+  tubeFigure,
   type GeometryMode,
   type LensCandidate,
   type LensKindFilter,
@@ -24,6 +25,8 @@ import { renderFormula } from '@/lib/vision/formulaTerms';
 import type { CheckStatus } from '@/lib/vision/types';
 import { useShowFormulas } from '@/components/ui/FormulaVisibility';
 import { LensDiagram, type AccessoryKind, type DiagramAccessory, type DiagramField } from './LensDiagram';
+import { TubeFigures } from './TubeFigures';
+import { DEFAULT_ENGINE_PARAMS } from '@/lib/vision/engineParams';
 
 /**
  * Giao diện Bộ chọn ống kính. Không tính gì ở đây — mọi con số đến từ
@@ -248,6 +251,25 @@ export function LensSelector({
     setLimit(PAGE);
     setOpen(null);
   };
+
+  // Số chung cho hình kiểm tra lắp đặt trong Chi tiết (chốt 2026-11-11 Q5 vòng 2).
+  const figureBase = useMemo<FigureBase | null>(() => {
+    if (!shown) return null;
+    const n = lensNeed(shown.input);
+    if (!n) return null;
+    const { fovWidthMm: w, fovHeightMm: h } = shown.input;
+    const line = shown.input.camera.cameraType === 'line';
+    const fa = activeFixedAccessory(shown.input);
+    return {
+      sensorLongMm: n.sensorLongMm,
+      sensorShortMm: line ? null : n.sensorShortMm,
+      needLongMm: line ? w : Math.max(w, h),
+      needShortMm: line ? null : Math.min(w, h),
+      manualTubeMm: fa?.tubeMm ?? null,
+      manualConverter: fa?.converterFactor ?? null,
+      marginWarn: (params ?? DEFAULT_ENGINE_PARAMS).tubeFocusMarginWarn,
+    };
+  }, [shown, params]);
 
   const all = result?.candidates ?? [];
   const counts = { pass: 0, warn: 0, info: 0, fail: 0 } as Record<CheckStatus, number>;
@@ -711,6 +733,7 @@ export function LensSelector({
                       wdMm={shown.input.workingDistanceMm}
                       manualTubeMm={shown.input.fixedAccessory?.tubeMm ?? null}
                       showFSet={shown.input.heightVariationMm !== null}
+                      figureBase={figureBase}
                       open={open === c.component.id}
                       onToggle={() => setOpen(open === c.component.id ? null : c.component.id)}
                     />
@@ -829,12 +852,23 @@ function NeedItem({ label, value, formula, note, status }: { label: string; valu
   );
 }
 
+type FigureBase = {
+  sensorLongMm: number;
+  sensorShortMm: number | null;
+  needLongMm: number;
+  needShortMm: number | null;
+  manualTubeMm: number | null;
+  manualConverter: number | null;
+  marginWarn: number;
+};
+
 function LensRow({
   candidate: c,
   line,
   wdMm,
   manualTubeMm,
   showFSet,
+  figureBase,
   open,
   onToggle,
 }: {
@@ -845,6 +879,7 @@ function LensRow({
   /** Ống nối anh khai tay (áp cho mọi ống). */
   manualTubeMm: number | null;
   showFSet: boolean;
+  figureBase: FigureBase | null;
   open: boolean;
   onToggle: () => void;
 }) {
@@ -866,6 +901,26 @@ function LensRow({
   const sFUncertain = (lens.frontFocalMm ?? null) === null || lens.frontFocalApprox === true;
   const approx = !fixedBeta && lens.focalLengthMm !== null && sFUncertain && c.fovLongMm !== null ? '≈ ' : '';
   const cell = 'py-2 pr-4 whitespace-nowrap tabular-nums';
+  // Hình kiểm tra lắp đặt + ren cần vặn: chỉ ống thường có tiêu cự, đã có WD (Q1, Q6).
+  const figProps =
+    figureBase && wdMm !== null && lens.lensType === 'fixed' && lens.focalLengthMm !== null && lens.focalLengthMm > 0
+      ? {
+          focalMm: lens.focalLengthMm,
+          frontFocalMm: lens.frontFocalMm ?? null,
+          frontFocalApprox: lens.frontFocalApprox === true,
+          modMm: lens.wdMinMm,
+          wdMm,
+          tubeMm: acc?.kind === 'tube' ? acc.totalMm : (figureBase.manualTubeMm ?? 0),
+          converterFactor: acc?.kind === 'converter' ? acc.factor : (figureBase.manualConverter ?? 1),
+          sensorLongMm: figureBase.sensorLongMm,
+          sensorShortMm: figureBase.sensorShortMm,
+          needLongMm: figureBase.needLongMm,
+          needShortMm: figureBase.needShortMm,
+          marginWarn: figureBase.marginWarn,
+          admin: showFormulas,
+        }
+      : null;
+  const ring = figProps ? tubeFigure({ ...figProps, frontFocalMm: figProps.frontFocalMm ?? 0 }) : null;
   return (
     <Fragment>
       <tr className={c.status === 'fail' ? 'opacity-60' : undefined}>
@@ -916,8 +971,11 @@ function LensRow({
       {open ? (
         <tr className="bg-slate-50/60 dark:bg-slate-900/60">
           <td colSpan={showFSet ? 12 : 11} className="px-4 py-3">
+            {/* Bảng cuộn ngang: khung Chi tiết đứng yên bên trái, rộng không quá phần nhìn thấy. */}
+            <div className="sticky left-4 max-w-[min(60rem,calc(100vw-6rem))]">
+            {figProps ? <TubeFigures key={c.component.id} {...figProps} /> : null}
             {/* Số chuyển từ bảng vào Chi tiết (Q1, Q4): WD thật, pixel dùng, F nên đặt. */}
-            <dl className="mb-3 grid gap-x-6 gap-y-2 sm:grid-cols-3">
+            <dl className="mb-3 grid gap-x-6 gap-y-2 sm:grid-cols-2 lg:grid-cols-4">
               <div>
                 <dt className="text-xs font-medium text-slate-500 dark:text-slate-400">{t('list.colRealWd')}</dt>
                 <dd className="text-sm text-slate-900 dark:text-slate-100">
@@ -932,6 +990,17 @@ function LensRow({
                 <dt className="text-xs font-medium text-slate-500 dark:text-slate-400">{t('list.colFSet')}</dt>
                 <dd className="text-sm text-slate-900 dark:text-slate-100">{c.fSet === null ? t('list.fSetNeedDh') : `F/${show(c.fSet, 1)}`}</dd>
               </div>
+              {ring ? (
+                <div>
+                  <dt className="text-xs font-medium text-slate-500 dark:text-slate-400">{t('list.ring')}</dt>
+                  <dd className={`text-sm ${ring.ringStatus === 'low' || ring.ringStatus === 'high' ? 'text-red-700 dark:text-red-300' : 'text-slate-900 dark:text-slate-100'}`}>
+                    {ring.ringStatus === 'unknown'
+                      ? t('list.ringNoMod', { ring: show(ring.ringMm, 1) })
+                      : t('list.ringValue', { ring: show(Math.max(ring.ringMm, 0), 1), max: show(ring.ringMaxMm, 1) })}
+                    {ring.ringStatus === 'low' ? ` · ${t('list.ringLow')}` : ring.ringStatus === 'high' ? ` · ${t('list.ringHigh')}` : ''}
+                  </dd>
+                </div>
+              ) : null}
             </dl>
             <p className={`mb-3 ${NOTE_CLASS}`}>{t('list.realWdNote')}</p>
             <ul className="space-y-2">
@@ -955,6 +1024,7 @@ function LensRow({
                 {t('list.datasheet')}
               </ActionLink>
             ) : null}
+            </div>
           </td>
         </tr>
       ) : null}

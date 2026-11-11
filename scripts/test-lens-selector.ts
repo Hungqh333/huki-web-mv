@@ -366,6 +366,46 @@ test('[OPT-010] test case của đặc tả công thức ống nối 2026-11-11 
   close(4 * (1 + r13.betaWd), 5.7, 0.05, 'T13 F hiệu dụng');
 });
 
+test('[OPT-010] số liệu hình H1–H3, H5 + ren cần vặn (chốt 2026-11-11 Q5)', async () => {
+  const { tubeFigure } = await import('../src/lib/vision/lensSelector');
+  const base = { focalMm: 50, frontFocalMm: 20, modMm: 300, wdMm: 140, tubeMm: 15, converterFactor: 1, sensorLongMm: 8.8, sensorShortMm: 6.6, needLongMm: 20, needShortMm: 15 };
+  // T13: β 0,417, x′ 20,8, ren 5,8 / tối đa 8,9, dải 124,5 → 186,7, vùng nhìn 21,1, dư min(15,5; 46,7) ÷ 140 = 11,1 %
+  const t13 = tubeFigure(base)!;
+  close(t13.xMm, 120, 1e-9, 'x');
+  close(t13.beta, 0.417, 0.001, 'β');
+  close(t13.xPrimeMm, 20.83, 0.01, 'x′');
+  close(t13.ringMm, 5.8, 0.05, 'ren');
+  close(t13.ringMaxMm!, 8.9, 0.05, 'ren tối đa');
+  assert.equal(t13.ringStatus, 'ok');
+  close(t13.focus!.wdMinMm, 124.5, 0.1, 'WD gần');
+  close(t13.focus!.wdMaxMm, 186.7, 0.1, 'WD xa');
+  close(t13.margin!, 15.5 / 140, 0.001, 'độ dư');
+  close(t13.fovLongMm, 21.1, 0.05, 'vùng nhìn');
+  assert.equal(t13.fovTooSmall, false);
+  // Ống 20 → x′ 20,8 − 20 = 0,8 mm ren (vẫn nét, WD 140 < 145); ống 25 → ren âm = ống dài quá
+  assert.equal(tubeFigure({ ...base, tubeMm: 20 })!.ringStatus, 'ok');
+  assert.equal(tubeFigure({ ...base, tubeMm: 25 })!.ringStatus, 'low');
+  assert.equal(tubeFigure({ ...base, tubeMm: 25 })!.margin, null);
+  // Ống 10 → ren 10,8 > 8,9 = ống ngắn quá (WD 140 < WD gần 152,1)
+  assert.equal(tubeFigure({ ...base, tubeMm: 10 })!.ringStatus, 'high');
+  // Chưa khai MOD → không biết ren tối đa, không có dải nét
+  const noMod = tubeFigure({ ...base, modMm: null })!;
+  assert.equal(noMod.ringStatus, 'unknown');
+  assert.equal(noMod.focus, null);
+  // T15: không ống, f 25 sF 15 MOD 100 WD 300 → β 0,088, vùng nhìn 100,3, dải MOD → ∞, không có độ dư
+  const t15 = tubeFigure({ ...base, focalMm: 25, frontFocalMm: 15, modMm: 100, wdMm: 300, tubeMm: 0 })!;
+  close(t15.beta, 0.0877, 0.0001, 'T15 β');
+  close(t15.fovLongMm, 100.3, 0.05, 'T15 vùng nhìn');
+  assert.deepEqual([Math.round(t15.focus!.wdMinMm), t15.focus!.wdMaxMm], [100, Infinity]);
+  assert.equal(t15.margin, null);
+  // Bộ nhân ×2: vùng nhìn còn một nửa → nhỏ hơn vùng nhìn cần (W07)
+  const k2 = tubeFigure({ ...base, converterFactor: 2 })!;
+  close(k2.fovLongMm, 10.56, 0.01, 'vùng nhìn ×2');
+  assert.equal(k2.fovTooSmall, true);
+  // T16: f 50, sF 60, WD 55 → vật sau tiêu điểm trước (E01)
+  assert.equal(tubeFigure({ ...base, frontFocalMm: 60, wdMm: 55 }), null);
+});
+
 test('[OPT-010] chọn ống theo độ dư lấy nét (chốt 2026-11-11 Q1)', async () => {
   const { tubeLengthRange, tubeFocusRange, tubeFocusMargin, chooseTubeStack } = await import('../src/lib/vision/lensSelector');
   // f 50, sF 0, MOD 300, WD 140: e ∈ [9,5; 17,9]. Ống 10: nét [136,4; 250] → dư 3,6 ÷ 140 = 2,6 %.

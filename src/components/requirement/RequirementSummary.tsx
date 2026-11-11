@@ -654,7 +654,7 @@ export function RequirementSummary({
       </div>
 
       {resolved ? (
-        <aside className="min-w-0 lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:self-start lg:overflow-y-auto">
+        <aside className="min-w-0 lg:sticky lg:top-[calc(var(--header-h,0px)_+_1.5rem)] lg:max-h-[calc(100vh_-_var(--header-h,0px)_-_3rem)] lg:self-start lg:overflow-y-auto">
           {assumptionsOpen ? (
             <AssumptionsPanel
               assumptions={resolved.assumptions}

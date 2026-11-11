@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
+import { HeaderHeightVar } from './HeaderHeightVar';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { MainNav, SectionNav, type NavGroup } from './MainNav';
 import { RoleBadge } from '@/components/auth/RoleBadge';
@@ -71,7 +72,10 @@ export async function Header() {
   ];
 
   return (
-    <header className="border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
+    // Đứng yên khi cuộn (lg trở lên, 2026-11-11). Màn hẹp không khoá: menu mở ra dài hơn màn hình
+    // thì phải cuộn được. z-30: dưới lớp phủ hộp thoại (z-40/50).
+    <header id="site-header" className="border-b border-slate-200 bg-white lg:sticky lg:top-0 lg:z-30 dark:border-slate-800 dark:bg-slate-950">
+      <HeaderHeightVar targetId="site-header" />
       <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-3 px-4 py-3 sm:px-6">
         <Link href="/" className="flex items-center gap-2">
           <span className="grid size-8 place-items-center rounded-md bg-sky-600 text-sm font-bold text-white">

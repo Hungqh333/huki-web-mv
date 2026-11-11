@@ -29,7 +29,7 @@ export function AdminNav({ items, label }: { items: AdminNavItem[]; label: strin
   return (
     <nav
       aria-label={label}
-      className="-mx-4 flex gap-2 overflow-x-auto px-4 lg:sticky lg:top-6 lg:mx-0 lg:max-h-[calc(100vh-3rem)] lg:flex-col lg:gap-1 lg:self-start lg:overflow-y-auto lg:overflow-x-visible lg:px-0"
+      className="-mx-4 flex gap-2 overflow-x-auto px-4 lg:sticky lg:top-[calc(var(--header-h,0px)_+_1.5rem)] lg:mx-0 lg:max-h-[calc(100vh_-_var(--header-h,0px)_-_3rem)] lg:flex-col lg:gap-1 lg:self-start lg:overflow-y-auto lg:overflow-x-visible lg:px-0"
     >
       {items.map((item) => {
         // Trang con (/admin/chi-tieu/he-so) vẫn phải sáng mục cha.

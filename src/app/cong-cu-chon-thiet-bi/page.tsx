@@ -137,7 +137,7 @@ export default async function SelectorHomePage() {
             </Link>
           </div>
 
-          <aside className="space-y-4 xl:sticky xl:top-6 xl:self-start">
+          <aside className="space-y-4 xl:sticky xl:top-[calc(var(--header-h,0px)_+_1.5rem)] xl:self-start">
             {/* Bài toán vừa dùng — chỉ hiện khi có lịch sử, khỏi chiếm chỗ vô ích */}
             <Panel
               id="recent-tasks-title"

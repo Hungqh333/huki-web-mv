@@ -8,6 +8,11 @@
  */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Header đứng yên khi cuộn (lg trở lên): nhảy tới #mục không chui xuống dưới header. --header-h do HeaderHeightVar ghi. */
+html {
+  scroll-padding-top: calc(var(--header-h, 0px) + 0.75rem);
+}
+
 /*
  * Đã dọn phần sót lại của create-next-app:
  *

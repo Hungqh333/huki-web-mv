@@ -219,7 +219,7 @@ export function KpiCalculator({ data, locale }: { data: KpiData; locale: 'vi' | 
           />
         </div>
 
-        <div className="min-w-0 lg:sticky lg:top-6 lg:self-start">
+        <div className="min-w-0 lg:sticky lg:top-[calc(var(--header-h,0px)_+_1.5rem)] lg:self-start">
           {result ? (
             <KpiResultPanel
               result={result}

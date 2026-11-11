@@ -243,7 +243,7 @@ export function MountCheck({
       </div>
 
       {figProps ? (
-        <section aria-label={t('resultLabel')} className="rounded-lg border border-slate-200 bg-slate-50/60 p-4 dark:border-slate-800 dark:bg-slate-900/60">
+        <section aria-label={t('resultLabel')} className="rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900">
           {/* Đổi ô nhập → vẽ lại từ đầu, thanh trượt về số mới. */}
           <div className="max-w-5xl">
             <TubeFigures key={JSON.stringify(figProps)} {...figProps} />

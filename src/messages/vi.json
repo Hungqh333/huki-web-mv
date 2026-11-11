@@ -3158,7 +3158,13 @@
       "ringLow": "ống dài quá",
       "ringHigh": "vượt hành trình ren",
       "betaSystem": "Độ phóng đại β cả hệ",
-      "fovReal": "Vùng nhìn thực"
+      "fovReal": "Vùng nhìn thực",
+      "margin": "Độ dư lấy nét",
+      "marginValue": "{m} % WD",
+      "marginOutside": "WD ngoài dải nét",
+      "marginNoMod": "chưa khai MOD",
+      "marginNoTube": "không ống · nét từ {mod} mm trở ra",
+      "wdBandNote": "Đoạn xanh trên thanh WD là dải lấy nét với ống nối đang chọn."
     },
     "list": {
       "title": "Ống kính trong kho",

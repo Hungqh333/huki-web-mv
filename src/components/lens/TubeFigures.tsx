@@ -15,6 +15,8 @@ import {
  *   H1 sơ đồ tia Newton, H2 thanh độ đẩy ra = ống nối + ren — chỉ admin (lộ mô hình Newton, Q2);
  *   H3 dải WD lấy nét, H5 vùng nhìn cần / thực, dòng "Ren cần vặn" — Member+.
  *   Thanh trượt WD, e cho mọi người xem trang; sF chỉ admin (Q3). Chỉ đổi hình trong khung này, không đổi ô nhập.
+ *   Vòng 4 (Q1–Q6 như đề xuất): H3 + H5 lên ngay dưới thanh trượt, H2 rồi H1 để cuối; khối thanh trượt + số dính
+ *   khi cuộn; ô gõ số; trục H2/H3/H5 cố định theo dải thanh trượt; thêm ô "Độ dư lấy nét"; thanh WD tô dải nét.
  *   H4 (bảng quét sF) bỏ, thay bằng dòng "ước tính" trên tiêu đề (Q5).
  * Không tính gì ở đây: số đến từ `tubeFigure` (lensSelector.ts, cùng công thức OPT-001/OPT-010).
  */
@@ -395,13 +397,22 @@ function NewtonFigure({
 }
 
 /** H2 — độ đẩy ra x′ = ống nối e + ren; vạch e + ren tối đa; đỏ khi thừa / thiếu. */
-function PushFigure({ fig, e }: { fig: TubeFigure; e: number }) {
+function PushFigure({
+  fig,
+  e,
+  scaleMm,
+}: {
+  fig: TubeFigure;
+  e: number;
+  /** Thước cố định theo dải thanh trượt (Q4). */
+  scaleMm: number;
+}) {
   const t = useTranslations("lensSelector.figures");
   const W = 640;
   const L = 20;
   const R = W - 20;
   const reach = fig.ringMaxMm !== null ? e + fig.ringMaxMm : null;
-  const max = Math.max(fig.xPrimeMm, e, reach ?? 0) * 1.08 || 1;
+  const max = Math.max(scaleMm, fig.xPrimeMm, e, reach ?? 0) * 1.08 || 1;
   const X = (mm: number) => L + ((R - L) * mm) / max;
   const top = 36;
   const h = 20;
@@ -517,18 +528,21 @@ function FocusFigure({
   e,
   wd,
   mod,
+  axisMm,
 }: {
   fig: TubeFigure;
   e: number;
   wd: number;
   mod: number | null;
+  /** Trục cố định theo dải thanh trượt WD (Q4). */
+  axisMm: number;
 }) {
   const t = useTranslations("lensSelector.figures");
   const W = 440;
   const L = 20;
   const R = W - 20;
   const focus = fig.focus!;
-  const D = Math.max(wd * 1.8, focus.wdMinMm * 1.15, (mod ?? 0) * 1.15);
+  const D = Math.max(axisMm, wd * 1.05);
   const X = (mm: number) => L + ((R - L) * Math.min(mm, D)) / D;
   const band = (
     y: number,
@@ -625,17 +639,22 @@ function FovFigure({
   fig,
   needLong,
   needShort,
+  maxLong,
+  maxShort,
 }: {
   fig: TubeFigure;
   needLong: number;
   needShort: number | null;
+  /** Vùng nhìn lớn nhất trên dải thanh trượt WD — khung tỉ lệ cố định (Q4). */
+  maxLong: number;
+  maxShort: number | null;
 }) {
   const t = useTranslations("lensSelector.figures");
   const W = 300;
   const H = 150;
   const line = fig.fovShortMm === null || needShort === null;
-  const maxW = Math.max(fig.fovLongMm, needLong);
-  const maxH = line ? 1 : Math.max(fig.fovShortMm!, needShort!);
+  const maxW = Math.max(fig.fovLongMm, needLong, maxLong);
+  const maxH = line ? 1 : Math.max(fig.fovShortMm!, needShort!, maxShort ?? 0);
   const s = line ? 260 / maxW : Math.min(260 / maxW, 110 / maxH);
   const rect = (w: number, h: number, cls: string, dash?: string) => (
     <rect
@@ -695,6 +714,11 @@ function FovFigure({
   );
 }
 
+/**
+ * Thanh trượt + ô gõ số (chốt 2026-11-11 vòng 4 Q3). Ô gõ giữ chuỗi đang gõ dở ("13.") tới khi rời ô;
+ * số hợp lệ đẩy ngay ra ngoài. `band`: đoạn tô xanh trên rãnh (Q6, thanh WD = dải lấy nét).
+ * `ticks`: vạch dưới rãnh (ống nối chuẩn) — rãnh tự vẽ nên datalist không hiện vạch.
+ */
 function Slider({
   id,
   label,
@@ -702,7 +726,9 @@ function Slider({
   min,
   max,
   step,
-  list,
+  accept,
+  band,
+  ticks,
   onChange,
 }: {
   id: string;
@@ -711,31 +737,69 @@ function Slider({
   min: number;
   max: number;
   step: number;
-  list?: string;
+  accept: "positive" | "nonneg" | "any";
+  band?: { from: number; to: number } | null;
+  ticks?: number[];
   onChange: (v: number) => void;
 }) {
+  const [draft, setDraft] = useState<string | null>(null);
+  const pct = (v: number) =>
+    (Math.min(Math.max(v, min), max) - min) / (max - min || 1) * 100;
+  const background = band
+    ? `linear-gradient(to right, var(--range-off) 0% ${r1(pct(band.from))}%, var(--range-on) ${r1(pct(band.from))}% ${r1(pct(band.to))}%, var(--range-off) ${r1(pct(band.to))}% 100%)`
+    : undefined;
+  const ok = (n: number) =>
+    accept === "positive" ? n > 0 : accept === "nonneg" ? n >= 0 : true;
   return (
     <div>
-      <label
-        htmlFor={id}
-        className="flex items-baseline justify-between text-xs font-medium text-slate-600 dark:text-slate-300"
-      >
-        <span>{label}</span>
-        <span className="tabular-nums text-sm font-semibold text-slate-900 dark:text-slate-100">
-          {show(value)}
-        </span>
-      </label>
+      <div className="flex items-center justify-between gap-2">
+        <label
+          htmlFor={id}
+          className="text-xs font-medium text-slate-600 dark:text-slate-300"
+        >
+          {label}
+        </label>
+        <input
+          type="number"
+          inputMode="decimal"
+          step={step}
+          aria-label={label}
+          value={draft ?? show(value)}
+          onChange={(ev) => {
+            const s = ev.target.value;
+            setDraft(s);
+            const n = Number(s.replace(",", "."));
+            if (s.trim() !== "" && Number.isFinite(n) && ok(n)) onChange(n);
+          }}
+          onBlur={() => setDraft(null)}
+          className="w-24 rounded-md border border-slate-300 bg-white px-2 py-1 text-right text-sm font-semibold tabular-nums text-slate-900 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+        />
+      </div>
       <input
         id={id}
         type="range"
         min={min}
         max={max}
         step={step}
-        value={value}
-        list={list}
-        onChange={(ev) => onChange(Number(ev.target.value))}
-        className="mt-1 w-full accent-sky-600"
+        value={Math.min(Math.max(value, min), max)}
+        onChange={(ev) => {
+          setDraft(null);
+          onChange(Number(ev.target.value));
+        }}
+        style={background ? { background } : undefined}
+        className="fig-range mt-2 w-full"
       />
+      {ticks && ticks.length > 0 ? (
+        <div className="relative mx-2 h-3" aria-hidden="true">
+          {ticks.map((v) => (
+            <span
+              key={v}
+              className="absolute top-0 h-1.5 w-px bg-slate-400 dark:bg-slate-500"
+              style={{ left: `${r1(pct(v))}%` }}
+            />
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -805,7 +869,6 @@ export function TubeFigures(props: TubeFiguresProps) {
   );
   const wdMax = Math.ceil((props.wdMm * 2) / wdStep) * wdStep;
   const eMax = Math.max(props.focalMm, props.tubeMm);
-  const tubeList = `${uid}-tubes`;
   const marginLow =
     fig?.margin !== null &&
     fig?.margin !== undefined &&
@@ -815,77 +878,135 @@ export function TubeFigures(props: TubeFiguresProps) {
     fig.focus !== null &&
     (wd < fig.focus.wdMinMm - 1e-9 || wd > fig.focus.wdMaxMm + 1e-9);
 
+  /* Trục cố định theo cả dải thanh trượt (chốt 2026-11-11 vòng 4 Q4): kéo thì chỉ vạch / khung đổi chỗ,
+     dải nét và thước đứng yên. Chỉ là tỉ lệ vẽ, không phải phép tính kỹ thuật. */
+  const f = props.focalMm;
+  const xAtMin = wdMin - sF;
+  const xAtMax = wdMax - sF;
+  const pushScaleMm = Math.max(
+    xAtMin > 1e-9 ? (f * f) / xAtMin : 0,
+    eMax + (fig?.ringMaxMm ?? 0),
+  );
+  const focusAxisMm = Math.max(wdMax * 1.05, (props.modMm ?? 0) * 1.15);
+  const betaAtMax =
+    xAtMax > 1e-9 ? (f / xAtMax) * props.converterFactor : null;
+  const fovMax =
+    betaAtMax !== null
+      ? {
+          long: props.sensorLongMm / betaAtMax,
+          short:
+            props.sensorShortMm !== null
+              ? props.sensorShortMm / betaAtMax
+              : null,
+        }
+      : null;
+
+  const marginCell =
+    fig === null
+      ? null
+      : fig.focus === null
+        ? { text: t("marginNoMod"), tone: "muted" as const }
+        : outside
+          ? { text: t("marginOutside"), tone: "bad" as const }
+          : fig.margin !== null
+            ? {
+                text: t("marginValue", { m: show(fig.margin * 100) }),
+                tone: marginLow ? ("warn" as const) : ("ok" as const),
+              }
+            : e <= 1e-9
+              ? {
+                  text: t("marginNoTube", { mod: show(props.modMm ?? 0) }),
+                  tone: "muted" as const,
+                }
+              : { text: "—", tone: "muted" as const };
+  const TONE = {
+    ok: "text-slate-900 dark:text-slate-100",
+    warn: "text-amber-700 dark:text-amber-300",
+    bad: "text-red-700 dark:text-red-300",
+    muted: "text-slate-500 dark:text-slate-400",
+  };
+  const DT = "text-xs font-medium text-slate-500 dark:text-slate-400";
+
   return (
     <div className="mb-4 space-y-3">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
-          {t("title")}
-        </h4>
-        {moved ? (
-          <button
-            type="button"
-            onClick={() => {
-              setWd(props.wdMm);
-              setE(props.tubeMm);
-              setSF(sF0);
-            }}
-            className="rounded-md border border-slate-300 bg-white px-2.5 py-1 text-xs font-medium hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
-          >
-            {t("reset")}
-          </button>
-        ) : null}
-      </div>
-      <div
-        className={`grid gap-x-6 gap-y-3 ${props.admin ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}
-      >
-        <Slider
-          id={`${uid}-wd`}
-          label={t("sliderWd")}
-          value={wd}
-          min={wdMin}
-          max={wdMax}
-          step={wdStep}
-          onChange={setWd}
-        />
-        <Slider
-          id={`${uid}-e`}
-          label={t("sliderTube")}
-          value={e}
-          min={0}
-          max={eMax}
-          step={0.5}
-          list={tubeList}
-          onChange={setE}
-        />
-        {props.admin ? (
+      {/* Khối điều khiển + số kết quả dính dưới thanh menu khi cuộn (Q2, màn rộng). */}
+      <div className="space-y-3 border-b border-slate-200 bg-slate-50 pb-3 lg:sticky lg:top-[var(--header-h,0px)] lg:z-20 lg:pt-3 dark:border-slate-800 dark:bg-slate-900">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+            {t("title")}
+          </h4>
+          {moved ? (
+            <button
+              type="button"
+              onClick={() => {
+                setWd(props.wdMm);
+                setE(props.tubeMm);
+                setSF(sF0);
+              }}
+              className="rounded-md border border-slate-300 bg-white px-2.5 py-1 text-xs font-medium hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
+            >
+              {t("reset")}
+            </button>
+          ) : null}
+        </div>
+        <div
+          className={`grid gap-x-6 gap-y-3 ${props.admin ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}
+        >
           <Slider
-            id={`${uid}-sf`}
-            label={t("sliderSf")}
-            value={sF}
-            min={-props.focalMm}
-            max={props.focalMm}
-            step={0.5}
-            onChange={setSF}
+            id={`${uid}-wd`}
+            label={t("sliderWd")}
+            value={wd}
+            min={wdMin}
+            max={wdMax}
+            step={wdStep}
+            accept="positive"
+            band={
+              fig?.focus
+                ? { from: fig.focus.wdMinMm, to: fig.focus.wdMaxMm }
+                : null
+            }
+            onChange={setWd}
           />
-        ) : null}
-      </div>
-      <datalist id={tubeList}>
-        {STANDARD_TUBE_LENGTHS_MM.filter((v) => v <= eMax).map((v) => (
-          <option key={v} value={v} />
-        ))}
-      </datalist>
-      {moved ? <p className={NOTE_CLASS}>{t("trialNote")}</p> : null}
-      {fig === null ? (
-        <p className="text-sm text-red-700 dark:text-red-300">{t("e01")}</p>
-      ) : (
-        <>
-          <dl className="grid gap-x-6 gap-y-2 rounded-md border border-slate-200 bg-white px-3 py-2 sm:grid-cols-3 dark:border-slate-700 dark:bg-slate-900">
+          <Slider
+            id={`${uid}-e`}
+            label={t("sliderTube")}
+            value={e}
+            min={0}
+            max={eMax}
+            step={0.5}
+            accept="nonneg"
+            ticks={STANDARD_TUBE_LENGTHS_MM.filter((v) => v <= eMax)}
+            onChange={setE}
+          />
+          {props.admin ? (
+            <Slider
+              id={`${uid}-sf`}
+              label={t("sliderSf")}
+              value={sF}
+              min={-props.focalMm}
+              max={props.focalMm}
+              step={0.5}
+              accept="any"
+              onChange={setSF}
+            />
+          ) : null}
+        </div>
+        {fig?.focus ? <p className={NOTE_CLASS}>{t("wdBandNote")}</p> : null}
+        {moved ? <p className={NOTE_CLASS}>{t("trialNote")}</p> : null}
+        {fig === null || marginCell === null ? (
+          <p className="text-sm text-red-700 dark:text-red-300">{t("e01")}</p>
+        ) : (
+          <dl className="grid grid-cols-2 gap-x-6 gap-y-2 rounded-md border border-slate-200 bg-white px-3 py-2 lg:grid-cols-4 dark:border-slate-700 dark:bg-slate-900">
             <div>
-              <dt className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                {t("ring")}
-              </dt>
+              <dt className={DT}>{t("margin")}</dt>
+              <dd className={`text-sm tabular-nums ${TONE[marginCell.tone]}`}>
+                {marginCell.text}
+              </dd>
+            </div>
+            <div>
+              <dt className={DT}>{t("ring")}</dt>
               <dd
-                className={`text-sm tabular-nums ${fig.ringStatus === "low" || fig.ringStatus === "high" ? "text-red-700 dark:text-red-300" : "text-slate-900 dark:text-slate-100"}`}
+                className={`text-sm tabular-nums ${fig.ringStatus === "low" || fig.ringStatus === "high" ? TONE.bad : TONE.ok}`}
               >
                 {fig.ringStatus === "unknown"
                   ? t("ringNoMod", { ring: show(fig.ringMm) })
@@ -901,19 +1022,15 @@ export function TubeFigures(props: TubeFiguresProps) {
               </dd>
             </div>
             <div>
-              <dt className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                {t("betaSystem")}
-              </dt>
-              <dd className="text-sm tabular-nums text-slate-900 dark:text-slate-100">
+              <dt className={DT}>{t("betaSystem")}</dt>
+              <dd className={`text-sm tabular-nums ${TONE.ok}`}>
                 {show(fig.betaSystem, 4)}
               </dd>
             </div>
             <div>
-              <dt className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                {t("fovReal")}
-              </dt>
+              <dt className={DT}>{t("fovReal")}</dt>
               <dd
-                className={`text-sm tabular-nums ${fig.fovTooSmall ? "text-red-700 dark:text-red-300" : "text-slate-900 dark:text-slate-100"}`}
+                className={`text-sm tabular-nums ${fig.fovTooSmall ? TONE.bad : TONE.ok}`}
               >
                 {fig.fovShortMm === null
                   ? `${show(fig.fovLongMm)} mm`
@@ -921,41 +1038,11 @@ export function TubeFigures(props: TubeFiguresProps) {
               </dd>
             </div>
           </dl>
-          {props.admin ? (
-            <>
-              <Frame
-                title={t("h1Title")}
-                badge={badge}
-                note={<p className={`mt-1 ${NOTE_CLASS}`}>{t("h1Note")}</p>}
-              >
-                <NewtonFigure fig={fig} f={props.focalMm} sF={sF} wd={wd} />
-              </Frame>
-              <Frame
-                title={t("h2Title")}
-                badge={badge}
-                note={
-                  <p
-                    className={`mt-1 ${fig.ringStatus === "low" || fig.ringStatus === "high" ? "text-sm text-red-700 dark:text-red-300" : NOTE_CLASS}`}
-                  >
-                    {fig.ringStatus === "low"
-                      ? t("pushTooLong", { v: show(-fig.ringMm) })
-                      : fig.ringStatus === "high"
-                        ? t("pushTooShort", {
-                            v: show(fig.ringMm - fig.ringMaxMm!),
-                          })
-                        : fig.ringStatus === "unknown"
-                          ? t("pushNoMod")
-                          : t("pushOk", {
-                              ring: show(fig.ringMm),
-                              max: show(fig.ringMaxMm!),
-                            })}
-                  </p>
-                }
-              >
-                <PushFigure fig={fig} e={e} />
-              </Frame>
-            </>
-          ) : null}
+        )}
+      </div>
+      {fig === null ? null : (
+        <>
+          {/* Thứ tự (Q1): H3 + H5 ngay dưới thanh trượt → H2 → H1 (minh hoạ, để cuối). */}
           <div
             className={`grid gap-3 ${props.needLongMm !== null ? "lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]" : ""}`}
           >
@@ -979,7 +1066,13 @@ export function TubeFigures(props: TubeFiguresProps) {
               {fig.focus === null ? (
                 <p className={NOTE_CLASS}>{t("focusNoMod")}</p>
               ) : (
-                <FocusFigure fig={fig} e={e} wd={wd} mod={props.modMm} />
+                <FocusFigure
+                  fig={fig}
+                  e={e}
+                  wd={wd}
+                  mod={props.modMm}
+                  axisMm={focusAxisMm}
+                />
               )}
             </Frame>
             {props.needLongMm !== null ? (
@@ -998,10 +1091,47 @@ export function TubeFigures(props: TubeFiguresProps) {
                   fig={fig}
                   needLong={props.needLongMm}
                   needShort={props.needShortMm}
+                  maxLong={fovMax?.long ?? 0}
+                  maxShort={fovMax?.short ?? null}
                 />
               </Frame>
             ) : null}
           </div>
+          {props.admin ? (
+            <>
+              <Frame
+                title={t("h2Title")}
+                badge={badge}
+                note={
+                  <p
+                    className={`mt-1 ${fig.ringStatus === "low" || fig.ringStatus === "high" ? "text-sm text-red-700 dark:text-red-300" : NOTE_CLASS}`}
+                  >
+                    {fig.ringStatus === "low"
+                      ? t("pushTooLong", { v: show(-fig.ringMm) })
+                      : fig.ringStatus === "high"
+                        ? t("pushTooShort", {
+                            v: show(fig.ringMm - fig.ringMaxMm!),
+                          })
+                        : fig.ringStatus === "unknown"
+                          ? t("pushNoMod")
+                          : t("pushOk", {
+                              ring: show(fig.ringMm),
+                              max: show(fig.ringMaxMm!),
+                            })}
+                  </p>
+                }
+              >
+                <PushFigure fig={fig} e={e} scaleMm={pushScaleMm} />
+              </Frame>
+              <Frame
+                title={t("h1Title")}
+                badge={badge}
+                note={<p className={`mt-1 ${NOTE_CLASS}`}>{t("h1Note")}</p>}
+              >
+                <NewtonFigure fig={fig} f={props.focalMm} sF={sF} wd={wd} />
+              </Frame>
+            </>
+          ) : null}
         </>
       )}
     </div>

@@ -3158,7 +3158,13 @@
       "ringLow": "tube too long",
       "ringHigh": "beyond ring travel",
       "betaSystem": "System magnification β",
-      "fovReal": "Actual field of view"
+      "fovReal": "Actual field of view",
+      "margin": "Focus margin",
+      "marginValue": "{m} % of WD",
+      "marginOutside": "WD outside focus range",
+      "marginNoMod": "no MOD",
+      "marginNoTube": "no tube · in focus from {mod} mm",
+      "wdBandNote": "The green part of the WD slider is the focus range with the current tube."
     },
     "list": {
       "title": "Lenses in stock",

@@ -13,6 +13,48 @@ html {
   scroll-padding-top: calc(var(--header-h, 0px) + 0.75rem);
 }
 
+/* Thanh trượt hình kiểm tra lắp đặt (TubeFigures, 2026-11-11 vòng 4 Q6): rãnh tự vẽ để tô dải lấy nét lên thanh WD. */
+:root {
+  --range-off: #cbd5e1;
+  --range-on: #34d399;
+  --range-thumb: #0284c7;
+}
+.dark {
+  --range-off: #475569;
+  --range-on: #059669;
+  --range-thumb: #38bdf8;
+}
+.fig-range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 0.5rem;
+  border-radius: 9999px;
+  background: var(--range-off);
+  cursor: pointer;
+}
+.fig-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 9999px;
+  background: var(--range-thumb);
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.35);
+}
+.fig-range::-moz-range-thumb {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 9999px;
+  background: var(--range-thumb);
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.35);
+}
+.fig-range:focus-visible {
+  outline: 2px solid var(--range-thumb);
+  outline-offset: 3px;
+}
+
 /*
  * Đã dọn phần sót lại của create-next-app:
  *

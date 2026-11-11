@@ -336,6 +336,71 @@ test('[OPT-010] dải ống nối và dải lấy nét — tính tay', async () 
   assert.equal(chooseTubeStack([{ lengthMm: 20 }], 4, 8), null);
 });
 
+test('[OPT-010] test case của đặc tả công thức ống nối 2026-11-11 (T02–T11, T13)', async () => {
+  const { tubeLengthRange, tubeFocusRange, tubeFocusMargin, chooseTubeStack, realWorkingDistanceMm } = await import('../src/lib/vision/lensSelector');
+  // Dung sai đặc tả: ±0,1 mm, ±0,001 với β (số đặc tả đã làm tròn → so ±0,05 mm / ±0,0005 khi cần)
+  const range = (sF: number) => tubeLengthRange(50, 300, 140, sF)!;
+  for (const [sF, bWd, bMod, eMin, eMax] of [[0, 0.357, 0.167, 9.5, 17.9], [20, 0.417, 0.179, 11.9, 20.8], [50, 0.556, 0.2, 17.8, 27.8]]) {
+    const r = range(sF);
+    close(r.betaWd, bWd, 0.001, `T β_WD sF ${sF}`);
+    close(r.betaMod, bMod, 0.001, `T β_MOD sF ${sF}`);
+    close(r.minMm, eMin, 0.1, `T e min sF ${sF}`);
+    close(r.maxMm, eMax, 0.1, `T e max sF ${sF}`);
+  }
+  close(50 * range(20).betaMod, 8.9, 0.1, 'T05 ren tối đa');
+  const t06 = tubeFocusRange(50, 300, 0, 20);
+  assert.deepEqual([Math.round(t06.wdMinMm), t06.wdMaxMm], [300, Infinity], 'T06');
+  for (const [sF, e, near, far] of [[20, 10, 152.1, 270], [20, 15, 124.5, 186.7], [20, 20, 106.4, 145], [0, 10, 136.4, 250]]) {
+    const t = tubeFocusRange(50, 300, e, sF);
+    close(t.wdMinMm, near, 0.1, `T dải nét gần e ${e} sF ${sF}`);
+    close(t.wdMaxMm, far, 0.1, `T dải nét xa e ${e} sF ${sF}`);
+  }
+  close(realWorkingDistanceMm(50, 0.176, 1, 35)!, 319.1, 0.1, 'T11 WD cần lắp');
+  // T13: kho 5/10/15/20, sF 20 → e 15 (dư 11 %), ren cần 50 × 0,417 − 15 = 5,8
+  const r13 = range(20);
+  const marginOf = (e: number) => tubeFocusMargin(140, tubeFocusRange(50, 300, e, 20));
+  const pick = chooseTubeStack([5, 10, 15, 20].map((lengthMm) => ({ lengthMm })), r13.minMm, r13.maxMm, undefined, { marginOf, minMargin: 0.1 })!;
+  assert.deepEqual(pick.map((t) => t.lengthMm), [15]);
+  close(50 * r13.betaWd - 15, 5.8, 0.05, 'T13 ren cần vặn');
+  close(8.8 / r13.betaWd, 21.1, 0.05, 'T13 vùng nhìn');
+  close(4 * (1 + r13.betaWd), 5.7, 0.05, 'T13 F hiệu dụng');
+});
+
+test('[OPT-010] chọn ống theo độ dư lấy nét (chốt 2026-11-11 Q1)', async () => {
+  const { tubeLengthRange, tubeFocusRange, tubeFocusMargin, chooseTubeStack } = await import('../src/lib/vision/lensSelector');
+  // f 50, sF 0, MOD 300, WD 140: e ∈ [9,5; 17,9]. Ống 10: nét [136,4; 250] → dư 3,6 ÷ 140 = 2,6 %.
+  // Ống 15 (5 + 10): nét [107,1; 166,7] → dư 26,7 ÷ 140 = 19 %.
+  const r = tubeLengthRange(50, 300, 140, 0)!;
+  const marginOf = (e: number) => tubeFocusMargin(140, tubeFocusRange(50, 300, e, 0));
+  close(marginOf(10), 3.6 / 140, 1e-3, 'dư ống 10');
+  const stock = [5, 10, 20].map((lengthMm) => ({ lengthMm }));
+  assert.deepEqual(chooseTubeStack(stock, r.minMm, r.maxMm)!.map((t) => t.lengthMm), [10], 'không xét độ dư: ít khúc nhất');
+  assert.deepEqual(chooseTubeStack(stock, r.minMm, r.maxMm, undefined, { marginOf, minMargin: 0.1 })!.map((t) => t.lengthMm), [5, 10], 'đủ dư: 5 + 10');
+  // Không ai đủ dư → dư lớn nhất (kho chỉ có 10)
+  assert.deepEqual(chooseTubeStack([{ lengthMm: 10 }], r.minMm, r.maxMm, undefined, { marginOf, minMargin: 0.1 })!.map((t) => t.lengthMm), [10]);
+
+  // Qua selectLenses: kho C-mount 5/10/20 → chọn 5 + 10, không cảnh báo độ dư; kho chỉ có 10 → cảnh báo
+  const input = { ...INPUT, fovWidthMm: 23.5, fovHeightMm: 19.7, workingDistanceMm: 140 };
+  const lens50 = lens({ focal_length_mm: 50, f_number_min: 2.8, wd_min_mm: 300, front_focal_mm: 0 }, 'f50');
+  const run = (lengths: number[], params = DEFAULT_ENGINE_PARAMS) =>
+    selectLenses(input, [lens50, ...lengths.map((l) => part('tube', { length_mm: l, mount: 'C' }, `T${l}`))], params).candidates[0];
+  const good = run([5, 10, 20]);
+  assert.ok(good.accessory?.kind === 'tube' && good.accessory.totalMm === 15, JSON.stringify(good.accessory));
+  assert.ok(!good.checks.some((k) => k.noteKey === 'tubeFocusMargin'));
+  const tight = run([10]);
+  assert.ok(tight.accessory?.kind === 'tube' && tight.accessory.totalMm === 10);
+  const warn = tight.checks.find((k) => k.noteKey === 'tubeFocusMargin')!;
+  assert.equal(warn.status, 'warn');
+  assert.deepEqual(warn.noteValues, { gap: 3.6, margin: 2.6, limit: 10 });
+  // Ngưỡng 0 → về cách chọn cũ (ít khúc nhất), không cảnh báo
+  const off = run([5, 10, 20], { ...DEFAULT_ENGINE_PARAMS, tubeFocusMarginWarn: 0 });
+  assert.ok(off.accessory?.kind === 'tube' && off.accessory.totalMm === 10);
+  assert.ok(!off.checks.some((k) => k.noteKey === 'tubeFocusMargin'));
+  // Khai tay e 10 ở WD 140 → cũng cảnh báo
+  const manual = selectLenses({ ...input, fixedAccessory: { tubeMm: 10, converterFactor: null } }, [lens50]).candidates[0];
+  assert.ok(manual.checks.some((k) => k.noteKey === 'tubeFocusMargin'));
+});
+
 test('[OPT-010] ống bị loại vì MOD → đạt nhờ ống nối 5 mm trong kho, cảnh báo macro', () => {
   const lens25 = lens({ focal_length_mm: 25, wd_min_mm: 200 }, 'f25-mod200');
   const tubes = [part('tube', { length_mm: 5, mount: 'C' }, 'T5'), part('tube', { length_mm: 10, mount: 'C' }, 'T10')];
@@ -351,9 +416,13 @@ test('[OPT-010] ống bị loại vì MOD → đạt nhờ ống nối 5 mm tron
   assert.ok(!notes.includes('accessoryLight'), '2 log₂ 1,3125 = 0,78 stop < 1');
   // WD được kiểm theo dải mới, không còn LOẠI vì MOD
   assert.equal(c.checks.find((k) => k.key === 'workingDistance')!.noteKey, 'wdWithTube');
-  // Kho không có ống nối → gợi ý mức chuẩn 5 mm, "chưa có trong kho"
+  // Ống 5 mm: nét [76,9; 125] → WD 80 chỉ dư 3,8 % → cảnh báo (kho không có ống nào đủ dư)
+  assert.ok(notes.includes('tubeFocusMargin'));
+  // Kho không có ống nối → bộ chuẩn, chọn theo độ dư (chốt 2026-11-11 Q1): 5 mm dư 3,8 %;
+  // 5 + 1 = 6 mm: nét [68,5; 104,2] → dư 11,5 ÷ 80 = 14 % → ống đủ dư ngắn nhất trong nhóm 2 khúc
   const std = selectLenses(input, [lens25]).candidates[0];
-  assert.ok(std.accessory?.kind === 'tube' && !std.accessory.inStock && std.accessory.totalMm === 5);
+  assert.ok(std.accessory?.kind === 'tube' && !std.accessory.inStock && std.accessory.totalMm === 6, JSON.stringify(std.accessory));
+  assert.ok(!std.checks.some((k) => k.noteKey === 'tubeFocusMargin'));
   assert.ok(std.checks.some((k) => k.noteKey === 'accessoryNotInStock'));
 });
 

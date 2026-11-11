@@ -112,6 +112,20 @@ export const FORMULA_SYMBOLS: readonly FormulaSymbolGroup[] = [
         see: ['OPT-010'],
       },
       {
+        symbol: 'ren',
+        name: 'Độ đẩy ra của vòng lấy nét',
+        unit: 'mm',
+        meaning: 'Vòng nét ở vạch ∞ thì ren = 0, vặn hết về MOD thì ren = f × β_MOD. Cùng ống nối tạo độ đẩy x′ = e + ren = f × β_WD; ren cần vặn = f × β_WD − e.',
+        see: ['OPT-010'],
+      },
+      {
+        symbol: 'độ dư lấy nét',
+        name: 'Khoảng cách từ WD tới mép dải nét',
+        unit: '% WD',
+        meaning: 'min(WD − WD gần; WD xa − WD) ÷ WD khi đã lắp ống nối. Nhỏ thì vật lệch một chút là mất nét; mép gần tính ra còn có thể lạc quan so với bảng hãng.',
+        see: ['OPT-010'],
+      },
+      {
         symbol: 'k',
         name: 'Hệ số bộ nhân tiêu cự (rear converter)',
         unit: '×',

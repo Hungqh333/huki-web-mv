@@ -1,5 +1,5 @@
 {
-  "reviewedAt": "2026-11-10",
+  "reviewedAt": "2026-11-11",
   "files": {
     "components/match.ts": "3a373886dcd88a13",
     "components/pc.ts": "dfd7523cd0f5ba06",
@@ -20,7 +20,7 @@
     "vision/experimentMetrics.ts": "23372c4539bb9e5f",
     "vision/feasibility.ts": "f387aef3bb2d7868",
     "vision/highSpeed.ts": "635862c244468a00",
-    "vision/lensSelector.ts": "ce4f16381813f3cc",
+    "vision/lensSelector.ts": "7e64845132bbbffa",
     "vision/lightColor.ts": "153aebbfd0828871",
     "vision/lighting.ts": "b71b89fd28a36274",
     "vision/lightMatrix.ts": "2de6fa36894ab1fe",

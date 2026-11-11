@@ -52,6 +52,8 @@ export const ENGINE_PARAMS = [
   /* 0,5 × f theo Edmund (chốt 2026-11-10 Q2) — chỉ cảnh báo, không loại. */
   { key: 'tubeLengthToFocalWarn', group: 'optics', default: 0.5, min: 0.1, max: 5, step: 0.1, unit: '× f' },
   { key: 'tubeMaxSegments', group: 'optics', default: 3, min: 1, max: 10, step: 1 },
+  // OPT-010 (chốt 2026-11-11 Q1): ưu tiên ống có WD cách mép dải nét từ tỉ lệ này của WD trở lên; dưới mức này thì cảnh báo.
+  { key: 'tubeFocusMarginWarn', group: 'optics', default: 0.1, min: 0, max: 0.5, step: 0.01 },
   { key: 'converterMaxFactor', group: 'optics', default: 2, min: 1.1, max: 4, step: 0.1, unit: '×' },
   // LNS-005 (2026-10-26) — trang Chọn ống kính: vùng nhìn của ống rộng hơn vùng cần quá bấy nhiêu lần (trục sát nhất) thì loại.
   { key: 'lensFovMaxRatio', group: 'optics', default: 1.5, min: 1.05, max: 10, step: 0.05, unit: '×' },

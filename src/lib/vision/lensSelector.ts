@@ -87,6 +87,7 @@ export type LensParams = Pick<
   | 'accessoryLightLossStopsWarn'
   | 'tubeLengthToFocalWarn'
   | 'tubeMaxSegments'
+  | 'tubeFocusMarginWarn'
   | 'converterMaxFactor'
   | 'lensFovMaxRatio'
   | 'telecentricWdTolerance'
@@ -277,22 +278,60 @@ export function tubeFocusRange(focalMm: number, modMm: number, totalMm: number, 
   return { wdMinMm: workingDistanceFor(focalMm, lo + betaMod, frontFocalMm), wdMaxMm: lo > 0 ? workingDistanceFor(focalMm, lo, frontFocalMm) : Infinity };
 }
 
-/** Tổ hợp ống nối có tổng ∈ [min; max]: ít khúc nhất, rồi ngắn nhất. Một chiều dài dùng lặp được. */
-export function chooseTubeStack<T extends { lengthMm: number }>(stock: readonly T[], minMm: number, maxMm: number, maxPieces = TUBE_SEARCH_MAX_PIECES): T[] | null {
+/**
+ * Độ dư lấy nét: từ WD tới mép gần hơn của dải nét, tính theo tỉ lệ WD (chốt 2026-11-11 Q1).
+ * Mép gần tính ra có thể lạc quan so với bảng hãng, nên WD sát mép dễ không lấy nét được.
+ */
+export function tubeFocusMargin(wdMm: number, focus: { wdMinMm: number; wdMaxMm: number }): number {
+  return Math.min(wdMm - focus.wdMinMm, focus.wdMaxMm - wdMm) / wdMm;
+}
+
+/**
+ * Tổ hợp ống nối có tổng ∈ [min; max]. Một chiều dài dùng lặp được.
+ * Không truyền `focus`: ít khúc nhất, rồi ngắn nhất.
+ * Có `focus` (chốt 2026-11-11 Q1): trong nhóm đủ dư như trên; không ai đủ dư thì dư lớn nhất, rồi ít khúc, rồi ngắn nhất.
+ */
+export function chooseTubeStack<T extends { lengthMm: number }>(
+  stock: readonly T[],
+  minMm: number,
+  maxMm: number,
+  maxPieces = TUBE_SEARCH_MAX_PIECES,
+  focus?: { marginOf: (totalMm: number) => number; minMargin: number }
+): T[] | null {
   const unique = [...new Map(stock.filter((t) => t.lengthMm > 0).map((t) => [t.lengthMm, t])).values()].sort((a, b) => a.lengthMm - b.lengthMm);
   const total = (pieces: T[]) => pieces.reduce((sum, t) => sum + t.lengthMm, 0);
-  let best: T[] | null = null;
+  const fewerThenShorter = (a: T[], b: T[]) => a.length < b.length || (a.length === b.length && total(a) < total(b) - EPS);
+  let safe: T[] | null = null;
+  let fallback: { pieces: T[]; margin: number } | null = null;
   const walk = (start: number, picked: T[]) => {
     const sum = total(picked);
     if (picked.length > 0 && sum >= minMm - EPS && sum <= maxMm + EPS) {
-      if (best === null || picked.length < best.length || (picked.length === best.length && sum < total(best))) best = [...picked];
-      return;
+      const margin = focus ? focus.marginOf(sum) : Infinity;
+      if (margin >= (focus?.minMargin ?? 0) - EPS) {
+        if (safe === null || fewerThenShorter(picked, safe)) safe = [...picked];
+      } else if (fallback === null || margin > fallback.margin + EPS || (Math.abs(margin - fallback.margin) <= EPS && fewerThenShorter(picked, fallback.pieces))) {
+        fallback = { pieces: [...picked], margin };
+      }
     }
     if (picked.length >= maxPieces || sum > maxMm) return;
     for (let i = start; i < unique.length; i++) walk(i, [...picked, unique[i]]);
   };
   walk(0, []);
-  return best;
+  return safe ?? (fallback as { pieces: T[]; margin: number } | null)?.pieces ?? null;
+}
+
+/** W02 (chốt 2026-11-11 Q1): WD sát mép dải nét khi đã lắp ống nối — chỉ cảnh báo, không loại. */
+function tubeFocusMarginCheck(wdMm: number, focus: { wdMinMm: number; wdMaxMm: number }, params: Params): LensCheck | null {
+  const margin = tubeFocusMargin(wdMm, focus);
+  if (margin >= params.tubeFocusMarginWarn - EPS) return null;
+  const gapMm = Math.min(wdMm - focus.wdMinMm, focus.wdMaxMm - wdMm);
+  return {
+    key: 'tube',
+    status: 'warn',
+    formula: `min(${fmt(wdMm, 1)} − ${fmt(focus.wdMinMm, 1)}; ${fmt(focus.wdMaxMm, 1)} − ${fmt(wdMm, 1)}) ÷ ${fmt(wdMm, 1)} = ${fmt(margin * 100, 1)} % < ${fmt(params.tubeFocusMarginWarn * 100, 0)} %`,
+    noteKey: 'tubeFocusMargin',
+    noteValues: { gap: round(gapMm, 1), margin: round(margin * 100, 1), limit: round(params.tubeFocusMarginWarn * 100, 0) },
+  };
 }
 
 /** Số stop mất khi F# hiệu dụng nhân `factor`: 2 × log₂(factor). */
@@ -308,7 +347,7 @@ function tubeFrontFocalCheck(lens: ConfigLens): LensCheck | null {
   return null;
 }
 
-function tubeChecks(acc: TubeAccessory, lens: ConfigLens, focalMm: number, betaWd: number, params: Params): LensCheck[] {
+function tubeChecks(acc: TubeAccessory, lens: ConfigLens, focalMm: number, wdMm: number, betaWd: number, params: Params): LensCheck[] {
   const pieces = acc.pieces.length > 1 ? `${acc.pieces.map((p) => fmt(p.lengthMm, 1)).join(' + ')} = ` : '';
   const wdMax = Number.isFinite(acc.wdMaxMm) ? fmt(acc.wdMaxMm, 0) : '∞';
   const checks: LensCheck[] = [
@@ -323,6 +362,8 @@ function tubeChecks(acc: TubeAccessory, lens: ConfigLens, focalMm: number, betaW
   if (!acc.inStock) checks.push({ key: 'tube', status: 'info', formula: acc.mount, noteKey: 'accessoryNotInStock', noteValues: { mount: acc.mount } });
   const sF = tubeFrontFocalCheck(lens);
   if (sF) checks.push(sF);
+  const focusMargin = tubeFocusMarginCheck(wdMm, acc, params);
+  if (focusMargin) checks.push(focusMargin);
   if (betaWd >= params.accessoryMacroBetaWarn) {
     checks.push({ key: 'tube', status: 'warn', formula: `β ${fmt(betaWd, 3)} ≥ ${params.accessoryMacroBetaWarn}`, noteKey: 'tubeMacro', noteValues: { beta: round(betaWd, 3), limit: params.accessoryMacroBetaWarn } });
   }
@@ -758,11 +799,14 @@ function tryAccessory(input: LensSelectorInput, need: LensNeed, component: Compo
   if (fails.length > 0 && fails.every((key) => key === 'wdBelowMod') && lens.wdMinMm !== null) {
     const range = tubeLengthRange(f, lens.wdMinMm, wd, lens.frontFocalMm ?? 0);
     if (!range) return null;
-    let pieces = chooseTubeStack(stock.tubes.filter((t) => t.mount === mount), range.minMm, range.maxMm);
+    const modMm = lens.wdMinMm;
+    const sFmm = lens.frontFocalMm ?? 0;
+    const focusRule = { marginOf: (totalMm: number) => tubeFocusMargin(wd, tubeFocusRange(f, modMm, totalMm, sFmm)), minMargin: params.tubeFocusMarginWarn };
+    let pieces = chooseTubeStack(stock.tubes.filter((t) => t.mount === mount), range.minMm, range.maxMm, undefined, focusRule);
     let inStock = true;
     if (!pieces) {
       if (!STANDARD_ACCESSORY_MOUNTS.includes(mount)) return null;
-      pieces = chooseTubeStack(STANDARD_TUBE_LENGTHS_MM.map((lengthMm) => ({ lengthMm, mount, component: null })), range.minMm, range.maxMm);
+      pieces = chooseTubeStack(STANDARD_TUBE_LENGTHS_MM.map((lengthMm) => ({ lengthMm, mount, component: null })), range.minMm, range.maxMm, undefined, focusRule);
       inStock = false;
     }
     if (!pieces) return null;
@@ -783,7 +827,7 @@ function tryAccessory(input: LensSelectorInput, need: LensNeed, component: Compo
       tube: { totalMm, wdMinMm: focus.wdMinMm, wdMaxMm: focus.wdMaxMm },
       converterFactor: null,
       accessory,
-      checks: tubeChecks(accessory, lens, f, range.betaWd, params),
+      checks: tubeChecks(accessory, lens, f, wd, range.betaWd, params),
     });
     return result.status === 'fail' ? null : result;
   }
@@ -849,6 +893,11 @@ function manualVariant(lens: ConfigLens, wd: number | null, fixed: { tubeMm: num
     });
     const sFCheck = tubeFrontFocalCheck(lens);
     if (sFCheck) checks.push(sFCheck);
+    // WD ngoài dải nét đã bị LOẠI ở phép kiểm WD — chỉ cảnh báo độ dư khi WD còn trong dải.
+    if (wd !== null && range.wdMinMm !== null && wd >= range.wdMinMm && wd <= range.wdMaxMm) {
+      const focusMargin = tubeFocusMarginCheck(wd, { wdMinMm: range.wdMinMm, wdMaxMm: range.wdMaxMm }, params);
+      if (focusMargin) checks.push(focusMargin);
+    }
     if (betaPrime !== null && betaPrime >= params.accessoryMacroBetaWarn) {
       checks.push({ key: 'tube', status: 'warn', formula: `β ${fmt(betaPrime, 3)} ≥ ${params.accessoryMacroBetaWarn}`, noteKey: 'tubeMacro', noteValues: { beta: round(betaPrime, 3), limit: params.accessoryMacroBetaWarn } });
     }

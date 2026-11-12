@@ -620,13 +620,14 @@ function FocusFigure({
         x2={r1(wdX)}
         y2={76}
         strokeWidth={2}
-        className="stroke-red-600 dark:stroke-red-400"
+        // Tím, không đỏ (2026-11-12 Q1): đỏ dành cho NG.
+        className="stroke-violet-600 dark:stroke-violet-400"
       />
       <Label
         x={wdX}
         y={100}
         anchor={wdX > W - 60 ? "end" : wdX < 60 ? "start" : "middle"}
-        className="fill-red-700 dark:fill-red-300"
+        className="fill-violet-700 dark:fill-violet-300"
       >
         {`WD ${show(wd)}`}
       </Label>
@@ -809,11 +810,14 @@ function Frame({
   badge,
   children,
   note,
+  reserveNote = false,
 }: {
   title: string;
   badge?: string | null;
   children: ReactNode;
   note?: ReactNode;
+  /** Giữ sẵn chỗ 2 dòng cho ghi chú đổi theo thanh trượt — khung không nhảy cỡ khi kéo (2026-11-12 Q3). */
+  reserveNote?: boolean;
 }) {
   return (
     <figure className="min-w-0 rounded-md border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
@@ -827,7 +831,7 @@ function Frame({
       </figcaption>
       {/* Điện thoại: hình giữ cỡ chữ đọc được, cuộn ngang trong khung. */}
       <div className="overflow-x-auto">{children}</div>
-      {note}
+      {reserveNote ? <div className="flow-root min-h-[2.75rem]">{note}</div> : note}
     </figure>
   );
 }
@@ -863,11 +867,16 @@ export function TubeFigures(props: TubeFiguresProps) {
           ? t("estimateApprox", { v: show(sF0) })
           : null;
   const wdStep = props.wdMm < 50 ? 0.5 : 1;
+  /* Dải thanh WD (2026-11-12 Q2): tới 1,5 × MOD để luôn kéo được vào dải nét khi không ống (nét từ MOD trở ra);
+     số gõ tay ngoài dải thì dải nở theo. Chỉ là dải kéo, không phải phép tính kỹ thuật. */
   const wdMin = Math.max(
     wdStep,
-    Math.floor((props.wdMm * 0.5) / wdStep) * wdStep,
+    Math.floor((Math.min(props.wdMm * 0.5, wd)) / wdStep) * wdStep,
   );
-  const wdMax = Math.ceil((props.wdMm * 2) / wdStep) * wdStep;
+  const wdMax =
+    Math.ceil(
+      Math.max(props.wdMm * 2, (props.modMm ?? 0) * 1.5, wd) / wdStep,
+    ) * wdStep;
   const eMax = Math.max(props.focalMm, props.tubeMm);
   const marginLow =
     fig?.margin !== null &&
@@ -935,19 +944,21 @@ export function TubeFigures(props: TubeFiguresProps) {
           <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
             {t("title")}
           </h4>
-          {moved ? (
-            <button
+          {/* Nút luôn giữ chỗ (ẩn khi chưa kéo) để dòng tiêu đề không đổi cao (Q3). */}
+          <button
               type="button"
+              disabled={!moved}
+              aria-hidden={!moved}
+              tabIndex={moved ? undefined : -1}
               onClick={() => {
                 setWd(props.wdMm);
                 setE(props.tubeMm);
                 setSF(sF0);
               }}
-              className="rounded-md border border-slate-300 bg-white px-2.5 py-1 text-xs font-medium hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
+              className={`rounded-md border border-slate-300 bg-white px-2.5 py-1 text-xs font-medium hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800 ${moved ? "" : "invisible"}`}
             >
               {t("reset")}
             </button>
-          ) : null}
         </div>
         <div
           className={`grid gap-x-6 gap-y-3 ${props.admin ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}
@@ -992,21 +1003,26 @@ export function TubeFigures(props: TubeFiguresProps) {
           ) : null}
         </div>
         {fig?.focus ? <p className={NOTE_CLASS}>{t("wdBandNote")}</p> : null}
-        {moved ? <p className={NOTE_CLASS}>{t("trialNote")}</p> : null}
+        <p
+          className={`${NOTE_CLASS} ${moved ? "" : "invisible"}`}
+          aria-hidden={!moved}
+        >
+          {t("trialNote")}
+        </p>
         {fig === null || marginCell === null ? (
           <p className="text-sm text-red-700 dark:text-red-300">{t("e01")}</p>
         ) : (
           <dl className="grid grid-cols-2 gap-x-6 gap-y-2 rounded-md border border-slate-200 bg-white px-3 py-2 lg:grid-cols-4 dark:border-slate-700 dark:bg-slate-900">
             <div>
               <dt className={DT}>{t("margin")}</dt>
-              <dd className={`text-sm tabular-nums ${TONE[marginCell.tone]}`}>
+              <dd className={`min-h-[2.5rem] text-sm tabular-nums ${TONE[marginCell.tone]}`}>
                 {marginCell.text}
               </dd>
             </div>
             <div>
               <dt className={DT}>{t("ring")}</dt>
               <dd
-                className={`text-sm tabular-nums ${fig.ringStatus === "low" || fig.ringStatus === "high" ? TONE.bad : TONE.ok}`}
+                className={`min-h-[2.5rem] text-sm tabular-nums ${fig.ringStatus === "low" || fig.ringStatus === "high" ? TONE.bad : TONE.ok}`}
               >
                 {fig.ringStatus === "unknown"
                   ? t("ringNoMod", { ring: show(fig.ringMm) })
@@ -1023,14 +1039,14 @@ export function TubeFigures(props: TubeFiguresProps) {
             </div>
             <div>
               <dt className={DT}>{t("betaSystem")}</dt>
-              <dd className={`text-sm tabular-nums ${TONE.ok}`}>
+              <dd className={`min-h-[2.5rem] text-sm tabular-nums ${TONE.ok}`}>
                 {show(fig.betaSystem, 4)}
               </dd>
             </div>
             <div>
               <dt className={DT}>{t("fovReal")}</dt>
               <dd
-                className={`text-sm tabular-nums ${fig.fovTooSmall ? TONE.bad : TONE.ok}`}
+                className={`min-h-[2.5rem] text-sm tabular-nums ${fig.fovTooSmall ? TONE.bad : TONE.ok}`}
               >
                 {fig.fovShortMm === null
                   ? `${show(fig.fovLongMm)} mm`
@@ -1049,6 +1065,7 @@ export function TubeFigures(props: TubeFiguresProps) {
             <Frame
               title={t("h3Title")}
               badge={badge}
+              reserveNote
               note={
                 fig.focus === null ? null : (
                   <p
@@ -1079,6 +1096,7 @@ export function TubeFigures(props: TubeFiguresProps) {
               <Frame
                 title={t("h5Title")}
                 badge={badge}
+                reserveNote
                 note={
                   fig.fovTooSmall ? (
                     <p className="mt-1 text-sm text-red-700 dark:text-red-300">
@@ -1102,6 +1120,7 @@ export function TubeFigures(props: TubeFiguresProps) {
               <Frame
                 title={t("h2Title")}
                 badge={badge}
+                reserveNote
                 note={
                   <p
                     className={`mt-1 ${fig.ringStatus === "low" || fig.ringStatus === "high" ? "text-sm text-red-700 dark:text-red-300" : NOTE_CLASS}`}

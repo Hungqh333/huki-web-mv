@@ -157,6 +157,38 @@ export function MountCheck({
       {prefilled ? <p className="rounded-md bg-sky-50 px-3 py-2 text-sm text-sky-900 dark:bg-sky-950/40 dark:text-sky-200">{t('fromSelector')}</p> : null}
 
       <div className="grid gap-6 lg:grid-cols-2">
+        {/* ── Camera ── chọn trước, bên trái (2026-11-12 Q4) */}
+        <Panel
+          id="mount-camera"
+          title={t('camera.title')}
+          actions={<SourceToggle value={camSource} onChange={setCamSource} catalogDisabled={cameras.length === 0} labels={{ catalog: t('fromCatalog'), manual: t('camera.manual') }} />}
+        >
+          {camSource === 'catalog' ? (
+            <div className="space-y-3">
+              <input type="search" value={camSearch} onChange={(ev) => setCamSearch(ev.target.value)} placeholder={t('camera.search')} aria-label={t('camera.search')} className={inputClass} />
+              <div>
+                <label htmlFor="mount-cam-pick" className={labelClass}>
+                  {t('camera.pick')} <span className={NOTE_CLASS}>{t('camera.count', { shown: filteredCameras.length, total: cameras.length })}</span>
+                </label>
+                <select id="mount-cam-pick" value={camId} onChange={(ev) => setCamId(ev.target.value)} className={`mt-1.5 ${inputClass}`}>
+                  <option value="">{filteredCameras.length ? t('camera.none') : t('camera.noMatch')}</option>
+                  {pickedCam && !filteredCameras.includes(pickedCam) ? <option value={pickedCam.id}>{pickedCam.label}</option> : null}
+                  {filteredCameras.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          ) : (
+            <div className={`${FIELD_GRID} sm:grid-cols-2`}>
+              <NumberField id="mount-sl" label={t('camera.long')} value={manualCam.long} onChange={(v) => setManualCam({ ...manualCam, long: v })} />
+              <NumberField id="mount-ss" label={t('camera.short')} hint={t('camera.shortHint')} value={manualCam.short} onChange={(v) => setManualCam({ ...manualCam, short: v })} />
+            </div>
+          )}
+        </Panel>
+
         {/* ── Ống kính ── */}
         <Panel
           id="mount-lens"
@@ -193,38 +225,6 @@ export function MountCheck({
               <NumberField id="mount-f" label={t('lens.focal')} value={manualLens.f} onChange={(v) => setManualLens({ ...manualLens, f: v })} />
               <NumberField id="mount-mod" label={t('lens.mod')} hint={t('lens.modHint')} value={manualLens.mod} onChange={(v) => setManualLens({ ...manualLens, mod: v })} />
               {admin ? <NumberField id="mount-sf" label={t('lens.sF')} hint={t('lens.sFHint')} value={manualLens.sF} onChange={(v) => setManualLens({ ...manualLens, sF: v })} /> : null}
-            </div>
-          )}
-        </Panel>
-
-        {/* ── Camera ── */}
-        <Panel
-          id="mount-camera"
-          title={t('camera.title')}
-          actions={<SourceToggle value={camSource} onChange={setCamSource} catalogDisabled={cameras.length === 0} labels={{ catalog: t('fromCatalog'), manual: t('camera.manual') }} />}
-        >
-          {camSource === 'catalog' ? (
-            <div className="space-y-3">
-              <input type="search" value={camSearch} onChange={(ev) => setCamSearch(ev.target.value)} placeholder={t('camera.search')} aria-label={t('camera.search')} className={inputClass} />
-              <div>
-                <label htmlFor="mount-cam-pick" className={labelClass}>
-                  {t('camera.pick')} <span className={NOTE_CLASS}>{t('camera.count', { shown: filteredCameras.length, total: cameras.length })}</span>
-                </label>
-                <select id="mount-cam-pick" value={camId} onChange={(ev) => setCamId(ev.target.value)} className={`mt-1.5 ${inputClass}`}>
-                  <option value="">{filteredCameras.length ? t('camera.none') : t('camera.noMatch')}</option>
-                  {pickedCam && !filteredCameras.includes(pickedCam) ? <option value={pickedCam.id}>{pickedCam.label}</option> : null}
-                  {filteredCameras.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          ) : (
-            <div className={`${FIELD_GRID} sm:grid-cols-2`}>
-              <NumberField id="mount-sl" label={t('camera.long')} value={manualCam.long} onChange={(v) => setManualCam({ ...manualCam, long: v })} />
-              <NumberField id="mount-ss" label={t('camera.short')} hint={t('camera.shortHint')} value={manualCam.short} onChange={(v) => setManualCam({ ...manualCam, short: v })} />
             </div>
           )}
         </Panel>

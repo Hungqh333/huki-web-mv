@@ -270,6 +270,7 @@ export function LensSelector({
       needShortMm: line ? null : Math.min(w, h),
       manualTubeMm: fa?.tubeMm ?? null,
       manualConverter: fa?.converterFactor ?? null,
+      pixelUm: shown.input.camera.pixelSizeUm,
     };
   }, [shown, checkHref]);
 
@@ -723,6 +724,11 @@ export function LensSelector({
                     <th scope="col" className="py-2 pr-4 font-medium">{t('list.colMount')}</th>
                     <th scope="col" className="py-2 pr-4 font-medium">{t('list.colMmPerPx')}</th>
                     {shown.input.heightVariationMm !== null ? <th scope="col" className="py-2 pr-4 font-medium">{t('list.colFSet')}</th> : null}
+                    {shown.input.heightVariationMm !== null ? (
+                      <th scope="col" className="py-2 pr-4 font-medium" title={t('list.dofNote')}>
+                        {t('list.colDof')}
+                      </th>
+                    ) : null}
                     <th scope="col" className="py-2 pr-4 font-medium">{t('list.colStatus')}</th>
                   </tr>
                 </thead>
@@ -863,6 +869,8 @@ type FigureBase = {
   needShortMm: number | null;
   manualTubeMm: number | null;
   manualConverter: number | null;
+  /** Cỡ điểm ảnh camera (µm) → trang Kiểm tra lắp đặt tính DOF (OPT-013). */
+  pixelUm: number | null;
 };
 
 function LensRow({
@@ -917,6 +925,9 @@ function LensRow({
           k: acc?.kind === 'converter' ? acc.factor : figureBase.manualConverter,
           fw: figureBase.needLongMm,
           fh: figureBase.needShortMm,
+          px: figureBase.pixelUm,
+          // F trên vòng ống gốc: F đặt tính trên cả hệ (× k bộ nhân).
+          n: c.fSet !== null ? c.fSet / (acc?.kind === 'converter' ? acc.factor : (figureBase.manualConverter ?? 1)) : null,
         })
       : null;
   return (
@@ -949,6 +960,7 @@ function LensRow({
         <td className={cell}>{lens.mount ?? '—'}</td>
         <td className={cell}>{show(c.mmPerPx, 4)}</td>
         {showFSet ? <td className={cell}>{c.fSet === null ? '—' : `F/${show(c.fSet, 1)}`}</td> : null}
+        {showFSet ? <td className={cell}>{c.dof === null ? '—' : Number.isFinite(c.dof.totalMm) ? `${show(c.dof.totalMm, 2)} mm` : '∞'}</td> : null}
         <td className="py-2 pr-4">
           <div className="flex items-center gap-2">
             <StatusBadge status={c.status} />
@@ -968,7 +980,7 @@ function LensRow({
       </tr>
       {open ? (
         <tr className="bg-slate-50/60 dark:bg-slate-900/60">
-          <td colSpan={showFSet ? 12 : 11} className="px-4 py-3">
+          <td colSpan={showFSet ? 13 : 11} className="px-4 py-3">
             {/* Bảng cuộn ngang: khung Chi tiết đứng yên bên trái, rộng không quá phần nhìn thấy. */}
             <div className="sticky left-4 max-w-[min(60rem,calc(100vw-6rem))]">
             {checkLink ? (
@@ -979,7 +991,7 @@ function LensRow({
               </div>
             ) : null}
             {/* Số chuyển từ bảng vào Chi tiết (Q1, Q4): WD thật, pixel dùng, F nên đặt. */}
-            <dl className="mb-3 grid gap-x-6 gap-y-2 sm:grid-cols-3">
+            <dl className="mb-3 grid gap-x-6 gap-y-2 sm:grid-cols-2 lg:grid-cols-4">
               <div>
                 <dt className="text-xs font-medium text-slate-500 dark:text-slate-400">{t('list.colRealWd')}</dt>
                 <dd className="text-sm text-slate-900 dark:text-slate-100">
@@ -993,6 +1005,18 @@ function LensRow({
               <div>
                 <dt className="text-xs font-medium text-slate-500 dark:text-slate-400">{t('list.colFSet')}</dt>
                 <dd className="text-sm text-slate-900 dark:text-slate-100">{c.fSet === null ? t('list.fSetNeedDh') : `F/${show(c.fSet, 1)}`}</dd>
+              </div>
+              <div>
+                <dt className="text-xs font-medium text-slate-500 dark:text-slate-400">{t('list.colDofDetail')}</dt>
+                <dd className="text-sm tabular-nums text-slate-900 dark:text-slate-100">
+                  {c.dof === null
+                    ? t('list.fSetNeedDh')
+                    : t('list.dofValue', {
+                        front: show(c.dof.frontMm, 2),
+                        back: Number.isFinite(c.dof.backMm) ? show(c.dof.backMm, 2) : '∞',
+                        total: Number.isFinite(c.dof.totalMm) ? show(c.dof.totalMm, 2) : '∞',
+                      })}
+                </dd>
               </div>
             </dl>
             <p className={`mb-3 ${NOTE_CLASS}`}>{t('list.realWdNote')}</p>

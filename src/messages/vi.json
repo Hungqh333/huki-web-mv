@@ -3001,9 +3001,12 @@
       "summaryNoMod": "f {f} mm · chưa khai MOD",
       "summarySf": "sF {sF} mm",
       "summaryNoSf": "chưa khai sF",
+      "summaryF": "F/{min}–F/{max}",
       "focal": "Tiêu cự f (mm)",
       "mod": "MOD (mm, tuỳ chọn)",
       "modHint": "Khoảng lấy nét gần nhất, tính từ mặt trước ống. Để trống thì chưa vẽ được dải nét.",
+      "fMin": "F nhỏ nhất (tuỳ chọn)",
+      "fMax": "F lớn nhất (tuỳ chọn)",
       "sF": "Tiêu điểm trước sF (mm, tuỳ chọn) · chỉ admin",
       "sFHint": "Từ mặt trước ống tới tiêu điểm trước, có thể âm. Để trống = 0, hình ghi “ước tính”."
     },
@@ -3017,7 +3020,11 @@
       "count": "{shown}/{total} camera",
       "long": "Cảm biến cạnh dài (mm)",
       "short": "Cảm biến cạnh ngắn (mm)",
-      "shortHint": "Để trống = line scan."
+      "shortHint": "Để trống = line scan.",
+      "pixel": "Cỡ điểm ảnh (µm, tuỳ chọn)",
+      "pixelHint": "Cần để tính độ sâu trường ảnh (DOF).",
+      "summaryPixel": "Điểm ảnh {px} µm",
+      "summaryNoPixel": "Camera chưa khai cỡ điểm ảnh, chưa tính được DOF."
     },
     "setup": {
       "title": "Lắp đặt",
@@ -3026,7 +3033,11 @@
       "converter": "Bộ nhân k (×)",
       "fovW": "Vùng nhìn cần rộng (mm, tuỳ chọn)",
       "fovH": "Vùng nhìn cần cao (mm, tuỳ chọn)",
-      "hint": "Ống nối: tổng các khúc, để trống = không ống. Bộ nhân để trống = không dùng. Có vùng nhìn cần thì vẽ thêm H5."
+      "hint": "Ống nối: tổng các khúc, để trống = không ống. Bộ nhân để trống = không dùng. Có vùng nhìn cần thì vẽ thêm H5.",
+      "blur": "Độ nhòe cho phép (DOF)",
+      "blurPreset": { "tight": "Đo chặt · {px, number} px", "measure": "Đo lường · {px, number} px (Opto k 0,008)", "defect": "Phát hiện lỗi · {px, number} px (Opto k 0,015)", "custom": "Tự nhập số px" },
+      "blurPx": "Số px nhòe",
+      "blurHint": "Vòng mờ = số px × cỡ điểm ảnh. Đo chặt 2 px giống Chọn ống kính; 4 px và 7,5 px theo hệ số k của Opto Engineering."
     },
     "missing": "Chọn ống kính, camera và nhập khoảng cách làm việc để vẽ hình.",
     "resultLabel": "Hình kiểm tra lắp đặt"
@@ -3159,6 +3170,12 @@
       "ringHigh": "vượt hành trình ren",
       "betaSystem": "Độ phóng đại β cả hệ",
       "fovReal": "Vùng nhìn thực",
+      "sliderF": "Khẩu F (vòng ống)",
+      "dof": "DOF trước / sau",
+      "dofValue": "−{front} / +{back} mm · tổng {total}",
+      "dofNoPixel": "chưa có cỡ điểm ảnh",
+      "dofDiffraction": "Quá F#max F/{fMax} → mờ do nhiễu xạ",
+      "dofNote": "Nền tím nhạt quanh vạch WD trên H3 là DOF ở khẩu F đang đặt; cần ảnh thật nét thì chỉ nên dùng một nửa.",
       "margin": "Độ dư lấy nét",
       "marginValue": "{m} % WD",
       "marginOutside": "WD ngoài dải nét",
@@ -3176,6 +3193,10 @@
       "colMmPerPx": "mm/px",
       "colPixelUse": "Pixel dùng",
       "colFSet": "F nên đặt",
+      "colDof": "DOF",
+      "colDofDetail": "DOF tại F nên đặt",
+      "dofValue": "−{front} / +{back} mm · tổng {total}",
+      "dofNote": "Độ sâu trường ảnh tại F nên đặt, vòng mờ 2 px (OPT-013)",
       "colStatus": "Kết luận",
       "details": "Chi tiết",
       "hide": "Ẩn",

@@ -8,6 +8,13 @@ import {
   tubeFigure,
   type TubeFigure,
 } from "@/lib/vision/lensSelector";
+import { maxRingFNumber } from "@/lib/vision/configurationRules";
+import {
+  DOF_DEFAULT_F,
+  STANDARD_F_STOPS,
+  blurMm,
+  depthOfFieldNewton,
+} from "@/lib/vision/depthOfField";
 
 /**
  * Hình kiểm tra lắp đặt (chốt 2026-11-11 Q5 vòng 2, Q1–Q6 như đề xuất; vòng 3 Q1-B: chuyển khỏi Chi tiết
@@ -18,6 +25,7 @@ import {
  *   Vòng 4 (Q1–Q6 như đề xuất): H3 + H5 lên ngay dưới thanh trượt, H2 rồi H1 để cuối; khối thanh trượt + số dính
  *   khi cuộn; ô gõ số; trục H2/H3/H5 cố định theo dải thanh trượt; thêm ô "Độ dư lấy nét"; thanh WD tô dải nét.
  *   H4 (bảng quét sF) bỏ, thay bằng dòng "ước tính" trên tiêu đề (Q5).
+ *   DOF (OPT-013, chốt 2026-11-21): thanh khẩu F, ô "DOF trước / sau", dải DOF tím nhạt quanh vạch WD trên H3.
  * Không tính gì ở đây: số đến từ `tubeFigure` (lensSelector.ts, cùng công thức OPT-001/OPT-010).
  */
 
@@ -39,6 +47,14 @@ export type TubeFiguresProps = {
   marginWarn: number;
   /** Admin: thấy H1, H2 và thanh sF. */
   admin: boolean;
+  /** Cỡ điểm ảnh (µm); null = chưa biết → không tính DOF. */
+  pixelUm: number | null;
+  /** Dải khẩu F trên vòng ống (null = chưa khai → 1,4…16) và khẩu F mở trang (F đặt từ Chọn ống kính). */
+  fNumberMin: number | null;
+  fNumberMax: number | null;
+  fNumberInit: number | null;
+  /** Độ nhòe cho phép (px) — đổi không làm thanh trượt về số đầu. */
+  blurPx: number;
 };
 
 const r1 = (v: number) => Math.round(v * 10) / 10;
@@ -522,13 +538,14 @@ function PushFigure({
   );
 }
 
-/** H3 — trục WD: dải nét không ống (xám), có ống (xanh), vạch đỏ tại WD. */
+/** H3 — trục WD: dải nét không ống (xám), có ống (xanh), vạch tím tại WD, nền tím nhạt = DOF. */
 function FocusFigure({
   fig,
   e,
   wd,
   mod,
   axisMm,
+  dof,
 }: {
   fig: TubeFigure;
   e: number;
@@ -536,6 +553,8 @@ function FocusFigure({
   mod: number | null;
   /** Trục cố định theo dải thanh trượt WD (Q4). */
   axisMm: number;
+  /** Dải DOF quanh WD (OPT-013); to = ∞ khi nét tới vô cực. */
+  dof: { from: number; to: number } | null;
 }) {
   const t = useTranslations("lensSelector.figures");
   const W = 440;
@@ -585,6 +604,15 @@ function FocusFigure({
       role="img"
       aria-label={t("h3Title")}
     >
+      {dof ? (
+        <rect
+          x={r1(X(Math.max(dof.from, 0)))}
+          y={2}
+          width={r1(Math.max(X(dof.to) - X(Math.max(dof.from, 0)), 2))}
+          height={74}
+          className="fill-violet-400/20 dark:fill-violet-500/25"
+        />
+      ) : null}
       {mod !== null
         ? band(
             10,
@@ -730,6 +758,7 @@ function Slider({
   accept,
   band,
   ticks,
+  note,
   onChange,
 }: {
   id: string;
@@ -741,6 +770,8 @@ function Slider({
   accept: "positive" | "nonneg" | "any";
   band?: { from: number; to: number } | null;
   ticks?: number[];
+  /** Dòng cảnh báo dưới thanh — giữ sẵn chỗ khi `note` khác undefined (null = trống) để khối không đổi cao. */
+  note?: string | null;
   onChange: (v: number) => void;
 }) {
   const [draft, setDraft] = useState<string | null>(null);
@@ -801,6 +832,11 @@ function Slider({
           ))}
         </div>
       ) : null}
+      {note !== undefined ? (
+        <p className="min-h-[2rem] text-xs text-amber-700 dark:text-amber-300">
+          {note}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -843,7 +879,14 @@ export function TubeFigures(props: TubeFiguresProps) {
   const [wd, setWd] = useState(props.wdMm);
   const [e, setE] = useState(props.tubeMm);
   const [sF, setSF] = useState(sF0);
-  const moved = wd !== props.wdMm || e !== props.tubeMm || sF !== sF0;
+  // Thanh khẩu F: dải theo ống; chưa khai thì 1,4…16; F mở trang ngoài dải thì dải nở theo.
+  const fInit = props.fNumberInit ?? DOF_DEFAULT_F;
+  const fLo = Math.min(props.fNumberMin ?? 1.4, fInit);
+  const fHi = Math.max(props.fNumberMax ?? 16, fLo, props.fNumberInit ?? 0);
+  const f0 = Math.min(Math.max(fInit, fLo), fHi);
+  const [fNum, setFNum] = useState(f0);
+  const moved =
+    wd !== props.wdMm || e !== props.tubeMm || sF !== sF0 || fNum !== f0;
   const fig = tubeFigure({
     focalMm: props.focalMm,
     frontFocalMm: sF,
@@ -866,6 +909,36 @@ export function TubeFigures(props: TubeFiguresProps) {
         : props.frontFocalApprox
           ? t("estimateApprox", { v: show(sF0) })
           : null;
+  // DOF ở khẩu F đang đặt (OPT-013) + so F#max nhiễu xạ (OPT-004, F trên vòng ống gốc = F#max cả hệ ÷ k).
+  const dof =
+    fig !== null && props.pixelUm !== null
+      ? depthOfFieldNewton({
+          focalMm: props.focalMm,
+          fNumber: fNum,
+          betaLens: fig.beta,
+          blur: blurMm(props.blurPx, props.pixelUm),
+          converterFactor: props.converterFactor,
+        })
+      : null;
+  const fMaxRing =
+    fig !== null && props.pixelUm !== null
+      ? maxRingFNumber(props.pixelUm, fig.betaSystem) / props.converterFactor
+      : null;
+  const diffraction = fMaxRing !== null && fNum > fMaxRing + 1e-9;
+  const inf = (v: number) => (Number.isFinite(v) ? show(v, 2) : "∞");
+  const dofCell =
+    props.pixelUm === null
+      ? { text: t("dofNoPixel"), tone: "muted" as const }
+      : dof === null
+        ? { text: "—", tone: "muted" as const }
+        : {
+            text: t("dofValue", {
+              front: inf(dof.frontMm),
+              back: inf(dof.backMm),
+              total: inf(dof.totalMm),
+            }),
+            tone: diffraction ? ("warn" as const) : ("ok" as const),
+          };
   const wdStep = props.wdMm < 50 ? 0.5 : 1;
   /* Dải thanh WD (2026-11-12 Q2): tới 1,5 × MOD để luôn kéo được vào dải nét khi không ống (nét từ MOD trở ra);
      số gõ tay ngoài dải thì dải nở theo. Chỉ là dải kéo, không phải phép tính kỹ thuật. */
@@ -954,6 +1027,7 @@ export function TubeFigures(props: TubeFiguresProps) {
                 setWd(props.wdMm);
                 setE(props.tubeMm);
                 setSF(sF0);
+                setFNum(f0);
               }}
               className={`rounded-md border border-slate-300 bg-white px-2.5 py-1 text-xs font-medium hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800 ${moved ? "" : "invisible"}`}
             >
@@ -961,7 +1035,7 @@ export function TubeFigures(props: TubeFiguresProps) {
             </button>
         </div>
         <div
-          className={`grid gap-x-6 gap-y-3 ${props.admin ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}
+          className={`grid gap-x-6 gap-y-3 ${props.admin ? "sm:grid-cols-2 lg:grid-cols-4" : "sm:grid-cols-3"}`}
         >
           <Slider
             id={`${uid}-wd`}
@@ -989,6 +1063,22 @@ export function TubeFigures(props: TubeFiguresProps) {
             ticks={STANDARD_TUBE_LENGTHS_MM.filter((v) => v <= eMax)}
             onChange={setE}
           />
+          <Slider
+            id={`${uid}-f`}
+            label={t("sliderF")}
+            value={fNum}
+            min={fLo}
+            max={fHi}
+            step={0.1}
+            accept="positive"
+            ticks={STANDARD_F_STOPS.filter((v) => v >= fLo && v <= fHi)}
+            note={
+              diffraction
+                ? t("dofDiffraction", { fMax: show(fMaxRing!, 1) })
+                : null
+            }
+            onChange={setFNum}
+          />
           {props.admin ? (
             <Slider
               id={`${uid}-sf`}
@@ -1002,7 +1092,13 @@ export function TubeFigures(props: TubeFiguresProps) {
             />
           ) : null}
         </div>
-        {fig?.focus ? <p className={NOTE_CLASS}>{t("wdBandNote")}</p> : null}
+        {fig?.focus || dof ? (
+          <p className={NOTE_CLASS}>
+            {[fig?.focus ? t("wdBandNote") : null, dof ? t("dofNote") : null]
+              .filter(Boolean)
+              .join(" ")}
+          </p>
+        ) : null}
         <p
           className={`${NOTE_CLASS} ${moved ? "" : "invisible"}`}
           aria-hidden={!moved}
@@ -1012,7 +1108,7 @@ export function TubeFigures(props: TubeFiguresProps) {
         {fig === null || marginCell === null ? (
           <p className="text-sm text-red-700 dark:text-red-300">{t("e01")}</p>
         ) : (
-          <dl className="grid grid-cols-2 gap-x-6 gap-y-2 rounded-md border border-slate-200 bg-white px-3 py-2 lg:grid-cols-4 dark:border-slate-700 dark:bg-slate-900">
+          <dl className="grid grid-cols-2 gap-x-6 gap-y-2 rounded-md border border-slate-200 bg-white px-3 py-2 lg:grid-cols-5 dark:border-slate-700 dark:bg-slate-900">
             <div>
               <dt className={DT}>{t("margin")}</dt>
               <dd className={`min-h-[2.5rem] text-sm tabular-nums ${TONE[marginCell.tone]}`}>
@@ -1041,6 +1137,14 @@ export function TubeFigures(props: TubeFiguresProps) {
               <dt className={DT}>{t("betaSystem")}</dt>
               <dd className={`min-h-[2.5rem] text-sm tabular-nums ${TONE.ok}`}>
                 {show(fig.betaSystem, 4)}
+              </dd>
+            </div>
+            <div>
+              <dt className={DT}>{t("dof")}</dt>
+              <dd
+                className={`min-h-[2.5rem] text-sm tabular-nums ${TONE[dofCell.tone]}`}
+              >
+                {dofCell.text}
               </dd>
             </div>
             <div>
@@ -1089,6 +1193,11 @@ export function TubeFigures(props: TubeFiguresProps) {
                   wd={wd}
                   mod={props.modMm}
                   axisMm={focusAxisMm}
+                  dof={
+                    dof
+                      ? { from: wd - dof.frontMm, to: wd + dof.backMm }
+                      : null
+                  }
                 />
               )}
             </Frame>

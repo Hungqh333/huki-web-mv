@@ -3001,9 +3001,12 @@
       "summaryNoMod": "f {f} mm · no MOD",
       "summarySf": "sF {sF} mm",
       "summaryNoSf": "no sF",
+      "summaryF": "F/{min}–F/{max}",
       "focal": "Focal length f (mm)",
       "mod": "MOD (mm, optional)",
       "modHint": "Minimum object distance from the lens front. Leave empty and the focus range cannot be drawn.",
+      "fMin": "Min F-number (optional)",
+      "fMax": "Max F-number (optional)",
       "sF": "Front focal distance sF (mm, optional) · admin only",
       "sFHint": "From the lens front to the front focal point, may be negative. Empty = 0, figures marked “estimate”."
     },
@@ -3017,7 +3020,11 @@
       "count": "{shown}/{total} cameras",
       "long": "Sensor long side (mm)",
       "short": "Sensor short side (mm)",
-      "shortHint": "Empty = line scan."
+      "shortHint": "Empty = line scan.",
+      "pixel": "Pixel size (µm, optional)",
+      "pixelHint": "Needed for depth of field (DOF).",
+      "summaryPixel": "Pixel {px} µm",
+      "summaryNoPixel": "Camera has no pixel size, DOF cannot be calculated."
     },
     "setup": {
       "title": "Mounting",
@@ -3026,7 +3033,11 @@
       "converter": "Converter k (×)",
       "fovW": "Required FOV width (mm, optional)",
       "fovH": "Required FOV height (mm, optional)",
-      "hint": "Tube: total of all pieces, empty = none. Converter empty = none. With a required FOV, H5 is drawn too."
+      "hint": "Tube: total of all pieces, empty = none. Converter empty = none. With a required FOV, H5 is drawn too.",
+      "blur": "Allowed blur (DOF)",
+      "blurPreset": { "tight": "Tight measurement · {px, number} px", "measure": "Measurement · {px, number} px (Opto k 0.008)", "defect": "Defect detection · {px, number} px (Opto k 0.015)", "custom": "Enter px" },
+      "blurPx": "Blur (px)",
+      "blurHint": "Blur circle = px × pixel size. Tight 2 px matches the Lens selector; 4 px and 7.5 px follow Opto Engineering's k factor."
     },
     "missing": "Pick a lens and a camera and enter the working distance to draw the figures.",
     "resultLabel": "Mounting check figures"
@@ -3159,6 +3170,12 @@
       "ringHigh": "beyond ring travel",
       "betaSystem": "System magnification β",
       "fovReal": "Actual field of view",
+      "sliderF": "F-number (lens ring)",
+      "dof": "DOF front / back",
+      "dofValue": "−{front} / +{back} mm · total {total}",
+      "dofNoPixel": "no pixel size",
+      "dofDiffraction": "Above F#max F/{fMax} → diffraction blur",
+      "dofNote": "The light violet area around the WD line in H3 is the DOF at the current F-number; for very sharp images use only half of it.",
       "margin": "Focus margin",
       "marginValue": "{m} % of WD",
       "marginOutside": "WD outside focus range",
@@ -3176,6 +3193,10 @@
       "colMmPerPx": "mm/px",
       "colPixelUse": "Pixels used",
       "colFSet": "Set F",
+      "colDof": "DOF",
+      "colDofDetail": "DOF at suggested F",
+      "dofValue": "−{front} / +{back} mm · total {total}",
+      "dofNote": "Depth of field at the suggested F-number, 2 px blur (OPT-013)",
       "colStatus": "Verdict",
       "details": "Details",
       "hide": "Hide",

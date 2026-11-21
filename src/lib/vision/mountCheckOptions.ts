@@ -15,6 +15,9 @@ export type MountLensOption = {
   frontFocalMm: number | null;
   frontFocalApprox: boolean;
   modMm: number | null;
+  /** Dải khẩu F trên vòng (OPT-013 thanh khẩu F); null = chưa khai. */
+  fNumberMin: number | null;
+  fNumberMax: number | null;
 };
 
 export type MountCameraOption = {
@@ -23,12 +26,14 @@ export type MountCameraOption = {
   sensorLongMm: number;
   /** null = line scan. */
   sensorShortMm: number | null;
+  /** Cỡ điểm ảnh (µm) — vòng mờ của DOF (OPT-013); null = chưa khai. */
+  pixelUm: number | null;
 };
 
 /** Số điền sẵn khi mở từ một dòng kết quả Chọn ống kính (chuỗi thô từ URL, MountCheck tự đọc số). */
 export type MountCheckInitial = Partial<Record<(typeof MOUNT_PARAM_KEYS)[number], string>>;
 
-export const MOUNT_PARAM_KEYS = ['lens', 'cam', 'sl', 'ss', 'wd', 'e', 'k', 'fw', 'fh'] as const;
+export const MOUNT_PARAM_KEYS = ['lens', 'cam', 'sl', 'ss', 'px', 'wd', 'e', 'k', 'fw', 'fh', 'n'] as const;
 
 export function readMountParams(params: Record<string, string | string[] | undefined>): MountCheckInitial {
   const out: MountCheckInitial = {};
@@ -67,6 +72,8 @@ export function mountLensOptions(components: Component[]): MountLensOption[] {
       frontFocalMm: lens.frontFocalMm ?? null,
       frontFocalApprox: lens.frontFocalApprox === true,
       modMm: lens.wdMinMm,
+      fNumberMin: lens.fNumberMin,
+      fNumberMax: lens.fNumberMax,
     });
   }
   return out;
@@ -88,6 +95,7 @@ export function mountCameraOptions(components: Component[]): MountCameraOption[]
       label: `${c.brand} ${c.model}${px ? ` · ${px}` : ''} · ${round(sensor.longMm)}${line ? '' : ` × ${round(sensor.shortMm)}`} mm`,
       sensorLongMm: sensor.longMm,
       sensorShortMm: line ? null : sensor.shortMm,
+      pixelUm: camera.pixelSizeUm,
     });
   }
   return out;

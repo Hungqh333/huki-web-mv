@@ -5,12 +5,14 @@ import { useTranslations } from 'next-intl';
 import { FIELD_CELL, FIELD_GRID, FIELD_LABEL, NOTE_CLASS, Panel } from '@/components/ui/PanelHeader';
 import { useShowFormulas } from '@/components/ui/FormulaVisibility';
 import type { MountCameraOption, MountCheckInitial, MountLensOption } from '@/lib/vision/mountCheckOptions';
+import { DOF_BLUR_PRESETS, type DofBlurPreset } from '@/lib/vision/depthOfField';
 import { TubeFigures } from './TubeFigures';
 
 /**
  * Trang Kiểm tra lắp đặt ống kính (chốt 2026-11-11 vòng 3: Q1-B trang riêng, Q2-b mở từ dòng kết quả
  * Chọn ống kính hoặc tự chọn ống / camera trong kho hay nhập tay, Q3-a quyền như Q5, Q4-a menu nhóm Ống kính).
- * Không tính gì ở đây: số trong hình đến từ `tubeFigure` (lensSelector.ts, OPT-001/OPT-010).
+ * Không tính gì ở đây: số trong hình đến từ `tubeFigure` (lensSelector.ts, OPT-001/OPT-010) và DOF từ
+ * depthOfField.ts (OPT-013, chốt 2026-11-21: cỡ điểm ảnh, dải khẩu F, ba mức độ nhòe + tự nhập).
  */
 
 const inputClass =
@@ -84,12 +86,13 @@ export function MountCheck({
   const [lensSource, setLensSource] = useState<'catalog' | 'manual'>(lenses.length > 0 ? 'catalog' : 'manual');
   const [lensSearch, setLensSearch] = useState('');
   const [lensId, setLensId] = useState(initialLens);
-  const [manualLens, setManualLens] = useState({ f: '', sF: '', mod: '' });
+  const [manualLens, setManualLens] = useState({ f: '', sF: '', mod: '', fMin: '', fMax: '' });
 
   const [camSource, setCamSource] = useState<'catalog' | 'manual'>(initialCam || (!initial.sl && cameras.length > 0) ? 'catalog' : 'manual');
   const [camSearch, setCamSearch] = useState('');
   const [camId, setCamId] = useState(initialCam);
-  const [manualCam, setManualCam] = useState({ long: initialCam ? '' : (initial.sl ?? ''), short: initialCam ? '' : (initial.ss ?? '') });
+  const [manualCam, setManualCam] = useState({ long: initialCam ? '' : (initial.sl ?? ''), short: initialCam ? '' : (initial.ss ?? ''), px: initialCam ? '' : (initial.px ?? '') });
+  const [blur, setBlur] = useState<{ preset: DofBlurPreset | 'custom'; custom: string }>({ preset: 'tight', custom: '' });
 
   const [setup, setSetup] = useState({ wd: initial.wd ?? '', e: initial.e ?? '', k: initial.k ?? '', fw: initial.fw ?? '', fh: initial.fh ?? '' });
 
@@ -106,18 +109,20 @@ export function MountCheck({
       frontFocalMm: admin ? parse(manualLens.sF) : null,
       frontFocalApprox: false,
       modMm: positive(manualLens.mod),
+      fNumberMin: positive(manualLens.fMin),
+      fNumberMax: positive(manualLens.fMax),
     };
   }, [lensSource, lenses, lensId, manualLens, admin]);
 
   const camera = useMemo(() => {
     if (camSource === 'catalog') {
       const c = cameras.find((x) => x.id === camId);
-      return c ? { sensorLongMm: c.sensorLongMm, sensorShortMm: c.sensorShortMm } : null;
+      return c ? { sensorLongMm: c.sensorLongMm, sensorShortMm: c.sensorShortMm, pixelUm: c.pixelUm } : null;
     }
     const long = positive(manualCam.long);
     if (long === null) return null;
     const short = positive(manualCam.short);
-    return { sensorLongMm: Math.max(long, short ?? 0), sensorShortMm: short === null ? null : Math.min(long, short) };
+    return { sensorLongMm: Math.max(long, short ?? 0), sensorShortMm: short === null ? null : Math.min(long, short), pixelUm: positive(manualCam.px) };
   }, [camSource, cameras, camId, manualCam]);
 
   const wd = positive(setup.wd);
@@ -146,8 +151,14 @@ export function MountCheck({
           needShortMm: need?.short ?? null,
           marginWarn,
           admin,
+          pixelUm: camera.pixelUm,
+          fNumberMin: lens.fNumberMin,
+          fNumberMax: lens.fNumberMax,
+          // F đặt mang từ Chọn ống kính chỉ áp cho đúng ống mở trang.
+          fNumberInit: lensSource === 'catalog' && lensId === initialLens && initialLens !== '' ? positive(initial.n ?? '') : null,
         }
       : null;
+  const blurPx = blur.preset === 'custom' ? (positive(blur.custom) ?? DOF_BLUR_PRESETS.tight) : DOF_BLUR_PRESETS[blur.preset];
 
   const pickedLens = lensSource === 'catalog' ? lenses.find((l) => l.id === lensId) : null;
   const pickedCam = camSource === 'catalog' ? cameras.find((c) => c.id === camId) : null;
@@ -180,11 +191,15 @@ export function MountCheck({
                   ))}
                 </select>
               </div>
+              {pickedCam ? (
+                <p className={NOTE_CLASS}>{pickedCam.pixelUm !== null ? t('camera.summaryPixel', { px: show(pickedCam.pixelUm, 2) }) : t('camera.summaryNoPixel')}</p>
+              ) : null}
             </div>
           ) : (
             <div className={`${FIELD_GRID} sm:grid-cols-2`}>
               <NumberField id="mount-sl" label={t('camera.long')} value={manualCam.long} onChange={(v) => setManualCam({ ...manualCam, long: v })} />
               <NumberField id="mount-ss" label={t('camera.short')} hint={t('camera.shortHint')} value={manualCam.short} onChange={(v) => setManualCam({ ...manualCam, short: v })} />
+              <NumberField id="mount-px" label={t('camera.pixel')} hint={t('camera.pixelHint')} value={manualCam.px} onChange={(v) => setManualCam({ ...manualCam, px: v })} step="0.01" />
             </div>
           )}
         </Panel>
@@ -216,6 +231,7 @@ export function MountCheck({
               {pickedLens ? (
                 <p className={NOTE_CLASS}>
                   {pickedLens.modMm !== null ? t('lens.summary', { f: show(pickedLens.focalMm, 1), mod: show(pickedLens.modMm, 0) }) : t('lens.summaryNoMod', { f: show(pickedLens.focalMm, 1) })}
+                  {pickedLens.fNumberMin !== null ? ` · ${t('lens.summaryF', { min: show(pickedLens.fNumberMin, 1), max: pickedLens.fNumberMax !== null ? show(pickedLens.fNumberMax, 1) : '?' })}` : ''}
                   {admin ? ` · ${pickedLens.frontFocalMm !== null ? t('lens.summarySf', { sF: show(pickedLens.frontFocalMm, 1) }) : t('lens.summaryNoSf')}` : ''}
                 </p>
               ) : null}
@@ -224,6 +240,8 @@ export function MountCheck({
             <div className={`${FIELD_GRID} sm:grid-cols-2`}>
               <NumberField id="mount-f" label={t('lens.focal')} value={manualLens.f} onChange={(v) => setManualLens({ ...manualLens, f: v })} />
               <NumberField id="mount-mod" label={t('lens.mod')} hint={t('lens.modHint')} value={manualLens.mod} onChange={(v) => setManualLens({ ...manualLens, mod: v })} />
+              <NumberField id="mount-fmin" label={t('lens.fMin')} value={manualLens.fMin} onChange={(v) => setManualLens({ ...manualLens, fMin: v })} step="0.1" />
+              <NumberField id="mount-fmax" label={t('lens.fMax')} value={manualLens.fMax} onChange={(v) => setManualLens({ ...manualLens, fMax: v })} step="0.1" />
               {admin ? <NumberField id="mount-sf" label={t('lens.sF')} hint={t('lens.sFHint')} value={manualLens.sF} onChange={(v) => setManualLens({ ...manualLens, sF: v })} /> : null}
             </div>
           )}
@@ -239,6 +257,45 @@ export function MountCheck({
             {line ? null : <NumberField id="mount-fh" label={t('setup.fovH')} value={setup.fh} onChange={(v) => setSetup({ ...setup, fh: v })} />}
           </div>
           <p className={`mt-3 ${NOTE_CLASS}`}>{t('setup.hint')}</p>
+          {/* Độ nhòe cho phép của DOF (OPT-013, Q2-A): ba mức + tự nhập. */}
+          <div className="mt-4 flex flex-wrap items-end gap-4">
+            <div>
+              <label htmlFor="mount-blur" className={labelClass}>
+                {t('setup.blur')}
+              </label>
+              <select
+                id="mount-blur"
+                value={blur.preset}
+                onChange={(ev) => setBlur({ ...blur, preset: ev.target.value as DofBlurPreset | 'custom' })}
+                className={`mt-1.5 ${inputClass} sm:w-72`}
+              >
+                {(['tight', 'measure', 'defect'] as const).map((p) => (
+                  <option key={p} value={p}>
+                    {t(`setup.blurPreset.${p}`, { px: DOF_BLUR_PRESETS[p] })}
+                  </option>
+                ))}
+                <option value="custom">{t('setup.blurPreset.custom')}</option>
+              </select>
+            </div>
+            {blur.preset === 'custom' ? (
+              <div>
+                <label htmlFor="mount-blur-px" className={labelClass}>
+                  {t('setup.blurPx')}
+                </label>
+                <input
+                  id="mount-blur-px"
+                  type="number"
+                  inputMode="decimal"
+                  step="0.1"
+                  value={blur.custom}
+                  onChange={(ev) => setBlur({ ...blur, custom: ev.target.value })}
+                  placeholder={show(DOF_BLUR_PRESETS.tight, 1)}
+                  className={`mt-1.5 ${inputClass} w-28`}
+                />
+              </div>
+            ) : null}
+          </div>
+          <p className={`mt-2 ${NOTE_CLASS}`}>{t('setup.blurHint')}</p>
         </Panel>
       </div>
 
@@ -246,7 +303,7 @@ export function MountCheck({
         <section aria-label={t('resultLabel')} className="rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900">
           {/* Đổi ô nhập → vẽ lại từ đầu, thanh trượt về số mới. */}
           <div className="max-w-5xl">
-            <TubeFigures key={JSON.stringify(figProps)} {...figProps} />
+            <TubeFigures key={JSON.stringify(figProps)} {...figProps} blurPx={blurPx} />
           </div>
         </section>
       ) : (

@@ -18,6 +18,7 @@
 import { DEFAULT_CAMERAS_PER_PC, PC_BANDWIDTH_HEADROOM } from '@/lib/components/pc';
 import { GPU_BOARD_POWER_W, GPU_FALLBACK_W } from '@/lib/pc/power';
 import { CYCLE_DEFAULTS, DOF_FASTEST_PRACTICAL_F } from '@/lib/vision/configurationRules';
+import { DOF_BLUR_PRESETS, DOF_DEFAULT_F, OPTO_DOF_K_DEFECT, OPTO_DOF_K_MEASURE } from '@/lib/vision/depthOfField';
 import type { EngineParamKey } from '@/lib/vision/engineParams';
 import { UNKNOWN_SCORE } from '@/lib/vision/feasibility';
 import { K_STITCH } from '@/lib/vision/mechanics';
@@ -996,6 +997,40 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
         evidence: 'calculated',
         usedIn: ['lens'],
         source: 'vision/lensSelector.ts : betaToFit, realWorkingDistanceMm, roundUpWd, evaluateLens',
+      },
+      {
+        id: 'OPT-013',
+        title: 'Độ sâu trường ảnh (DOF) chiều thuận — khẩu F → trước / sau điểm nét',
+        figure: 'dof',
+        rules: ['OPT-013'],
+        formula: [
+          'c = vòng mờ cho phép trên cảm biến = số px nhòe × cỡ điểm ảnh',
+          'ống thường, mô hình Newton của OPT-001: x = WD − sF · β = f ÷ x · x′ = β × f',
+          'δ = N × (1 + β) × c ÷ k   (N: F trên vòng ống gốc · (1 + β): F làm việc · k: bộ nhân sau ống, không có thì 1)',
+          'x_gần = f² ÷ (x′ + δ) · x_xa = f² ÷ (x′ − δ)   (x′ ≤ δ → x_xa = ∞, siêu tiêu cự)',
+          'trước = x − x_gần · sau = x_xa − x · tổng = trước + sau',
+          'telecentric: trước = sau = N_làm việc × c ÷ β²  → tổng = 2 × N_làm việc × c ÷ β²',
+          'δ ≪ x′ → tổng ≈ 2 × N × c × (1 + β) ÷ β² = bản gần đúng của OPT-005',
+        ],
+        verdict: ['khẩu F trên thanh > F#max cả hệ ÷ k (OPT-004) → CẢNH BÁO nhiễu xạ (ô DOF chữ vàng)'],
+        notes: [
+          'Chỉ hiện số, KHÔNG đổi Đạt / Loại. Chọn ống kính: cột DOF tại F nên đặt của OPT-005, c = 2 px (giữ OPT-005 nguyên — chốt 2026-11-21 Q4-A).',
+          'Đối chiếu (chốt 2026-11-21 Q1-A): Fujifilm Tr = δF·L² ÷ (f² − δF·L), Tf = δF·L² ÷ (f² + δF·L) — trùng công thức trên khi L đo từ tiêu điểm trước và F thay bằng F làm việc; Edmund Optics: độ sâu phía ảnh = 2 × F làm việc × vết nhòe; Opto Engineering: F làm việc = (1 + β) × F, telecentric DOF = F làm việc × p × k ÷ β²; FRAMOS: vòng mờ = pixel × 1,4 (đơn sắc) / 2,0 (màu).',
+          'Đổi k Opto ra số px: 2 × c = p × k × 1000 → c ÷ p = 500 × k.',
+          'Ví dụ: f 8 · β 0,02 · F/11 · c 6,9 µm → trước 130,4 · sau 375,0 · tổng 505,4 mm (bản gần đúng chỉ 387 mm). Telecentric Opto: β 0,25 · F làm việc 8 · p 5,5 µm · k 0,015 → 10,56 mm.',
+          'Phía sau luôn dài hơn phía trước (Fujifilm, Edmund). Cần ảnh thật nét thì chỉ dùng một nửa DOF (Opto Engineering) — trang ghi câu này dưới thanh trượt.',
+        ],
+        constants: [
+          { name: 'Đo chặt (px)', value: DOF_BLUR_PRESETS.tight },
+          { name: 'Đo lường (px) = 500 × k Opto', value: DOF_BLUR_PRESETS.measure },
+          { name: 'k Opto đo lường', value: OPTO_DOF_K_MEASURE },
+          { name: 'Phát hiện lỗi (px) = 500 × k Opto', value: DOF_BLUR_PRESETS.defect },
+          { name: 'k Opto phát hiện lỗi', value: OPTO_DOF_K_DEFECT },
+          { name: 'F mở trang khi chưa có F đặt', value: DOF_DEFAULT_F },
+        ],
+        evidence: 'calculated',
+        usedIn: ['lens', 'mountCheck'],
+        source: 'vision/depthOfField.ts : depthOfFieldNewton, depthOfFieldTelecentric, optoKToBlurPx, DOF_BLUR_PRESETS · vision/lensSelector.ts : evaluateLens',
       },
     ],
   },

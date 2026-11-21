@@ -28,6 +28,7 @@ import {
   telecentricFrontDiameterMm,
 } from './optics';
 import { fmt, round, type Check } from './types';
+import { blurMm, depthOfFieldNewton, depthOfFieldTelecentric, type DepthOfField } from './depthOfField';
 
 /**
  * Bộ chọn ống kính (Lens Selector, chốt 2026-10-17).
@@ -141,6 +142,8 @@ export type LensCandidate = {
   pixelUse: number | null;
   /** F nên đặt cho độ sâu (trên vòng khẩu), null khi không nhập Δh. */
   fSet: number | null;
+  /** DOF tại F đặt (OPT-013), vòng mờ 2 px như OPT-005; null khi không có F đặt hoặc thiếu số. */
+  dof: DepthOfField | null;
   checks: LensCheck[];
   status: Check['status'];
   /** Số phép kiểm chưa kiểm được vì ống chưa khai thông số. */
@@ -790,6 +793,18 @@ export function evaluateLens(
     }
   }
 
+  // ── DOF thật tại F đặt (OPT-013) — chỉ hiện số, không đổi Đạt / Loại ──
+  let dof: DepthOfField | null = null;
+  if (fSet !== null && beta !== null && pitch !== null) {
+    const c = blurMm(DEFAULT_CIRCLE_OF_CONFUSION_PX, pitch);
+    if (lens.lensType === 'telecentric') dof = depthOfFieldTelecentric({ workingFNumber: fSet, beta, blur: c });
+    else if (lens.focalLengthMm !== null) {
+      // fSet tính trên β cả hệ (đã × k) → F trên vòng ống gốc = fSet ÷ k, β ống gốc = β ÷ k.
+      const k = variant?.converterFactor ?? 1;
+      dof = depthOfFieldNewton({ focalMm: lens.focalLengthMm, fNumber: fSet / k, betaLens: beta / k, blur: c, converterFactor: k });
+    }
+  }
+
   if (variant) checks.push(...variant.checks);
 
   // ── WD thật (OPT-012) — chỉ để bố trí cơ khí, không vào phép kiểm ──
@@ -827,6 +842,7 @@ export function evaluateLens(
     mmPerPx: mmPerPx !== null ? round(mmPerPx, 5) : null,
     pixelUse: pixelUse !== null ? round(pixelUse, 3) : null,
     fSet,
+    dof,
     checks,
     // Phụ kiện engine TỰ gợi ý → luôn CẢNH BÁO; phụ kiện anh tự khai → theo đúng các phép kiểm.
     status: judged.length === 0 ? 'info' : judged.includes('fail') ? 'fail' : judged.includes('warn') || variant?.accessory ? 'warn' : 'pass',

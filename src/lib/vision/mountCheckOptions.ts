@@ -33,7 +33,9 @@ export type MountCameraOption = {
 /** Số điền sẵn khi mở từ một dòng kết quả Chọn ống kính (chuỗi thô từ URL, MountCheck tự đọc số). */
 export type MountCheckInitial = Partial<Record<(typeof MOUNT_PARAM_KEYS)[number], string>>;
 
-export const MOUNT_PARAM_KEYS = ['lens', 'cam', 'sl', 'ss', 'px', 'wd', 'e', 'k', 'fw', 'fh', 'n'] as const;
+// w, h: số pixel camera nhập tay (2026-11-21: ô camera tay nhập số pixel, không nhập mm); sl, ss (mm) chỉ dùng khi
+// Chọn ống kính khai camera theo cỡ danh định, không có số pixel.
+export const MOUNT_PARAM_KEYS = ['lens', 'cam', 'w', 'h', 'sl', 'ss', 'px', 'wd', 'e', 'k', 'fw', 'fh', 'n'] as const;
 
 export function readMountParams(params: Record<string, string | string[] | undefined>): MountCheckInitial {
   const out: MountCheckInitial = {};

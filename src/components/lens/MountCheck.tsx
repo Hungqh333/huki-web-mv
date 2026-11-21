@@ -6,6 +6,7 @@ import { FIELD_CELL, FIELD_GRID, FIELD_LABEL, NOTE_CLASS, Panel } from '@/compon
 import { useShowFormulas } from '@/components/ui/FormulaVisibility';
 import type { MountCameraOption, MountCheckInitial, MountLensOption } from '@/lib/vision/mountCheckOptions';
 import { DOF_BLUR_PRESETS, type DofBlurPreset } from '@/lib/vision/depthOfField';
+import { sensorOf, tubeFigure } from '@/lib/vision/lensSelector';
 import { TubeFigures } from './TubeFigures';
 
 /**
@@ -13,6 +14,8 @@ import { TubeFigures } from './TubeFigures';
  * Chọn ống kính hoặc tự chọn ống / camera trong kho hay nhập tay, Q3-a quyền như Q5, Q4-a menu nhóm Ống kính).
  * Không tính gì ở đây: số trong hình đến từ `tubeFigure` (lensSelector.ts, OPT-001/OPT-010) và DOF từ
  * depthOfField.ts (OPT-013, chốt 2026-11-21: cỡ điểm ảnh, dải khẩu F, ba mức độ nhòe + tự nhập).
+ * 2026-11-21: camera tay nhập SỐ PIXEL + cỡ điểm ảnh (mm do sensorOf tính — tránh nhập nhầm pixel vào ô mm);
+ * ô vùng nhìn chỉ để xem (kết quả tubeFigure); vùng nhìn cần chỉ còn mang từ Chọn ống kính để vẽ H5.
  */
 
 const inputClass =
@@ -43,6 +46,17 @@ function NumberField({ id, label, hint, value, onChange, step = 'any' }: { id: s
       </label>
       <input id={id} type="number" inputMode="decimal" step={step} value={value} onChange={(e) => onChange(e.target.value)} className={`mt-1.5 ${inputClass}`} />
       {hint ? <p className={`mt-1 ${NOTE_CLASS}`}>{hint}</p> : <span />}
+    </div>
+  );
+}
+
+/** Ô chỉ xem — kết quả tính, cùng hàng với ô nhập (FIELD_GRID). */
+function ReadOnlyField({ label, value }: { label: string; value: string }) {
+  return (
+    <div className={FIELD_CELL}>
+      <span className={`${FIELD_LABEL} ${labelClass}`}>{label}</span>
+      <output className="mt-1.5 block w-full rounded-md border border-dashed border-slate-300 bg-slate-50 px-3 py-2 text-sm font-semibold tabular-nums text-slate-900 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-100">{value}</output>
+      <span />
     </div>
   );
 }
@@ -88,13 +102,16 @@ export function MountCheck({
   const [lensId, setLensId] = useState(initialLens);
   const [manualLens, setManualLens] = useState({ f: '', sF: '', mod: '', fMin: '', fMax: '' });
 
-  const [camSource, setCamSource] = useState<'catalog' | 'manual'>(initialCam || (!initial.sl && cameras.length > 0) ? 'catalog' : 'manual');
+  const fromSelectorManual = !initialCam && (initial.w !== undefined || initial.sl !== undefined);
+  const [camSource, setCamSource] = useState<'catalog' | 'manual'>(initialCam || (!fromSelectorManual && cameras.length > 0) ? 'catalog' : 'manual');
   const [camSearch, setCamSearch] = useState('');
   const [camId, setCamId] = useState(initialCam);
-  const [manualCam, setManualCam] = useState({ long: initialCam ? '' : (initial.sl ?? ''), short: initialCam ? '' : (initial.ss ?? ''), px: initialCam ? '' : (initial.px ?? '') });
+  const [manualCam, setManualCam] = useState({ w: initialCam ? '' : (initial.w ?? ''), h: initialCam ? '' : (initial.h ?? ''), px: initialCam ? '' : (initial.px ?? '') });
+  // Chọn ống kính khai camera theo cỡ danh định (không có số pixel): dùng cỡ mm mang sang tới khi anh nhập số pixel.
+  const [nominalMm] = useState(() => (!initialCam && initial.w === undefined && positive(initial.sl ?? '') !== null ? { long: positive(initial.sl!)!, short: positive(initial.ss ?? '') } : null));
   const [blur, setBlur] = useState<{ preset: DofBlurPreset | 'custom'; custom: string }>({ preset: 'tight', custom: '' });
 
-  const [setup, setSetup] = useState({ wd: initial.wd ?? '', e: initial.e ?? '', k: initial.k ?? '', fw: initial.fw ?? '', fh: initial.fh ?? '' });
+  const [setup, setSetup] = useState({ wd: initial.wd ?? '', e: initial.e ?? '', k: initial.k ?? '' });
 
   const filteredLenses = useMemo(() => (lensSearch.trim() ? lenses.filter((l) => matches(l.label, lensSearch)) : lenses), [lenses, lensSearch]);
   const filteredCameras = useMemo(() => (camSearch.trim() ? cameras.filter((c) => matches(c.label, camSearch)) : cameras), [cameras, camSearch]);
@@ -119,21 +136,34 @@ export function MountCheck({
       const c = cameras.find((x) => x.id === camId);
       return c ? { sensorLongMm: c.sensorLongMm, sensorShortMm: c.sensorShortMm, pixelUm: c.pixelUm } : null;
     }
-    const long = positive(manualCam.long);
-    if (long === null) return null;
-    const short = positive(manualCam.short);
-    return { sensorLongMm: Math.max(long, short ?? 0), sensorShortMm: short === null ? null : Math.min(long, short), pixelUm: positive(manualCam.px) };
-  }, [camSource, cameras, camId, manualCam]);
+    const w = positive(manualCam.w);
+    const h = positive(manualCam.h);
+    const px = positive(manualCam.px);
+    if (w === null) {
+      if (nominalMm === null || manualCam.h !== '') return null;
+      return { sensorLongMm: nominalMm.long, sensorShortMm: nominalMm.short, pixelUm: px, nominal: true };
+    }
+    if (px === null) return null;
+    const line = h === null;
+    const sensor = sensorOf({ cameraType: line ? 'line' : 'area', widthPx: Math.max(w, h ?? 0), heightPx: line ? 1 : Math.min(w, h!), pixelSizeUm: px, sensorFormat: null, mount: null, interfaceName: null, maxFps: null, bytesPerPx: 1 });
+    if (!sensor) return null;
+    return { sensorLongMm: sensor.longMm, sensorShortMm: line ? null : sensor.shortMm, pixelUm: px, nominal: false };
+  }, [camSource, cameras, camId, manualCam, nominalMm]);
 
   const wd = positive(setup.wd);
   const e = parse(setup.e);
   const tube = e !== null && e > 0 ? e : 0;
   const k = positive(setup.k) ?? 1;
-  const fw = positive(setup.fw);
-  const fh = positive(setup.fh);
+  // Vùng nhìn cần: chỉ mang từ Chọn ống kính (không còn ô nhập) — line scan chỉ bề rộng; area cần đủ hai cạnh, thiếu thì không vẽ H5.
+  const fw = positive(initial.fw ?? '');
+  const fh = positive(initial.fh ?? '');
   const line = camera?.sensorShortMm === null;
-  // Vùng nhìn cần: line scan chỉ bề rộng; area cần đủ hai cạnh, thiếu thì không vẽ H5.
   const need = line ? (fw !== null ? { long: fw, short: null } : null) : fw !== null && fh !== null ? { long: Math.max(fw, fh), short: Math.min(fw, fh) } : null;
+  // Vùng nhìn thực ở WD đã nhập (ô chỉ xem) — cùng tubeFigure với hình (OPT-001).
+  const fovNow =
+    lens && camera && wd !== null
+      ? tubeFigure({ focalMm: lens.focalMm, frontFocalMm: lens.frontFocalMm ?? 0, modMm: lens.modMm, wdMm: wd, tubeMm: tube, converterFactor: k, sensorLongMm: camera.sensorLongMm, sensorShortMm: camera.sensorShortMm, needLongMm: 0, needShortMm: null })
+      : null;
 
   const figProps =
     lens && camera && wd !== null
@@ -196,11 +226,22 @@ export function MountCheck({
               ) : null}
             </div>
           ) : (
+            <>
             <div className={`${FIELD_GRID} sm:grid-cols-2`}>
-              <NumberField id="mount-sl" label={t('camera.long')} value={manualCam.long} onChange={(v) => setManualCam({ ...manualCam, long: v })} />
-              <NumberField id="mount-ss" label={t('camera.short')} hint={t('camera.shortHint')} value={manualCam.short} onChange={(v) => setManualCam({ ...manualCam, short: v })} />
+              <NumberField id="mount-w" label={t('camera.long')} value={manualCam.w} onChange={(v) => setManualCam({ ...manualCam, w: v })} step="1" />
+              <NumberField id="mount-h" label={t('camera.short')} hint={t('camera.shortHint')} value={manualCam.h} onChange={(v) => setManualCam({ ...manualCam, h: v })} step="1" />
               <NumberField id="mount-px" label={t('camera.pixel')} hint={t('camera.pixelHint')} value={manualCam.px} onChange={(v) => setManualCam({ ...manualCam, px: v })} step="0.01" />
             </div>
+            {camera ? (
+              <p className={`mt-2 ${NOTE_CLASS}`}>
+                {camera.nominal
+                  ? t('camera.nominalMm', { long: show(camera.sensorLongMm), short: camera.sensorShortMm !== null ? show(camera.sensorShortMm) : '—' })
+                  : camera.sensorShortMm === null
+                    ? t('camera.sizeMmLine', { long: show(camera.sensorLongMm, 3) })
+                    : t('camera.sizeMm', { long: show(camera.sensorLongMm, 3), short: show(camera.sensorShortMm, 3) })}
+              </p>
+            ) : null}
+            </>
           )}
         </Panel>
 
@@ -253,10 +294,11 @@ export function MountCheck({
             <NumberField id="mount-wd" label={t('setup.wd')} value={setup.wd} onChange={(v) => setSetup({ ...setup, wd: v })} />
             <NumberField id="mount-e" label={t('setup.tube')} value={setup.e} onChange={(v) => setSetup({ ...setup, e: v })} step="0.5" />
             <NumberField id="mount-k" label={t('setup.converter')} value={setup.k} onChange={(v) => setSetup({ ...setup, k: v })} step="0.1" />
-            <NumberField id="mount-fw" label={t('setup.fovW')} value={setup.fw} onChange={(v) => setSetup({ ...setup, fw: v })} />
-            {line ? null : <NumberField id="mount-fh" label={t('setup.fovH')} value={setup.fh} onChange={(v) => setSetup({ ...setup, fh: v })} />}
+            <ReadOnlyField label={t('setup.fovLong')} value={fovNow ? `${show(fovNow.fovLongMm, 1)}` : '—'} />
+            {line ? null : <ReadOnlyField label={t('setup.fovShort')} value={fovNow && fovNow.fovShortMm !== null ? `${show(fovNow.fovShortMm, 1)}` : '—'} />}
           </div>
           <p className={`mt-3 ${NOTE_CLASS}`}>{t('setup.hint')}</p>
+          {need ? <p className={`mt-1 ${NOTE_CLASS}`}>{need.short === null ? t('setup.needLine', { w: show(need.long, 1) }) : t('setup.need', { w: show(need.long, 1), h: show(need.short, 1) })}</p> : null}
           {/* Độ nhòe cho phép của DOF (OPT-013, Q2-A): ba mức + tự nhập. */}
           <div className="mt-4 flex flex-wrap items-end gap-4">
             <div>

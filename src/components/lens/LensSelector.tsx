@@ -271,6 +271,9 @@ export function LensSelector({
       manualTubeMm: fa?.tubeMm ?? null,
       manualConverter: fa?.converterFactor ?? null,
       pixelUm: shown.input.camera.pixelSizeUm,
+      // Số pixel → trang Kiểm tra lắp đặt nhập camera tay theo pixel; camera chỉ khai cỡ danh định thì null.
+      widthPx: shown.input.camera.pixelSizeUm !== null && shown.input.camera.widthPx > 0 ? shown.input.camera.widthPx : null,
+      heightPx: shown.input.camera.pixelSizeUm !== null && !line && shown.input.camera.heightPx > 0 ? shown.input.camera.heightPx : null,
     };
   }, [shown, checkHref]);
 
@@ -871,6 +874,8 @@ type FigureBase = {
   manualConverter: number | null;
   /** Cỡ điểm ảnh camera (µm) → trang Kiểm tra lắp đặt tính DOF (OPT-013). */
   pixelUm: number | null;
+  widthPx: number | null;
+  heightPx: number | null;
 };
 
 function LensRow({
@@ -918,8 +923,10 @@ function LensRow({
       ? mountCheckHref(figureBase.checkHref, {
           lens: c.component.id,
           cam: figureBase.cameraId,
-          sl: figureBase.sensorLongMm,
-          ss: figureBase.sensorShortMm,
+          w: figureBase.widthPx,
+          h: figureBase.heightPx,
+          sl: figureBase.widthPx === null ? figureBase.sensorLongMm : null,
+          ss: figureBase.widthPx === null ? figureBase.sensorShortMm : null,
           wd: wdMm,
           e: acc?.kind === 'tube' ? acc.totalMm : figureBase.manualTubeMm,
           k: acc?.kind === 'converter' ? acc.factor : figureBase.manualConverter,

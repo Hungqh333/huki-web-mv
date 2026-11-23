@@ -342,12 +342,14 @@ export function ObliquePanel({
             />
           </div>
 
-          {res === null || areaW === null || areaL === null ? (
+          {/* Thanh trượt LUÔN hiện khi đã có vùng + camera: số gõ dở (vd chiều cao "2") làm camera quá gần điểm ngắm
+              thì chỉ phần kết quả đổi thành thông báo — ô đang gõ không bị gỡ khỏi trang (sửa 2026-11-23). */}
+          {areaW === null || areaL === null || (res === null && calc.problem !== 'distance') ? (
             <p className="rounded-md border border-dashed border-slate-300 px-4 py-3 text-sm text-slate-600 dark:border-slate-700 dark:text-slate-300">{t(`problem.${calc.problem ?? 'area'}`)}</p>
           ) : (
             <section aria-label={t('result.title')} className="space-y-4 rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900">
-              {/* Thanh trượt + số dính dưới menu khi cuộn (màn rộng), như hình Kiểm tra lắp đặt. */}
-              <div className="space-y-3 border-b border-slate-200 bg-slate-50 pb-3 lg:sticky lg:top-[var(--header-h,0px)] lg:z-20 lg:pt-3 dark:border-slate-800 dark:bg-slate-900">
+              {/* Không dính khi cuộn (Hùng 2026-11-23: cuộn trong khung khó nhìn). */}
+              <div className="space-y-3 border-b border-slate-200 pb-3 dark:border-slate-800">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100">{t('result.title')}</h3>
                   <div className="flex flex-wrap gap-2">
@@ -364,7 +366,7 @@ export function ObliquePanel({
                   </div>
                 </div>
                 <div className="grid gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
-                  <Slider id="oblique-sl-tilt" label={t('setup.tilt')} value={state.tiltDeg ?? res.tiltDeg} min={0} max={OBLIQUE_MAX_TILT_DEG} step={0.1} accept="nonneg" onChange={(v) => set({ tiltDeg: v })} note={state.tiltDeg === null ? t('setup.tiltCentre') : null} />
+                  <Slider id="oblique-sl-tilt" label={t('setup.tilt')} value={state.tiltDeg ?? res?.tiltDeg ?? 0} min={0} max={OBLIQUE_MAX_TILT_DEG} step={0.1} accept="nonneg" onChange={(v) => set({ tiltDeg: v })} note={state.tiltDeg === null ? t('setup.tiltCentre') : null} />
                   <Slider id="oblique-sl-h" label={t('setup.height')} value={state.heightMm} min={100} max={Math.max(3000, Math.ceil(state.heightMm * 1.5))} step={10} accept="positive" onChange={(v) => set({ heightMm: v })} note={null} />
                   <Slider
                     id="oblique-sl-setback"
@@ -393,13 +395,15 @@ export function ObliquePanel({
                     label={t('setup.focal')}
                     value={focalMm}
                     min={2}
-                    max={Math.max(50, Math.ceil(res.focalMaxMm * 2), Math.ceil(focalMm))}
+                    max={Math.max(50, Math.ceil((res?.focalMaxMm ?? 25) * 2), Math.ceil(focalMm))}
                     step={0.1}
                     accept="positive"
                     onChange={(v) => set({ focalMm: v })}
                     note={state.focalMm !== null && lensFocalMm !== null ? t('focalTrial') : lensFocalMm === null ? t('focalNoLens') : null}
                   />
                 </div>
+                {res ? (
+                <>
                 <dl className="grid grid-cols-2 gap-x-6 gap-y-2 rounded-md border border-slate-200 bg-white px-3 py-2 lg:grid-cols-5 dark:border-slate-700 dark:bg-slate-900">
                   <div>
                     <dt className={DT}>{t('result.coverage')}</dt>
@@ -431,7 +435,14 @@ export function ObliquePanel({
                   </div>
                 </dl>
                 {res.horizon ? <p className="text-sm text-amber-700 dark:text-amber-300">{t('result.horizon')}</p> : null}
+                </>
+                ) : (
+                  <p className="rounded-md border border-dashed border-amber-300 px-4 py-3 text-sm text-amber-800 dark:border-amber-800 dark:text-amber-200">{t(`problem.${calc.problem ?? 'distance'}`)}</p>
+                )}
               </div>
+
+              {res ? (
+              <>
 
               <div className="grid gap-4 lg:grid-cols-2">
                 <figure className="min-w-0 rounded-md border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
@@ -513,6 +524,8 @@ export function ObliquePanel({
                   </div>
                 )}
               </div>
+              </>
+              ) : null}
             </section>
           )}
         </div>

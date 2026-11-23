@@ -55,6 +55,8 @@ export type TubeFiguresProps = {
   fNumberInit: number | null;
   /** Độ nhòe cho phép (px) — đổi không làm thanh trượt về số đầu. */
   blurPx: number;
+  /** Khối thanh trượt dính dưới menu khi cuộn (mặc định có); tắt khi đang mở Camera nghiêng (2026-11-23). */
+  sticky?: boolean;
 };
 
 const r1 = (v: number) => Math.round(v * 10) / 10;
@@ -1012,7 +1014,7 @@ export function TubeFigures(props: TubeFiguresProps) {
   return (
     <div className="mb-4 space-y-3">
       {/* Khối điều khiển + số kết quả dính dưới thanh menu khi cuộn (Q2, màn rộng). */}
-      <div className="space-y-3 border-b border-slate-200 bg-slate-50 pb-3 lg:sticky lg:top-[var(--header-h,0px)] lg:z-20 lg:pt-3 dark:border-slate-800 dark:bg-slate-900">
+      <div className={`space-y-3 border-b border-slate-200 bg-slate-50 pb-3 dark:border-slate-800 dark:bg-slate-900 ${props.sticky === false ? "" : "lg:sticky lg:top-[var(--header-h,0px)] lg:z-20 lg:pt-3"}`}>
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
             {t("title")}

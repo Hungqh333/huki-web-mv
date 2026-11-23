@@ -1045,6 +1045,8 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
           'khoảng ảnh v = f × D ÷ (D − f)   (nét tại điểm ngắm, thấu kính mỏng — cùng gốc Newton x′ = f² ÷ (D − f))',
           'điểm P lên cảm biến: z = (P − C)·d · ảnh = ((P − C)·r ; (P − C)·u) × v ÷ z',
           'mức dùng góc = max(|ảnh ngang| ÷ nửa rộng cảm biến ; |ảnh dọc| ÷ nửa cao)',
+          'sản phẩm cao h: xét 8 góc khối (4 góc đáy z = 0 + 4 góc mặt trên z = h) cho vùng phủ, mm/px (đo trên mặt z của góc) và khoảng nét; điểm ngắm vẫn ở mặt đáy; camera phải cao hơn h',
+          'che khuất sau chi tiết cao h tại điểm cách chân camera d_ngang = h × d_ngang ÷ (H − h); báo giá trị lớn nhất trong 4 góc trên',
           'f lớn nhất: ảnh tỉ lệ thuận với v → v_max = v × (1 − dư) ÷ mức dùng lớn nhất · f_max = v_max × D ÷ (D + v_max)',
           'mm/px tại P: dịch 1 pixel trên ảnh, chiếu ngược xuống mặt phẳng, đo hai hướng; xét 4 góc + giữa mép gần + giữa mép xa',
           'độ sâu nét: khoảng cách dọc trục tới góc gần nhất / xa nhất → x′ = f² ÷ (khoảng − f), δ = (x′_gần − x′_xa) ÷ 2, x′₀ = trung bình, N = δ ÷ ((1 + x′₀/f) × c)   (OPT-013 chiều ngược)',
@@ -1060,6 +1062,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
           'Chốt 2026-11-23 (Q1-B vị trí 3D tự do, Q3 ô mm/px cần, Q4 dư mặc định 5 %); vòng 2 cùng ngày: gộp vào Kiểm tra lắp đặt thành khung gập, dùng chung camera + ống, thanh góc nghiêng thay ô dời điểm ngắm, khi mở thì WD của hình nét / ren = D (tính từ tâm ống, lệch WD đo từ mặt trước ống vài mm). Mô hình chiếu tâm, chưa tính méo ống kính (ống góc rộng 1–3 %), tâm chiếu = vị trí camera.',
           'Mép gần là chỗ hay thiếu (hình thang hẹp phía camera); mép xa là chỗ mm/px thô nhất.',
           'Ví dụ: vùng 1200 × 800 mm, cao 1500, lùi 600, ngắm tâm, cảm biến 8,4456 × 7,0656 mm cạnh dài ngang → nghiêng 33,7°, f_max 11,06 mm (xoay dọc 9,26 mm); f 8: mm/px 0,68 (giữa mép gần) → 1,17 (giữa mép xa, hướng dọc); khoảng dọc trục 1581 → 2025 mm, F cần ≈ F/0,65.',
+          'Vòng 3 (2026-11-23): thêm chiều cao sản phẩm — 8 góc, che khuất, hình nhìn ngang vẽ khối + phần khuất (tô cam).',
           'Gợi ý ống: ống thường trong kho có f ≤ f_max, xếp f giảm dần; báo vòng ảnh < đường chéo cảm biến × 0,98, MOD > khoảng gần nhất, khác ngàm — chỉ ghi chú, không loại.',
         ],
         constants: [

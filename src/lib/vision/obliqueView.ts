@@ -10,7 +10,9 @@
  *   - Trục quang d = (T − C) ÷ |T − C|; trục ngang ảnh r = d × Z (ảnh không xoay quanh trục quang); trục dọc u = r × d.
  *   - Nét tại T: khoảng ảnh v = f × D ÷ (D − f), D = |T − C| (thấu kính mỏng, cùng gốc Newton: x′ = f² ÷ (D − f)).
  *   - Điểm P lên cảm biến: z = (P − C)·d, ảnh = ((P − C)·r, (P − C)·u) × v ÷ z.
- * Vùng phủ đủ khi cả 4 góc vùng kiểm tra nằm trong cảm biến đã chừa độ dư. Toạ độ ảnh tỉ lệ thuận với v nên tiêu cự
+ * Vùng phủ đủ khi cả 4 góc vùng kiểm tra nằm trong cảm biến đã chừa độ dư. Sản phẩm cao h (vòng 3 2026-11-23): xét thêm 4 góc
+ * mặt trên ở z = h (8 góc của khối) cho vùng phủ, mm/px (đo trên mặt z = h) và khoảng nét; điểm ngắm vẫn ở mặt đáy.
+ * Che khuất sau chi tiết cao h tại điểm cách chân camera d_ngang: h × d_ngang ÷ (H − h) (tia qua đỉnh chạm đáy). Toạ độ ảnh tỉ lệ thuận với v nên tiêu cự
  * lớn nhất còn phủ đủ giải được trực tiếp: v_max = v × (1 − dư) ÷ mức dùng, f_max = v_max × D ÷ (D + v_max).
  */
 
@@ -40,14 +42,17 @@ export type ObliqueInput = {
   margin: number;
   /** Vòng mờ cho DOF (px) — như OPT-013. */
   blurPx: number;
+  /** Chiều cao sản phẩm trên mặt phẳng (mm); bỏ trống / 0 = sản phẩm dẹt. */
+  productHeightMm?: number;
 };
 
 export type GroundPoint = { x: number; y: number };
 
 export type PointSample = {
-  /** Toạ độ trên mặt phẳng. */
+  /** Toạ độ điểm (z = 0 mặt đáy, z = h mặt trên sản phẩm). */
   x: number;
   y: number;
+  z: number;
   /** mm/px theo hai hướng ảnh (ngang, dọc). */
   gsdAcrossMm: number;
   gsdAlongMm: number;
@@ -62,8 +67,12 @@ export type ObliqueResult = {
   tiltDeg: number;
   distanceToAimMm: number;
   imageDistanceMm: number;
-  /** 4 góc vùng: gần trái, gần phải, xa phải, xa trái. */
+  /** 4 góc vùng ở mặt đáy: gần trái, gần phải, xa phải, xa trái. */
   corners: PointSample[];
+  /** 4 góc mặt trên sản phẩm (cùng thứ tự); rỗng khi sản phẩm dẹt. */
+  topCorners: PointSample[];
+  /** Độ dài bị che phía sau chi tiết cao bằng sản phẩm, lớn nhất trong 4 góc trên (mm); null khi dẹt. */
+  occlusionMm: number | null;
   nearCenter: PointSample;
   farCenter: PointSample;
   maxUsage: number;
@@ -98,6 +107,9 @@ const norm = (a: Vec3): Vec3 => scale(a, 1 / len(a));
 export function obliqueView(input: ObliqueInput): ObliqueResult | null {
   const { areaWidthMm: A, areaLengthMm: B, heightMm: H, focalMm: f } = input;
   if (!(A > 0) || !(B > 0) || !(H > 0) || !(f > 0) || !(input.sensorLongMm > 0) || !(input.sensorShortMm > 0) || !(input.pixelUm > 0)) return null;
+  const hP = Math.max(input.productHeightMm ?? 0, 0);
+  // Camera phải cao hơn mặt trên sản phẩm.
+  if (!(H > hP)) return null;
   const margin = Math.min(Math.max(input.margin, 0), 0.5);
   const C: Vec3 = [input.sideOffsetMm, -input.setbackMm, H];
   let T: Vec3 = [0, B / 2, 0];
@@ -128,33 +140,38 @@ export function obliqueView(input: ObliqueInput): ObliqueResult | null {
     const z = dot(w, d);
     return { px: (dot(w, r) / z) * v, py: (dot(w, u) / z) * v, z };
   };
-  const toGround = (px: number, py: number): Vec3 | null => {
+  /** Tia qua điểm ảnh (px, py) chạm mặt phẳng ngang z = zp. */
+  const toPlane = (px: number, py: number, zp: number): Vec3 | null => {
     const dir: Vec3 = [d[0] * v + r[0] * px + u[0] * py, d[1] * v + r[1] * px + u[1] * py, d[2] * v + r[2] * px + u[2] * py];
     if (dir[2] >= -1e-12) return null;
-    const t = -C[2] / dir[2];
-    return [C[0] + t * dir[0], C[1] + t * dir[1], 0];
+    const t = (zp - C[2]) / dir[2];
+    return [C[0] + t * dir[0], C[1] + t * dir[1], zp];
   };
-  const sample = (x: number, y: number): PointSample => {
-    const { px, py, z } = toImage([x, y, 0]);
+  const toGround = (px: number, py: number) => toPlane(px, py, 0);
+  const sample = (x: number, y: number, zp = 0): PointSample => {
+    const { px, py, z } = toImage([x, y, zp]);
     const usage = z > 0 ? Math.max(Math.abs(px) / halfW, Math.abs(py) / halfH) : Infinity;
-    const g0 = toGround(px, py);
-    const gx = toGround(px + pitch, py);
-    const gy = toGround(px, py + pitch);
+    const g0 = toPlane(px, py, zp);
+    const gx = toPlane(px + pitch, py, zp);
+    const gy = toPlane(px, py + pitch, zp);
     const dist = (a: Vec3 | null, b: Vec3 | null) => (a && b ? len(sub(a, b)) : Infinity);
-    return { x, y, gsdAcrossMm: dist(g0, gx), gsdAlongMm: dist(g0, gy), usage };
+    return { x, y, z: zp, gsdAcrossMm: dist(g0, gx), gsdAlongMm: dist(g0, gy), usage };
   };
 
   const corners = [sample(-A / 2, 0), sample(A / 2, 0), sample(A / 2, B), sample(-A / 2, B)];
+  const topCorners = hP > 0 ? [sample(-A / 2, 0, hP), sample(A / 2, 0, hP), sample(A / 2, B, hP), sample(-A / 2, B, hP)] : [];
+  const box = [...corners, ...topCorners];
   const nearCenter = sample(0, 0);
   const farCenter = sample(0, B);
-  const maxUsage = Math.max(...corners.map((c) => c.usage));
+  const maxUsage = Math.max(...box.map((c) => c.usage));
   const covers = maxUsage <= 1 - margin + 1e-12;
   const vMax = Number.isFinite(maxUsage) && maxUsage > 0 ? (v * (1 - margin)) / maxUsage : 0;
   const focalMaxMm = (vMax * D) / (D + vMax);
-  const all = [...corners, nearCenter, farCenter];
+  const all = [...box, nearCenter, farCenter];
   const worstGsdMm = Math.max(...all.map((p) => Math.max(p.gsdAcrossMm, p.gsdAlongMm)));
   const bestGsdMm = Math.min(...all.map((p) => Math.min(p.gsdAcrossMm, p.gsdAlongMm)));
-  const depths = corners.map((c) => dot(sub([c.x, c.y, 0], C), d));
+  const depths = box.map((c) => dot(sub([c.x, c.y, c.z], C), d));
+  const occlusionMm = hP > 0 ? Math.max(...topCorners.map((c) => (hP * Math.hypot(c.x - C[0], c.y - C[1])) / (H - hP))) : null;
   const nearestMm = Math.min(...depths);
   const farthestMm = Math.max(...depths);
   const depth = nearestMm > f ? fNumberForDepthRange({ focalMm: f, nearMm: nearestMm, farMm: farthestMm, blur: blurMm(input.blurPx, input.pixelUm) }) : null;
@@ -194,6 +211,8 @@ export function obliqueView(input: ObliqueInput): ObliqueResult | null {
     distanceToAimMm: D,
     imageDistanceMm: v,
     corners,
+    topCorners,
+    occlusionMm,
     nearCenter,
     farCenter,
     maxUsage,

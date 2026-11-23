@@ -116,7 +116,7 @@ function TopView({ res, areaW, areaL, margin }: { res: ObliqueResult; areaW: num
       <line x1={X(cam[0])} y1={Y(cam[1])} x2={X(res.aimPoint[0])} y2={Y(res.aimPoint[1])} strokeDasharray="3 3" strokeWidth={1} className="stroke-violet-600 dark:stroke-violet-400" />
       <circle cx={X(res.aimPoint[0])} cy={Y(res.aimPoint[1])} r={3} className="fill-violet-600 dark:fill-violet-400" />
       {res.corners.map((c, i) => (
-        <circle key={i} cx={X(c.x)} cy={Y(c.y)} r={5} strokeWidth={1.5} className={DOT[cornerTone(c.usage, margin)]} />
+        <circle key={i} cx={X(c.x)} cy={Y(c.y)} r={5} strokeWidth={1.5} className={DOT[cornerTone(Math.max(c.usage, res.topCorners[i]?.usage ?? 0), margin)]} />
       ))}
       <rect x={X(cam[0]) - 7} y={Y(cam[1]) - 5} width={14} height={10} rx={2} className="fill-slate-800 dark:fill-slate-100" />
       <text x={X(cam[0])} y={Y(cam[1]) + 18} textAnchor="middle" fontSize={11} className="fill-slate-700 dark:fill-slate-200">
@@ -140,7 +140,9 @@ function SideView({ res, areaL }: { res: ObliqueResult; areaL: number }) {
   const pad = 26;
   const cam = res.cameraPos;
   const farY = res.edgeFar?.y ?? Math.max(areaL, cam[1]) * 1.5;
-  const ys = [0, areaL, cam[1], res.edgeNear?.y ?? 0, Math.min(farY, areaL * 2 + Math.abs(cam[1]))];
+  const hTop = res.topCorners[0]?.z ?? 0;
+  const shadow = hTop > 0 && cam[2] > hTop ? areaL + (hTop * (areaL - cam[1])) / (cam[2] - hTop) : areaL;
+  const ys = [0, areaL, shadow, cam[1], res.edgeNear?.y ?? 0, Math.min(farY, areaL * 2 + Math.abs(cam[1]))];
   let y0 = Math.min(...ys);
   let y1 = Math.max(...ys);
   const ey = (y1 - y0) * 0.08 + 1;
@@ -160,6 +162,11 @@ function SideView({ res, areaL }: { res: ObliqueResult; areaL: number }) {
   const [nx, ny] = ray(res.edgeNear, false);
   const [fx, fy] = ray(res.edgeFar, true);
   const [ax, ay] = P(res.aimPoint[1], 0);
+  // Sản phẩm cao (vòng 3): khối mặt cắt + tia tới mép trên xa và bóng khuất phía sau.
+  const hP = res.topCorners[0]?.z ?? 0;
+  const [bx0, by0] = P(0, hP);
+  const [bx1] = P(areaL, 0);
+  const shadowEnd = hP > 0 && cam[2] > hP ? areaL + (hP * (areaL - cam[1])) / (cam[2] - hP) : null;
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label={t('sideTitle')}>
       <line x1={0} y1={ground} x2={W} y2={ground} strokeWidth={1} className="stroke-slate-400 dark:stroke-slate-500" />
@@ -168,6 +175,17 @@ function SideView({ res, areaL }: { res: ObliqueResult; areaL: number }) {
       <line x1={cx} y1={cy} x2={fx} y2={fy} strokeWidth={1.5} className="stroke-sky-600 dark:stroke-sky-400" />
       <line x1={cx} y1={cy} x2={ax} y2={ay} strokeDasharray="4 3" strokeWidth={1} className="stroke-violet-600 dark:stroke-violet-400" />
       <line x1={P(0, 0)[0]} y1={ground} x2={P(areaL, 0)[0]} y2={ground} strokeWidth={5} className="stroke-slate-800 dark:stroke-slate-100" />
+      {hP > 0 ? (
+        <>
+          <rect x={bx0} y={by0} width={r1(bx1 - bx0)} height={r1(ground - by0)} className="fill-amber-200/60 stroke-amber-700 dark:fill-amber-800/50 dark:stroke-amber-400" strokeWidth={1} />
+          {shadowEnd !== null ? (
+            <>
+              <line x1={cx} y1={cy} x2={P(shadowEnd, 0)[0]} y2={ground} strokeDasharray="3 3" strokeWidth={1} className="stroke-amber-700 dark:stroke-amber-400" />
+              <line x1={bx1} y1={ground} x2={P(shadowEnd, 0)[0]} y2={ground} strokeWidth={4} className="stroke-amber-500/70" />
+            </>
+          ) : null}
+        </>
+      ) : null}
       <line x1={cx} y1={cy} x2={cx} y2={ground} strokeDasharray="2 3" strokeWidth={1} className="stroke-slate-400 dark:stroke-slate-500" />
       <rect x={cx - 8} y={cy - 6} width={16} height={12} rx={2} className="fill-slate-800 dark:fill-slate-100" />
       <text x={cx + 12} y={cy - 8} fontSize={11} className="fill-slate-700 dark:fill-slate-200">
@@ -185,7 +203,7 @@ function SideView({ res, areaL }: { res: ObliqueResult; areaL: number }) {
 
 export type ObliqueState = {
   open: boolean;
-  area: { w: string; l: string; margin: string; need: string };
+  area: { w: string; l: string; h: string; margin: string; need: string };
   heightMm: number;
   setbackMm: number;
   sideMm: number;
@@ -200,7 +218,7 @@ export type ObliqueState = {
 export function initialObliqueState(open: boolean): ObliqueState {
   return {
     open,
-    area: { w: '1200', l: '800', margin: String(OBLIQUE_DEFAULT_MARGIN * 100), need: '' },
+    area: { w: '1200', l: '800', h: '0', margin: String(OBLIQUE_DEFAULT_MARGIN * 100), need: '' },
     heightMm: 1500,
     setbackMm: 600,
     sideMm: 0,
@@ -218,7 +236,7 @@ export type ObliqueCalc = {
   margin: number;
   needGsd: number | null;
   /** Lý do chưa tính được. */
-  problem: 'camera' | 'line' | 'pixel' | 'area' | 'distance' | null;
+  problem: 'camera' | 'line' | 'pixel' | 'area' | 'distance' | 'productTall' | null;
 };
 
 /** Tính ở MountCheck (WD của hình bên dưới lấy từ đây — Q3), khung chỉ hiển thị. */
@@ -233,6 +251,7 @@ export function obliqueCalc(state: ObliqueState, camera: ObliqueCamera | null, l
   const areaW = positive(state.area.w);
   const areaL = positive(state.area.l);
   if (areaW === null || areaL === null) return { ...base, res: null, problem: 'area' };
+  const productH = Math.max(parse(state.area.h) ?? 0, 0);
   const res = obliqueView({
     areaWidthMm: areaW,
     areaLengthMm: areaL,
@@ -240,6 +259,7 @@ export function obliqueCalc(state: ObliqueState, camera: ObliqueCamera | null, l
     setbackMm: state.setbackMm,
     sideOffsetMm: state.sideMm,
     tiltDeg: state.tiltDeg,
+    productHeightMm: productH,
     sensorLongMm: camera.longMm,
     sensorShortMm: camera.shortMm,
     pixelUm: camera.pixelUm,
@@ -248,7 +268,7 @@ export function obliqueCalc(state: ObliqueState, camera: ObliqueCamera | null, l
     margin,
     blurPx: DOF_BLUR_PRESETS.tight,
   });
-  return { ...base, res, problem: res ? null : 'distance' };
+  return { ...base, res, problem: res ? null : productH >= state.heightMm ? 'productTall' : 'distance' };
 }
 
 /**
@@ -324,9 +344,10 @@ export function ObliquePanel({
       ) : (
         <div className="space-y-4">
           <p className={NOTE_CLASS}>{t('panelDesc')}</p>
-          <div className={`${FIELD_GRID} grid-cols-2 sm:grid-cols-4`}>
+          <div className={`${FIELD_GRID} grid-cols-2 sm:grid-cols-3 lg:grid-cols-5`}>
             <NumberField id="oblique-area-w" label={t('setup.areaW')} value={state.area.w} onChange={(v) => setArea({ w: v })} />
             <NumberField id="oblique-area-l" label={t('setup.areaL')} value={state.area.l} onChange={(v) => setArea({ l: v })} />
+            <NumberField id="oblique-area-h" label={t('setup.productH')} hint={t('setup.productHHint')} value={state.area.h} onChange={(v) => setArea({ h: v })} />
             <NumberField id="oblique-margin" label={t('setup.margin')} hint={t('setup.marginHint')} value={state.area.margin} onChange={(v) => setArea({ margin: v })} step="1" />
             <NumberField id="oblique-need" label={t('setup.needGsd')} value={state.area.need} onChange={(v) => setArea({ need: v })} step="0.01" />
           </div>
@@ -344,7 +365,7 @@ export function ObliquePanel({
 
           {/* Thanh trượt LUÔN hiện khi đã có vùng + camera: số gõ dở (vd chiều cao "2") làm camera quá gần điểm ngắm
               thì chỉ phần kết quả đổi thành thông báo — ô đang gõ không bị gỡ khỏi trang (sửa 2026-11-23). */}
-          {areaW === null || areaL === null || (res === null && calc.problem !== 'distance') ? (
+          {areaW === null || areaL === null || (res === null && calc.problem !== 'distance' && calc.problem !== 'productTall') ? (
             <p className="rounded-md border border-dashed border-slate-300 px-4 py-3 text-sm text-slate-600 dark:border-slate-700 dark:text-slate-300">{t(`problem.${calc.problem ?? 'area'}`)}</p>
           ) : (
             <section aria-label={t('result.title')} className="space-y-4 rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900">
@@ -435,6 +456,7 @@ export function ObliquePanel({
                   </div>
                 </dl>
                 {res.horizon ? <p className="text-sm text-amber-700 dark:text-amber-300">{t('result.horizon')}</p> : null}
+                {res.occlusionMm !== null ? <p className={NOTE_CLASS}>{t('result.occlusion', { h: show(res.topCorners[0].z, 1), occ: show(res.occlusionMm, 1) })}</p> : null}
                 </>
                 ) : (
                   <p className="rounded-md border border-dashed border-amber-300 px-4 py-3 text-sm text-amber-800 dark:border-amber-800 dark:text-amber-200">{t(`problem.${calc.problem ?? 'distance'}`)}</p>
@@ -463,11 +485,13 @@ export function ObliquePanel({
                       </tr>
                     </thead>
                     <tbody>
-                      {res.corners.map((c, i) => {
+                      {[...res.corners, ...res.topCorners].map((c, k) => {
+                        const i = k % 4;
                         const tone = cornerTone(c.usage, margin);
+                        const name = t(`result.corner${i}`);
                         return (
-                          <tr key={i} className="border-t border-slate-100 dark:border-slate-800">
-                            <td className="py-1">{t(`result.corner${i}`)}</td>
+                          <tr key={k} className="border-t border-slate-100 dark:border-slate-800">
+                            <td className="py-1">{res.topCorners.length === 0 ? name : k < 4 ? t('result.cornerBottom', { name }) : t('result.cornerTop', { name })}</td>
                             <td className={`py-1 ${TONE[tone]}`}>{Number.isFinite(c.usage) ? `${show(c.usage * 100, 1)} %` : '—'}</td>
                             <td className="py-1">{`${show(c.gsdAcrossMm, 3)} × ${show(c.gsdAlongMm, 3)}`}</td>
                           </tr>

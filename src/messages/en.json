@@ -3009,7 +3009,9 @@
       "setbackHint": "Negative: camera is above the area.",
       "side": "Side offset (mm)",
       "tilt": "Tilt (°)",
-      "tiltCentre": "Aiming at the area centre — drag to rotate the camera at its mount."
+      "tiltCentre": "Aiming at the area centre — drag to rotate the camera at its mount.",
+      "productH": "Product height (mm)",
+      "productHHint": "0 = flat product."
     },
     "result": {
       "title": "Simulation",
@@ -3046,7 +3048,10 @@
       "corner3": "Far left",
       "modelNote": "Central projection model, lens distortion not included; the camera position is the lens centre. DOF blur 2 px as in the Lens selector. Measurement tasks still need perspective calibration (OPT-009).",
       "adminNote": "Admin: image distance v = {v} mm, distance to aim point D = {d} mm (OPT-014).",
-      "distance": "Distance along the axis"
+      "distance": "Distance along the axis",
+      "cornerBottom": "{name} · bottom",
+      "cornerTop": "{name} · top",
+      "occlusion": "Occlusion: behind a feature {h} mm high, up to {occ} mm is hidden (farthest corner). The side view shades the hidden part in orange."
     },
     "lenses": {
       "title": "Standard lenses in the catalog with f ≤ {f} mm",
@@ -3067,7 +3072,8 @@
       "line": "Line scan camera — this section handles area scan cameras only.",
       "pixel": "The camera has no pixel size — enter it in the Camera panel above.",
       "area": "Enter the inspection area width and length.",
-      "distance": "Camera too close to the aim point (distance ≤ focal length) — raise it or reduce the tilt."
+      "distance": "Camera too close to the aim point (distance ≤ focal length) — raise it or reduce the tilt.",
+      "productTall": "Camera is below the product top — raise the camera."
     }
   },
   "mountCheck": {

@@ -111,3 +111,20 @@ test('góc nghiêng (vòng 2): góc đúng bằng góc ngắm tâm → trùng k�
   const hy = side.aimPoint[1] + 600;
   near(hy / hx, (400 + 600) / (0 - 600), 1e-9);
 });
+
+test('sản phẩm cao (vòng 3): h = 0 trùng sản phẩm dẹt; h > 0 → 8 góc, góc trên gần camera hơn, che khuất h × d_ngang ÷ (H − h)', () => {
+  const flat = obliqueView(base)!;
+  const zero = obliqueView({ ...base, productHeightMm: 0 })!;
+  assert.equal(zero.topCorners.length, 0);
+  assert.equal(zero.occlusionMm, null);
+  near(zero.maxUsage, flat.maxUsage, 1e-12);
+  const tall = obliqueView({ ...base, productHeightMm: 100 })!;
+  assert.equal(tall.topCorners.length, 4);
+  assert.ok(tall.nearestMm < flat.nearestMm, 'mặt trên gần camera hơn');
+  // Góc trên xa trái (−600, 800, 100): d_ngang = hypot(600, 1400); che = 100 × d ÷ 1400
+  near(tall.occlusionMm!, (100 * Math.hypot(600, 1400)) / 1400, 1e-9);
+  // Mặt trên gần camera hơn → mm/px ở góc trên nhỏ hơn góc đáy cùng vị trí.
+  assert.ok(tall.topCorners[2].gsdAlongMm < tall.corners[2].gsdAlongMm);
+  // Camera thấp hơn mặt trên sản phẩm → null.
+  assert.equal(obliqueView({ ...base, productHeightMm: 1500 }), null);
+});

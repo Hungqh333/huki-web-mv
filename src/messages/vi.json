@@ -3009,7 +3009,9 @@
       "setbackHint": "Âm: camera nằm phía trên vùng kiểm tra.",
       "side": "Lệch bên (mm)",
       "tilt": "Góc nghiêng (°)",
-      "tiltCentre": "Đang ngắm tâm vùng — kéo để xoay camera tại chỗ lắp."
+      "tiltCentre": "Đang ngắm tâm vùng — kéo để xoay camera tại chỗ lắp.",
+      "productH": "Chiều cao sản phẩm (mm)",
+      "productHHint": "0 = sản phẩm dẹt."
     },
     "result": {
       "title": "Mô phỏng",
@@ -3046,7 +3048,10 @@
       "corner3": "Xa trái",
       "modelNote": "Mô hình chiếu tâm, chưa tính méo ống kính; vị trí camera là tâm ống kính. Vòng mờ DOF 2 px như Chọn ống kính. Bài đo kích thước vẫn phải hiệu chuẩn phối cảnh (OPT-009).",
       "adminNote": "Admin: khoảng ảnh v = {v} mm, khoảng cách tới điểm ngắm D = {d} mm (OPT-014).",
-      "distance": "Khoảng cách dọc trục"
+      "distance": "Khoảng cách dọc trục",
+      "cornerBottom": "{name} · đáy",
+      "cornerTop": "{name} · mặt trên",
+      "occlusion": "Che khuất: sau chi tiết cao {h} mm, phía sau bị khuất tới {occ} mm (góc xa nhất). Hình nhìn ngang tô cam phần khuất."
     },
     "lenses": {
       "title": "Ống thường trong kho có f ≤ {f} mm",
@@ -3067,7 +3072,8 @@
       "line": "Camera line scan — phần này chỉ tính camera area scan.",
       "pixel": "Camera chưa có cỡ điểm ảnh — nhập ở khung Camera phía trên.",
       "area": "Nhập bề rộng và chiều dài vùng kiểm tra.",
-      "distance": "Camera quá gần điểm ngắm (khoảng cách ≤ tiêu cự) — tăng chiều cao hoặc giảm góc."
+      "distance": "Camera quá gần điểm ngắm (khoảng cách ≤ tiêu cự) — tăng chiều cao hoặc giảm góc.",
+      "productTall": "Camera thấp hơn mặt trên sản phẩm — tăng chiều cao camera."
     }
   },
   "mountCheck": {

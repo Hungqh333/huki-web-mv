@@ -19,6 +19,7 @@ import { DEFAULT_CAMERAS_PER_PC, PC_BANDWIDTH_HEADROOM } from '@/lib/components/
 import { GPU_BOARD_POWER_W, GPU_FALLBACK_W } from '@/lib/pc/power';
 import { CYCLE_DEFAULTS, DOF_FASTEST_PRACTICAL_F } from '@/lib/vision/configurationRules';
 import { DOF_BLUR_PRESETS, DOF_DEFAULT_F, OPTO_DOF_K_DEFECT, OPTO_DOF_K_MEASURE } from '@/lib/vision/depthOfField';
+import { OBLIQUE_DEFAULT_MARGIN } from '@/lib/vision/obliqueView';
 import type { EngineParamKey } from '@/lib/vision/engineParams';
 import { UNKNOWN_SCORE } from '@/lib/vision/feasibility';
 import { K_STITCH } from '@/lib/vision/mechanics';
@@ -34,12 +35,13 @@ import { LEAKAGE_LIMIT, OVERKILL_LIMIT } from '@/lib/vision/experimentMetrics';
 import { LINE_EXPOSURE_BRIGHT_US, LINE_MAX_CAMERAS, RANK_MARGIN_TARGET } from '@/lib/vision/cameraSelector';
 
 /** Trang dùng công thức. */
-export type FormulaPage = 'design' | 'lens' | 'mountCheck' | 'camera' | 'lineScan' | 'code' | 'ocr' | 'light' | 'oldSelector' | 'pc' | 'kpi';
+export type FormulaPage = 'design' | 'lens' | 'mountCheck' | 'oblique' | 'camera' | 'lineScan' | 'code' | 'ocr' | 'light' | 'oldSelector' | 'pc' | 'kpi';
 
 export const PAGE_LABEL: Record<FormulaPage, { label: string; href: string }> = {
   design: { label: 'Thiết kế hệ thống', href: '/thiet-ke-he-thong/yeu-cau' },
   lens: { label: 'Chọn ống kính', href: '/chon-ong-kinh' },
   mountCheck: { label: 'Kiểm tra lắp đặt ống kính', href: '/kiem-tra-lap-dat' },
+  oblique: { label: 'Camera nghiêng', href: '/camera-nghieng' },
   camera: { label: 'Chọn camera area scan', href: '/chon-camera' },
   lineScan: { label: 'Chọn camera line scan', href: '/chon-line-scan' },
   code: { label: 'Chọn đầu đọc mã', href: '/chon-doc-ma' },
@@ -1031,6 +1033,43 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
         evidence: 'calculated',
         usedIn: ['lens', 'mountCheck'],
         source: 'vision/depthOfField.ts : depthOfFieldNewton, depthOfFieldTelecentric, optoKToBlurPx, DOF_BLUR_PRESETS · vision/lensSelector.ts : evaluateLens',
+      },
+      {
+        id: 'OPT-014',
+        title: 'Camera nghiêng nhìn mặt phẳng ngang — vùng phủ hình thang',
+        figure: 'tilt',
+        rules: ['OPT-014'],
+        formula: [
+          'toạ độ: mặt phẳng XY nằm ngang, Z lên; vùng kiểm tra [−A/2; A/2] × [0; B], Y xa dần camera',
+          'camera C = (lệch bên, −khoảng lùi, chiều cao); điểm ngắm T = (0, B/2 + dời ngắm, 0); D = |T − C|',
+          'trục quang d = (T − C) ÷ D; ngang ảnh r = d × Z (không xoay quanh trục); dọc ảnh u = r × d',
+          'khoảng ảnh v = f × D ÷ (D − f)   (nét tại điểm ngắm, thấu kính mỏng — cùng gốc Newton x′ = f² ÷ (D − f))',
+          'điểm P lên cảm biến: z = (P − C)·d · ảnh = ((P − C)·r ; (P − C)·u) × v ÷ z',
+          'mức dùng góc = max(|ảnh ngang| ÷ nửa rộng cảm biến ; |ảnh dọc| ÷ nửa cao)',
+          'f lớn nhất: ảnh tỉ lệ thuận với v → v_max = v × (1 − dư) ÷ mức dùng lớn nhất · f_max = v_max × D ÷ (D + v_max)',
+          'mm/px tại P: dịch 1 pixel trên ảnh, chiếu ngược xuống mặt phẳng, đo hai hướng; xét 4 góc + giữa mép gần + giữa mép xa',
+          'độ sâu nét: khoảng cách dọc trục tới góc gần nhất / xa nhất → x′ = f² ÷ (khoảng − f), δ = (x′_gần − x′_xa) ÷ 2, x′₀ = trung bình, N = δ ÷ ((1 + x′₀/f) × c)   (OPT-013 chiều ngược)',
+        ],
+        verdict: [
+          'mức dùng góc ≤ 1 − dư → ĐẠT',
+          '1 − dư < mức dùng góc ≤ 1 → CẢNH BÁO sát mép',
+          'mức dùng góc > 1 → LOẠI thiếu vùng phủ',
+          'mm/px thô nhất > mm/px cần → LOẠI',
+          'N cần > F#max (OPT-004) → CẢNH BÁO cân nhắc ngàm Scheimpflug',
+        ],
+        notes: [
+          'Chốt 2026-11-23 (Q1-B vị trí 3D tự do, Q2-A trang riêng /camera-nghieng, Q3 ô mm/px cần, Q4 dư mặc định 5 %). Mô hình chiếu tâm, chưa tính méo ống kính (ống góc rộng 1–3 %), tâm chiếu = vị trí camera.',
+          'Mép gần là chỗ hay thiếu (hình thang hẹp phía camera); mép xa là chỗ mm/px thô nhất.',
+          'Ví dụ: vùng 1200 × 800 mm, cao 1500, lùi 600, ngắm tâm, cảm biến 8,4456 × 7,0656 mm cạnh dài ngang → nghiêng 33,7°, f_max 11,06 mm (xoay dọc 9,26 mm); f 8: mm/px 0,68 (giữa mép gần) → 1,17 (giữa mép xa, hướng dọc); khoảng dọc trục 1581 → 2025 mm, F cần ≈ F/0,65.',
+          'Gợi ý ống: ống thường trong kho có f ≤ f_max, xếp f giảm dần; báo vòng ảnh < đường chéo cảm biến × 0,98, MOD > khoảng gần nhất, khác ngàm — chỉ ghi chú, không loại.',
+        ],
+        constants: [
+          { name: 'Độ dư vùng phủ mặc định', value: OBLIQUE_DEFAULT_MARGIN },
+          { name: 'Vòng mờ DOF (px)', value: DOF_BLUR_PRESETS.tight },
+        ],
+        evidence: 'calculated',
+        usedIn: ['oblique'],
+        source: 'vision/obliqueView.ts : obliqueView, OBLIQUE_DEFAULT_MARGIN · vision/depthOfField.ts : fNumberForDepthRange',
       },
     ],
   },

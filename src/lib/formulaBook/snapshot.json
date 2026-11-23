@@ -1,5 +1,5 @@
 {
-  "reviewedAt": "2026-11-21",
+  "reviewedAt": "2026-11-23",
   "files": {
     "components/match.ts": "3a373886dcd88a13",
     "components/pc.ts": "dfd7523cd0f5ba06",
@@ -14,7 +14,7 @@
     "vision/cameraTask.ts": "337b09b836e8f0de",
     "vision/codeReader.ts": "f4a81aee9d2e339e",
     "vision/configurationRules.ts": "0124e7ce1e469045",
-    "vision/depthOfField.ts": "38d3099132d1694b",
+    "vision/depthOfField.ts": "ca818e2fd6550b45",
     "vision/engineTables.ts": "27a0ab422b467c91",
     "vision/equipmentFilter.ts": "9d527e7e0e4efdef",
     "vision/experimentMatch.ts": "c95880e45b4716a8",
@@ -28,6 +28,7 @@
     "vision/lightSelector.ts": "bc9737be2838a53c",
     "vision/linescan.ts": "6bc8e182650a46dd",
     "vision/mechanics.ts": "2467abf244df5c62",
+    "vision/obliqueView.ts": "87005724ddf70625",
     "vision/ocr.ts": "1d82784d98e56f23",
     "vision/optics.ts": "0934eb0a387181db",
     "vision/requirementAnalysis.ts": "f1de01a2c578945a",

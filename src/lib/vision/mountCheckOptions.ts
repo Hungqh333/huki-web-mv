@@ -1,4 +1,4 @@
-import { specNumber, specString, type Component } from '@/lib/components/specs';
+import { sensorDiagonalMm, specNumber, specString, type Component } from '@/lib/components/specs';
 import { cameraFromComponent, lensFromComponent } from '@/lib/vision/configurationRules';
 import { sensorOf } from '@/lib/vision/lensSelector';
 
@@ -18,6 +18,9 @@ export type MountLensOption = {
   /** Dải khẩu F trên vòng (OPT-013 thanh khẩu F); null = chưa khai. */
   fNumberMin: number | null;
   fNumberMax: number | null;
+  /** Vòng ảnh (mm) và ngàm — trang Camera nghiêng lọc gợi ý ống (OPT-014). */
+  imageCircleMm: number | null;
+  mount: string | null;
 };
 
 export type MountCameraOption = {
@@ -28,6 +31,7 @@ export type MountCameraOption = {
   sensorShortMm: number | null;
   /** Cỡ điểm ảnh (µm) — vòng mờ của DOF (OPT-013); null = chưa khai. */
   pixelUm: number | null;
+  mount: string | null;
 };
 
 /** Số điền sẵn khi mở từ một dòng kết quả Chọn ống kính (chuỗi thô từ URL, MountCheck tự đọc số). */
@@ -76,6 +80,8 @@ export function mountLensOptions(components: Component[]): MountLensOption[] {
       modMm: lens.wdMinMm,
       fNumberMin: lens.fNumberMin,
       fNumberMax: lens.fNumberMax,
+      imageCircleMm: lens.imageCircleMm ?? sensorDiagonalMm(lens.imageCircleFormat),
+      mount: lens.mount,
     });
   }
   return out;
@@ -98,6 +104,7 @@ export function mountCameraOptions(components: Component[]): MountCameraOption[]
       sensorLongMm: sensor.longMm,
       sensorShortMm: line ? null : sensor.shortMm,
       pixelUm: camera.pixelSizeUm,
+      mount: camera.mount,
     });
   }
   return out;

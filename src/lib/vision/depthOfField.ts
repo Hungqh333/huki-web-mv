@@ -82,3 +82,20 @@ export function depthOfFieldTelecentric(input: { workingFNumber: number; beta: n
   const half = (n * c) / (b * b);
   return { frontMm: half, backMm: half, totalMm: 2 * half, deltaMm: n * c };
 }
+
+/**
+ * Chiều ngược của depthOfFieldNewton (ống thường, không bộ nhân): khoảng cách vật gần nhất / xa nhất DỌC TRỤC QUANG
+ * (tính từ tâm ống) phải cùng nằm trong DOF. Đặt nét giữa hai ảnh: x′ = f² ÷ (khoảng − f),
+ * δ = (x′_gần − x′_xa) ÷ 2, x′₀ = (x′_gần + x′_xa) ÷ 2, β₀ = x′₀ ÷ f, N = δ ÷ ((1 + β₀) × c).
+ * Dùng cho camera nghiêng (OPT-014): mặt phẳng nét vuông góc trục quang, mặt vật nằm chéo.
+ */
+export function fNumberForDepthRange(input: { focalMm: number; nearMm: number; farMm: number; blur: number }): { fNumber: number; focusMm: number; beta: number } | null {
+  const { focalMm: f, nearMm, farMm, blur: c } = input;
+  if (!(f > 0) || !(c > 0) || !(nearMm > f) || !(farMm >= nearMm)) return null;
+  const xpNear = (f * f) / (nearMm - f);
+  const xpFar = (f * f) / (farMm - f);
+  const delta = (xpNear - xpFar) / 2;
+  const xp0 = (xpNear + xpFar) / 2;
+  const beta = xp0 / f;
+  return { fNumber: delta / ((1 + beta) * c), focusMm: f + (f * f) / xp0, beta };
+}

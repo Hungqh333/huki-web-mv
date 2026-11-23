@@ -45,6 +45,7 @@ const equipmentSections = [
       { href: '/chon-ong-kinh', key: 'lens' },
       // Hình kiểm tra lắp đặt ống nối (chốt 2026-11-11 vòng 3 Q4-a: cạnh Chọn ống kính).
       { href: '/kiem-tra-lap-dat', key: 'mountCheck' },
+      { href: '/camera-nghieng', key: 'oblique' },
       { href: '/chon-den', key: 'light' },
     ],
   },

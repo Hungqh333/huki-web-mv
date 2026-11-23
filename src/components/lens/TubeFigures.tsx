@@ -748,7 +748,7 @@ function FovFigure({
  * số hợp lệ đẩy ngay ra ngoài. `band`: đoạn tô xanh trên rãnh (Q6, thanh WD = dải lấy nét).
  * `ticks`: vạch dưới rãnh (ống nối chuẩn) — rãnh tự vẽ nên datalist không hiện vạch.
  */
-function Slider({
+export function Slider({
   id,
   label,
   value,

@@ -89,6 +89,8 @@ export const RULES: readonly RuleDefinition[] = [
   { id: 'OPT-012', version: '1.0.0', category: 'OPT', dimension: 'Optics' },
   // DOF chiều thuận: khẩu F → trước / sau điểm nét (chốt 2026-11-21, depthOfField.ts).
   { id: 'OPT-013', version: '1.0.0', category: 'OPT', dimension: 'Optics' },
+  // Camera nghiêng nhìn mặt phẳng ngang: vùng phủ hình thang (chốt 2026-11-23, obliqueView.ts).
+  { id: 'OPT-014', version: '1.0.0', category: 'OPT', dimension: 'Optics' },
   { id: 'LGT-001', version: '1.0.0', category: 'LGT', dimension: 'Lighting' },
   { id: 'LGT-002', version: '1.0.0', category: 'LGT', dimension: 'Lighting' },
   { id: 'LGT-003', version: '1.0.0', category: 'LGT', dimension: 'Lighting' },

@@ -4,7 +4,9 @@
  *
  * Mô hình chiếu tâm (lỗ kim), tâm chiếu = vị trí camera (đồng tử vào), không tính méo ống kính:
  *   - Toạ độ: mặt phẳng XY nằm ngang, Z lên. Vùng kiểm tra [−A/2; A/2] × [0; B] — Y xa dần camera.
- *   - Camera C = (lệch bên, −khoảng lùi, chiều cao), ngắm T = (0, B/2 + dời điểm ngắm, 0).
+ *   - Camera C = (lệch bên, −khoảng lùi, chiều cao). Điểm ngắm T: góc nghiêng để trống → tâm vùng (0, B/2, 0);
+ *     có góc θ (so với phương đứng, vòng 2 2026-11-23 Q4) → camera giữ chỗ lắp, hướng ngang h = hướng từ chân camera
+ *     tới tâm vùng, T = (Cx, Cy, 0) + h × H × tan θ.
  *   - Trục quang d = (T − C) ÷ |T − C|; trục ngang ảnh r = d × Z (ảnh không xoay quanh trục quang); trục dọc u = r × d.
  *   - Nét tại T: khoảng ảnh v = f × D ÷ (D − f), D = |T − C| (thấu kính mỏng, cùng gốc Newton: x′ = f² ÷ (D − f)).
  *   - Điểm P lên cảm biến: z = (P − C)·d, ảnh = ((P − C)·r, (P − C)·u) × v ÷ z.
@@ -26,8 +28,8 @@ export type ObliqueInput = {
   setbackMm: number;
   /** Lệch bên so với đường giữa vùng, mm. */
   sideOffsetMm: number;
-  /** Dời điểm ngắm dọc trục Y so với tâm vùng, mm (dương = ngắm xa hơn). */
-  aimShiftMm: number;
+  /** Góc nghiêng trục quang so với phương đứng (độ); null = ngắm tâm vùng. */
+  tiltDeg: number | null;
   sensorLongMm: number;
   sensorShortMm: number;
   pixelUm: number;
@@ -98,7 +100,17 @@ export function obliqueView(input: ObliqueInput): ObliqueResult | null {
   if (!(A > 0) || !(B > 0) || !(H > 0) || !(f > 0) || !(input.sensorLongMm > 0) || !(input.sensorShortMm > 0) || !(input.pixelUm > 0)) return null;
   const margin = Math.min(Math.max(input.margin, 0), 0.5);
   const C: Vec3 = [input.sideOffsetMm, -input.setbackMm, H];
-  const T: Vec3 = [0, B / 2 + input.aimShiftMm, 0];
+  let T: Vec3 = [0, B / 2, 0];
+  if (input.tiltDeg !== null) {
+    const tilt = Math.min(Math.max(input.tiltDeg, 0), OBLIQUE_MAX_TILT_DEG);
+    const hx = T[0] - C[0];
+    const hy = T[1] - C[1];
+    const hl = Math.hypot(hx, hy);
+    // Camera ngay trên tâm vùng: chưa có hướng ngang → nghiêng về phía xa (+Y).
+    const [ux, uy] = hl < 1e-9 ? [0, 1] : [hx / hl, hy / hl];
+    const reach = H * Math.tan((tilt * Math.PI) / 180);
+    T = [C[0] + ux * reach, C[1] + uy * reach, 0];
+  }
   const D = len(sub(T, C));
   if (!(D > f)) return null;
   const d = norm(sub(T, C));
@@ -201,3 +213,6 @@ export function obliqueView(input: ObliqueInput): ObliqueResult | null {
 
 /** Độ dư vùng phủ mặc định (Q4): méo ống góc rộng 1–3 % + sai lệch lắp. */
 export const OBLIQUE_DEFAULT_MARGIN = 0.05;
+
+/** Góc nghiêng lớn nhất của thanh trượt (vòng 2 Q4) — 90° là nhìn ngang, không chạm mặt phẳng. */
+export const OBLIQUE_MAX_TILT_DEG = 80;

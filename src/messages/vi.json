@@ -15,7 +15,6 @@
     "kpi": "Chỉ tiêu",
     "pc": "PC Vision",
     "mountCheck": "Kiểm tra lắp đặt",
-    "oblique": "Camera nghiêng",
     "selectorVision": "Gợi ý cấu hình",
     "lens": "Ống kính",
     "visionEngineer": "Vision Engineer",
@@ -43,7 +42,6 @@
       "ocr": "Đọc, kiểm tra ký tự in",
       "lens": "Tiêu cự, khoảng làm việc, lọc ống trong kho",
       "mountCheck": "Ống nối, ren cần vặn, dải nét theo WD",
-      "oblique": "Vùng phủ khi camera đặt chéo, mm/px mép xa, khẩu F",
       "light": "Kiểu đèn, màu đèn theo bài toán",
       "pc": "Danh mục PC thường dùng, gợi ý theo camera"
     }
@@ -2986,22 +2984,22 @@
     }
   },
   "oblique": {
-    "title": "Camera nghiêng",
-    "subtitle": "Camera đặt chéo nhìn xuống mặt phẳng ngang: vùng phủ có đủ không, mm/px ở mép xa, khẩu F để cả vùng nét, và ống kính trong kho dùng được.",
-    "why": "Camera chéo cho vùng phủ hình thang: mép gần hẹp, mép xa rộng và thô hơn. Mô hình chiếu tâm, chưa tính méo ống kính — giữ độ dư.",
-    "exampleNote": "Đang hiện số mẫu để xem thử (vùng 1200 × 800 mm, camera cao 1500 mm, lùi 600 mm) — sửa theo dự án.",
+    "panelTitle": "Camera nghiêng",
+    "panelDesc": "Camera đặt chéo nhìn xuống mặt phẳng ngang: vùng phủ hình thang, mm/px mép xa, khẩu F cho cả vùng nét. Dùng camera và ống kính đã chọn ở trên; khi mở, WD lấy từ đây. Số vùng và vị trí là số mẫu — sửa theo dự án.",
+    "open": "Mở",
+    "close": "Đóng",
+    "resetTilt": "Ngắm tâm vùng",
+    "resetFocal": "Về f của ống ({f} mm)",
+    "focalTrial": "Đang thử f khác ống đã chọn — hình bên dưới vẫn theo f của ống.",
+    "focalNoLens": "Chưa chọn ống ở trên — đang thử với f này.",
     "cameraLine": "Camera line scan — trang này chỉ tính camera area scan.",
-    "missing": "Chọn camera (hoặc nhập số pixel + cỡ điểm ảnh) và nhập vùng kiểm tra để xem mô phỏng.",
     "setup": {
       "title": "Vùng kiểm tra",
       "areaW": "Rộng (mm, ngang camera)",
       "areaL": "Dài (mm, xa dần camera)",
-      "aim": "Dời điểm ngắm (mm)",
-      "aimHint": "So với tâm vùng, dương = ngắm xa hơn.",
       "margin": "Độ dư vùng phủ (%)",
       "marginHint": "Chừa cho méo ống và sai lệch lắp.",
       "needGsd": "mm/px cần (tuỳ chọn)",
-      "hint": "Chiều cao, khoảng lùi, lệch bên và tiêu cự chỉnh bằng thanh trượt ở phần Mô phỏng.",
       "rotate": "Cạnh dài cảm biến",
       "rotateAcross": "Nằm ngang",
       "rotateAlong": "Nằm dọc",
@@ -3009,7 +3007,9 @@
       "height": "Chiều cao camera (mm)",
       "setback": "Khoảng lùi tới mép gần (mm)",
       "setbackHint": "Âm: camera nằm phía trên vùng kiểm tra.",
-      "side": "Lệch bên (mm)"
+      "side": "Lệch bên (mm)",
+      "tilt": "Góc nghiêng (°)",
+      "tiltCentre": "Đang ngắm tâm vùng — kéo để xoay camera tại chỗ lắp."
     },
     "result": {
       "title": "Mô phỏng",
@@ -3023,8 +3023,7 @@
       "gsdValue": "{best} → {worst}",
       "gsdNeedOk": "đạt ≤ {need}",
       "gsdNeedBad": "quá {need}",
-      "tilt": "Góc nghiêng · khoảng cách dọc trục",
-      "distanceValue": "{near} → {far} mm",
+      "distanceValue": "gần {near} → xa {far} mm · điểm ngắm {aim} mm",
       "depth": "Khẩu F cần cho cả vùng nét",
       "depthValue": "≥ F/{f} · nét tại {focus} mm",
       "depthOk": "F#max F/{fMax}",
@@ -3046,7 +3045,8 @@
       "corner2": "Xa phải",
       "corner3": "Xa trái",
       "modelNote": "Mô hình chiếu tâm, chưa tính méo ống kính; vị trí camera là tâm ống kính. Vòng mờ DOF 2 px như Chọn ống kính. Bài đo kích thước vẫn phải hiệu chuẩn phối cảnh (OPT-009).",
-      "adminNote": "Admin: khoảng ảnh v = {v} mm, khoảng cách tới điểm ngắm D = {d} mm (OPT-014)."
+      "adminNote": "Admin: khoảng ảnh v = {v} mm, khoảng cách tới điểm ngắm D = {d} mm (OPT-014).",
+      "distance": "Khoảng cách dọc trục"
     },
     "lenses": {
       "title": "Ống thường trong kho có f ≤ {f} mm",
@@ -3058,9 +3058,16 @@
       "circleBad": "vòng ảnh nhỏ hơn cảm biến",
       "modBad": "MOD xa hơn khoảng gần nhất",
       "mountBad": "khác ngàm",
-      "use": "Dùng f này",
+      "use": "Dùng ống này",
       "more": "Xem thêm {n} ống",
       "less": "Thu gọn"
+    },
+    "problem": {
+      "camera": "Chọn camera ở khung Camera phía trên để xem mô phỏng.",
+      "line": "Camera line scan — phần này chỉ tính camera area scan.",
+      "pixel": "Camera chưa có cỡ điểm ảnh — nhập ở khung Camera phía trên.",
+      "area": "Nhập bề rộng và chiều dài vùng kiểm tra.",
+      "distance": "Camera quá gần điểm ngắm (khoảng cách ≤ tiêu cự) — tăng chiều cao hoặc giảm góc."
     }
   },
   "mountCheck": {
@@ -3117,6 +3124,7 @@
       "fovLong": "Vùng nhìn thực, cạnh dài (mm)",
       "fovShort": "Vùng nhìn thực, cạnh ngắn (mm)",
       "hint": "Ống nối: tổng các khúc, để trống = không ống. Bộ nhân để trống = không dùng. Vùng nhìn thực tính ở WD đã nhập, chỉ để xem.",
+      "wdFromOblique": "WD đang lấy từ Camera nghiêng: khoảng cách từ camera tới điểm ngắm dọc trục quang (tính từ tâm ống, lệch WD đo từ mặt trước ống vài mm).",
       "need": "Vùng nhìn cần mang từ Chọn ống kính: {w} × {h} mm, H5 so với số này.",
       "needLine": "Vùng nhìn cần mang từ Chọn ống kính: {w} mm, H5 so với số này.",
       "blur": "Độ nhòe cho phép (DOF)",

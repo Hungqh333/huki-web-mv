@@ -15,7 +15,6 @@
     "kpi": "KPI",
     "pc": "PC Vision",
     "mountCheck": "Mounting check",
-    "oblique": "Tilted camera",
     "selectorVision": "Setup advisor",
     "lens": "Lens",
     "visionEngineer": "Vision Engineer",
@@ -43,7 +42,6 @@
       "ocr": "Read and verify printed characters",
       "lens": "Focal length, working distance, stock filter",
       "mountCheck": "Extension tubes, focus ring travel, focus range vs WD",
-      "oblique": "Coverage with an angled camera, far-edge mm/px, F-number",
       "light": "Light type and color per task",
       "pc": "Common PC configurations, suggestions per camera"
     }
@@ -2986,22 +2984,22 @@
     }
   },
   "oblique": {
-    "title": "Tilted camera",
-    "subtitle": "Camera looking down at a horizontal plane at an angle: does the coverage fit, mm/px at the far edge, F-number to keep the whole area sharp, and usable lenses from the catalog.",
-    "why": "A tilted camera covers a trapezoid: narrow near edge, wider and coarser far edge. Central projection model, lens distortion not included — keep a margin.",
-    "exampleNote": "Showing example values (area 1200 × 800 mm, camera 1500 mm high, 600 mm set back) — change them for your project.",
+    "panelTitle": "Tilted camera",
+    "panelDesc": "Camera looking down at a horizontal plane at an angle: trapezoid coverage, far-edge mm/px, F-number for the whole area in focus. Uses the camera and lens chosen above; while open, WD comes from here. Area and position values are examples — change them for your project.",
+    "open": "Open",
+    "close": "Close",
+    "resetTilt": "Aim at centre",
+    "resetFocal": "Back to lens f ({f} mm)",
+    "focalTrial": "Trying a different f from the chosen lens — the figures below still use the lens f.",
+    "focalNoLens": "No lens chosen above — trying with this f.",
     "cameraLine": "Line scan camera — this page handles area scan cameras only.",
-    "missing": "Pick a camera (or enter pixel counts + pixel size) and the inspection area to see the simulation.",
     "setup": {
       "title": "Inspection area",
       "areaW": "Width (mm, across)",
       "areaL": "Length (mm, away from camera)",
-      "aim": "Aim shift (mm)",
-      "aimHint": "From the area centre, positive = aim further.",
       "margin": "Coverage margin (%)",
       "marginHint": "For lens distortion and mounting error.",
       "needGsd": "Required mm/px (optional)",
-      "hint": "Height, set-back, side offset and focal length are adjusted with the sliders in Simulation.",
       "rotate": "Sensor long side",
       "rotateAcross": "Across",
       "rotateAlong": "Along",
@@ -3009,7 +3007,9 @@
       "height": "Camera height (mm)",
       "setback": "Set-back to near edge (mm)",
       "setbackHint": "Negative: camera is above the area.",
-      "side": "Side offset (mm)"
+      "side": "Side offset (mm)",
+      "tilt": "Tilt (°)",
+      "tiltCentre": "Aiming at the area centre — drag to rotate the camera at its mount."
     },
     "result": {
       "title": "Simulation",
@@ -3023,8 +3023,7 @@
       "gsdValue": "{best} → {worst}",
       "gsdNeedOk": "meets ≤ {need}",
       "gsdNeedBad": "above {need}",
-      "tilt": "Tilt · distance along axis",
-      "distanceValue": "{near} → {far} mm",
+      "distanceValue": "near {near} → far {far} mm · aim point {aim} mm",
       "depth": "F-number for the whole area in focus",
       "depthValue": "≥ F/{f} · focus at {focus} mm",
       "depthOk": "F#max F/{fMax}",
@@ -3046,7 +3045,8 @@
       "corner2": "Far right",
       "corner3": "Far left",
       "modelNote": "Central projection model, lens distortion not included; the camera position is the lens centre. DOF blur 2 px as in the Lens selector. Measurement tasks still need perspective calibration (OPT-009).",
-      "adminNote": "Admin: image distance v = {v} mm, distance to aim point D = {d} mm (OPT-014)."
+      "adminNote": "Admin: image distance v = {v} mm, distance to aim point D = {d} mm (OPT-014).",
+      "distance": "Distance along the axis"
     },
     "lenses": {
       "title": "Standard lenses in the catalog with f ≤ {f} mm",
@@ -3058,9 +3058,16 @@
       "circleBad": "image circle smaller than sensor",
       "modBad": "MOD beyond the nearest distance",
       "mountBad": "different mount",
-      "use": "Use this f",
+      "use": "Use this lens",
       "more": "Show {n} more",
       "less": "Show less"
+    },
+    "problem": {
+      "camera": "Pick a camera in the Camera panel above to see the simulation.",
+      "line": "Line scan camera — this section handles area scan cameras only.",
+      "pixel": "The camera has no pixel size — enter it in the Camera panel above.",
+      "area": "Enter the inspection area width and length.",
+      "distance": "Camera too close to the aim point (distance ≤ focal length) — raise it or reduce the tilt."
     }
   },
   "mountCheck": {
@@ -3117,6 +3124,7 @@
       "fovLong": "Real field of view, long side (mm)",
       "fovShort": "Real field of view, short side (mm)",
       "hint": "Tube: total of all pieces, empty = none. Converter empty = none. The real field of view is calculated at the entered WD and is read-only.",
+      "wdFromOblique": "WD comes from Tilted camera: distance from the camera to the aim point along the optical axis (from the lens centre, a few mm off a WD measured from the lens front).",
       "need": "Required field of view from the Lens selector: {w} × {h} mm, H5 compares against it.",
       "needLine": "Required field of view from the Lens selector: {w} mm, H5 compares against it.",
       "blur": "Allowed blur (DOF)",

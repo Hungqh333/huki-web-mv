@@ -39,7 +39,8 @@ export type MountCheckInitial = Partial<Record<(typeof MOUNT_PARAM_KEYS)[number]
 
 // w, h: số pixel camera nhập tay (2026-11-21: ô camera tay nhập số pixel, không nhập mm); sl, ss (mm) chỉ dùng khi
 // Chọn ống kính khai camera theo cỡ danh định, không có số pixel.
-export const MOUNT_PARAM_KEYS = ['lens', 'cam', 'w', 'h', 'sl', 'ss', 'px', 'wd', 'e', 'k', 'fw', 'fh', 'n'] as const;
+// nghieng=1: mở sẵn khung Camera nghiêng (link cũ /camera-nghieng chuyển về đây, 2026-11-23 vòng 2).
+export const MOUNT_PARAM_KEYS = ['lens', 'cam', 'w', 'h', 'sl', 'ss', 'px', 'wd', 'e', 'k', 'fw', 'fh', 'n', 'nghieng'] as const;
 
 export function readMountParams(params: Record<string, string | string[] | undefined>): MountCheckInitial {
   const out: MountCheckInitial = {};

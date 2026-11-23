@@ -7,6 +7,7 @@ import { useShowFormulas } from '@/components/ui/FormulaVisibility';
 import type { MountCameraOption, MountCheckInitial, MountLensOption } from '@/lib/vision/mountCheckOptions';
 import { DOF_BLUR_PRESETS, type DofBlurPreset } from '@/lib/vision/depthOfField';
 import { sensorOf, tubeFigure } from '@/lib/vision/lensSelector';
+import { ObliquePanel, initialObliqueState, obliqueCalc, type ObliqueState } from './ObliqueView';
 import { TubeFigures } from './TubeFigures';
 
 /**
@@ -109,6 +110,7 @@ export function MountCheck({
   const [manualCam, setManualCam] = useState({ w: initialCam ? '' : (initial.w ?? ''), h: initialCam ? '' : (initial.h ?? ''), px: initialCam ? '' : (initial.px ?? '') });
   // Chọn ống kính khai camera theo cỡ danh định (không có số pixel): dùng cỡ mm mang sang tới khi anh nhập số pixel.
   const [nominalMm] = useState(() => (!initialCam && initial.w === undefined && positive(initial.sl ?? '') !== null ? { long: positive(initial.sl!)!, short: positive(initial.ss ?? '') } : null));
+  const [obliqueState, setObliqueState] = useState<ObliqueState>(() => initialObliqueState(initial.nghieng === '1'));
   const [blur, setBlur] = useState<{ preset: DofBlurPreset | 'custom'; custom: string }>({ preset: 'tight', custom: '' });
 
   const [setup, setSetup] = useState({ wd: initial.wd ?? '', e: initial.e ?? '', k: initial.k ?? '' });
@@ -150,7 +152,11 @@ export function MountCheck({
     return { sensorLongMm: sensor.longMm, sensorShortMm: line ? null : sensor.shortMm, pixelUm: px, nominal: false };
   }, [camSource, cameras, camId, manualCam, nominalMm]);
 
-  const wd = positive(setup.wd);
+  // Camera nghiêng (vòng 2 2026-11-23): khung gập dùng chung camera + ống; bật lên thì WD = khoảng cách tới điểm ngắm (Q3).
+  const obliqueCam = camera ? { longMm: camera.sensorLongMm, shortMm: camera.sensorShortMm, pixelUm: camera.pixelUm, mount: (camSource === 'catalog' ? cameras.find((c) => c.id === camId)?.mount : null) ?? null } : null;
+  const oblique = obliqueCalc(obliqueState, obliqueCam, lens?.focalMm ?? null);
+  const obliqueWd = obliqueState.open && oblique.res ? Math.round(oblique.res.distanceToAimMm * 10) / 10 : null;
+  const wd = obliqueWd ?? positive(setup.wd);
   const e = parse(setup.e);
   const tube = e !== null && e > 0 ? e : 0;
   const k = positive(setup.k) ?? 1;
@@ -291,13 +297,18 @@ export function MountCheck({
         {/* ── Lắp đặt ── */}
         <Panel id="mount-setup" title={t('setup.title')} className="lg:col-span-2">
           <div className={`${FIELD_GRID} grid-cols-2 sm:grid-cols-3 lg:grid-cols-5`}>
-            <NumberField id="mount-wd" label={t('setup.wd')} value={setup.wd} onChange={(v) => setSetup({ ...setup, wd: v })} />
+            {obliqueWd !== null ? (
+              <ReadOnlyField label={t('setup.wd')} value={show(obliqueWd, 1)} />
+            ) : (
+              <NumberField id="mount-wd" label={t('setup.wd')} value={setup.wd} onChange={(v) => setSetup({ ...setup, wd: v })} />
+            )}
             <NumberField id="mount-e" label={t('setup.tube')} value={setup.e} onChange={(v) => setSetup({ ...setup, e: v })} step="0.5" />
             <NumberField id="mount-k" label={t('setup.converter')} value={setup.k} onChange={(v) => setSetup({ ...setup, k: v })} step="0.1" />
             <ReadOnlyField label={t('setup.fovLong')} value={fovNow ? `${show(fovNow.fovLongMm, 1)}` : '—'} />
             {line ? null : <ReadOnlyField label={t('setup.fovShort')} value={fovNow && fovNow.fovShortMm !== null ? `${show(fovNow.fovShortMm, 1)}` : '—'} />}
           </div>
           <p className={`mt-3 ${NOTE_CLASS}`}>{t('setup.hint')}</p>
+          {obliqueWd !== null ? <p className="mt-1 text-xs text-violet-700 dark:text-violet-300">{t('setup.wdFromOblique')}</p> : null}
           {need ? <p className={`mt-1 ${NOTE_CLASS}`}>{need.short === null ? t('setup.needLine', { w: show(need.long, 1) }) : t('setup.need', { w: show(need.long, 1), h: show(need.short, 1) })}</p> : null}
           {/* Độ nhòe cho phép của DOF (OPT-013, Q2-A): ba mức + tự nhập. */}
           <div className="mt-4 flex flex-wrap items-end gap-4">
@@ -340,6 +351,21 @@ export function MountCheck({
           <p className={`mt-2 ${NOTE_CLASS}`}>{t('setup.blurHint')}</p>
         </Panel>
       </div>
+
+      <ObliquePanel
+        state={obliqueState}
+        setState={setObliqueState}
+        calc={oblique}
+        camera={obliqueCam}
+        lensFocalMm={lens?.focalMm ?? null}
+        lenses={lenses}
+        onUseLens={(id) => {
+          setLensSource('catalog');
+          setLensId(id);
+          setObliqueState({ ...obliqueState, focalMm: null });
+        }}
+        admin={admin}
+      />
 
       {figProps ? (
         <section aria-label={t('resultLabel')} className="rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900">

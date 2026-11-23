@@ -21,7 +21,7 @@ const base: ObliqueInput = {
   heightMm: 1500,
   setbackMm: 600,
   sideOffsetMm: 0,
-  aimShiftMm: 0,
+  tiltDeg: null,
   sensorLongMm: 2448 * 0.00345,
   sensorShortMm: 2048 * 0.00345,
   pixelUm: 3.45,
@@ -94,4 +94,20 @@ test('ngắm quá cao → một phần ảnh nhìn quá chân trời; số vào 
   assert.equal(r.horizon, true);
   assert.equal(obliqueView({ ...base, focalMm: 0 }), null);
   assert.equal(obliqueView({ ...base, areaWidthMm: 0 }), null);
+});
+
+test('góc nghiêng (vòng 2): góc đúng bằng góc ngắm tâm → trùng kết quả; tăng góc → điểm ngắm xa hơn, camera đứng yên', () => {
+  const centre = obliqueView(base)!;
+  const same = obliqueView({ ...base, tiltDeg: centre.tiltDeg })!;
+  near(same.aimPoint[1], centre.aimPoint[1], 1e-6);
+  near(same.focalMaxMm, centre.focalMaxMm, 1e-6);
+  const more = obliqueView({ ...base, tiltDeg: 45 })!;
+  near(more.tiltDeg, 45, 1e-9);
+  near(more.aimPoint[1], -600 + 1500, 1e-6); // tan 45° × 1500 tính từ chân camera
+  assert.deepEqual(more.cameraPos, centre.cameraPos);
+  // Lệch bên: hướng ngang vẫn nhắm về tâm vùng.
+  const side = obliqueView({ ...base, sideOffsetMm: 600, tiltDeg: 30 })!;
+  const hx = side.aimPoint[0] - 600;
+  const hy = side.aimPoint[1] + 600;
+  near(hy / hx, (400 + 600) / (0 - 600), 1e-9);
 });

@@ -102,6 +102,8 @@ export function MountCheck({
   const [lensSearch, setLensSearch] = useState('');
   const [lensId, setLensId] = useState(initialLens);
   const [manualLens, setManualLens] = useState({ f: '', sF: '', mod: '', fMin: '', fMax: '' });
+  // Nút Hiện / Ẩn kết quả của Hình kiểm tra lắp đặt (2026-11-24): mặc định đóng.
+  const [figOpen, setFigOpen] = useState(false);
 
   const fromSelectorManual = !initialCam && (initial.w !== undefined || initial.sl !== undefined);
   const [camSource, setCamSource] = useState<'catalog' | 'manual'>(initialCam || (!fromSelectorManual && cameras.length > 0) ? 'catalog' : 'manual');
@@ -371,7 +373,7 @@ export function MountCheck({
         <section aria-label={t('resultLabel')} className="rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900">
           {/* Đổi ô nhập → vẽ lại từ đầu, thanh trượt về số mới. */}
           <div className="max-w-5xl">
-            <TubeFigures key={JSON.stringify(figProps)} {...figProps} blurPx={blurPx} sticky={!obliqueState.open} />
+            <TubeFigures key={JSON.stringify(figProps)} {...figProps} blurPx={blurPx} sticky={!obliqueState.open} open={figOpen} onToggle={() => setFigOpen(!figOpen)} />
           </div>
         </section>
       ) : (

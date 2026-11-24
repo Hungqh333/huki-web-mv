@@ -1046,6 +1046,8 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
           'điểm P lên cảm biến: z = (P − C)·d · ảnh = ((P − C)·r ; (P − C)·u) × v ÷ z',
           'mức dùng góc = max(|ảnh ngang| ÷ nửa rộng cảm biến ; |ảnh dọc| ÷ nửa cao)',
           'hình "Ảnh camera nhìn thấy": vẽ 4 góc sản phẩm tại (ảnh ngang ; ảnh dọc) trong khung cảm biến — chỉ để hình dung, không tính thêm',
+          'FOV thực tế trên mặt phẳng (cả cảm biến, không trừ dư): đường P0 + s·hướng trên mặt phẳng thấy được ⇔ z > 0, |(P − C)·r| × v ≤ nửa rộng × z, |(P − C)·u| × v ≤ nửa cao × z — tuyến tính theo s → đoạn [s_min ; s_max]; xét ngang mép gần (Y = 0), ngang mép xa (Y = B), dọc giữa (X = 0) · dư trái = −A/2 − s_min, dư phải = s_max − A/2, dư trước = −s_min, dư sau = s_max − B (âm = thiếu, s_max = ∞ khi quá chân trời) · cạnh ảnh = khoảng cách 2 góc cảm biến cùng cạnh chiếu xuống',
+          'Cao FOV tại mép sản phẩm: cùng điều kiện trên đường đứng P0 = (0, Y, 0) + z·(0, 0, 1), Y = 0 (mép gần) và Y = B (mép xa) → đoạn [z_min ; z_max] · cao tối đa còn trong ảnh = z_max · chân khuất khi z_min > 0 (tia biên dưới cắt qua) · không thấy khi z_max ≤ 0',
           'f lớn nhất: ảnh tỉ lệ thuận với v → v_max = v × (1 − dư) ÷ mức dùng lớn nhất · f_max = v_max × D ÷ (D + v_max)',
           'mm/px tại P: dịch 1 pixel trên ảnh, chiếu ngược xuống mặt phẳng, đo hai hướng; xét 4 góc + giữa mép gần + giữa mép xa',
           'độ sâu nét: khoảng cách dọc trục tới góc gần nhất / xa nhất → x′ = f² ÷ (khoảng − f), δ = (x′_gần − x′_xa) ÷ 2, x′₀ = trung bình, N = δ ÷ ((1 + x′₀/f) × c)   (OPT-013 chiều ngược)',
@@ -1062,6 +1064,8 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
           'Mép gần là chỗ hay thiếu (hình thang hẹp phía camera); mép xa là chỗ mm/px thô nhất.',
           'Ví dụ: vùng 1200 × 800 mm, cao 1500, lùi 600, ngắm tâm, cảm biến 8,4456 × 7,0656 mm cạnh dài ngang → nghiêng 33,7°, f_max 11,06 mm (xoay dọc 9,26 mm); f 8: mm/px 0,68 (giữa mép gần) → 1,17 (giữa mép xa, hướng dọc); khoảng dọc trục 1581 → 2025 mm, F cần ≈ F/0,65.',
           'Vòng 4 (2026-11-23, A + B): nhập theo kích thước sản phẩm (rộng × dài, sản phẩm = vùng kiểm tra), thêm hình Ảnh camera nhìn thấy; thử chiều cao sản phẩm (8 góc) đã bỏ theo ý Hùng.',
+          'Vòng 5 (2026-11-24, Q1-B): hiện FOV thực tế trên mặt phẳng — ví dụ trên f 8: cạnh ảnh 1465 → 2680 mm, ngang mép gần sản phẩm 1661 (dư 230 mỗi bên), mép xa 2128 (dư 464), dọc 2084 mm (dư trước 337, sau 947).',
+          'Vòng 5 (2026-11-24, Q1–Q4 A): hình Nhìn ngang có vạch đứng cao FOV tại mép sản phẩm — mẫu trên: f 8 → mép gần 1117, mép xa 605 mm; f 14 → 955 / 228 mm (kiểm bằng tam giác đồng dạng: 1500 × 251 / 1651 = 228); f 25 → chân mép gần khuất 256 mm, mép xa không thấy.',
           'Gợi ý ống: ống thường trong kho có f ≤ f_max, xếp f giảm dần; báo vòng ảnh < đường chéo cảm biến × 0,98, MOD > khoảng gần nhất, khác ngàm — chỉ ghi chú, không loại.',
         ],
         constants: [

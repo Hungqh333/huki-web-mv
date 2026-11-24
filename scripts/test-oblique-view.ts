@@ -120,3 +120,46 @@ test('toạ độ trên cảm biến (hình Ảnh camera): khớp mức dùng; m
   assert.ok(r.corners[2].imageX - r.corners[3].imageX < r.corners[1].imageX - r.corners[0].imageX);
   near(r.sensorHalfWidthMm, (2448 * 0.00345) / 2, 1e-12);
 });
+
+test('FOV thực tế trên mặt phẳng (vòng 5): cạnh ảnh 1465 → 2680 · dài 2084, dư trước 337 / sau 947 · ngang mép sản phẩm 1661 / 2128', () => {
+  const g = obliqueView({ ...base, margin: 0.05 })!.groundFov; // độ dư không ảnh hưởng — FOV tính trên cả cảm biến
+  near(g.nearEdgeWidthMm!, 1465, 1);
+  near(g.farEdgeWidthMm!, 2680, 1);
+  near(g.along!.widthMm, 2084, 1);
+  near(g.along!.startMm, 337, 1);
+  near(g.along!.endMm, 947, 1);
+  near(g.atNear!.widthMm, 1661, 1);
+  near(g.atNear!.startMm, g.atNear!.endMm, 1e-6); // không lệch bên → dư hai bên bằng nhau
+  near(g.atNear!.startMm, (g.atNear!.widthMm - 1200) / 2, 1e-6);
+  near(g.atFar!.widthMm, 2128, 1);
+  // Khớp biên vùng phủ đang vẽ (cạnh ảnh chạm đất là đường thẳng → hình thang).
+  const fp = obliqueView(base)!.footprint;
+  near(Math.hypot(fp[0].x - fp[24].x, fp[0].y - fp[24].y), g.nearEdgeWidthMm!, 1e-6);
+  near(fp[0].y, -g.along!.startMm, 1e-6);
+});
+
+test('FOV thực tế: lệch bên → dư trái ≠ phải; quá chân trời → mép xa ∞', () => {
+  const side = obliqueView({ ...base, sideOffsetMm: 500, focalMm: 6 })!.groundFov;
+  assert.ok(Math.abs(side.atNear!.startMm - side.atNear!.endMm) > 1);
+  const hz = obliqueView({ ...base, heightMm: 300, setbackMm: 2000, focalMm: 4 })!.groundFov;
+  assert.equal(hz.farEdgeWidthMm, null);
+  assert.equal(hz.along!.endMm, Infinity);
+  assert.ok(Number.isFinite(hz.along!.startMm));
+});
+
+test('cao FOV tại mép sản phẩm (vòng 5): f 8 → 1117 / 605 · f 14 → 955 / 228 · khớp tia biên trên nối camera với cạnh xa ảnh', () => {
+  for (const [f, n, fa] of [[8, 1117, 605], [14, 955, 228]] as const) {
+    const g = obliqueView({ ...base, focalMm: f })!.groundFov;
+    near(g.heightAtNear!.highMm, n, 1);
+    near(g.heightAtFar!.highMm, fa, 1);
+    assert.equal(g.heightAtNear!.lowMm, 0);
+    // Tam giác đồng dạng: camera (lùi 600, cao 1500) → điểm xa nhất ảnh chạm đất (800 + dư sau).
+    const farY = 800 + g.along!.endMm;
+    near(g.heightAtFar!.highMm, (1500 * (farY - 800)) / (farY + 600), 1e-6);
+  }
+  // f 25: tia biên dưới rơi vào trong sản phẩm → chân mép gần nằm ngoài ảnh; mép xa không thấy đoạn nào.
+  const g25 = obliqueView({ ...base, focalMm: 25 })!.groundFov;
+  assert.ok(g25.heightAtNear!.lowMm > 0);
+  near(g25.heightAtNear!.lowMm, (1500 * -g25.along!.startMm) / (600 - g25.along!.startMm), 1e-6);
+  assert.equal(g25.heightAtFar, null);
+});

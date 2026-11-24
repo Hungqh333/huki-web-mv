@@ -6,7 +6,7 @@ import { FIELD_CELL, FIELD_GRID, FIELD_LABEL, NOTE_CLASS, Panel } from '@/compon
 import { mountFit, maxRingFNumber } from '@/lib/vision/configurationRules';
 import { DOF_BLUR_PRESETS } from '@/lib/vision/depthOfField';
 import type { MountLensOption } from '@/lib/vision/mountCheckOptions';
-import { OBLIQUE_DEFAULT_MARGIN, OBLIQUE_MAX_TILT_DEG, obliqueView, type ObliqueResult } from '@/lib/vision/obliqueView';
+import { OBLIQUE_DEFAULT_MARGIN, OBLIQUE_MAX_TILT_DEG, obliqueView, type GroundFov, type HeightSpan, type ObliqueResult } from '@/lib/vision/obliqueView';
 import { Slider } from './TubeFigures';
 
 /**
@@ -30,6 +30,8 @@ const positive = (value: string) => {
 };
 const show = (v: number, digits = 2) => String(Math.round(v * 10 ** digits) / 10 ** digits);
 const r1 = (v: number) => Math.round(v * 10) / 10;
+/** Viền nền cho chữ đè lên vạch / vùng màu (dùng với paintOrder="stroke"). */
+const HALO = 'stroke-white dark:stroke-slate-900';
 
 function NumberField({ id, label, hint, value, onChange, step = 'any' }: { id: string; label: string; hint?: string; value: string; onChange: (v: string) => void; step?: string }) {
   return (
@@ -79,31 +81,168 @@ function cornerTone(usage: number, margin: number): 'ok' | 'warn' | 'bad' {
 }
 
 /** Hình nhìn từ trên: vùng kiểm tra (nét đứt), vùng phủ của ảnh (tô xanh), camera + điểm ngắm. Y xa dần lên trên. */
+/** FOV thực tế trên mặt phẳng (vòng 5, Q1-B): cạnh ảnh, ngang mép gần / xa sản phẩm, dọc giữa sản phẩm. */
+function FovBlock({ fov }: { fov: GroundFov }) {
+  const t = useTranslations('oblique.result');
+  const mm = (v: number | null) => (v === null || !Number.isFinite(v) ? t('fovInf') : show(v, 0));
+  const gap = (v: number) => (v < -0.5 ? t('fovShort', { v: show(-v, 0) }) : t('fovSpare', { v: Number.isFinite(v) ? show(Math.max(v, 0), 0) : t('fovInf') }));
+  const short = (s: { startMm: number; endMm: number } | null) => s !== null && (s.startMm < -0.5 || s.endMm < -0.5);
+  // Cao tối đa còn trong ảnh; chân bị khuất → kèm phần chân khuất; không thấy đoạn nào → "không thấy".
+  const height = (h: HeightSpan | null) =>
+    h === null ? t('fovHeightNone') : h.lowMm > 0.5 ? t('fovHeightFrom', { lo: mm(h.lowMm), hi: mm(h.highMm) }) : t('fovHeightMm', { v: mm(h.highMm) });
+  const lines: { text: string; bad: boolean }[] = [
+    { text: t('fovEdges', { near: mm(fov.nearEdgeWidthMm), far: mm(fov.farEdgeWidthMm) }), bad: false },
+    fov.atNear ? { text: t('fovAtNear', { w: mm(fov.atNear.widthMm), l: gap(fov.atNear.startMm), r: gap(fov.atNear.endMm) }), bad: short(fov.atNear) } : null,
+    fov.atFar ? { text: t('fovAtFar', { w: mm(fov.atFar.widthMm), l: gap(fov.atFar.startMm), r: gap(fov.atFar.endMm) }), bad: short(fov.atFar) } : null,
+    fov.along ? { text: t('fovAlong', { w: mm(fov.along.widthMm), a: gap(fov.along.startMm), b: gap(fov.along.endMm) }), bad: short(fov.along) } : null,
+    {
+      text: t('fovHeight', { n: height(fov.heightAtNear), f: height(fov.heightAtFar) }),
+      bad: !fov.heightAtNear || !fov.heightAtFar || fov.heightAtNear.lowMm > 0.5 || fov.heightAtFar.lowMm > 0.5,
+    },
+  ].filter((l): l is { text: string; bad: boolean } => l !== null);
+  return (
+    <div className="rounded-md border border-slate-200 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900">
+      <p className="text-xs font-medium text-slate-500 dark:text-slate-400">{t('fov')}</p>
+      <ul className="mt-1 grid gap-x-6 gap-y-1 text-sm tabular-nums lg:grid-cols-2">
+        {lines.map((l) => (
+          <li key={l.text} className={l.bad ? TONE.bad : 'text-slate-900 dark:text-slate-100'}>
+            {l.text}
+          </li>
+        ))}
+      </ul>
+      <p className={`mt-1 ${NOTE_CLASS}`}>{t('fovNote')}</p>
+    </div>
+  );
+}
+
+/**
+ * Vòng 5 (2026-11-24): kích thước FOV thực tế trên hình Nhìn từ trên — chỉ ghi số (mm), nét mảnh.
+ * Một màu xám cho mọi vạch đo và số; phần thiếu (FOV không phủ tới mép sản phẩm): vạch đỏ đậm + số đỏ dấu −.
+ * Chuỗi bên phải: camera → cạnh gần ảnh → mép gần → mép xa → cạnh xa ảnh (đo theo phương xa dần camera).
+ */
+function FovDims({ res, areaW, areaL, X, Y, W }: { res: ObliqueResult; areaW: number; areaL: number; X: (x: number) => number; Y: (y: number) => number; W: number }) {
+  const fov = res.groundFov;
+  // Một màu xám cho mọi vạch đo và số; chỉ phần thiếu (FOV không phủ tới mép sản phẩm) đổi đỏ.
+  const DIM = 'stroke-slate-500 dark:stroke-slate-400';
+  const BAD = 'stroke-red-600 dark:stroke-red-400';
+  const EXT = 'stroke-slate-300 dark:stroke-slate-600';
+  const T_DIM = `fill-slate-700 dark:fill-slate-200 ${HALO}`;
+  const T_BAD = `fill-red-600 dark:fill-red-400 ${HALO}`;
+  const short = (v: number) => v < -0.5;
+  const num = (v: number) => (short(v) ? `−${show(-v, 0)}` : show(Math.max(v, 0), 0));
+  const gapTone = (v: number) => (short(v) ? T_BAD : T_DIM);
+  const gapLine = (v: number) => (short(v) ? BAD : DIM);
+  // Đoạn đo mảnh, gạch hai đầu ngắn (toạ độ màn hình).
+  const dim = (key: string, x1: number, y1: number, x2: number, y2: number, cls = DIM) => {
+    const horiz = Math.abs(y2 - y1) < Math.abs(x2 - x1);
+    const tk = 2.5;
+    const tick = (x: number, y: number) => (horiz ? <line x1={x} y1={y - tk} x2={x} y2={y + tk} /> : <line x1={x - tk} y1={y} x2={x + tk} y2={y} />);
+    return (
+      <g key={key} strokeWidth={cls === BAD ? 1.75 : 0.75} className={cls}>
+        <line x1={x1} y1={y1} x2={x2} y2={y2} />
+        {tick(x1, y1)}
+        {tick(x2, y2)}
+      </g>
+    );
+  };
+  const label = (key: string, x: number, y: number, text: string, cls: string, anchor: 'start' | 'middle' | 'end' = 'start', rotate = false) => (
+    <text key={key} x={x} y={y} textAnchor={anchor} fontSize={9} strokeWidth={2.5} paintOrder="stroke" transform={rotate ? `rotate(-90 ${x} ${y})` : undefined} className={cls}>
+      {text}
+    </text>
+  );
+  const out: React.ReactNode[] = [];
+  const fp = res.horizon ? [] : res.footprint;
+
+  // Dư trái / phải tại mép gần (số trên vạch) và mép xa (số dưới vạch), sát góc sản phẩm.
+  for (const { key, span, y, dy } of [
+    { key: 'n', span: fov.atNear, y: 0, dy: -4 },
+    { key: 'f', span: fov.atFar, y: areaL, dy: 10 },
+  ]) {
+    if (!span) continue;
+    if (Number.isFinite(span.startMm)) {
+      out.push(dim(`${key}l`, X(-areaW / 2), Y(y), X(-areaW / 2 - span.startMm), Y(y), gapLine(span.startMm)));
+      out.push(label(`${key}lt`, X(-areaW / 2) - 6, Y(y) + dy, num(span.startMm), gapTone(span.startMm), 'end'));
+    }
+    if (Number.isFinite(span.endMm)) {
+      out.push(dim(`${key}r`, X(areaW / 2), Y(y), X(areaW / 2 + span.endMm), Y(y), gapLine(span.endMm)));
+      out.push(label(`${key}rt`, X(areaW / 2) + 6, Y(y) + dy, num(span.endMm), gapTone(span.endMm)));
+    }
+  }
+
+  if (fov.along) {
+    const a = fov.along;
+    const camY = Y(res.cameraPos[1]);
+    const yNear = Number.isFinite(a.startMm) ? Y(-a.startMm) : null;
+    const yFar = Number.isFinite(a.endMm) ? Y(areaL + a.endMm) : null;
+    // Chuỗi bên phải, chừa chỗ cho số dư sát góc phải sản phẩm (≈ 26 đơn vị hình), không quá mép hình.
+    const xR = Math.min(Math.max(X(areaW / 2) + 30, X(res.cameraPos[0]) + 12, ...fp.map((p) => X(p.x))) + 8, W - 30);
+    const ext: { y: number; xFrom: number }[] = [{ y: camY, xFrom: X(res.cameraPos[0]) + 9 }];
+    if (yNear !== null) ext.push({ y: yNear, xFrom: fp.length >= 96 ? X(fp[24].x) + 2 : X(areaW / 2) });
+    ext.push({ y: Y(0), xFrom: X(areaW / 2) + 2 }, { y: Y(areaL), xFrom: X(areaW / 2) + 2 });
+    if (yFar !== null) ext.push({ y: yFar, xFrom: fp.length >= 96 ? X(fp[48].x) + 2 : X(areaW / 2) });
+    ext.forEach((e, i) => out.push(<line key={`ext${i}`} x1={e.xFrom} y1={e.y} x2={xR + 3} y2={e.y} strokeWidth={0.5} strokeDasharray="2 2" className={EXT} />));
+    const mid = (y1: number, y2: number) => (y1 + y2) / 2 + 3;
+    if (yNear !== null) {
+      // Camera → cạnh gần ảnh (nhìn từ trên, theo phương xa dần camera).
+      out.push(dim('vc', xR, camY, xR, yNear));
+      out.push(label('vct', xR + 5, mid(camY, yNear), show(-a.startMm - res.cameraPos[1], 0), T_DIM));
+      out.push(dim('va', xR, yNear, xR, Y(0), gapLine(a.startMm)));
+      out.push(label('vat', xR + 5, mid(yNear, Y(0)), num(a.startMm), gapTone(a.startMm)));
+    }
+    out.push(dim('vp', xR, Y(0), xR, Y(areaL)));
+    out.push(label('vpt', xR + 5, mid(Y(0), Y(areaL)), show(areaL, 0), T_DIM));
+    if (yFar !== null) {
+      out.push(dim('vb', xR, Y(areaL), xR, yFar, gapLine(a.endMm)));
+      out.push(label('vbt', xR + 5, mid(Y(areaL), yFar), num(a.endMm), gapTone(a.endMm)));
+    }
+    // Chiều dài FOV: vạch đứng bên trái biên FOV.
+    if (yNear !== null && yFar !== null && fp.length > 0) {
+      const xL = Math.max(14, Math.min(X(-areaW / 2) - 30, ...fp.map((p) => X(p.x))) - 8);
+      out.push(dim('len', xL, yNear, xL, yFar));
+      out.push(label('lent', xL - 4, (yNear + yFar) / 2, show(a.widthMm, 0), T_DIM, 'middle', true));
+    }
+  }
+
+  // Bề rộng hai cạnh ảnh: số ngay ngoài cạnh.
+  if (fp.length >= 96) {
+    const nearMid = { x: (fp[0].x + fp[24].x) / 2, y: (fp[0].y + fp[24].y) / 2 };
+    const farMid = { x: (fp[48].x + fp[72].x) / 2, y: (fp[48].y + fp[72].y) / 2 };
+    if (fov.nearEdgeWidthMm !== null) out.push(label('en', X(nearMid.x) - 6, Y(nearMid.y) + 10, show(fov.nearEdgeWidthMm, 0), T_DIM, 'end'));
+    if (fov.farEdgeWidthMm !== null) out.push(label('ef', X(farMid.x), Y(farMid.y) - 4, show(fov.farEdgeWidthMm, 0), T_DIM, 'middle'));
+  }
+  return <g>{out}</g>;
+}
+
 function TopView({ res, areaW, areaL, margin }: { res: ObliqueResult; areaW: number; areaL: number; margin: number }) {
   const t = useTranslations('oblique.result');
-  const W = 420;
+  // Vòng 5: hình rộng hơn + chừa hai bên (SIDE) cho vạch đo FOV và chữ.
+  const W = 460;
   const H = 360;
-  const pad = 28;
+  const pad = 24;
+  const SIDE = 40;
   const cam = res.cameraPos;
-  // Khung nhìn: vùng kiểm tra + camera, nới 25 %.
-  const xs = [-areaW / 2, areaW / 2, cam[0]];
-  const ys = [0, areaL, cam[1]];
+  // Khung nhìn: vùng kiểm tra + camera + cả FOV khi khép kín (vòng 5: vạch đo FOV cần thấy hết), nới 25 %.
+  const fp = res.horizon ? [] : res.footprint;
+  const xs = [-areaW / 2, areaW / 2, cam[0], ...fp.map((p) => p.x)];
+  const ys = [0, areaL, cam[1], ...fp.map((p) => p.y)];
   let x0 = Math.min(...xs);
   let x1 = Math.max(...xs);
   let y0 = Math.min(...ys);
   let y1 = Math.max(...ys);
-  const ex = (x1 - x0) * 0.25 + 1;
+  const ex = (x1 - x0) * 0.08 + 1;
   const ey = (y1 - y0) * 0.25 + 1;
   x0 -= ex;
   x1 += ex;
   y0 -= ey;
   y1 += ey;
-  const s = Math.min((W - 2 * pad) / (x1 - x0), (H - 2 * pad) / (y1 - y0));
+  const s = Math.min((W - 2 * pad - 2 * SIDE) / (x1 - x0), (H - 2 * pad) / (y1 - y0));
   const ox = (W - (x1 - x0) * s) / 2;
   const oy = (H - (y1 - y0) * s) / 2;
   const X = (x: number) => r1(ox + (x - x0) * s);
   const Y = (y: number) => r1(H - oy - (y - y0) * s);
   const poly = res.footprint.map((p) => `${X(p.x)},${Y(p.y)}`).join(' ');
+  // Tên sản phẩm chỉ ghi khi khối đủ chỗ (kích thước đã có ở ô nhập và vạch đo).
+  const showName = areaL * s >= 30 && areaW * s >= 100;
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label={t('topTitle')}>
       <defs>
@@ -114,9 +253,11 @@ function TopView({ res, areaW, areaL, margin }: { res: ObliqueResult; areaW: num
       <polygon points={poly} clipPath="url(#oblique-top-clip)" className="fill-sky-400/25 stroke-sky-600 dark:fill-sky-500/25 dark:stroke-sky-400" strokeWidth={1.5} />
       {/* Sản phẩm (B, 2026-11-23): khối màu có tên thay khung nét đứt. */}
       <rect x={X(-areaW / 2)} y={Y(areaL)} width={r1(areaW * s)} height={r1(areaL * s)} rx={2} strokeWidth={1.5} className="fill-teal-200/70 stroke-teal-700 dark:fill-teal-800/60 dark:stroke-teal-300" />
-      <text x={X(0)} y={Y(areaL / 2) - 18} textAnchor="middle" fontSize={11} className="fill-teal-900 dark:fill-teal-100">
-        {`${t('product')} ${show(areaW, 0)} × ${show(areaL, 0)}`}
-      </text>
+      {showName ? (
+        <text x={X(0)} y={Y(areaL / 2) - 8} textAnchor="middle" fontSize={10} className="fill-teal-900 dark:fill-teal-100">
+          {`${t('product')} ${show(areaW, 0)} × ${show(areaL, 0)}`}
+        </text>
+      ) : null}
       <line x1={X(cam[0])} y1={Y(cam[1])} x2={X(res.aimPoint[0])} y2={Y(res.aimPoint[1])} strokeDasharray="3 3" strokeWidth={1} className="stroke-violet-600 dark:stroke-violet-400" />
       <circle cx={X(res.aimPoint[0])} cy={Y(res.aimPoint[1])} r={3} className="fill-violet-600 dark:fill-violet-400" />
       {res.corners.map((c, i) => (
@@ -126,12 +267,7 @@ function TopView({ res, areaW, areaL, margin }: { res: ObliqueResult; areaW: num
       <text x={X(cam[0])} y={Y(cam[1]) + 18} textAnchor="middle" fontSize={11} className="fill-slate-700 dark:fill-slate-200">
         {t('camera')}
       </text>
-      <text x={X(0)} y={Y(0) + 14} textAnchor="middle" fontSize={10} className="fill-slate-500 dark:fill-slate-400">
-        {t('near')}
-      </text>
-      <text x={X(0)} y={Y(areaL) - 6} textAnchor="middle" fontSize={10} className="fill-slate-500 dark:fill-slate-400">
-        {t('far')}
-      </text>
+      <FovDims res={res} areaW={areaW} areaL={areaL} X={X} Y={Y} W={W} />
     </svg>
   );
 }
@@ -236,8 +372,48 @@ function SideView({ res, areaL }: { res: ObliqueResult; areaL: number }) {
       <text x={cx - 4} y={(cy + ground) / 2} textAnchor="end" fontSize={10} className="fill-slate-500 dark:fill-slate-400">
         {`${show(cam[2], 0)} mm`}
       </text>
+      <HeightDims fov={res.groundFov} areaL={areaL} P={P} zTop={z1} />
     </svg>
   );
+}
+
+/**
+ * Vòng 5 (2026-11-24, Q1–Q4 A): trên hình Nhìn ngang, vạch đứng tại mép gần / mép xa sản phẩm — vật đặt ở đó cao tới số ghi
+ * vẫn nằm trọn trong ảnh (cả cảm biến). Vạch đỏ dấu −: phần chân nằm ngoài ảnh (tia biên dưới cắt qua).
+ */
+function HeightDims({ fov, areaL, P, zTop }: { fov: GroundFov; areaL: number; P: (y: number, z: number) => [number, number]; zTop: number }) {
+  const out: React.ReactNode[] = [];
+  const tk = 2.5;
+  const bar = (key: string, x: number, ya: number, yb: number, bad: boolean) => (
+    <g key={key} strokeWidth={bad ? 1.75 : 0.75} className={bad ? 'stroke-red-600 dark:stroke-red-400' : 'stroke-slate-500 dark:stroke-slate-400'}>
+      <line x1={x} y1={ya} x2={x} y2={yb} />
+      <line x1={x - tk} y1={ya} x2={x + tk} y2={ya} />
+      <line x1={x - tk} y1={yb} x2={x + tk} y2={yb} />
+    </g>
+  );
+  const label = (key: string, x: number, y: number, text: string, bad: boolean, anchor: 'start' | 'end') => (
+    <text key={key} x={x} y={y} textAnchor={anchor} fontSize={9} strokeWidth={2.5} paintOrder="stroke" className={`${bad ? 'fill-red-600 dark:fill-red-400' : 'fill-slate-700 dark:fill-slate-200'} ${HALO}`}>
+      {text}
+    </text>
+  );
+  for (const { key, h, y, side } of [
+    { key: 'hn', h: fov.heightAtNear, y: 0, side: -1 },
+    { key: 'hf', h: fov.heightAtFar, y: areaL, side: 1 },
+  ] as const) {
+    if (!h) continue;
+    const [x, yLow] = P(y, h.lowMm);
+    const yHigh = P(y, Math.min(h.highMm, zTop))[1];
+    const lx = x + side * 5;
+    const anchor = side < 0 ? 'end' : 'start';
+    out.push(bar(key, x, yLow, yHigh, false));
+    out.push(label(`${key}t`, lx, (yLow + yHigh) / 2 + 3, Number.isFinite(h.highMm) ? show(h.highMm, 0) : '∞', false, anchor));
+    if (h.lowMm > 0.5) {
+      const yGround = P(y, 0)[1];
+      out.push(bar(`${key}b`, x, yGround, yLow, true));
+      out.push(label(`${key}bt`, lx, (yGround + yLow) / 2 + 3, `−${show(h.lowMm, 0)}`, true, anchor));
+    }
+  }
+  return <g>{out}</g>;
 }
 
 export type ObliqueState = {
@@ -491,6 +667,7 @@ export function ObliquePanel({
                     </dd>
                   </div>
                 </dl>
+                <FovBlock fov={res.groundFov} />
                 {res.horizon ? <p className="text-sm text-amber-700 dark:text-amber-300">{t('result.horizon')}</p> : null}
                 </>
                 ) : (

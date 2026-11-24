@@ -58,6 +58,35 @@ export type PointSample = {
   imageY: number;
 };
 
+/** Bề rộng FOV trên một đường thẳng của mặt phẳng: từ s_min tới s_max (∞ = quá chân trời). */
+export type FovSpan = {
+  widthMm: number;
+  /** Phần dư so với sản phẩm ở hai đầu (âm = thiếu): trái / phải, hoặc trước (phía camera) / sau. */
+  startMm: number;
+  endMm: number;
+};
+
+/**
+ * Đoạn thấy được trên đường đứng dựng tại giữa một mép sản phẩm (vòng 5, 2026-11-24): vật đặt ở đó cao tới `highMm`
+ * vẫn nằm trọn trong ảnh. `lowMm` > 0: phần chân từ mặt phẳng tới `lowMm` nằm ngoài ảnh (tia biên dưới cắt qua).
+ */
+export type HeightSpan = { lowMm: number; highMm: number };
+
+/** FOV thực tế trên mặt phẳng (vòng 5, 2026-11-24): cả cảm biến, không trừ độ dư. */
+export type GroundFov = {
+  /** Bề rộng cạnh dưới / cạnh trên của ảnh khi chạm mặt phẳng (null = quá chân trời). */
+  nearEdgeWidthMm: number | null;
+  farEdgeWidthMm: number | null;
+  /** Ngang qua mép gần / mép xa sản phẩm: rộng + dư trái / phải. */
+  atNear: FovSpan | null;
+  atFar: FovSpan | null;
+  /** Dọc đường giữa sản phẩm: dài + dư trước / sau. */
+  along: FovSpan | null;
+  /** Chiều cao thấy được trên đường đứng qua giữa mép gần / mép xa sản phẩm (null = không thấy đoạn nào trên mặt phẳng). */
+  heightAtNear: HeightSpan | null;
+  heightAtFar: HeightSpan | null;
+};
+
 export type ObliqueResult = {
   cameraPos: Vec3;
   aimPoint: Vec3;
@@ -88,6 +117,7 @@ export type ObliqueResult = {
   /** Nửa rộng / nửa cao cảm biến theo hướng đang lắp (mm). */
   sensorHalfWidthMm: number;
   sensorHalfHeightMm: number;
+  groundFov: GroundFov;
   /** Chỗ chạm đất của tia mép ảnh ở cột giữa (hình nhìn ngang): gần, xa (null = quá chân trời). */
   edgeNear: GroundPoint | null;
   edgeFar: GroundPoint | null;
@@ -186,6 +216,52 @@ export function obliqueView(input: ObliqueInput): ObliqueResult | null {
     }
   }
 
+  // FOV thực tế: đoạn thấy được của đường P0 + s·dir trên mặt phẳng. Ảnh P nằm trong cảm biến và trước camera ⇔
+  // z > 0, |(P−C)·r| × v ≤ nửa rộng × z, |(P−C)·u| × v ≤ nửa cao × z — đều tuyến tính theo s → một khoảng [s_min; s_max].
+  const lineSpan = (P0: Vec3, dir: Vec3): [number, number] | null => {
+    const w0 = sub(P0, C);
+    const z0 = dot(w0, d);
+    const z1 = dot(dir, d);
+    // Mỗi ràng buộc: a + b·s ≥ 0.
+    const cons: [number, number][] = [[z0 - 1e-9, z1]];
+    for (const [axis, half] of [[r, halfW], [u, halfH]] as const) {
+      const p0 = dot(w0, axis) * v;
+      const p1 = dot(dir, axis) * v;
+      cons.push([half * z0 - p0, half * z1 - p1], [half * z0 + p0, half * z1 + p1]);
+    }
+    let lo = -Infinity;
+    let hi = Infinity;
+    for (const [a, b] of cons) {
+      if (Math.abs(b) < 1e-12) {
+        if (a < 0) return null;
+      } else if (b > 0) lo = Math.max(lo, -a / b);
+      else hi = Math.min(hi, -a / b);
+    }
+    return lo < hi ? [lo, hi] : null;
+  };
+  const span = (P0: Vec3, dir: Vec3, start: number, end: number): FovSpan | null => {
+    const s = lineSpan(P0, dir);
+    return s ? { widthMm: s[1] - s[0], startMm: start - s[0], endMm: s[1] - end } : null;
+  };
+  const height = (y: number): HeightSpan | null => {
+    const s = lineSpan([0, y, 0], [0, 0, 1]);
+    return s && s[1] > 0 ? { lowMm: Math.max(0, s[0]), highMm: s[1] } : null;
+  };
+  const edgeWidth = (py: number) => {
+    const a = toGround(-halfW, py);
+    const b = toGround(halfW, py);
+    return a && b ? len(sub(a, b)) : null;
+  };
+  const groundFov: GroundFov = {
+    nearEdgeWidthMm: edgeWidth(-halfH),
+    farEdgeWidthMm: edgeWidth(halfH),
+    atNear: span([0, 0, 0], [1, 0, 0], -A / 2, A / 2),
+    atFar: span([0, B, 0], [1, 0, 0], -A / 2, A / 2),
+    along: span([0, 0, 0], [0, 1, 0], 0, B),
+    heightAtNear: height(0),
+    heightAtFar: height(B),
+  };
+
   // Tia mép trên / dưới ảnh ở cột giữa — cho hình nhìn ngang.
   const e1 = toGround(0, -halfH);
   const e2 = toGround(0, halfH);
@@ -214,6 +290,7 @@ export function obliqueView(input: ObliqueInput): ObliqueResult | null {
     horizon,
     sensorHalfWidthMm: halfW,
     sensorHalfHeightMm: halfH,
+    groundFov,
     edgeNear,
     edgeFar,
   };

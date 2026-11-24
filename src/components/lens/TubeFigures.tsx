@@ -57,6 +57,9 @@ export type TubeFiguresProps = {
   blurPx: number;
   /** Khối thanh trượt dính dưới menu khi cuộn (mặc định có); tắt khi đang mở Camera nghiêng (2026-11-23). */
   sticky?: boolean;
+  /** Nút Hiện / Ẩn kết quả (2026-11-24): false = chỉ hiện dòng tiêu đề; mặc định trang mở ra là đóng. */
+  open?: boolean;
+  onToggle?: () => void;
 };
 
 const r1 = (v: number) => Math.round(v * 10) / 10;
@@ -1011,16 +1014,38 @@ export function TubeFigures(props: TubeFiguresProps) {
   };
   const DT = "text-xs font-medium text-slate-500 dark:text-slate-400";
 
+  const toggle = props.onToggle ? (
+    <button
+      type="button"
+      onClick={props.onToggle}
+      aria-expanded={props.open !== false}
+      className="rounded-md border border-sky-600 bg-sky-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-sky-700 dark:border-sky-500 dark:bg-sky-600 dark:hover:bg-sky-500"
+    >
+      {props.open === false ? t("show") : t("hide")}
+    </button>
+  ) : null;
+  if (props.open === false) {
+    return (
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+          {t("title")}
+        </h4>
+        {toggle}
+      </div>
+    );
+  }
+
   return (
     <div className="mb-4 space-y-3">
       {/* Khối điều khiển + số kết quả dính dưới thanh menu khi cuộn (Q2, màn rộng). */}
       <div className={`space-y-3 border-b border-slate-200 bg-slate-50 pb-3 dark:border-slate-800 dark:bg-slate-900 ${props.sticky === false ? "" : "lg:sticky lg:top-[var(--header-h,0px)] lg:z-20 lg:pt-3"}`}>
-        <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
             {t("title")}
           </h4>
-          {/* Nút luôn giữ chỗ (ẩn khi chưa kéo) để dòng tiêu đề không đổi cao (Q3). */}
-          <button
+          <div className="flex items-center gap-2">
+            {/* Nút luôn giữ chỗ (ẩn khi chưa kéo) để dòng tiêu đề không đổi cao (Q3). */}
+            <button
               type="button"
               disabled={!moved}
               aria-hidden={!moved}
@@ -1035,6 +1060,8 @@ export function TubeFigures(props: TubeFiguresProps) {
             >
               {t("reset")}
             </button>
+            {toggle}
+          </div>
         </div>
         <div
           className={`grid gap-x-6 gap-y-3 ${props.admin ? "sm:grid-cols-2 lg:grid-cols-4" : "sm:grid-cols-3"}`}

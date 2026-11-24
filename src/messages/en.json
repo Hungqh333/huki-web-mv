@@ -2985,7 +2985,7 @@
   },
   "oblique": {
     "panelTitle": "Tilted camera",
-    "panelDesc": "Camera looking down at a horizontal plane at an angle: trapezoid coverage, far-edge mm/px, F-number for the whole area in focus. Uses the camera and lens chosen above; while open, WD comes from here. Area and position values are examples — change them for your project.",
+    "panelDesc": "Camera looking down at a product on a horizontal plane at an angle: how the product appears in the image, far-edge mm/px, F-number for the whole product in focus. Uses the camera and lens chosen above; while open, WD comes from here. Product size and camera position are examples — change them for your project.",
     "open": "Open",
     "close": "Close",
     "resetTilt": "Aim at centre",
@@ -2995,8 +2995,8 @@
     "cameraLine": "Line scan camera — this page handles area scan cameras only.",
     "setup": {
       "title": "Inspection area",
-      "areaW": "Width (mm, across)",
-      "areaL": "Length (mm, away from camera)",
+      "areaW": "Product width (mm, across)",
+      "areaL": "Product length (mm, away from camera)",
       "margin": "Coverage margin (%)",
       "marginHint": "For lens distortion and mounting error.",
       "needGsd": "Required mm/px (optional)",
@@ -3009,9 +3009,7 @@
       "setbackHint": "Negative: camera is above the area.",
       "side": "Side offset (mm)",
       "tilt": "Tilt (°)",
-      "tiltCentre": "Aiming at the area centre — drag to rotate the camera at its mount.",
-      "productH": "Product height (mm)",
-      "productHHint": "0 = flat product."
+      "tiltCentre": "Aiming at the area centre — drag to rotate the camera at its mount."
     },
     "result": {
       "title": "Simulation",
@@ -3032,13 +3030,13 @@
       "depthDiffraction": "above F#max F/{fMax} → consider a Scheimpflug mount",
       "horizon": "Part of the image looks above the horizon — reduce the tilt or raise the camera.",
       "topTitle": "Top view",
-      "topNote": "Dashed frame: inspection area. Blue: image coverage. Corner dots: green OK, amber tight, red outside. Violet dot: aim point.",
+      "topNote": "Teal block: product. Light blue: the part of the plane the camera captures. Corner dots: green OK, amber tight, red outside. Violet dot: aim point.",
       "sideTitle": "Side view",
       "sideNote": "Vertical section through the camera: top / bottom image edge rays (blue), optical axis (violet), inspection area (thick line).",
       "camera": "Camera",
       "near": "near edge",
       "far": "far edge",
-      "areaLabel": "inspection area",
+      "areaLabel": "product",
       "colCorner": "Corner",
       "colUsage": "Sensor used",
       "colGsd": "mm/px (across × along)",
@@ -3049,9 +3047,11 @@
       "modelNote": "Central projection model, lens distortion not included; the camera position is the lens centre. DOF blur 2 px as in the Lens selector. Measurement tasks still need perspective calibration (OPT-009).",
       "adminNote": "Admin: image distance v = {v} mm, distance to aim point D = {d} mm (OPT-014).",
       "distance": "Distance along the axis",
-      "cornerBottom": "{name} · bottom",
-      "cornerTop": "{name} · top",
-      "occlusion": "Occlusion: behind a feature {h} mm high, up to {occ} mm is hidden (farthest corner). The side view shades the hidden part in orange."
+      "cameraTitle": "What the camera sees",
+      "cameraNote": "The outer frame is the whole image, the dashed frame is the limit with margin. The product appears as in the real image: near edge large, far edge small. The violet + is the image centre (aim point).",
+      "cameraBehind": "A product corner is behind the camera — reduce the tilt.",
+      "product": "Product",
+      "cornersTitle": "Product corners"
     },
     "lenses": {
       "title": "Standard lenses in the catalog with f ≤ {f} mm",
@@ -3071,9 +3071,8 @@
       "camera": "Pick a camera in the Camera panel above to see the simulation.",
       "line": "Line scan camera — this section handles area scan cameras only.",
       "pixel": "The camera has no pixel size — enter it in the Camera panel above.",
-      "area": "Enter the inspection area width and length.",
-      "distance": "Camera too close to the aim point (distance ≤ focal length) — raise it or reduce the tilt.",
-      "productTall": "Camera is below the product top — raise the camera."
+      "area": "Enter the product size (width, length).",
+      "distance": "Camera too close to the aim point (distance ≤ focal length) — raise it or reduce the tilt."
     }
   },
   "mountCheck": {

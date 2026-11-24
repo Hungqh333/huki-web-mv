@@ -112,11 +112,15 @@ function TopView({ res, areaW, areaL, margin }: { res: ObliqueResult; areaW: num
         </clipPath>
       </defs>
       <polygon points={poly} clipPath="url(#oblique-top-clip)" className="fill-sky-400/25 stroke-sky-600 dark:fill-sky-500/25 dark:stroke-sky-400" strokeWidth={1.5} />
-      <rect x={X(-areaW / 2)} y={Y(areaL)} width={r1(areaW * s)} height={r1(areaL * s)} fill="none" strokeDasharray="6 4" strokeWidth={1.5} className="stroke-slate-700 dark:stroke-slate-200" />
+      {/* Sản phẩm (B, 2026-11-23): khối màu có tên thay khung nét đứt. */}
+      <rect x={X(-areaW / 2)} y={Y(areaL)} width={r1(areaW * s)} height={r1(areaL * s)} rx={2} strokeWidth={1.5} className="fill-teal-200/70 stroke-teal-700 dark:fill-teal-800/60 dark:stroke-teal-300" />
+      <text x={X(0)} y={Y(areaL / 2) - 18} textAnchor="middle" fontSize={11} className="fill-teal-900 dark:fill-teal-100">
+        {`${t('product')} ${show(areaW, 0)} × ${show(areaL, 0)}`}
+      </text>
       <line x1={X(cam[0])} y1={Y(cam[1])} x2={X(res.aimPoint[0])} y2={Y(res.aimPoint[1])} strokeDasharray="3 3" strokeWidth={1} className="stroke-violet-600 dark:stroke-violet-400" />
       <circle cx={X(res.aimPoint[0])} cy={Y(res.aimPoint[1])} r={3} className="fill-violet-600 dark:fill-violet-400" />
       {res.corners.map((c, i) => (
-        <circle key={i} cx={X(c.x)} cy={Y(c.y)} r={5} strokeWidth={1.5} className={DOT[cornerTone(Math.max(c.usage, res.topCorners[i]?.usage ?? 0), margin)]} />
+        <circle key={i} cx={X(c.x)} cy={Y(c.y)} r={5} strokeWidth={1.5} className={DOT[cornerTone(c.usage, margin)]} />
       ))}
       <rect x={X(cam[0]) - 7} y={Y(cam[1]) - 5} width={14} height={10} rx={2} className="fill-slate-800 dark:fill-slate-100" />
       <text x={X(cam[0])} y={Y(cam[1]) + 18} textAnchor="middle" fontSize={11} className="fill-slate-700 dark:fill-slate-200">
@@ -132,6 +136,59 @@ function TopView({ res, areaW, areaL, margin }: { res: ObliqueResult; areaW: num
   );
 }
 
+/**
+ * A (2026-11-23): "Ảnh camera nhìn thấy" — khung chữ nhật là cả bức ảnh (cảm biến), sản phẩm chiếu vào thành hình thang
+ * đúng như ảnh chụp. Khung nét đứt bên trong = giới hạn đã chừa độ dư. Góc ra ngoài khung vẫn vẽ (đỏ) để thấy thiếu bao nhiêu.
+ */
+function CameraView({ res, areaW, areaL, margin }: { res: ObliqueResult; areaW: number; areaL: number; margin: number }) {
+  const t = useTranslations('oblique.result');
+  const hw = res.sensorHalfWidthMm;
+  const hh = res.sensorHalfHeightMm;
+  const visible = res.corners.every((c) => Number.isFinite(c.usage));
+  const W = 420;
+  const pad = 22;
+  // Khung nhìn: cảm biến, nới ra nếu góc sản phẩm lọt ngoài (tối đa gấp đôi để hình không quá nhỏ).
+  const ex = Math.min(Math.max(hw, ...(visible ? res.corners.map((c) => Math.abs(c.imageX)) : [hw])), 2 * hw) * 1.08;
+  const ey = Math.min(Math.max(hh, ...(visible ? res.corners.map((c) => Math.abs(c.imageY)) : [hh])), 2 * hh) * 1.08;
+  const s = (W - 2 * pad) / (2 * ex);
+  const H = r1(2 * ey * s + 2 * pad);
+  const X = (x: number) => r1(W / 2 + x * s);
+  const Y = (y: number) => r1(H / 2 - y * s);
+  const m = 1 - margin;
+  const poly = res.corners.map((c) => `${X(c.imageX)},${Y(c.imageY)}`).join(' ');
+  const cx = res.corners.reduce((a, c) => a + c.imageX, 0) / 4;
+  const cy = res.corners.reduce((a, c) => a + c.imageY, 0) / 4;
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label={t('cameraTitle')}>
+      <rect x={X(-hw)} y={Y(hh)} width={r1(2 * hw * s)} height={r1(2 * hh * s)} strokeWidth={1.5} className="fill-slate-50 stroke-slate-500 dark:fill-slate-950 dark:stroke-slate-400" />
+      {margin > 0 ? <rect x={X(-hw * m)} y={Y(hh * m)} width={r1(2 * hw * m * s)} height={r1(2 * hh * m * s)} fill="none" strokeDasharray="4 3" strokeWidth={1} className="stroke-slate-400 dark:stroke-slate-500" /> : null}
+      {visible ? (
+        <>
+          <polygon points={poly} strokeWidth={1.5} className="fill-teal-200/70 stroke-teal-700 dark:fill-teal-800/60 dark:stroke-teal-300" />
+          <text x={X(cx)} y={Y(cy) - 18} textAnchor="middle" fontSize={11} className="fill-teal-900 dark:fill-teal-100">
+            {`${t('product')} ${show(areaW, 0)} × ${show(areaL, 0)}`}
+          </text>
+          <text x={X((res.corners[0].imageX + res.corners[1].imageX) / 2)} y={Y((res.corners[0].imageY + res.corners[1].imageY) / 2) + 14} textAnchor="middle" fontSize={10} className="fill-slate-500 dark:fill-slate-400">
+            {t('near')}
+          </text>
+          <text x={X((res.corners[2].imageX + res.corners[3].imageX) / 2)} y={Y((res.corners[2].imageY + res.corners[3].imageY) / 2) - 6} textAnchor="middle" fontSize={10} className="fill-slate-500 dark:fill-slate-400">
+            {t('far')}
+          </text>
+          {res.corners.map((c, i) => (
+            <circle key={i} cx={X(c.imageX)} cy={Y(c.imageY)} r={5} strokeWidth={1.5} className={DOT[cornerTone(c.usage, margin)]} />
+          ))}
+        </>
+      ) : (
+        <text x={W / 2} y={H / 2} textAnchor="middle" fontSize={11} className="fill-red-700 dark:fill-red-300">
+          {t('cameraBehind')}
+        </text>
+      )}
+      <line x1={X(0) - 6} y1={Y(0)} x2={X(0) + 6} y2={Y(0)} strokeWidth={1} className="stroke-violet-600 dark:stroke-violet-400" />
+      <line x1={X(0)} y1={Y(0) - 6} x2={X(0)} y2={Y(0) + 6} strokeWidth={1} className="stroke-violet-600 dark:stroke-violet-400" />
+    </svg>
+  );
+}
+
 /** Hình nhìn ngang: mặt cắt dọc (trục Y – Z) qua camera. */
 function SideView({ res, areaL }: { res: ObliqueResult; areaL: number }) {
   const t = useTranslations('oblique.result');
@@ -140,9 +197,7 @@ function SideView({ res, areaL }: { res: ObliqueResult; areaL: number }) {
   const pad = 26;
   const cam = res.cameraPos;
   const farY = res.edgeFar?.y ?? Math.max(areaL, cam[1]) * 1.5;
-  const hTop = res.topCorners[0]?.z ?? 0;
-  const shadow = hTop > 0 && cam[2] > hTop ? areaL + (hTop * (areaL - cam[1])) / (cam[2] - hTop) : areaL;
-  const ys = [0, areaL, shadow, cam[1], res.edgeNear?.y ?? 0, Math.min(farY, areaL * 2 + Math.abs(cam[1]))];
+  const ys = [0, areaL, cam[1], res.edgeNear?.y ?? 0, Math.min(farY, areaL * 2 + Math.abs(cam[1]))];
   let y0 = Math.min(...ys);
   let y1 = Math.max(...ys);
   const ey = (y1 - y0) * 0.08 + 1;
@@ -162,11 +217,6 @@ function SideView({ res, areaL }: { res: ObliqueResult; areaL: number }) {
   const [nx, ny] = ray(res.edgeNear, false);
   const [fx, fy] = ray(res.edgeFar, true);
   const [ax, ay] = P(res.aimPoint[1], 0);
-  // Sản phẩm cao (vòng 3): khối mặt cắt + tia tới mép trên xa và bóng khuất phía sau.
-  const hP = res.topCorners[0]?.z ?? 0;
-  const [bx0, by0] = P(0, hP);
-  const [bx1] = P(areaL, 0);
-  const shadowEnd = hP > 0 && cam[2] > hP ? areaL + (hP * (areaL - cam[1])) / (cam[2] - hP) : null;
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label={t('sideTitle')}>
       <line x1={0} y1={ground} x2={W} y2={ground} strokeWidth={1} className="stroke-slate-400 dark:stroke-slate-500" />
@@ -175,17 +225,6 @@ function SideView({ res, areaL }: { res: ObliqueResult; areaL: number }) {
       <line x1={cx} y1={cy} x2={fx} y2={fy} strokeWidth={1.5} className="stroke-sky-600 dark:stroke-sky-400" />
       <line x1={cx} y1={cy} x2={ax} y2={ay} strokeDasharray="4 3" strokeWidth={1} className="stroke-violet-600 dark:stroke-violet-400" />
       <line x1={P(0, 0)[0]} y1={ground} x2={P(areaL, 0)[0]} y2={ground} strokeWidth={5} className="stroke-slate-800 dark:stroke-slate-100" />
-      {hP > 0 ? (
-        <>
-          <rect x={bx0} y={by0} width={r1(bx1 - bx0)} height={r1(ground - by0)} className="fill-amber-200/60 stroke-amber-700 dark:fill-amber-800/50 dark:stroke-amber-400" strokeWidth={1} />
-          {shadowEnd !== null ? (
-            <>
-              <line x1={cx} y1={cy} x2={P(shadowEnd, 0)[0]} y2={ground} strokeDasharray="3 3" strokeWidth={1} className="stroke-amber-700 dark:stroke-amber-400" />
-              <line x1={bx1} y1={ground} x2={P(shadowEnd, 0)[0]} y2={ground} strokeWidth={4} className="stroke-amber-500/70" />
-            </>
-          ) : null}
-        </>
-      ) : null}
       <line x1={cx} y1={cy} x2={cx} y2={ground} strokeDasharray="2 3" strokeWidth={1} className="stroke-slate-400 dark:stroke-slate-500" />
       <rect x={cx - 8} y={cy - 6} width={16} height={12} rx={2} className="fill-slate-800 dark:fill-slate-100" />
       <text x={cx + 12} y={cy - 8} fontSize={11} className="fill-slate-700 dark:fill-slate-200">
@@ -203,7 +242,7 @@ function SideView({ res, areaL }: { res: ObliqueResult; areaL: number }) {
 
 export type ObliqueState = {
   open: boolean;
-  area: { w: string; l: string; h: string; margin: string; need: string };
+  area: { w: string; l: string; margin: string; need: string };
   heightMm: number;
   setbackMm: number;
   sideMm: number;
@@ -218,7 +257,7 @@ export type ObliqueState = {
 export function initialObliqueState(open: boolean): ObliqueState {
   return {
     open,
-    area: { w: '1200', l: '800', h: '0', margin: String(OBLIQUE_DEFAULT_MARGIN * 100), need: '' },
+    area: { w: '1200', l: '800', margin: String(OBLIQUE_DEFAULT_MARGIN * 100), need: '' },
     heightMm: 1500,
     setbackMm: 600,
     sideMm: 0,
@@ -236,7 +275,7 @@ export type ObliqueCalc = {
   margin: number;
   needGsd: number | null;
   /** Lý do chưa tính được. */
-  problem: 'camera' | 'line' | 'pixel' | 'area' | 'distance' | 'productTall' | null;
+  problem: 'camera' | 'line' | 'pixel' | 'area' | 'distance' | null;
 };
 
 /** Tính ở MountCheck (WD của hình bên dưới lấy từ đây — Q3), khung chỉ hiển thị. */
@@ -251,7 +290,6 @@ export function obliqueCalc(state: ObliqueState, camera: ObliqueCamera | null, l
   const areaW = positive(state.area.w);
   const areaL = positive(state.area.l);
   if (areaW === null || areaL === null) return { ...base, res: null, problem: 'area' };
-  const productH = Math.max(parse(state.area.h) ?? 0, 0);
   const res = obliqueView({
     areaWidthMm: areaW,
     areaLengthMm: areaL,
@@ -259,7 +297,6 @@ export function obliqueCalc(state: ObliqueState, camera: ObliqueCamera | null, l
     setbackMm: state.setbackMm,
     sideOffsetMm: state.sideMm,
     tiltDeg: state.tiltDeg,
-    productHeightMm: productH,
     sensorLongMm: camera.longMm,
     sensorShortMm: camera.shortMm,
     pixelUm: camera.pixelUm,
@@ -268,7 +305,7 @@ export function obliqueCalc(state: ObliqueState, camera: ObliqueCamera | null, l
     margin,
     blurPx: DOF_BLUR_PRESETS.tight,
   });
-  return { ...base, res, problem: res ? null : productH >= state.heightMm ? 'productTall' : 'distance' };
+  return { ...base, res, problem: res ? null : 'distance' };
 }
 
 /**
@@ -344,10 +381,9 @@ export function ObliquePanel({
       ) : (
         <div className="space-y-4">
           <p className={NOTE_CLASS}>{t('panelDesc')}</p>
-          <div className={`${FIELD_GRID} grid-cols-2 sm:grid-cols-3 lg:grid-cols-5`}>
+          <div className={`${FIELD_GRID} grid-cols-2 sm:grid-cols-4`}>
             <NumberField id="oblique-area-w" label={t('setup.areaW')} value={state.area.w} onChange={(v) => setArea({ w: v })} />
             <NumberField id="oblique-area-l" label={t('setup.areaL')} value={state.area.l} onChange={(v) => setArea({ l: v })} />
-            <NumberField id="oblique-area-h" label={t('setup.productH')} hint={t('setup.productHHint')} value={state.area.h} onChange={(v) => setArea({ h: v })} />
             <NumberField id="oblique-margin" label={t('setup.margin')} hint={t('setup.marginHint')} value={state.area.margin} onChange={(v) => setArea({ margin: v })} step="1" />
             <NumberField id="oblique-need" label={t('setup.needGsd')} value={state.area.need} onChange={(v) => setArea({ need: v })} step="0.01" />
           </div>
@@ -365,7 +401,7 @@ export function ObliquePanel({
 
           {/* Thanh trượt LUÔN hiện khi đã có vùng + camera: số gõ dở (vd chiều cao "2") làm camera quá gần điểm ngắm
               thì chỉ phần kết quả đổi thành thông báo — ô đang gõ không bị gỡ khỏi trang (sửa 2026-11-23). */}
-          {areaW === null || areaL === null || (res === null && calc.problem !== 'distance' && calc.problem !== 'productTall') ? (
+          {areaW === null || areaL === null || (res === null && calc.problem !== 'distance') ? (
             <p className="rounded-md border border-dashed border-slate-300 px-4 py-3 text-sm text-slate-600 dark:border-slate-700 dark:text-slate-300">{t(`problem.${calc.problem ?? 'area'}`)}</p>
           ) : (
             <section aria-label={t('result.title')} className="space-y-4 rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900">
@@ -456,7 +492,6 @@ export function ObliquePanel({
                   </div>
                 </dl>
                 {res.horizon ? <p className="text-sm text-amber-700 dark:text-amber-300">{t('result.horizon')}</p> : null}
-                {res.occlusionMm !== null ? <p className={NOTE_CLASS}>{t('result.occlusion', { h: show(res.topCorners[0].z, 1), occ: show(res.occlusionMm, 1) })}</p> : null}
                 </>
                 ) : (
                   <p className="rounded-md border border-dashed border-amber-300 px-4 py-3 text-sm text-amber-800 dark:border-amber-800 dark:text-amber-200">{t(`problem.${calc.problem ?? 'distance'}`)}</p>
@@ -468,6 +503,11 @@ export function ObliquePanel({
 
               <div className="grid gap-4 lg:grid-cols-2">
                 <figure className="min-w-0 rounded-md border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
+                  <figcaption className="mb-2 text-sm font-semibold text-slate-800 dark:text-slate-100">{t('result.cameraTitle')}</figcaption>
+                  <CameraView res={res} areaW={areaW} areaL={areaL} margin={margin} />
+                  <p className={`mt-1 ${NOTE_CLASS}`}>{t('result.cameraNote')}</p>
+                </figure>
+                <figure className="min-w-0 rounded-md border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
                   <figcaption className="mb-2 text-sm font-semibold text-slate-800 dark:text-slate-100">{t('result.topTitle')}</figcaption>
                   <TopView res={res} areaW={areaW} areaL={areaL} margin={margin} />
                   <p className={`mt-1 ${NOTE_CLASS}`}>{t('result.topNote')}</p>
@@ -476,7 +516,10 @@ export function ObliquePanel({
                   <figcaption className="mb-2 text-sm font-semibold text-slate-800 dark:text-slate-100">{t('result.sideTitle')}</figcaption>
                   <SideView res={res} areaL={areaL} />
                   <p className={`mt-1 ${NOTE_CLASS}`}>{t('result.sideNote')}</p>
-                  <table className="mt-3 w-full text-xs tabular-nums">
+                </figure>
+                <figure className="min-w-0 rounded-md border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
+                  <figcaption className="mb-2 text-sm font-semibold text-slate-800 dark:text-slate-100">{t('result.cornersTitle')}</figcaption>
+                  <table className="w-full text-xs tabular-nums">
                     <thead>
                       <tr className="text-left text-slate-500 dark:text-slate-400">
                         <th className="py-1 font-medium">{t('result.colCorner')}</th>
@@ -485,13 +528,11 @@ export function ObliquePanel({
                       </tr>
                     </thead>
                     <tbody>
-                      {[...res.corners, ...res.topCorners].map((c, k) => {
-                        const i = k % 4;
+                      {res.corners.map((c, i) => {
                         const tone = cornerTone(c.usage, margin);
-                        const name = t(`result.corner${i}`);
                         return (
-                          <tr key={k} className="border-t border-slate-100 dark:border-slate-800">
-                            <td className="py-1">{res.topCorners.length === 0 ? name : k < 4 ? t('result.cornerBottom', { name }) : t('result.cornerTop', { name })}</td>
+                          <tr key={i} className="border-t border-slate-100 dark:border-slate-800">
+                            <td className="py-1">{t(`result.corner${i}`)}</td>
                             <td className={`py-1 ${TONE[tone]}`}>{Number.isFinite(c.usage) ? `${show(c.usage * 100, 1)} %` : '—'}</td>
                             <td className="py-1">{`${show(c.gsdAcrossMm, 3)} × ${show(c.gsdAlongMm, 3)}`}</td>
                           </tr>

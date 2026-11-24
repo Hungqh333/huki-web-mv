@@ -2985,7 +2985,7 @@
   },
   "oblique": {
     "panelTitle": "Camera nghiêng",
-    "panelDesc": "Camera đặt chéo nhìn xuống mặt phẳng ngang: vùng phủ hình thang, mm/px mép xa, khẩu F cho cả vùng nét. Dùng camera và ống kính đã chọn ở trên; khi mở, WD lấy từ đây. Số vùng và vị trí là số mẫu — sửa theo dự án.",
+    "panelDesc": "Camera đặt chéo nhìn xuống sản phẩm nằm trên mặt phẳng ngang: sản phẩm hiện thế nào trong ảnh, mm/px mép xa, khẩu F cho cả sản phẩm nét. Dùng camera và ống kính đã chọn ở trên; khi mở, WD lấy từ đây. Kích thước sản phẩm và vị trí camera là số mẫu — sửa theo dự án.",
     "open": "Mở",
     "close": "Đóng",
     "resetTilt": "Ngắm tâm vùng",
@@ -2995,8 +2995,8 @@
     "cameraLine": "Camera line scan — trang này chỉ tính camera area scan.",
     "setup": {
       "title": "Vùng kiểm tra",
-      "areaW": "Rộng (mm, ngang camera)",
-      "areaL": "Dài (mm, xa dần camera)",
+      "areaW": "Sản phẩm rộng (mm, ngang camera)",
+      "areaL": "Sản phẩm dài (mm, xa dần camera)",
       "margin": "Độ dư vùng phủ (%)",
       "marginHint": "Chừa cho méo ống và sai lệch lắp.",
       "needGsd": "mm/px cần (tuỳ chọn)",
@@ -3009,9 +3009,7 @@
       "setbackHint": "Âm: camera nằm phía trên vùng kiểm tra.",
       "side": "Lệch bên (mm)",
       "tilt": "Góc nghiêng (°)",
-      "tiltCentre": "Đang ngắm tâm vùng — kéo để xoay camera tại chỗ lắp.",
-      "productH": "Chiều cao sản phẩm (mm)",
-      "productHHint": "0 = sản phẩm dẹt."
+      "tiltCentre": "Đang ngắm tâm vùng — kéo để xoay camera tại chỗ lắp."
     },
     "result": {
       "title": "Mô phỏng",
@@ -3032,14 +3030,14 @@
       "depthDiffraction": "quá F#max F/{fMax} → cân nhắc ngàm Scheimpflug",
       "horizon": "Một phần ảnh nhìn lên quá đường chân trời — giảm góc nghiêng hoặc tăng chiều cao.",
       "topTitle": "Nhìn từ trên",
-      "topNote": "Khung nét đứt: vùng kiểm tra. Vùng tô xanh: vùng phủ của ảnh. Chấm góc: xanh lá đủ, vàng sát mép, đỏ thiếu. Chấm tím: điểm ngắm.",
+      "topNote": "Khối xanh: sản phẩm. Vùng xanh nhạt: phần mặt phẳng camera chụp được. Chấm góc: xanh lá đủ, vàng sát mép, đỏ thiếu. Chấm tím: điểm ngắm.",
       "sideTitle": "Nhìn ngang",
       "sideNote": "Mặt cắt dọc qua camera: tia mép trên / dưới ảnh (xanh), trục quang (tím), vùng kiểm tra (vạch đậm).",
       "camera": "Camera",
       "near": "mép gần",
       "far": "mép xa",
-      "areaLabel": "vùng kiểm tra",
-      "colCorner": "Góc vùng",
+      "areaLabel": "sản phẩm",
+      "colCorner": "Góc",
       "colUsage": "Dùng cảm biến",
       "colGsd": "mm/px (ngang × dọc)",
       "corner0": "Gần trái",
@@ -3049,9 +3047,11 @@
       "modelNote": "Mô hình chiếu tâm, chưa tính méo ống kính; vị trí camera là tâm ống kính. Vòng mờ DOF 2 px như Chọn ống kính. Bài đo kích thước vẫn phải hiệu chuẩn phối cảnh (OPT-009).",
       "adminNote": "Admin: khoảng ảnh v = {v} mm, khoảng cách tới điểm ngắm D = {d} mm (OPT-014).",
       "distance": "Khoảng cách dọc trục",
-      "cornerBottom": "{name} · đáy",
-      "cornerTop": "{name} · mặt trên",
-      "occlusion": "Che khuất: sau chi tiết cao {h} mm, phía sau bị khuất tới {occ} mm (góc xa nhất). Hình nhìn ngang tô cam phần khuất."
+      "cameraTitle": "Ảnh camera nhìn thấy",
+      "cameraNote": "Khung ngoài là cả bức ảnh, khung nét đứt là giới hạn đã chừa độ dư. Sản phẩm hiện đúng như trong ảnh chụp: mép gần to, mép xa nhỏ. Dấu + tím là tâm ảnh (điểm ngắm).",
+      "cameraBehind": "Một góc sản phẩm nằm sau camera — giảm góc nghiêng.",
+      "product": "Sản phẩm",
+      "cornersTitle": "Góc sản phẩm"
     },
     "lenses": {
       "title": "Ống thường trong kho có f ≤ {f} mm",
@@ -3071,9 +3071,8 @@
       "camera": "Chọn camera ở khung Camera phía trên để xem mô phỏng.",
       "line": "Camera line scan — phần này chỉ tính camera area scan.",
       "pixel": "Camera chưa có cỡ điểm ảnh — nhập ở khung Camera phía trên.",
-      "area": "Nhập bề rộng và chiều dài vùng kiểm tra.",
-      "distance": "Camera quá gần điểm ngắm (khoảng cách ≤ tiêu cự) — tăng chiều cao hoặc giảm góc.",
-      "productTall": "Camera thấp hơn mặt trên sản phẩm — tăng chiều cao camera."
+      "area": "Nhập kích thước sản phẩm (rộng, dài).",
+      "distance": "Camera quá gần điểm ngắm (khoảng cách ≤ tiêu cự) — tăng chiều cao hoặc giảm góc."
     }
   },
   "mountCheck": {

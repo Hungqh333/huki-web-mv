@@ -85,7 +85,8 @@ function cornerTone(usage: number, margin: number): 'ok' | 'warn' | 'bad' {
 function FovBlock({ fov }: { fov: GroundFov }) {
   const t = useTranslations('oblique.result');
   const mm = (v: number | null) => (v === null || !Number.isFinite(v) ? t('fovInf') : show(v, 0));
-  const gap = (v: number) => (v < -0.5 ? t('fovShort', { v: show(-v, 0) }) : t('fovSpare', { v: Number.isFinite(v) ? show(Math.max(v, 0), 0) : t('fovInf') }));
+  // Rút gọn (2026-11-24): chỉ số, thiếu ghi dấu − (dòng đỏ) giống hình.
+  const gap = (v: number) => (v < -0.5 ? `−${show(-v, 0)}` : Number.isFinite(v) ? show(Math.max(v, 0), 0) : t('fovInf'));
   const short = (s: { startMm: number; endMm: number } | null) => s !== null && (s.startMm < -0.5 || s.endMm < -0.5);
   // Cao tối đa còn trong ảnh; chân bị khuất → kèm phần chân khuất; không thấy đoạn nào → "không thấy".
   const height = (h: HeightSpan | null) =>
@@ -110,7 +111,6 @@ function FovBlock({ fov }: { fov: GroundFov }) {
           </li>
         ))}
       </ul>
-      <p className={`mt-1 ${NOTE_CLASS}`}>{t('fovNote')}</p>
     </div>
   );
 }
@@ -215,13 +215,13 @@ function FovDims({ res, areaW, areaL, X, Y, W }: { res: ObliqueResult; areaW: nu
 
 function TopView({ res, areaW, areaL, margin }: { res: ObliqueResult; areaW: number; areaL: number; margin: number }) {
   const t = useTranslations('oblique.result');
-  // Vòng 5: hình rộng hơn + chừa hai bên (SIDE) cho vạch đo FOV và chữ.
-  const W = 460;
-  const H = 360;
-  const pad = 24;
+  // Vòng 6 (2026-11-24): rộng bằng hình Ảnh camera (420), cao co theo nội dung — hình to như hình bên cạnh.
+  // Chừa hai bên (SIDE) cho vạch đo FOV và chữ.
+  const W = 420;
+  const pad = 22;
   const SIDE = 40;
   const cam = res.cameraPos;
-  // Khung nhìn: vùng kiểm tra + camera + cả FOV khi khép kín (vòng 5: vạch đo FOV cần thấy hết), nới 25 %.
+  // Khung nhìn: sản phẩm + camera + cả FOV khi khép kín, nới 4 %.
   const fp = res.horizon ? [] : res.footprint;
   const xs = [-areaW / 2, areaW / 2, cam[0], ...fp.map((p) => p.x)];
   const ys = [0, areaL, cam[1], ...fp.map((p) => p.y)];
@@ -229,15 +229,19 @@ function TopView({ res, areaW, areaL, margin }: { res: ObliqueResult; areaW: num
   let x1 = Math.max(...xs);
   let y0 = Math.min(...ys);
   let y1 = Math.max(...ys);
-  const ex = (x1 - x0) * 0.08 + 1;
-  const ey = (y1 - y0) * 0.25 + 1;
+  const ex = (x1 - x0) * 0.04 + 1;
+  const ey = (y1 - y0) * 0.04 + 1;
   x0 -= ex;
   x1 += ex;
   y0 -= ey;
   y1 += ey;
-  const s = Math.min((W - 2 * pad - 2 * SIDE) / (x1 - x0), (H - 2 * pad) / (y1 - y0));
+  // Theo bề rộng trước; vùng quá dài thì giới hạn cao 1,3 × rộng.
+  const H_MAX = W * 1.3;
+  let s = (W - 2 * pad - 2 * SIDE) / (x1 - x0);
+  if ((y1 - y0) * s + 2 * pad > H_MAX) s = (H_MAX - 2 * pad) / (y1 - y0);
+  const H = r1((y1 - y0) * s + 2 * pad);
   const ox = (W - (x1 - x0) * s) / 2;
-  const oy = (H - (y1 - y0) * s) / 2;
+  const oy = pad;
   const X = (x: number) => r1(ox + (x - x0) * s);
   const Y = (y: number) => r1(H - oy - (y - y0) * s);
   const poly = res.footprint.map((p) => `${X(p.x)},${Y(p.y)}`).join(' ');
@@ -556,7 +560,6 @@ export function ObliquePanel({
         <p className={NOTE_CLASS}>{t('panelDesc')}</p>
       ) : (
         <div className="space-y-4">
-          <p className={NOTE_CLASS}>{t('panelDesc')}</p>
           <div className={`${FIELD_GRID} grid-cols-2 sm:grid-cols-4`}>
             <NumberField id="oblique-area-w" label={t('setup.areaW')} value={state.area.w} onChange={(v) => setArea({ w: v })} />
             <NumberField id="oblique-area-l" label={t('setup.areaL')} value={state.area.l} onChange={(v) => setArea({ l: v })} />
@@ -679,20 +682,23 @@ export function ObliquePanel({
               <>
 
               <div className="grid gap-4 lg:grid-cols-2">
-                <figure className="min-w-0 rounded-md border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
+                <figure className="flex min-w-0 flex-col rounded-md border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
                   <figcaption className="mb-2 text-sm font-semibold text-slate-800 dark:text-slate-100">{t('result.cameraTitle')}</figcaption>
                   <CameraView res={res} areaW={areaW} areaL={areaL} margin={margin} />
-                  <p className={`mt-1 ${NOTE_CLASS}`}>{t('result.cameraNote')}</p>
+                  {/* Chú thích sát đáy khung — cân với hình bên cạnh trong cùng hàng. */}
+                  <p className={`mt-auto pt-1 ${NOTE_CLASS}`}>{t('result.cameraNote')}</p>
                 </figure>
-                <figure className="min-w-0 rounded-md border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
+                <figure className="flex min-w-0 flex-col rounded-md border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
                   <figcaption className="mb-2 text-sm font-semibold text-slate-800 dark:text-slate-100">{t('result.topTitle')}</figcaption>
                   <TopView res={res} areaW={areaW} areaL={areaL} margin={margin} />
-                  <p className={`mt-1 ${NOTE_CLASS}`}>{t('result.topNote')}</p>
+                  {/* Chú thích sát đáy khung — cân với hình bên cạnh trong cùng hàng. */}
+                  <p className={`mt-auto pt-1 ${NOTE_CLASS}`}>{t('result.topNote')}</p>
                 </figure>
-                <figure className="min-w-0 rounded-md border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
+                <figure className="flex min-w-0 flex-col rounded-md border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
                   <figcaption className="mb-2 text-sm font-semibold text-slate-800 dark:text-slate-100">{t('result.sideTitle')}</figcaption>
                   <SideView res={res} areaL={areaL} />
-                  <p className={`mt-1 ${NOTE_CLASS}`}>{t('result.sideNote')}</p>
+                  {/* Chú thích sát đáy khung — cân với hình bên cạnh trong cùng hàng. */}
+                  <p className={`mt-auto pt-1 ${NOTE_CLASS}`}>{t('result.sideNote')}</p>
                 </figure>
                 <figure className="min-w-0 rounded-md border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
                   <figcaption className="mb-2 text-sm font-semibold text-slate-800 dark:text-slate-100">{t('result.cornersTitle')}</figcaption>

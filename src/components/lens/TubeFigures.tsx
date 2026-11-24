@@ -1125,7 +1125,7 @@ export function TubeFigures(props: TubeFiguresProps) {
           <p className={NOTE_CLASS}>
             {[fig?.focus ? t("wdBandNote") : null, dof ? t("dofNote") : null]
               .filter(Boolean)
-              .join(" ")}
+              .join(" · ")}
           </p>
         ) : null}
         <p

@@ -350,7 +350,6 @@ export function MountCheck({
               </div>
             ) : null}
           </div>
-          <p className={`mt-2 ${NOTE_CLASS}`}>{t('setup.blurHint')}</p>
         </Panel>
       </div>
 

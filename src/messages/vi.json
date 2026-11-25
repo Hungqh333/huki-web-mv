@@ -3007,7 +3007,7 @@
       "height": "Chiều cao camera (mm)",
       "setback": "Khoảng lùi tới mép gần (mm)",
       "setbackHint": "Âm: camera nằm phía trên vùng kiểm tra.",
-      "side": "Lệch bên (mm)",
+      "side": "Lệch bên (mm, + sang phải)",
       "tilt": "Nghiêng trước (°)",
       "tiltSide": "Nghiêng ngang (°, + sang phải)",
       "tiltCentre": "Đang ngắm tâm — kéo để xoay camera tại chỗ lắp."

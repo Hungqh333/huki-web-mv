@@ -3007,7 +3007,7 @@
       "height": "Camera height (mm)",
       "setback": "Set-back to near edge (mm)",
       "setbackHint": "Negative: camera is above the area.",
-      "side": "Side offset (mm)",
+      "side": "Side offset (mm, + to the right)",
       "tilt": "Forward tilt (°)",
       "tiltSide": "Side tilt (°, + to the right)",
       "tiltCentre": "Aiming at the centre — drag to rotate the camera at its mount."

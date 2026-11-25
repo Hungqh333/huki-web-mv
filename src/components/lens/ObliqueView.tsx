@@ -210,6 +210,15 @@ function FovDims({ res, areaW, areaL, X, Y, W }: { res: ObliqueResult; areaW: nu
     if (fov.nearEdgeWidthMm !== null) out.push(label('en', X(nearMid.x) - 6, Y(nearMid.y) + 10, show(fov.nearEdgeWidthMm, 0), T_DIM, 'end'));
     if (fov.farEdgeWidthMm !== null) out.push(label('ef', X(farMid.x), Y(farMid.y) - 4, show(fov.farEdgeWidthMm, 0), T_DIM, 'middle'));
   }
+
+  // Lệch bên (vòng 7, 2026-11-25 Q3-A): đường giữa sản phẩm (nét đứt) → camera, số mm trên vạch.
+  const camX = res.cameraPos[0];
+  if (Math.abs(camX) > 0.5) {
+    const camY = Y(res.cameraPos[1]);
+    out.push(<line key="sx" x1={X(0)} y1={Y(0)} x2={X(0)} y2={camY + 3} strokeWidth={0.5} strokeDasharray="2 2" className={EXT} />);
+    out.push(dim('sd', X(0), camY, X(camX), camY));
+    out.push(label('sdt', (X(0) + X(camX)) / 2, camY - 4, show(Math.abs(camX), 0), T_DIM, 'middle'));
+  }
   return <g>{out}</g>;
 }
 
@@ -626,7 +635,9 @@ export function ObliquePanel({
                     max={Math.ceil(Math.max(areaW, Math.abs(state.sideMm)))}
                     step={10}
                     accept="any"
-                    onChange={(v) => set({ sideMm: v })}
+                    // Vòng 7 (2026-11-25, Hùng: hướng chiếu cố định khi dịch ngang): đang ngắm tâm thì chốt hai góc đang hiện
+                    // trước khi dịch — camera dịch thẳng, không xoay. Bấm Ngắm tâm để xoay lại về tâm.
+                    onChange={(v) => set({ sideMm: v, tilt: state.tilt ?? (res ? tiltNow : null) })}
                     note={null}
                   />
                   <Slider

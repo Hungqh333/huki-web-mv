@@ -3008,8 +3008,9 @@
       "setback": "Set-back to near edge (mm)",
       "setbackHint": "Negative: camera is above the area.",
       "side": "Side offset (mm)",
-      "tilt": "Tilt (°)",
-      "tiltCentre": "Aiming at the area centre — drag to rotate the camera at its mount."
+      "tilt": "Forward tilt (°)",
+      "tiltSide": "Side tilt (°, + to the right)",
+      "tiltCentre": "Aiming at the centre — drag to rotate the camera at its mount."
     },
     "result": {
       "title": "Simulation",

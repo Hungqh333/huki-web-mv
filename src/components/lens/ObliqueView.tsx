@@ -426,8 +426,8 @@ export type ObliqueState = {
   heightMm: number;
   setbackMm: number;
   sideMm: number;
-  /** null = ngắm tâm vùng. */
-  tiltDeg: number | null;
+  /** null = ngắm tâm vùng; có số = góc nghiêng trước / ngang theo trục sản phẩm (vòng 6). */
+  tilt: { forwardDeg: number; sideDeg: number } | null;
   /** null = dùng f của ống đã chọn ở trên (Q2). */
   focalMm: number | null;
   longAcross: boolean;
@@ -441,7 +441,7 @@ export function initialObliqueState(open: boolean): ObliqueState {
     heightMm: 1500,
     setbackMm: 600,
     sideMm: 0,
-    tiltDeg: null,
+    tilt: null,
     focalMm: null,
     longAcross: true,
   };
@@ -476,7 +476,7 @@ export function obliqueCalc(state: ObliqueState, camera: ObliqueCamera | null, l
     heightMm: state.heightMm,
     setbackMm: state.setbackMm,
     sideOffsetMm: state.sideMm,
-    tiltDeg: state.tiltDeg,
+    tilt: state.tilt,
     sensorLongMm: camera.longMm,
     sensorShortMm: camera.shortMm,
     pixelUm: camera.pixelUm,
@@ -517,6 +517,7 @@ export function ObliquePanel({
   const areaL = positive(state.area.l);
   const set = (patch: Partial<ObliqueState>) => setState({ ...state, ...patch });
   const setArea = (patch: Partial<ObliqueState['area']>) => set({ area: { ...state.area, ...patch } });
+  const tiltNow = state.tilt ?? { forwardDeg: res?.tiltForwardDeg ?? 0, sideDeg: res?.tiltSideDeg ?? 0 };
 
   const fMaxRing = res?.depth && camera?.pixelUm ? maxRingFNumber(camera.pixelUm, res.depth.beta) : null;
   const sensorDiag = camera && camera.shortMm !== null ? Math.hypot(camera.longMm, camera.shortMm) : null;
@@ -589,8 +590,8 @@ export function ObliquePanel({
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100">{t('result.title')}</h3>
                   <div className="flex flex-wrap gap-2">
-                    {state.tiltDeg !== null ? (
-                      <button type="button" onClick={() => set({ tiltDeg: null })} className={smallBtn}>
+                    {state.tilt !== null ? (
+                      <button type="button" onClick={() => set({ tilt: null })} className={smallBtn}>
                         {t('resetTilt')}
                       </button>
                     ) : null}
@@ -602,7 +603,9 @@ export function ObliquePanel({
                   </div>
                 </div>
                 <div className="grid gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
-                  <Slider id="oblique-sl-tilt" label={t('setup.tilt')} value={state.tiltDeg ?? res?.tiltDeg ?? 0} min={0} max={OBLIQUE_MAX_TILT_DEG} step={0.1} accept="nonneg" onChange={(v) => set({ tiltDeg: v })} note={state.tiltDeg === null ? t('setup.tiltCentre') : null} />
+                  {/* Vòng 6 (Q2-A): kéo một thanh → thanh kia giữ đúng số đang hiện, hình không nhảy. */}
+                  <Slider id="oblique-sl-tilt" label={t('setup.tilt')} value={tiltNow.forwardDeg} min={-OBLIQUE_MAX_TILT_DEG} max={OBLIQUE_MAX_TILT_DEG} step={0.1} accept="any" onChange={(v) => set({ tilt: { ...tiltNow, forwardDeg: v } })} note={state.tilt === null ? t('setup.tiltCentre') : null} />
+                  <Slider id="oblique-sl-tilt-side" label={t('setup.tiltSide')} value={tiltNow.sideDeg} min={-OBLIQUE_MAX_TILT_DEG} max={OBLIQUE_MAX_TILT_DEG} step={0.1} accept="any" onChange={(v) => set({ tilt: { ...tiltNow, sideDeg: v } })} note={null} />
                   <Slider id="oblique-sl-h" label={t('setup.height')} value={state.heightMm} min={100} max={Math.max(3000, Math.ceil(state.heightMm * 1.5))} step={10} accept="positive" onChange={(v) => set({ heightMm: v })} note={null} />
                   <Slider
                     id="oblique-sl-setback"

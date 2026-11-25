@@ -1040,7 +1040,8 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
         rules: ['OPT-014'],
         formula: [
           'toạ độ: mặt phẳng XY nằm ngang, Z lên; vùng kiểm tra [−A/2; A/2] × [0; B], Y xa dần camera',
-          'camera C = (lệch bên, −khoảng lùi, chiều cao); điểm ngắm T: góc trống → tâm vùng (0, B/2, 0); có góc θ (so với phương đứng) → camera giữ chỗ lắp, h = hướng ngang từ chân camera tới tâm vùng, T = (Cx, Cy, 0) + h × H × tan θ (θ ≤ 80°); D = |T − C|',
+          'camera C = (lệch bên, −khoảng lùi, chiều cao); điểm ngắm T: góc trống → tâm vùng (0, B/2, 0); có góc nghiêng trước α (quanh X, + về phía xa) và nghiêng ngang β (quanh Y, + sang phải), mỗi góc đo so với phương đứng trong mặt phẳng của nó → camera giữ chỗ lắp, T = (Cx + H × tan β ; Cy + H × tan α ; 0) (|α|, |β| ≤ 80°); D = |T − C|',
+          'góc tổng so với phương đứng: tan²θ = tan²α + tan²β · khi ngắm tâm, góc hiện trên thanh trượt: α = atan(d_y ÷ −d_z), β = atan(d_x ÷ −d_z)',
           'trục quang d = (T − C) ÷ D; ngang ảnh r = d × Z (không xoay quanh trục); dọc ảnh u = r × d',
           'khoảng ảnh v = f × D ÷ (D − f)   (nét tại điểm ngắm, thấu kính mỏng — cùng gốc Newton x′ = f² ÷ (D − f))',
           'điểm P lên cảm biến: z = (P − C)·d · ảnh = ((P − C)·r ; (P − C)·u) × v ÷ z',
@@ -1066,6 +1067,7 @@ export const FORMULA_BOOK: readonly FormulaSection[] = [
           'Vòng 4 (2026-11-23, A + B): nhập theo kích thước sản phẩm (rộng × dài, sản phẩm = vùng kiểm tra), thêm hình Ảnh camera nhìn thấy; thử chiều cao sản phẩm (8 góc) đã bỏ theo ý Hùng.',
           'Vòng 5 (2026-11-24, Q1-B): hiện FOV thực tế trên mặt phẳng — ví dụ trên f 8: cạnh ảnh 1465 → 2680 mm, ngang mép gần sản phẩm 1661 (dư 230 mỗi bên), mép xa 2128 (dư 464), dọc 2084 mm (dư trước 337, sau 947).',
           'Vòng 5 (2026-11-24, Q1–Q4 A): hình Nhìn ngang có vạch đứng cao FOV tại mép sản phẩm — mẫu trên: f 8 → mép gần 1117, mép xa 605 mm; f 14 → 955 / 228 mm (kiểm bằng tam giác đồng dạng: 1500 × 251 / 1651 = 228); f 25 → chân mép gần khuất 256 mm, mép xa không thấy.',
+          'Vòng 6 (2026-11-25, Q1–Q4 A): nghiêng hai trục — nhập α (trước) và β (ngang) theo trục sản phẩm cố định, như thước thuỷ 2 trục đặt trên giá; đã nhập góc thì lệch bên chỉ dời camera, không tự quay về tâm; kéo một thanh thì thanh kia giữ số đang hiện; cạnh ảnh vẫn song song mặt đất (không xoay quanh trục quang). Ví dụ mẫu trên, dư 5 %: β 0 → 10° làm góc tổng 33,7 → 34,6°, f_max 10,51 → 8,04 mm, góc gần trái dùng 94,5 % cảm biến (gần phải 49,2 %).',
           'Gợi ý ống: ống thường trong kho có f ≤ f_max, xếp f giảm dần; báo vòng ảnh < đường chéo cảm biến × 0,98, MOD > khoảng gần nhất, khác ngàm — chỉ ghi chú, không loại.',
         ],
         constants: [

@@ -2988,7 +2988,7 @@
     "panelDesc": "Camera đặt chéo nhìn xuống sản phẩm: ảnh thấy gì, mm/px, khẩu F để nét cả sản phẩm.",
     "open": "Mở",
     "close": "Đóng",
-    "resetTilt": "Ngắm tâm vùng",
+    "resetTilt": "Ngắm tâm",
     "resetFocal": "Về f của ống ({f} mm)",
     "focalTrial": "Đang thử f khác ống đã chọn — hình bên dưới vẫn theo f của ống.",
     "focalNoLens": "Chưa chọn ống ở trên — đang thử với f này.",
@@ -3008,8 +3008,9 @@
       "setback": "Khoảng lùi tới mép gần (mm)",
       "setbackHint": "Âm: camera nằm phía trên vùng kiểm tra.",
       "side": "Lệch bên (mm)",
-      "tilt": "Góc nghiêng (°)",
-      "tiltCentre": "Đang ngắm tâm vùng — kéo để xoay camera tại chỗ lắp."
+      "tilt": "Nghiêng trước (°)",
+      "tiltSide": "Nghiêng ngang (°, + sang phải)",
+      "tiltCentre": "Đang ngắm tâm — kéo để xoay camera tại chỗ lắp."
     },
     "result": {
       "title": "Mô phỏng",

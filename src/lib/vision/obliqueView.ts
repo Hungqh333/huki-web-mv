@@ -5,8 +5,8 @@
  * Mô hình chiếu tâm (lỗ kim), tâm chiếu = vị trí camera (đồng tử vào), không tính méo ống kính:
  *   - Toạ độ: mặt phẳng XY nằm ngang, Z lên. Vùng kiểm tra [−A/2; A/2] × [0; B] — Y xa dần camera.
  *   - Camera C = (lệch bên, −khoảng lùi, chiều cao). Điểm ngắm T: góc nghiêng để trống → tâm vùng (0, B/2, 0);
- *     có góc θ (so với phương đứng, vòng 2 2026-11-23 Q4) → camera giữ chỗ lắp, hướng ngang h = hướng từ chân camera
- *     tới tâm vùng, T = (Cx, Cy, 0) + h × H × tan θ.
+ *     có góc (vòng 6 2026-11-25, Q1–Q4 A: hai trục) nghiêng trước α, nghiêng ngang β → camera giữ chỗ lắp,
+ *     T = (Cx + H × tan β, Cy + H × tan α, 0) — góc tổng θ: tan²θ = tan²α + tan²β.
  *   - Trục quang d = (T − C) ÷ |T − C|; trục ngang ảnh r = d × Z (ảnh không xoay quanh trục quang); trục dọc u = r × d.
  *   - Nét tại T: khoảng ảnh v = f × D ÷ (D − f), D = |T − C| (thấu kính mỏng, cùng gốc Newton: x′ = f² ÷ (D − f)).
  *   - Điểm P lên cảm biến: z = (P − C)·d, ảnh = ((P − C)·r, (P − C)·u) × v ÷ z.
@@ -28,8 +28,11 @@ export type ObliqueInput = {
   setbackMm: number;
   /** Lệch bên so với đường giữa vùng, mm. */
   sideOffsetMm: number;
-  /** Góc nghiêng trục quang so với phương đứng (độ); null = ngắm tâm vùng. */
-  tiltDeg: number | null;
+  /**
+   * Góc nghiêng hai trục (độ, vòng 6 2026-11-25): trước α quanh trục X (dương = về phía xa), ngang β quanh trục Y
+   * (dương = sang +X) — mỗi góc đo so với phương đứng trong mặt phẳng của nó. null = ngắm tâm vùng.
+   */
+  tilt: { forwardDeg: number; sideDeg: number } | null;
   sensorLongMm: number;
   sensorShortMm: number;
   pixelUm: number;
@@ -92,6 +95,9 @@ export type ObliqueResult = {
   aimPoint: Vec3;
   /** Góc trục quang so với phương thẳng đứng, độ. */
   tiltDeg: number;
+  /** Góc nghiêng trước α / ngang β đang dùng (độ) — khi ngắm tâm là góc tự tính. */
+  tiltForwardDeg: number;
+  tiltSideDeg: number;
   distanceToAimMm: number;
   imageDistanceMm: number;
   /** 4 góc vùng: gần trái, gần phải, xa phải, xa trái. */
@@ -137,15 +143,10 @@ export function obliqueView(input: ObliqueInput): ObliqueResult | null {
   const margin = Math.min(Math.max(input.margin, 0), 0.5);
   const C: Vec3 = [input.sideOffsetMm, -input.setbackMm, H];
   let T: Vec3 = [0, B / 2, 0];
-  if (input.tiltDeg !== null) {
-    const tilt = Math.min(Math.max(input.tiltDeg, 0), OBLIQUE_MAX_TILT_DEG);
-    const hx = T[0] - C[0];
-    const hy = T[1] - C[1];
-    const hl = Math.hypot(hx, hy);
-    // Camera ngay trên tâm vùng: chưa có hướng ngang → nghiêng về phía xa (+Y).
-    const [ux, uy] = hl < 1e-9 ? [0, 1] : [hx / hl, hy / hl];
-    const reach = H * Math.tan((tilt * Math.PI) / 180);
-    T = [C[0] + ux * reach, C[1] + uy * reach, 0];
+  if (input.tilt !== null) {
+    // Vòng 6 (Q1-A, Q2-A): hai góc theo trục sản phẩm cố định — lệch bên chỉ dời camera, không tự quay về tâm.
+    const tanOf = (deg: number) => Math.tan((Math.min(Math.max(deg, -OBLIQUE_MAX_TILT_DEG), OBLIQUE_MAX_TILT_DEG) * Math.PI) / 180);
+    T = [C[0] + H * tanOf(input.tilt.sideDeg), C[1] + H * tanOf(input.tilt.forwardDeg), 0];
   }
   const D = len(sub(T, C));
   if (!(D > f)) return null;
@@ -273,6 +274,8 @@ export function obliqueView(input: ObliqueInput): ObliqueResult | null {
     cameraPos: C,
     aimPoint: T,
     tiltDeg: (Math.acos(Math.min(1, Math.max(-1, -d[2]))) * 180) / Math.PI,
+    tiltForwardDeg: (Math.atan2(d[1], -d[2]) * 180) / Math.PI,
+    tiltSideDeg: (Math.atan2(d[0], -d[2]) * 180) / Math.PI,
     distanceToAimMm: D,
     imageDistanceMm: v,
     corners,
@@ -299,5 +302,5 @@ export function obliqueView(input: ObliqueInput): ObliqueResult | null {
 /** Độ dư vùng phủ mặc định (Q4): méo ống góc rộng 1–3 % + sai lệch lắp. */
 export const OBLIQUE_DEFAULT_MARGIN = 0.05;
 
-/** Góc nghiêng lớn nhất của thanh trượt (vòng 2 Q4) — 90° là nhìn ngang, không chạm mặt phẳng. */
+/** Góc nghiêng lớn nhất mỗi trục (vòng 2 Q4, vòng 6 cho cả hai trục, ±) — 90° là nhìn ngang, không chạm mặt phẳng. */
 export const OBLIQUE_MAX_TILT_DEG = 80;

@@ -21,7 +21,7 @@ const base: ObliqueInput = {
   heightMm: 1500,
   setbackMm: 600,
   sideOffsetMm: 0,
-  tiltDeg: null,
+  tilt: null,
   sensorLongMm: 2448 * 0.00345,
   sensorShortMm: 2048 * 0.00345,
   pixelUm: 3.45,
@@ -96,20 +96,58 @@ test('ngắm quá cao → một phần ảnh nhìn quá chân trời; số vào 
   assert.equal(obliqueView({ ...base, areaWidthMm: 0 }), null);
 });
 
-test('góc nghiêng (vòng 2): góc đúng bằng góc ngắm tâm → trùng kết quả; tăng góc → điểm ngắm xa hơn, camera đứng yên', () => {
+test('góc nghiêng (vòng 6, hai trục): góc đúng bằng góc ngắm tâm → trùng kết quả; tăng góc trước → điểm ngắm xa hơn, camera đứng yên', () => {
   const centre = obliqueView(base)!;
-  const same = obliqueView({ ...base, tiltDeg: centre.tiltDeg })!;
+  near(centre.tiltForwardDeg, 33.69, 0.01);
+  near(centre.tiltSideDeg, 0, 1e-9);
+  const same = obliqueView({ ...base, tilt: { forwardDeg: centre.tiltForwardDeg, sideDeg: centre.tiltSideDeg } })!;
   near(same.aimPoint[1], centre.aimPoint[1], 1e-6);
   near(same.focalMaxMm, centre.focalMaxMm, 1e-6);
-  const more = obliqueView({ ...base, tiltDeg: 45 })!;
+  const more = obliqueView({ ...base, tilt: { forwardDeg: 45, sideDeg: 0 } })!;
   near(more.tiltDeg, 45, 1e-9);
   near(more.aimPoint[1], -600 + 1500, 1e-6); // tan 45° × 1500 tính từ chân camera
   assert.deepEqual(more.cameraPos, centre.cameraPos);
-  // Lệch bên: hướng ngang vẫn nhắm về tâm vùng.
-  const side = obliqueView({ ...base, sideOffsetMm: 600, tiltDeg: 30 })!;
-  const hx = side.aimPoint[0] - 600;
-  const hy = side.aimPoint[1] + 600;
-  near(hy / hx, (400 + 600) / (0 - 600), 1e-9);
+  // Lệch bên + ngắm tâm: góc ngang tự tính âm (nhìn về −X); nhập lại đúng hai góc đó → trùng.
+  const offC = obliqueView({ ...base, sideOffsetMm: 600 })!;
+  near(Math.tan((offC.tiltSideDeg * Math.PI) / 180), -600 / 1500, 1e-12);
+  const offSame = obliqueView({ ...base, sideOffsetMm: 600, tilt: { forwardDeg: offC.tiltForwardDeg, sideDeg: offC.tiltSideDeg } })!;
+  near(offSame.maxUsage, offC.maxUsage, 1e-9);
+  // Đã nhập góc: lệch bên chỉ dời camera, không tự quay về tâm (Q2-A).
+  const off = obliqueView({ ...base, sideOffsetMm: 600, tilt: { forwardDeg: 30, sideDeg: 0 } })!;
+  near(off.aimPoint[0], 600, 1e-9);
+});
+
+test('nghiêng ngang (vòng 6): β ↔ −β đối xứng gương · góc tổng tan²θ = tan²α + tan²β · khớp chiếu tia độc lập', () => {
+  const tilt = { forwardDeg: 30, sideDeg: 12 };
+  const pos = obliqueView({ ...base, tilt })!;
+  const neg = obliqueView({ ...base, tilt: { forwardDeg: 30, sideDeg: -12 } })!;
+  near(pos.aimPoint[0], -neg.aimPoint[0], 1e-9);
+  near(pos.maxUsage, neg.maxUsage, 1e-9);
+  near(pos.corners[1].usage, neg.corners[0].usage, 1e-9); // góc gần phải ↔ gần trái
+  near(pos.corners[2].gsdAcrossMm, neg.corners[3].gsdAcrossMm, 1e-9);
+  near(pos.corners[0].imageX, -neg.corners[1].imageX, 1e-9);
+  const tan = (deg: number) => Math.tan((deg * Math.PI) / 180);
+  near(tan(pos.tiltDeg) ** 2, tan(30) ** 2 + tan(12) ** 2, 1e-9);
+  near(pos.tiltForwardDeg, 30, 1e-9);
+  near(pos.tiltSideDeg, 12, 1e-9);
+  near(pos.aimPoint[0], 1500 * tan(12), 1e-9);
+  near(pos.aimPoint[1], -600 + 1500 * tan(30), 1e-9);
+  // Chiếu tia độc lập: góc gần phải (600, 0, 0). Trục quang d ∝ (tan β, tan α, −1); ngang ảnh r ∥ d × Z (nằm ngang).
+  const dRaw = [tan(12), tan(30), -1];
+  const dl = Math.hypot(...dRaw);
+  const d = dRaw.map((x) => x / dl);
+  const rRaw = [d[1], -d[0], 0];
+  const rl = Math.hypot(...rRaw);
+  const r = rRaw.map((x) => x / rl);
+  const u = [r[1] * d[2] - r[2] * d[1], r[2] * d[0] - r[0] * d[2], r[0] * d[1] - r[1] * d[0]];
+  const w = [600 - 0, 0 + 600, -1500];
+  const dotp = (a: number[], b: number[]) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+  const D = Math.hypot(pos.aimPoint[0], pos.aimPoint[1] + 600, 1500);
+  const v = (8 * D) / (D - 8);
+  near(pos.corners[1].imageX, (dotp(w, r) / dotp(w, d)) * v, 1e-9);
+  near(pos.corners[1].imageY, (dotp(w, u) / dotp(w, d)) * v, 1e-9);
+  // Nghiêng sang phải (+X) → hình thang lệch: góc trái (−X) nằm sát mép ảnh hơn góc phải.
+  assert.ok(pos.corners[0].usage > pos.corners[1].usage);
 });
 
 test('toạ độ trên cảm biến (hình Ảnh camera): khớp mức dùng; mép xa nằm phía trên ảnh, mép gần phía dưới', () => {

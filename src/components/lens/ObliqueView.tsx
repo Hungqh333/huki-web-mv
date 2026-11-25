@@ -91,6 +91,7 @@ function FovBlock({ fov }: { fov: GroundFov }) {
   // Cao tối đa còn trong ảnh; chân bị khuất → kèm phần chân khuất; không thấy đoạn nào → "không thấy".
   const height = (h: HeightSpan | null) =>
     h === null ? t('fovHeightNone') : h.lowMm > 0.5 ? t('fovHeightFrom', { lo: mm(h.lowMm), hi: mm(h.highMm) }) : t('fovHeightMm', { v: mm(h.highMm) });
+  // Rút gọn lần 2 (2026-11-25): một dòng, mỗi mục một cụm; mục thiếu tô đỏ riêng.
   const lines: { text: string; bad: boolean }[] = [
     { text: t('fovEdges', { near: mm(fov.nearEdgeWidthMm), far: mm(fov.farEdgeWidthMm) }), bad: false },
     fov.atNear ? { text: t('fovAtNear', { w: mm(fov.atNear.widthMm), l: gap(fov.atNear.startMm), r: gap(fov.atNear.endMm) }), bad: short(fov.atNear) } : null,
@@ -102,15 +103,13 @@ function FovBlock({ fov }: { fov: GroundFov }) {
     },
   ].filter((l): l is { text: string; bad: boolean } => l !== null);
   return (
-    <div className="rounded-md border border-slate-200 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900">
-      <p className="text-xs font-medium text-slate-500 dark:text-slate-400">{t('fov')}</p>
-      <ul className="mt-1 grid gap-x-6 gap-y-1 text-sm tabular-nums lg:grid-cols-2">
-        {lines.map((l) => (
-          <li key={l.text} className={l.bad ? TONE.bad : 'text-slate-900 dark:text-slate-100'}>
-            {l.text}
-          </li>
-        ))}
-      </ul>
+    <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1">
+      <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{t('fov')}</span>
+      {lines.map((l) => (
+        <span key={l.text} className={l.bad ? TONE.bad : 'text-slate-900 dark:text-slate-100'}>
+          {l.text}
+        </span>
+      ))}
     </div>
   );
 }
@@ -549,7 +548,7 @@ export function ObliquePanel({
     : res.covers
       ? { text: t('result.coverOk', { u: show(res.maxUsage * 100, 1) }), tone: 'ok' }
       : res.maxUsage <= 1 + 1e-12
-        ? { text: t('result.coverLow', { u: show(res.maxUsage * 100, 1), m: show(margin * 100, 0) }), tone: 'warn' }
+        ? { text: t('result.coverLow', { u: show(res.maxUsage * 100, 1) }), tone: 'warn' }
         : { text: t('result.coverBad', { u: Number.isFinite(res.maxUsage) ? show(res.maxUsage * 100, 1) : '∞' }), tone: 'bad' };
   const gsdTone: Tone = res && needGsd !== null ? (res.worstGsdMm <= needGsd + 1e-12 ? 'ok' : 'bad') : 'ok';
   const depthBad = res?.depth && fMaxRing !== null && res.depth.fNumber > fMaxRing + 1e-9;
@@ -652,41 +651,9 @@ export function ObliquePanel({
                     note={state.focalMm !== null && lensFocalMm !== null ? t('focalTrial') : lensFocalMm === null ? t('focalNoLens') : null}
                   />
                 </div>
+                {/* 2026-11-25 (Hùng): khối số chuyển xuống dưới 4 hình — kéo thanh trượt thấy hình ngay; chỉ cảnh báo chặn ở lại đây. */}
                 {res ? (
-                <>
-                <dl className="grid grid-cols-2 gap-x-6 gap-y-2 rounded-md border border-slate-200 bg-white px-3 py-2 lg:grid-cols-5 dark:border-slate-700 dark:bg-slate-900">
-                  <div>
-                    <dt className={DT}>{t('result.coverage')}</dt>
-                    <dd className={`min-h-[2.5rem] text-sm tabular-nums ${TONE[coverage!.tone]}`}>{coverage!.text}</dd>
-                  </div>
-                  <div>
-                    <dt className={DT}>{t('result.focalMax')}</dt>
-                    <dd className="min-h-[2.5rem] text-sm tabular-nums text-slate-900 dark:text-slate-100">{t('result.focalMaxValue', { f: show(res.focalMaxMm, 1), m: show(margin * 100, 0) })}</dd>
-                  </div>
-                  <div>
-                    <dt className={DT}>{t('result.gsd')}</dt>
-                    <dd className={`min-h-[2.5rem] text-sm tabular-nums ${TONE[gsdTone]}`}>
-                      {t('result.gsdValue', { best: show(res.bestGsdMm, 3), worst: show(res.worstGsdMm, 3) })}
-                      {needGsd !== null ? ` · ${gsdTone === 'ok' ? t('result.gsdNeedOk', { need: show(needGsd, 3) }) : t('result.gsdNeedBad', { need: show(needGsd, 3) })}` : ''}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className={DT}>{t('result.distance')}</dt>
-                    <dd className="min-h-[2.5rem] text-sm tabular-nums text-slate-900 dark:text-slate-100">
-                      {t('result.distanceValue', { near: show(res.nearestMm, 0), far: show(res.farthestMm, 0), aim: show(res.distanceToAimMm, 0) })}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className={DT}>{t('result.depth')}</dt>
-                    <dd className={`min-h-[2.5rem] text-sm tabular-nums ${depthBad ? TONE.warn : TONE.ok}`}>
-                      {res.depth ? t('result.depthValue', { f: show(res.depth.fNumber, 1), focus: show(res.depth.focusMm, 0) }) : '—'}
-                      {res.depth && fMaxRing !== null ? ` · ${depthBad ? t('result.depthDiffraction', { fMax: show(fMaxRing, 1) }) : t('result.depthOk', { fMax: show(fMaxRing, 1) })}` : ''}
-                    </dd>
-                  </div>
-                </dl>
-                <FovBlock fov={res.groundFov} />
-                {res.horizon ? <p className="text-sm text-amber-700 dark:text-amber-300">{t('result.horizon')}</p> : null}
-                </>
+                  res.horizon ? <p className="text-sm text-amber-700 dark:text-amber-300">{t('result.horizon')}</p> : null
                 ) : (
                   <p className="rounded-md border border-dashed border-amber-300 px-4 py-3 text-sm text-amber-800 dark:border-amber-800 dark:text-amber-200">{t(`problem.${calc.problem ?? 'distance'}`)}</p>
                 )}
@@ -738,6 +705,40 @@ export function ObliquePanel({
                     </tbody>
                   </table>
                 </figure>
+              </div>
+
+              {/* Khối số gọn (2026-11-25): đơn vị mm ghi một lần ở tiêu đề; màu giữ như cũ (cam sát mép, đỏ thiếu). */}
+              <div className="space-y-1 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm tabular-nums dark:border-slate-700 dark:bg-slate-900">
+                <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{t('result.numbers')}</p>
+                <dl className="flex flex-wrap items-baseline gap-x-5 gap-y-1">
+                  <div className="flex items-baseline gap-1.5">
+                    <dt className={DT}>{t('result.coverage')}</dt>
+                    <dd className={TONE[coverage!.tone]}>{coverage!.text}</dd>
+                  </div>
+                  <div className="flex items-baseline gap-1.5">
+                    <dt className={DT}>{t('result.focalMax')}</dt>
+                    <dd className="text-slate-900 dark:text-slate-100">{t('result.focalMaxValue', { f: show(res.focalMaxMm, 1) })}</dd>
+                  </div>
+                  <div className="flex items-baseline gap-1.5">
+                    <dt className={DT}>{t('result.gsd')}</dt>
+                    <dd className={TONE[gsdTone]}>
+                      {t('result.gsdValue', { best: show(res.bestGsdMm, 3), worst: show(res.worstGsdMm, 3) })}
+                      {needGsd !== null ? ` · ${gsdTone === 'ok' ? t('result.gsdNeedOk', { need: show(needGsd, 3) }) : t('result.gsdNeedBad', { need: show(needGsd, 3) })}` : ''}
+                    </dd>
+                  </div>
+                  <div className="flex items-baseline gap-1.5">
+                    <dt className={DT}>{t('result.distance')}</dt>
+                    <dd className="text-slate-900 dark:text-slate-100">{t('result.distanceValue', { near: show(res.nearestMm, 0), far: show(res.farthestMm, 0), aim: show(res.distanceToAimMm, 0) })}</dd>
+                  </div>
+                  <div className="flex items-baseline gap-1.5">
+                    <dt className={DT}>{t('result.depth')}</dt>
+                    <dd className={depthBad ? TONE.warn : TONE.ok}>
+                      {res.depth ? t('result.depthValue', { f: show(res.depth.fNumber, 1), focus: show(res.depth.focusMm, 0) }) : '—'}
+                      {res.depth && fMaxRing !== null ? ` · ${depthBad ? t('result.depthDiffraction', { fMax: show(fMaxRing, 1) }) : t('result.depthOk', { fMax: show(fMaxRing, 1) })}` : ''}
+                    </dd>
+                  </div>
+                </dl>
+                <FovBlock fov={res.groundFov} />
               </div>
               <p className={NOTE_CLASS}>{t('result.modelNote')}</p>
               {admin ? <p className={NOTE_CLASS}>{t('result.adminNote', { v: show(res.imageDistanceMm, 3), d: show(res.distanceToAimMm, 0) })}</p> : null}

@@ -466,8 +466,9 @@ export type SpecFieldDef = {
 /* M42: phổ biến ở line scan pixel lớn, ống kính C-mount không lắp thẳng được.
    M12 (board lens), M40/M48/M58/M72/M90 (camera cảm biến lớn, line scan, ống
    telecentric lớn) và V38 (ống kính tiêu cự dài): thêm lúc nhập catalog
-   iRayple / Coolens / VST, chốt 2026-10-16. Khớp ngàm vẫn là so chuỗi. */
-export const MOUNTS = ['C', 'CS', 'F', 'M12', 'M40', 'M42', 'M48', 'M58', 'M72', 'M90', 'V38'];
+   iRayple / Coolens / VST, chốt 2026-10-16. M95: ống telecentric line scan
+   Coolens DTCA23K/24K, thêm 2026-11-28. Khớp ngàm vẫn là so chuỗi. */
+export const MOUNTS = ['C', 'CS', 'F', 'M12', 'M40', 'M42', 'M48', 'M58', 'M72', 'M90', 'M95', 'V38'];
 const INTERFACES = Object.keys(INTERFACE_BANDWIDTH);
 
 const SHUTTERS = ['global', 'rolling'];

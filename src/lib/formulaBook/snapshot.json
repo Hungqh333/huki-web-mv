@@ -1,9 +1,9 @@
 {
-  "reviewedAt": "2026-11-25",
+  "reviewedAt": "2026-11-28",
   "files": {
     "components/match.ts": "3a373886dcd88a13",
     "components/pc.ts": "dfd7523cd0f5ba06",
-    "components/specs.ts": "5a8c275799075e99",
+    "components/specs.ts": "861962165a543c3f",
     "kpi/calc.ts": "a16ec5d2a6870d15",
     "pc/code.ts": "3770e6450e0f9ece",
     "pc/fps.ts": "cc95562b7c50b994",

@@ -42,7 +42,7 @@ export function DeleteButton({
       ))}
       <button
         type="submit"
-        className="rounded px-2 py-1.5 text-xs text-red-600 hover:bg-red-50 hover:underline dark:text-red-400 dark:hover:bg-red-950/40"
+        className="rounded px-2 py-1.5 text-sm text-red-600 hover:bg-red-50 hover:underline dark:text-red-400 dark:hover:bg-red-950/40"
       >
         {t('delete')}
       </button>

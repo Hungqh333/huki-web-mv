@@ -101,7 +101,7 @@ export default async function AdminComponentsPage({
                 <td className="py-3 pr-3">
                   <Link
                     href={`/admin/linh-kien/${component.id}`}
-                    className="font-mono text-xs hover:text-sky-700 dark:hover:text-sky-400"
+                    className="font-mono hover:text-sky-700 dark:hover:text-sky-400"
                   >
                     {component.code}
                   </Link>
@@ -111,20 +111,19 @@ export default async function AdminComponentsPage({
                     </span>
                   ) : null}
                   {component.is_active ? null : (
-                    <span className="ml-2 text-xs text-slate-400">{t('inactive')}</span>
+                    <span className="ml-2 text-slate-400">{t('inactive')}</span>
                   )}
                 </td>
-                <td className="py-3 pr-3 text-xs">{t(`kinds.${component.kind}`)}</td>
+                <td className="py-3 pr-3 whitespace-nowrap">{t(`kinds.${component.kind}`)}</td>
                 <td className="py-3 pr-3">
-                  <span className="font-medium">{component.brand}</span>{' '}
-                  <span className="text-slate-600 dark:text-slate-400">{component.model}</span>
+                  {component.brand} {component.model}
                 </td>
-                <td className="py-3 pr-3 text-xs text-slate-600 dark:text-slate-400">
+                <td className="py-3 pr-3 text-slate-600 dark:text-slate-400">
                   {summarise(component) || '—'}
                 </td>
                 <td className="py-3 pr-3">
                   <span
-                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                    className={`inline-flex items-center whitespace-nowrap rounded-full px-2 py-0.5 ${
                       SOURCE_STYLES[component.source] ?? SOURCE_STYLES.unverified
                     }`}
                   >

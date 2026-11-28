@@ -3152,6 +3152,8 @@
     "resultLabel": "Mounting check figures"
   },
   "lensSelector": {
+    "steps": {"sensor": "Sensor", "optCatalog": "Pick a camera from stock", "optManual": "Enter sensor manually", "brand": "Brand", "brandAll": "All brands", "find": "Find model", "model": "Camera model", "conditions": "Working conditions", "conditionsHint": "Enter 2 of 3: focal length, distance, field of view. The other boxes are calculated (italic).", "conditionsHintTele": "Enter the field of view; working distance is optional. β and mm/px are calculated.", "clear": "Clear", "approx": "Approximate calculation, for reference only.", "needCamera": "Pick a camera in step 1.", "extra": "More options", "details": "Calculation details", "result": "Lens selection result", "needInput": "Complete steps 1 and 2 first."},
+    "figure": {"res": "Camera resolution", "wd": "Working distance (mm)", "wdOptional": "WD (mm, optional)", "fovW": "FOV width (mm)", "fovH": "FOV height (mm)", "fovHLine": "Object length (mm)", "aovH": "Horizontal angle (°)", "aovV": "Vertical angle (°)", "beta": "Magnification β", "betaMax": "Max β", "mmpx": "mm/px"},
     "title": "Lens selector",
     "subtitle": "Enter camera, field of view and working distance → required focal length, diffraction-limited F#, and the lenses in stock that fit.",
     "why": "Every number here uses the same formulas as System design (rules OPT-001…005), so a camera + lens pair never gets two different verdicts on two pages. WD is measured from the lens front; lenses without a front focal distance sF use the quick formula β = f ÷ WD — check the working-distance table in the datasheet before ordering.",

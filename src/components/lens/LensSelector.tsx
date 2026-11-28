@@ -4,13 +4,14 @@ import { ActionLink } from '@/components/ui/ActionLink';
 import { Icon } from '@/components/ui/Icon';
 import { Fragment, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { FIELD_CELL, FIELD_GRID, FIELD_LABEL, NOTE_CLASS, Panel } from '@/components/ui/PanelHeader';
+import { FIELD_CELL, FIELD_GRID, FIELD_LABEL, NOTE_CLASS } from '@/components/ui/PanelHeader';
 import { MOUNTS, SENSOR_FORMAT_KEYS, sensorDiagonalMm, specNumber, specString, type Component } from '@/lib/components/specs';
 import { cameraFromComponent, lensFromComponent, type ConfigCamera } from '@/lib/vision/configurationRules';
 import {
   STANDARD_CONVERTER_FACTORS,
   STANDARD_TUBE_LENGTHS_MM,
   activeFixedAccessory,
+  cameraSensorMm,
   lensNeed,
   selectLenses,
   solveGeometry,
@@ -23,7 +24,9 @@ import {
 import { renderFormula } from '@/lib/vision/formulaTerms';
 import type { CheckStatus } from '@/lib/vision/types';
 import { useShowFormulas } from '@/components/ui/FormulaVisibility';
-import { LensDiagram, type AccessoryKind, type DiagramAccessory, type DiagramField } from './LensDiagram';
+import { LensDiagram, type AccessoryKind, type DiagramAccessory } from './LensDiagram';
+import { ConditionFigure, FigureField } from './ConditionFigure';
+import { buildScene } from './conditionScene';
 import { mountCheckHref } from '@/lib/vision/mountCheckOptions';
 
 /**
@@ -35,9 +38,12 @@ import { mountCheckHref } from '@/lib/vision/mountCheckOptions';
  * theo ô đang nhập, góc nhìn tính tại WD.
  */
 
+// Ô nhập kiểu Hik (chốt 2026-11-28): viền xám #B3B3B3, góc 2 px, cao 32 px, viền cam khi chọn.
 const inputClass =
-  'w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/30 disabled:border-sky-200 disabled:bg-sky-50 disabled:font-semibold disabled:text-sky-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:disabled:border-sky-900 dark:disabled:bg-sky-950/40 dark:disabled:text-sky-300';
+  'h-8 w-full rounded-[2px] border border-[#B3B3B3] bg-white px-2 text-sm text-slate-900 outline-none focus:border-[#F76A05] focus:ring-2 focus:ring-[#F76A05]/30 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100';
 const labelClass = 'block text-sm font-medium text-slate-700 dark:text-slate-200';
+/** Nhãn ô bước 1: theo form chung của web (chốt 2026-11-28). */
+const hikLabel = labelClass;
 
 const STATUS_CLASS: Record<CheckStatus, string> = {
   pass: 'bg-emerald-50 text-emerald-800 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900',
@@ -48,7 +54,6 @@ const STATUS_CLASS: Record<CheckStatus, string> = {
 
 const PAGE = 30;
 const TABS: LensKindFilter[] = ['fixed', 'telecentric', 'm12'];
-const MODES: GeometryMode[] = ['fov-wd', 'focal-wd', 'focal-fov'];
 const EMPTY_TASK = { f: '', wd: '', fovW: '', fovH: '', dh: '', mmpx: '' };
 const EMPTY_ACCESSORY = { tube: '', converter: '' };
 
@@ -69,6 +74,39 @@ const num = (value: string): number | null => {
 
 const show = (value: number | null | undefined, digits = 2) =>
   value === null || value === undefined ? '—' : String(Math.round(value * 10 ** digits) / 10 ** digits);
+
+/** Số cho ô trên hình: chưa có thì để trống (không ghi "—"). */
+const cellValue = (value: number | null | undefined, digits: number) => (value === null || value === undefined ? '' : show(value, digits));
+
+/* ── Cách trình bày theo Lens Selector Hikrobot (chốt 2026-11-28 Q1–Q7) ── */
+
+/** Ba đại lượng "biết 2 trong 3" của ống thường / M12. */
+type GeoField = 'f' | 'wd' | 'fov';
+
+/** Hai ô gõ gần nhất quyết định kiểu bài toán (Q1-A): ô thứ ba là số máy tính ra. */
+function modeFrom(entered: GeoField[]): GeometryMode {
+  const has = (k: GeoField) => entered.includes(k);
+  if (has('f') && has('wd')) return 'focal-wd';
+  if (has('f') && has('fov')) return 'focal-fov';
+  return 'fov-wd';
+}
+
+/** Chỗ đặt ô trên hình: tính từ cảnh 3D (cạnh đúng nét ô nói tới). */
+const POS_BY_KIND = { fixed: buildScene(false).anchors, telecentric: buildScene(true).anchors };
+
+const HIK_BUTTON =
+  'inline-flex h-10 items-center justify-center rounded-[2px] bg-linear-to-b from-[#F76A05] to-[#F75200] px-5 text-sm font-medium text-white hover:brightness-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#F76A05]';
+
+function StepHeader({ n, title, underline = false }: { n: number; title: string; underline?: boolean }) {
+  return (
+    <div>
+      <h2 className="text-sm font-semibold text-indigo-950 dark:text-indigo-100">
+        {n}. {title}
+      </h2>
+      {underline ? <div className="mt-3 h-[3px] w-24 bg-[#F75200]" /> : null}
+    </div>
+  );
+}
 
 function cameraLabel(component: Component): string {
   const s = component.spec;
@@ -137,13 +175,16 @@ export function LensSelector({
   const lenses = useMemo(() => components.filter((c) => c.kind === 'lens' || c.kind === 'tube' || c.kind === 'converter'), [components]);
 
   const [tab, setTab] = useState<LensKindFilter>('fixed');
-  const [mode, setMode] = useState<GeometryMode>('fov-wd');
+  // Ô anh đã gõ, theo thứ tự (Q1-A): hai ô cuối quyết định kiểu bài toán.
+  const [entered, setEntered] = useState<GeoField[]>([]);
+  const mode = modeFrom(entered);
   const [source, setSource] = useState<'catalog' | 'manual'>(cameras.length > 0 ? 'catalog' : 'manual');
   const [search, setSearch] = useState('');
+  const [brand, setBrand] = useState('');
   const [cameraId, setCameraId] = useState('');
   const [manual, setManual] = useState({ type: 'area' as 'area' | 'line', widthPx: '', heightPx: '', pitch: '', format: '', mount: 'C' });
   const [task, setTask] = useState(EMPTY_TASK);
-  const [focus, setFocus] = useState<DiagramField | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const [showRejected, setShowRejected] = useState(false);
   const [onlyAccessory, setOnlyAccessory] = useState(false);
   const [limit, setLimit] = useState(PAGE);
@@ -153,17 +194,19 @@ export function LensSelector({
   const [accOpen, setAccOpen] = useState(false);
 
   const tele = tab === 'telecentric';
+  const POS = POS_BY_KIND[tele ? 'telecentric' : 'fixed'];
   const tubeStock = useMemo(() => stockValues(components, 'tube'), [components]);
   const converterStock = useMemo(() => stockValues(components, 'converter'), [components]);
 
+  const brands = useMemo(() => [...new Set(cameras.map((c) => c.brand))].sort((a, b) => a.localeCompare(b)), [cameras]);
   const filteredCameras = useMemo(() => {
     const words = search.toLowerCase().split(/\s+/).filter(Boolean);
-    if (words.length === 0) return cameras;
     return cameras.filter((c) => {
+      if (brand && c.brand !== brand) return false;
       const text = cameraLabel(c).toLowerCase() + ' ' + c.code.toLowerCase();
       return words.every((w) => text.includes(w));
     });
-  }, [cameras, search]);
+  }, [cameras, search, brand]);
 
   const camera: ConfigCamera | null = useMemo(() => {
     if (source === 'catalog') {
@@ -190,8 +233,14 @@ export function LensSelector({
   const line = camera?.cameraType === 'line';
   const f = num(task.f);
   const wd = num(task.wd);
-  const fovW = num(task.fovW);
-  const fovH = num(task.fovH);
+  /* Gõ một cạnh vùng nhìn thì cạnh kia lấy theo tỉ lệ cảm biến (như Hik); line scan
+     giữ cạnh dọc trống = chiều dài vật tuỳ chọn. */
+  const sensor = camera ? cameraSensorMm(camera) : null;
+  const aspect = sensor && !line && sensor.longMm > 0 ? sensor.shortMm / sensor.longMm : null;
+  const typedFovW = num(task.fovW);
+  const typedFovH = num(task.fovH);
+  const fovW = typedFovW ?? (typedFovH !== null && aspect ? typedFovH / aspect : null);
+  const fovH = typedFovH ?? (typedFovW !== null && aspect ? typedFovW * aspect : null);
   const dh = num(task.dh);
   const mmpx = num(task.mmpx);
   const fixedAccessory = activeFixedAccessory({ lensKind: tab, fixedAccessory: { tubeMm: num(acc.tube), converterFactor: num(acc.converter) } });
@@ -307,20 +356,45 @@ export function LensSelector({
     setLimit(PAGE);
   };
 
-  /** Ô đang là kết quả tính ra (khoá lại, hiện số tính). */
-  const computed = (field: 'f' | 'wd' | 'fov'): boolean =>
-    !tele && ((field === 'f' && mode === 'fov-wd') || (field === 'wd' && mode === 'focal-fov') || (field === 'fov' && mode === 'focal-wd'));
-  const computedValue = (field: 'f' | 'wdField' | 'fovW' | 'fovH'): string => {
-    if (!geometry) return '';
-    if (field === 'f') return show(geometry.focalLengthMm, 1);
-    if (field === 'wdField') return show(geometry.workingDistanceMm, 0);
-    return show(field === 'fovW' ? geometry.fovWidthMm : geometry.fovHeightMm, 1);
+  /* Ô trên hình (Q1-A): gõ ô nào cũng được. Ô gõ vào lên cuối danh sách "đã gõ"; quá hai
+     đại lượng thì đại lượng gõ sớm nhất thành số máy tính ra (xoá số cũ của nó). */
+  const geoKeys: Record<GeoField, (keyof typeof EMPTY_TASK)[]> = { f: ['f'], wd: ['wd'], fov: ['fovW', 'fovH'] };
+  const setGeo = (key: 'f' | 'wd' | 'fovW' | 'fovH') => (value: string) => {
+    const field: GeoField = key === 'fovW' || key === 'fovH' ? 'fov' : key;
+    const next = { ...task, [key]: value };
+    const stillTyped = geoKeys[field].some((k) => next[k].trim() !== '');
+    let list = entered.filter((k) => k !== field);
+    if (stillTyped && !tele) list.push(field);
+    if (list.length > 2) {
+      const dropped = list[0];
+      list = list.slice(1);
+      for (const k of geoKeys[dropped]) next[k] = '';
+    }
+    setTask(next);
+    if (!tele) setEntered(list);
+    setLimit(PAGE);
+  };
+  /** Ô đang hiện số anh gõ (true) hay số máy tính ra (false). */
+  const isTyped = (key: 'f' | 'wd' | 'fovW' | 'fovH'): boolean => {
+    if (tele) return task[key].trim() !== '';
+    const field: GeoField = key === 'fovW' || key === 'fovH' ? 'fov' : key;
+    return entered.includes(field) && task[key].trim() !== '';
+  };
+  const geoValue = (key: 'f' | 'wd' | 'fovW' | 'fovH'): string => {
+    if (isTyped(key)) return task[key];
+    if (tele) return key === 'fovW' ? cellValue(fovW, 1) : key === 'fovH' ? cellValue(line ? null : fovH, 1) : '';
+    const fovTyped = entered.includes('fov');
+    if (key === 'fovW') return fovTyped ? cellValue(fovW, 1) : cellValue(geometry?.fovWidthMm, 1);
+    if (key === 'fovH') return line ? '' : fovTyped ? cellValue(fovH, 1) : cellValue(geometry?.fovHeightMm, 1);
+    if (key === 'f') return cellValue(geometry?.focalLengthMm, 1);
+    return cellValue(geometry?.workingDistanceMm, 0);
   };
 
   const reset = () => {
     setTask(EMPTY_TASK);
-    setMode('fov-wd');
+    setEntered([]);
     setSearch('');
+    setBrand('');
     setCameraId('');
     setManual({ type: 'area', widthPx: '', heightPx: '', pitch: '', format: '', mount: 'C' });
     setShowRejected(false);
@@ -354,10 +428,10 @@ export function LensSelector({
   }
 
   return (
-    <div className="space-y-6">
-      {/* ── Tab theo họ ống ── */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div role="tablist" aria-label={t('tabs.label')} className="inline-flex rounded-lg border border-slate-300 bg-white p-0.5 dark:border-slate-700 dark:bg-slate-900">
+    <div className="space-y-10">
+      {/* ── Tab theo họ ống: gạch chân cam (Q3-A) ── */}
+      <div>
+        <div role="tablist" aria-label={t('tabs.label')} className="flex flex-wrap gap-x-8 border-b border-[#EBEBEB] dark:border-slate-800">
           {TABS.map((value) => (
             <button
               key={value}
@@ -369,187 +443,171 @@ export function LensSelector({
                 setLimit(PAGE);
                 setOpen(null);
               }}
-              className={`rounded-md px-3 py-1.5 text-sm font-medium ${tab === value ? 'bg-sky-600 text-white' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'}`}
+              className={`-mb-px border-b-[3px] pb-2 text-sm font-medium ${tab === value ? 'border-[#F75200] text-slate-900 dark:text-slate-100' : 'border-transparent text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100'}`}
             >
               {t(`tabs.${value}`)}
             </button>
           ))}
         </div>
-        <button
-          type="button"
-          onClick={reset}
-          className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-        >
-          ↺ {t('reset')}
-        </button>
+        <p className={`mt-2 ${NOTE_CLASS}`}>{t(`tabHint.${tab}`)}</p>
       </div>
-      <p className={`-mt-3 ${NOTE_CLASS}`}>{t(`tabHint.${tab}`)}</p>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* ── Camera ── */}
-        <Panel
-          id="lens-camera"
-          title={t('camera.title')}
-          actions={
-            <div className="inline-flex rounded-md border border-slate-300 bg-white p-0.5 text-xs dark:border-slate-700 dark:bg-slate-900">
-              {(['catalog', 'manual'] as const).map((value) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => setSource(value)}
-                  disabled={value === 'catalog' && cameras.length === 0}
-                  className={`rounded px-2.5 py-1 font-medium disabled:opacity-40 ${source === value ? 'bg-sky-600 text-white' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'}`}
-                >
-                  {t(value === 'catalog' ? 'camera.fromCatalog' : 'camera.manual')}
-                </button>
-              ))}
-            </div>
-          }
-        >
-          {source === 'catalog' ? (
-            <div className="space-y-3">
-              <input type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t('camera.search')} className={inputClass} aria-label={t('camera.search')} />
-              <div>
-                <label htmlFor="lens-camera-pick" className={labelClass}>
-                  {t('camera.pick')} <span className={NOTE_CLASS}>{t('camera.count', { shown: filteredCameras.length, total: cameras.length })}</span>
-                </label>
-                <select id="lens-camera-pick" value={cameraId} onChange={(e) => setCameraId(e.target.value)} className={`mt-1.5 ${inputClass}`}>
-                  <option value="">{filteredCameras.length ? t('camera.none') : t('camera.noMatch')}</option>
-                  {filteredCameras.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {cameraLabel(c)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          ) : (
-            <div className={`${FIELD_GRID} sm:grid-cols-2`}>
-              <div className={FIELD_CELL}>
-                <label htmlFor="lens-cam-type" className={`${FIELD_LABEL} ${labelClass}`}>{t('camera.type')}</label>
-                <select id="lens-cam-type" value={manual.type} onChange={(e) => setManual({ ...manual, type: e.target.value as 'area' | 'line' })} className={`mt-1.5 ${inputClass}`}>
-                  <option value="area">{t('camera.area')}</option>
-                  <option value="line">{t('camera.line')}</option>
-                </select>
-              </div>
-              <div className={FIELD_CELL}>
-                <label htmlFor="lens-cam-mount" className={`${FIELD_LABEL} ${labelClass}`}>{t('camera.mount')}</label>
-                <select id="lens-cam-mount" value={manual.mount} onChange={(e) => setManual({ ...manual, mount: e.target.value })} className={`mt-1.5 ${inputClass}`}>
-                  <option value="">{t('camera.mountUnknown')}</option>
-                  {MOUNTS.map((m) => (
-                    <option key={m} value={m}>{m}</option>
-                  ))}
-                </select>
-              </div>
-              <NumberInput id="lens-cam-w" label={t('camera.widthPx')} value={manual.widthPx} onChange={(v) => setManual({ ...manual, widthPx: v })} step="1" />
-              {manual.type === 'area' ? (
-                <NumberInput id="lens-cam-h" label={t('camera.heightPx')} value={manual.heightPx} onChange={(v) => setManual({ ...manual, heightPx: v })} step="1" />
-              ) : null}
-              <NumberInput id="lens-cam-pitch" label={t('camera.pixelSize')} value={manual.pitch} onChange={(v) => setManual({ ...manual, pitch: v })} step="0.01" />
-              <div className={FIELD_CELL}>
-                <label htmlFor="lens-cam-format" className={`${FIELD_LABEL} ${labelClass}`}>{t('camera.sensorFormat')}</label>
-                <select id="lens-cam-format" value={manual.format} onChange={(e) => setManual({ ...manual, format: e.target.value })} className={`mt-1.5 ${inputClass}`}>
-                  <option value="">{t('camera.sensorFormatAuto')}</option>
-                  {SENSOR_FORMAT_KEYS.map((fmt) => (
-                    <option key={fmt} value={fmt}>{fmt}&quot;</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          )}
-          {camera && need ? (
-            <p className={`mt-3 ${NOTE_CLASS}`}>
-              {t('camera.summary', { w: camera.widthPx, h: camera.heightPx, pitch: show(camera.pixelSizeUm), sw: show(need.sensorLongMm), sh: show(need.sensorShortMm) })}
-            </p>
-          ) : null}
-        </Panel>
-
-        {/* ── Bài toán ── */}
-        <Panel
-          id="lens-task"
-          title={t('task.title')}
-          note={tele ? undefined : t('task.computedNote')}
-        >
-          {!tele ? (
-            <div className="mb-4 flex flex-wrap items-center gap-2" role="radiogroup" aria-label={t('mode.label')}>
-              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{t('mode.label')}:</span>
-              {MODES.map((value) => (
-                <button
-                  key={value}
-                  type="button"
-                  role="radio"
-                  aria-checked={mode === value}
-                  onClick={() => setMode(value)}
-                  className={`rounded-full border px-3 py-1 text-xs font-medium ${mode === value ? 'border-sky-500 bg-sky-50 text-sky-800 dark:border-sky-700 dark:bg-sky-950/40 dark:text-sky-300' : 'border-slate-300 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800'}`}
-                >
-                  {t(`mode.${value}`)}
-                </button>
-              ))}
-            </div>
-          ) : null}
-          <div className={`${FIELD_GRID} sm:grid-cols-2`}>
-            {!tele ? (
-              <NumberInput
-                id="lens-f"
-                label={t('task.focal')}
-                value={computed('f') ? computedValue('f') : task.f}
-                computed={computed('f')}
-                onChange={setTaskValue('f')}
-                onFocus={() => setFocus('f')}
-                onBlur={() => setFocus(null)}
-                step="0.1"
+      {/* ── 1 Cảm biến ── */}
+      <section aria-label={t('steps.sensor')} className="space-y-4">
+        <StepHeader n={1} title={t('steps.sensor')} />
+        <div role="radiogroup" aria-label={t('steps.sensor')} className="flex flex-wrap gap-x-12 gap-y-2">
+          {(['catalog', 'manual'] as const).map((value) => (
+            <label key={value} className={`inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200 ${value === 'catalog' && cameras.length === 0 ? 'opacity-40' : ''}`}>
+              <input
+                type="radio"
+                name="lens-source"
+                checked={source === value}
+                disabled={value === 'catalog' && cameras.length === 0}
+                onChange={() => setSource(value)}
+                className="size-4 accent-[#F75200]"
               />
-            ) : null}
-            <NumberInput
-              id="lens-wd"
-              label={t(tele ? 'task.wdOptional' : 'task.wd')}
-              hint={t('task.wdHint')}
-              value={computed('wd') ? computedValue('wdField') : task.wd}
-              computed={computed('wd')}
-              onChange={setTaskValue('wd')}
-              onFocus={() => setFocus('wd')}
-              onBlur={() => setFocus(null)}
-            />
-            <NumberInput
-              id="lens-fov-w"
-              label={t('task.fovWidth')}
-              value={computed('fov') ? computedValue('fovW') : task.fovW}
-              computed={computed('fov')}
-              onChange={setTaskValue('fovW')}
-              onFocus={() => setFocus('fov')}
-              onBlur={() => setFocus(null)}
-            />
-            <NumberInput
-              id="lens-fov-h"
-              label={t(line ? 'task.fovHeightLine' : 'task.fovHeight')}
-              value={computed('fov') ? (line ? '' : computedValue('fovH')) : task.fovH}
-              computed={computed('fov')}
-              onChange={setTaskValue('fovH')}
-              onFocus={() => setFocus('fov')}
-              onBlur={() => setFocus(null)}
-            />
+              {t(value === 'catalog' ? 'steps.optCatalog' : 'steps.optManual')}
+            </label>
+          ))}
+        </div>
+        {source === 'catalog' ? (
+          <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,2fr)]">
+            <div>
+              <label htmlFor="lens-brand" className={hikLabel}>{t('steps.brand')}</label>
+              <select id="lens-brand" value={brand} onChange={(e) => setBrand(e.target.value)} className={`mt-1 ${inputClass}`}>
+                <option value="">{t('steps.brandAll')}</option>
+                {brands.map((b) => (
+                  <option key={b} value={b}>{b}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="lens-camera-search" className={hikLabel}>{t('steps.find')}</label>
+              <input id="lens-camera-search" type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t('camera.search')} className={`mt-1 ${inputClass}`} />
+            </div>
+            <div>
+              <label htmlFor="lens-camera-pick" className={hikLabel}>
+                {t('steps.model')} <span className="text-xs">({t('camera.count', { shown: filteredCameras.length, total: cameras.length })})</span>
+              </label>
+              <select id="lens-camera-pick" value={cameraId} onChange={(e) => setCameraId(e.target.value)} className={`mt-1 ${inputClass}`}>
+                <option value="">{filteredCameras.length ? t('camera.none') : t('camera.noMatch')}</option>
+                {filteredCameras.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {cameraLabel(c)}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-6">
+            <div>
+              <label htmlFor="lens-cam-type" className={hikLabel}>{t('camera.type')}</label>
+              <select id="lens-cam-type" value={manual.type} onChange={(e) => setManual({ ...manual, type: e.target.value as 'area' | 'line' })} className={`mt-1 ${inputClass}`}>
+                <option value="area">{t('camera.area')}</option>
+                <option value="line">{t('camera.line')}</option>
+              </select>
+            </div>
+            <HikNumber id="lens-cam-w" label={t('camera.widthPx')} value={manual.widthPx} onChange={(v) => setManual({ ...manual, widthPx: v })} />
+            {manual.type === 'area' ? <HikNumber id="lens-cam-h" label={t('camera.heightPx')} value={manual.heightPx} onChange={(v) => setManual({ ...manual, heightPx: v })} /> : null}
+            <HikNumber id="lens-cam-pitch" label={t('camera.pixelSize')} value={manual.pitch} onChange={(v) => setManual({ ...manual, pitch: v })} />
+            <div>
+              <label htmlFor="lens-cam-mount" className={hikLabel}>{t('camera.mount')}</label>
+              <select id="lens-cam-mount" value={manual.mount} onChange={(e) => setManual({ ...manual, mount: e.target.value })} className={`mt-1 ${inputClass}`}>
+                <option value="">{t('camera.mountUnknown')}</option>
+                {MOUNTS.map((m) => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="lens-cam-format" className={hikLabel}>{t('camera.sensorFormat')}</label>
+              <select id="lens-cam-format" value={manual.format} onChange={(e) => setManual({ ...manual, format: e.target.value })} className={`mt-1 ${inputClass}`}>
+                <option value="">{t('camera.sensorFormatAuto')}</option>
+                {SENSOR_FORMAT_KEYS.map((fmt) => (
+                  <option key={fmt} value={fmt}>{fmt}&quot;</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        )}
+        {camera && sensor ? (
+          <p className={NOTE_CLASS}>
+            {t('camera.summary', { w: camera.widthPx, h: camera.heightPx, pitch: show(camera.pixelSizeUm), sw: show(sensor.longMm), sh: show(sensor.shortMm) })}
+          </p>
+        ) : null}
+      </section>
+
+      {/* ── 2 Điều kiện làm việc: ô nhập đặt trên hình (Q1-A, Q2-A) ── */}
+      <section aria-label={t('steps.conditions')} className="space-y-4">
+        <StepHeader n={2} title={t('steps.conditions')} />
+        <p className="text-sm text-slate-600 dark:text-slate-300">{t(tele ? 'steps.conditionsHintTele' : 'steps.conditionsHint')}</p>
+        <div className="bg-[#F8F8F8] px-4 pb-5 pt-5 sm:px-6 dark:bg-slate-900/70">
+          <button type="button" onClick={reset} className={HIK_BUTTON}>
+            {t('steps.clear')}
+          </button>
+          <div className="mt-4">
+            <ConditionFigure telecentric={tele} lineScan={line}>
+              <FigureField
+                id="lens-res"
+                label={t('figure.res')}
+                value={camera && camera.widthPx > 0 ? (line ? `${camera.widthPx} px` : `${camera.widthPx} × ${camera.heightPx}`) : ''}
+                tone="plain"
+                pos={POS.res}
+                typed
+                readOnly
+              />
+              {!tele ? <FigureField id="lens-f" label={t('task.focal')} value={geoValue('f')} typed={isTyped('f')} tone="lens" pos={POS.f} onChange={setGeo('f')} /> : null}
+              {!tele ? <FigureField id="lens-aov-h" label={t('figure.aovH')} value={cellValue(need?.aovLongDeg, 1)} tone="lens" pos={POS.aovH} readOnly title={t('need.aovNote')} /> : null}
+              {!tele && !line ? <FigureField id="lens-aov-v" label={t('figure.aovV')} value={cellValue(need?.aovShortDeg, 1)} tone="lens" pos={POS.aovV} readOnly title={t('need.aovNote')} /> : null}
+              <FigureField id="lens-wd" label={t(tele ? 'figure.wdOptional' : 'figure.wd')} value={geoValue('wd')} typed={isTyped('wd')} tone="plain" pos={POS.wd} onChange={setGeo('wd')} title={t('task.wdHint')} />
+              <FigureField id="lens-fov-w" label={t('figure.fovW')} value={geoValue('fovW')} typed={isTyped('fovW')} tone="object" pos={POS.fovW} onChange={setGeo('fovW')} />
+              <FigureField id="lens-mmpx-now" label={t('figure.mmpx')} value={cellValue(need?.mmPerPx, 4)} tone="info" pos={POS.mmpx} readOnly />
+              <FigureField id="lens-fov-h" label={t(line ? 'figure.fovHLine' : 'figure.fovH')} value={geoValue('fovH')} typed={isTyped('fovH')} tone="object" pos={POS.fovH} onChange={setGeo('fovH')} />
+              <FigureField id="lens-beta" label={t(tele ? 'figure.betaMax' : 'figure.beta')} value={cellValue(need?.beta, 4)} tone="object" pos={POS.beta} readOnly />
+            </ConditionFigure>
+          </div>
+          <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">
+            ※ {!camera ? t('steps.needCamera') : !input ? t(tele ? 'need.missingTele' : `need.missing.${mode}`) : !need ? t('need.missingSensor') : t('steps.approx')}
+          </p>
+        </div>
+        {need?.cameraTooCoarse ? (
+          <p className="rounded-[2px] border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
+            {t('need.cameraTooCoarse', { have: show(need.mmPerPx, 4), need: show(mmpx, 4) })}
+          </p>
+        ) : null}
+        {need && !tele && need.fNeedDepth !== null && need.fMaxRing !== null && need.fNeedDepth > need.fMaxRing ? (
+          <p className="rounded-[2px] border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+            {t('need.fDepthConflict')}
+          </p>
+        ) : null}
+
+        {/* Tuỳ chọn thêm — mở sẵn (Q3-A) */}
+        <div className="space-y-3 pt-2">
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">{t('steps.extra')}</h3>
+          <div className={`${FIELD_GRID} sm:grid-cols-2`}>
             <NumberInput id="lens-dh" label={t('task.heightVariation')} hint={t('task.heightVariationHint')} value={task.dh} onChange={setTaskValue('dh')} />
             <NumberInput id="lens-mmpx" label={t('task.targetMmPerPx')} hint={t('task.targetMmPerPxHint')} value={task.mmpx} onChange={setTaskValue('mmpx')} step="0.001" />
           </div>
           {tab === 'fixed' ? (
-            <div className="mt-4 rounded-lg border border-slate-200 dark:border-slate-700">
+            <div className="rounded-[2px] border border-[#EBEBEB] dark:border-slate-700">
               <button
                 type="button"
                 onClick={() => setAccOpen(!accOpen)}
                 aria-expanded={accOpen || fixedAccessory !== null}
                 aria-controls="lens-accessory"
-                className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800/60"
+                className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-[#F8F8F8] dark:text-slate-200 dark:hover:bg-slate-800/60"
               >
                 <span>
                   {t('accessory.title')}
                   {fixedAccessory ? (
-                    <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900 dark:bg-amber-950/60 dark:text-amber-200">{manualDesc}</span>
+                    <span className="ml-2 rounded-full bg-[#FFD8C1] px-2 py-0.5 text-xs font-medium text-[#8A3200] dark:bg-[#4A2412] dark:text-[#FFB48A]">{manualDesc}</span>
                   ) : null}
                 </span>
                 <span aria-hidden="true" className="text-xs text-slate-500">{accOpen || fixedAccessory ? '▲' : '▼'}</span>
               </button>
               {accOpen || fixedAccessory ? (
-                <div id="lens-accessory" className="space-y-3 border-t border-slate-200 px-3 py-3 dark:border-slate-700">
+                <div id="lens-accessory" className="space-y-3 border-t border-[#EBEBEB] px-3 py-3 dark:border-slate-700">
                   <p className={NOTE_CLASS}>{t('accessory.intro')}</p>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div>
@@ -577,114 +635,104 @@ export function LensSelector({
               ) : null}
             </div>
           ) : null}
-        </Panel>
-      </div>
-
-      {/* ── Sơ đồ + thông số cần ── */}
-      <Panel id="lens-need" title={t('need.title')}>
-        <div className="grid gap-6 lg:grid-cols-2">
-          <LensDiagram
-            {...diagram}
-            telecentric={tele}
-            highlight={focus}
-            accessory={diagramAccessory}
-          />
-          {!input ? (
-            <p className={`self-center ${NOTE_CLASS}`}>{t(tele ? 'need.missingTele' : `need.missing.${mode}`)}</p>
-          ) : !need ? (
-            <p className="self-center text-sm text-amber-800 dark:text-amber-300">{t('need.missingSensor')}</p>
-          ) : (
-            <div className="space-y-4">
-              <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2 xl:grid-cols-3">
-                <NeedItem
-                  label={t(tele ? 'need.betaMax' : 'need.beta')}
-                  value={show(need.beta, 4)}
-                  formula={showFormulas ? need.betaFormula : undefined}
-                  note={t(tele ? 'need.betaMaxNote' : 'need.betaNote')}
-                />
-                {!tele && geometry ? (
-                  <NeedItem
-                    label={t(mode === 'fov-wd' ? (accK ? 'need.focalPrime' : 'need.focal') : accK ? 'need.focalGivenPrime' : 'need.focalGiven')}
-                    value={`${show(geometry.focalLengthMm, 1)} mm`}
-                    formula={
-                      !showFormulas || mode !== 'fov-wd'
-                        ? undefined
-                        : accK
-                          ? `${show(geometry.workingDistanceMm, 0)} × (${show(need.beta, 4)} ÷ ${show(accK, 2)}) ÷ (1 + ${show(need.beta, 4)} ÷ ${show(accK, 2)})`
-                          : `${show(geometry.workingDistanceMm, 0)} × ${show(need.beta, 4)} ÷ (1 + ${show(need.beta, 4)})`
-                    }
-                    note={accK ? t('need.focalPrimeNote', { k: show(accK, 2) }) : mode === 'fov-wd' ? t('need.focalNote') : undefined}
-                  />
-                ) : null}
-                {!tele && geometry && mode === 'focal-fov' ? (
-                  <NeedItem
-                    label={t('need.wdComputed')}
-                    value={`${show(geometry.workingDistanceMm, 0)} mm`}
-                    formula={!showFormulas ? undefined : accK ? `${show(geometry.focalLengthMm, 1)} × (1 + ${show(accK, 2)} ÷ ${show(need.beta, 4)})` : `${show(geometry.focalLengthMm, 1)} × (1 + 1 ÷ ${show(need.beta, 4)})`}
-                    note={t('need.wdComputedNote')}
-                  />
-                ) : null}
-                <NeedItem label={t('need.fov')} value={line ? `${show(need.fovLongMm, 1)} mm` : `${show(need.fovLongMm, 1)} × ${show(need.fovShortMm, 1)} mm`} />
-                {need.aovLongDeg !== null ? (
-                  <NeedItem
-                    label={t('need.aov')}
-                    value={need.aovShortDeg !== null ? `${show(need.aovLongDeg, 1)}° × ${show(need.aovShortDeg, 1)}°` : `${show(need.aovLongDeg, 1)}°`}
-                    note={t('need.aovNote')}
-                  />
-                ) : null}
-                <NeedItem label={t('need.mmPerPx')} value={show(need.mmPerPx, 4)} />
-                <NeedItem label={t('need.fMax')} value={need.fMaxRing !== null ? `F/${show(need.fMaxRing, 1)}` : '—'} note={tele ? t('need.fMaxNoteTele') : accK ? t('need.fMaxNotePrime', { k: show(accK, 2) }) : t('need.fMaxNote')} />
-                <NeedItem label={t('need.lp')} value={need.lpPerMm !== null ? `${show(need.lpPerMm, 0)} lp/mm` : '—'} />
-                <NeedItem label={t('need.circle')} value={`Ø ${show(need.sensorDiagonalMm, 1)} mm`} note={t('need.circleNote')} />
-                {need.fNeedDepth !== null && !tele ? (
-                  <NeedItem label={t('need.fDepth')} value={`F/${show(need.fNeedDepth, 1)}`} note={t('need.fDepthNote')} />
-                ) : null}
-                {need.telecentricFrontMm !== null ? (
-                  <NeedItem
-                    label={t('need.tele')}
-                    value={`Ø ≈ ${show(need.telecentricFrontMm, 0)} mm`}
-                    note={t(need.telecentricStatus === 'pass' ? 'need.telePass' : need.telecentricStatus === 'warn' ? 'need.teleWarn' : 'need.teleFail')}
-                    status={need.telecentricStatus ?? undefined}
-                  />
-                ) : null}
-              </dl>
-              {need.cameraTooCoarse ? (
-                <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
-                  {t('need.cameraTooCoarse', { have: show(need.mmPerPx, 4), need: show(mmpx, 4) })}
-                </p>
-              ) : null}
-              {!tele && need.fNeedDepth !== null && need.fMaxRing !== null && need.fNeedDepth > need.fMaxRing ? (
-                <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
-                  {t('need.fDepthConflict')}
-                </p>
-              ) : null}
-            </div>
-          )}
         </div>
-      </Panel>
 
-      {/* ── Nút Hiển thị kết quả (chốt 2026-10-26 Q2) ── */}
-      {need ? (
-        <div className="flex flex-wrap items-center gap-3">
+        {/* Chi tiết tính toán — gập sẵn (Q4-A) */}
+        <div className="rounded-[2px] border border-[#EBEBEB] dark:border-slate-700">
           <button
             type="button"
-            onClick={showResults}
-            className="inline-flex items-center gap-2 rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700"
+            onClick={() => setDetailsOpen(!detailsOpen)}
+            aria-expanded={detailsOpen}
+            aria-controls="lens-need"
+            className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-[#F8F8F8] dark:text-slate-200 dark:hover:bg-slate-800/60"
           >
+            {t('steps.details')}
+            <span aria-hidden="true" className="text-xs text-slate-500">{detailsOpen ? '▲' : '▼'}</span>
+          </button>
+          {detailsOpen ? (
+            <div id="lens-need" className="grid gap-6 border-t border-[#EBEBEB] px-3 py-4 lg:grid-cols-2 dark:border-slate-700">
+              <LensDiagram {...diagram} telecentric={tele} highlight={null} accessory={diagramAccessory} />
+              {!need ? (
+                <p className={`self-center ${NOTE_CLASS}`}>{t(tele ? 'need.missingTele' : `need.missing.${mode}`)}</p>
+              ) : (
+                <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2 xl:grid-cols-3">
+                  <NeedItem
+                    label={t(tele ? 'need.betaMax' : 'need.beta')}
+                    value={show(need.beta, 4)}
+                    formula={showFormulas ? need.betaFormula : undefined}
+                    note={t(tele ? 'need.betaMaxNote' : 'need.betaNote')}
+                  />
+                  {!tele && geometry ? (
+                    <NeedItem
+                      label={t(mode === 'fov-wd' ? (accK ? 'need.focalPrime' : 'need.focal') : accK ? 'need.focalGivenPrime' : 'need.focalGiven')}
+                      value={`${show(geometry.focalLengthMm, 1)} mm`}
+                      formula={
+                        !showFormulas || mode !== 'fov-wd'
+                          ? undefined
+                          : accK
+                            ? `${show(geometry.workingDistanceMm, 0)} × (${show(need.beta, 4)} ÷ ${show(accK, 2)}) ÷ (1 + ${show(need.beta, 4)} ÷ ${show(accK, 2)})`
+                            : `${show(geometry.workingDistanceMm, 0)} × ${show(need.beta, 4)} ÷ (1 + ${show(need.beta, 4)})`
+                      }
+                      note={accK ? t('need.focalPrimeNote', { k: show(accK, 2) }) : mode === 'fov-wd' ? t('need.focalNote') : undefined}
+                    />
+                  ) : null}
+                  {!tele && geometry && mode === 'focal-fov' ? (
+                    <NeedItem
+                      label={t('need.wdComputed')}
+                      value={`${show(geometry.workingDistanceMm, 0)} mm`}
+                      formula={!showFormulas ? undefined : accK ? `${show(geometry.focalLengthMm, 1)} × (1 + ${show(accK, 2)} ÷ ${show(need.beta, 4)})` : `${show(geometry.focalLengthMm, 1)} × (1 + 1 ÷ ${show(need.beta, 4)})`}
+                      note={t('need.wdComputedNote')}
+                    />
+                  ) : null}
+                  <NeedItem label={t('need.fov')} value={line ? `${show(need.fovLongMm, 1)} mm` : `${show(need.fovLongMm, 1)} × ${show(need.fovShortMm, 1)} mm`} />
+                  {need.aovLongDeg !== null ? (
+                    <NeedItem
+                      label={t('need.aov')}
+                      value={need.aovShortDeg !== null ? `${show(need.aovLongDeg, 1)}° × ${show(need.aovShortDeg, 1)}°` : `${show(need.aovLongDeg, 1)}°`}
+                      note={t('need.aovNote')}
+                    />
+                  ) : null}
+                  <NeedItem label={t('need.mmPerPx')} value={show(need.mmPerPx, 4)} />
+                  <NeedItem label={t('need.fMax')} value={need.fMaxRing !== null ? `F/${show(need.fMaxRing, 1)}` : '—'} note={tele ? t('need.fMaxNoteTele') : accK ? t('need.fMaxNotePrime', { k: show(accK, 2) }) : t('need.fMaxNote')} />
+                  <NeedItem label={t('need.lp')} value={need.lpPerMm !== null ? `${show(need.lpPerMm, 0)} lp/mm` : '—'} />
+                  <NeedItem label={t('need.circle')} value={`Ø ${show(need.sensorDiagonalMm, 1)} mm`} note={t('need.circleNote')} />
+                  {need.fNeedDepth !== null && !tele ? (
+                    <NeedItem label={t('need.fDepth')} value={`F/${show(need.fNeedDepth, 1)}`} note={t('need.fDepthNote')} />
+                  ) : null}
+                  {need.telecentricFrontMm !== null ? (
+                    <NeedItem
+                      label={t('need.tele')}
+                      value={`Ø ≈ ${show(need.telecentricFrontMm, 0)} mm`}
+                      note={t(need.telecentricStatus === 'pass' ? 'need.telePass' : need.telecentricStatus === 'warn' ? 'need.teleWarn' : 'need.teleFail')}
+                      status={need.telecentricStatus ?? undefined}
+                    />
+                  ) : null}
+                </dl>
+              )}
+            </div>
+          ) : null}
+        </div>
+      </section>
+
+      {/* ── 3 Kết quả: nút Hiện kết quả (chốt 2026-10-26 Q2) ── */}
+      <section aria-label={t('steps.result')} className="space-y-4">
+        <StepHeader n={3} title={t('steps.result')} underline />
+        <div className="flex flex-wrap items-center gap-3">
+          <button type="button" onClick={showResults} className={HIK_BUTTON}>
             {t('list.showResults')}
           </button>
+          {!need ? <span className="text-sm text-slate-500 dark:text-slate-400">{t('steps.needInput')}</span> : null}
           {stale ? <span className="text-sm text-amber-700 dark:text-amber-300">{t('list.stale')}</span> : null}
         </div>
-      ) : null}
 
-      {/* ── Ống kính trong kho ── */}
-      {result && shown ? (
-        <Panel
-          id="lens-list"
-          title={t('list.title')}
-          meta={`${t('list.meta', counts)}${accessoryCount > 0 ? ` · ${t('list.metaAccessory', { n: accessoryCount })}` : ''}`}
-          note={fixedAccessory ? t('list.manualHint', { desc: manualDesc }) : all.some((c) => c.accessory) ? t('list.accessoryHint') : undefined}
-          actions={
+        {/* ── Bảng ống trong kho: bảng phẳng kiểu Hik ── */}
+        {result && shown ? (
+        <div id="lens-list" className="border-t border-[#EBEBEB] dark:border-slate-800">
+          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 py-3">
+            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">{t('list.title')}</h3>
+              <span className={NOTE_CLASS}>{`${t('list.meta', counts)}${accessoryCount > 0 ? ` · ${t('list.metaAccessory', { n: accessoryCount })}` : ''}`}</span>
+            </div>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
               {accessoryCount > 0 ? (
                 <label className="inline-flex items-center gap-2 text-xs font-medium text-amber-800 dark:text-amber-300">
@@ -705,15 +753,17 @@ export function LensSelector({
                 {t('list.showRejected')}
               </label>
             </div>
-          }
-          bodyClassName={stale ? 'opacity-50 transition-opacity' : 'transition-opacity'}
-        >
+          </div>
+          {fixedAccessory || all.some((c) => c.accessory) ? (
+            <p className={`pb-3 ${NOTE_CLASS}`}>{fixedAccessory ? t('list.manualHint', { desc: manualDesc }) : t('list.accessoryHint')}</p>
+          ) : null}
+          <div className={stale ? 'opacity-50 transition-opacity' : 'transition-opacity'}>
           {visible.length === 0 ? (
-            <p className={`px-4 py-4 sm:px-5 ${NOTE_CLASS}`}>{t('list.empty')}</p>
+            <p className={`py-4 ${NOTE_CLASS}`}>{t('list.empty')}</p>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[1100px] text-left text-sm">
-                <thead className="bg-slate-50 text-xs text-slate-500 dark:bg-slate-900 dark:text-slate-400">
+              <table className="w-full min-w-[1100px] border border-[#EBEBEB] text-left text-sm text-slate-800 dark:border-slate-800 dark:text-slate-200">
+                <thead className="bg-black/[0.08] text-xs text-slate-600 dark:bg-white/10 dark:text-slate-300">
                   <tr>
                     {/* Cột theo bảng kết quả của Hikrobot (chốt 2026-10-26 Q1, Q4); F nên đặt chỉ khi có dải chiều cao vật. */}
                     <th scope="col" className="min-w-48 py-2 pl-4 pr-4 font-medium">{t('list.colLens')}</th>
@@ -735,7 +785,7 @@ export function LensSelector({
                     <th scope="col" className="py-2 pr-4 font-medium">{t('list.colStatus')}</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                <tbody className="divide-y divide-[#EBEBEB] dark:divide-slate-800">
                   {visible.slice(0, limit).map((c) => (
                     <LensRow
                       key={c.component.id}
@@ -753,16 +803,27 @@ export function LensSelector({
               </table>
             </div>
           )}
-          {visible.length > 0 ? <p className={`border-t border-slate-100 px-4 py-2 sm:px-5 dark:border-slate-800 ${NOTE_CLASS}`}>{t('list.footNote')}</p> : null}
+          {visible.length > 0 ? <p className={`py-2 ${NOTE_CLASS}`}>※ {t('list.footNote')}</p> : null}
           {visible.length > limit ? (
-            <div className="border-t border-slate-100 px-4 py-3 sm:px-5 dark:border-slate-800">
+            <div className="py-3">
               <button type="button" onClick={() => setLimit(limit + PAGE)} className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800">
                 {t('list.showMore', { n: Math.min(PAGE, visible.length - limit) })}
               </button>
             </div>
           ) : null}
-        </Panel>
-      ) : null}
+          </div>
+        </div>
+        ) : null}
+      </section>
+    </div>
+  );
+}
+
+function HikNumber({ id, label, value, onChange }: { id: string; label: string; value: string; onChange: (value: string) => void }) {
+  return (
+    <div>
+      <label htmlFor={id} className={hikLabel}>{label}</label>
+      <input id={id} type="text" inputMode="decimal" autoComplete="off" value={value} onChange={(e) => onChange(e.target.value)} className={`mt-1 ${inputClass}`} />
     </div>
   );
 }

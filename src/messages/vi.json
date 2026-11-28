@@ -3152,6 +3152,8 @@
     "resultLabel": "Hình kiểm tra lắp đặt"
   },
   "lensSelector": {
+    "steps": {"sensor": "Cảm biến", "optCatalog": "Chọn camera trong kho", "optManual": "Nhập tay cảm biến", "brand": "Hãng", "brandAll": "Tất cả hãng", "find": "Tìm model", "model": "Model camera", "conditions": "Điều kiện làm việc", "conditionsHint": "Gõ 2 trong 3: tiêu cự, khoảng cách, vùng nhìn. Các ô còn lại máy tự tính (chữ nghiêng).", "conditionsHintTele": "Gõ vùng nhìn; khoảng cách làm việc tuỳ chọn. β và mm/px máy tự tính.", "clear": "Xoá", "approx": "Số tính gần đúng, chỉ để tham khảo.", "needCamera": "Chọn camera ở bước 1.", "extra": "Tuỳ chọn thêm", "details": "Chi tiết tính toán", "result": "Kết quả chọn ống", "needInput": "Nhập đủ bước 1 và bước 2 trước."},
+    "figure": {"res": "Độ phân giải camera", "wd": "Khoảng cách WD (mm)", "wdOptional": "WD (mm, tuỳ chọn)", "fovW": "Vùng nhìn rộng (mm)", "fovH": "Vùng nhìn cao (mm)", "fovHLine": "Chiều dài vật (mm)", "aovH": "Góc nhìn ngang (°)", "aovV": "Góc nhìn dọc (°)", "beta": "Độ phóng đại β", "betaMax": "β tối đa", "mmpx": "mm/px"},
     "title": "Chọn ống kính",
     "subtitle": "Nhập camera, vùng nhìn và khoảng cách làm việc → tiêu cự cần, F# giới hạn, và các ống kính trong kho lắp được.",
     "why": "Mọi con số ở đây dùng đúng công thức của Thiết kế hệ thống (luật OPT-001…005), nên một cặp camera + ống kính không bao giờ ra hai kết luận khác nhau ở hai trang. WD tính từ mặt trước ống; ống chưa khai tiêu điểm trước sF thì dùng công thức nhanh β = f ÷ WD — trước khi đặt hàng, kiểm lại bảng khoảng cách làm việc trong datasheet.",
